@@ -1,0 +1,52 @@
+plugins {
+  id 'org.jetbrains.intellij' version '0.2.0'
+}
+
+description = 'Manifold :: IJ'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+tasks.withType(JavaCompile) {
+  options.encoding = 'UTF-8'
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+}
+
+dependencies {
+  compile group: 'org.manifold-systems', name: 'manifold', version: manifoldVersion
+}
+
+compileJava {
+  options.compilerArgs << '-proc:none'
+}
+
+afterEvaluate {
+  task downloadDependencies(type: Exec) {
+    configurations.testRuntime.files
+    commandLine 'echo', 'Downloaded all dependencies'
+  }
+}
+
+intellij {
+  pluginName project.name
+  version '2016.3' // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
+  plugins = ['ASM Bytecode Outline:0.3.5'] //include ASM in the sandbox by default. Nice.
+
+  downloadSources true
+
+  //if running on CI, don't download sources
+  if(System.getenv('CI') != null) {
+    downloadSources false
+  }
+}
+
+patchPluginXml {
+  sinceBuild '141.1010'
+  untilBuild '999.*'
+  pluginDescription 'IntelliJ IDEA plugin for Manifold'
+}
