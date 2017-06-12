@@ -11,6 +11,7 @@ import com.intellij.navigation.ItemPresentation;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.TextRange;
@@ -772,5 +773,11 @@ public class JavaFacadePsiClass implements PsiClass
   public <T> void putUserData( Key<T> key,  T value )
   {
     _delegate.putUserData( key, value );
+  }
+
+  public Module getModule()
+  {
+    return ProjectRootManager.getInstance( getProject() ).getFileIndex()
+      .getModuleForFile( getRawFiles().get( 0 ).getVirtualFile() );
   }
 }

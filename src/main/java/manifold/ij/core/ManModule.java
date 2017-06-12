@@ -89,25 +89,22 @@ public class ManModule extends SimpleModule
   }
 
   @Override
-  public ISourceProducer findSourceProducerFor( String fqn )
+  public Set<ISourceProducer> findSourceProducersFor( String fqn )
   {
-    ISourceProducer sp = super.findSourceProducerFor( fqn );
-    if( sp != null )
+    Set<ISourceProducer> sps = super.findSourceProducersFor( fqn );
+    if( !sps.isEmpty() )
     {
-      return sp;
+      return sps;
     }
+    sps = new HashSet<>();
     for( Dependency d : getDependencies() )
     {
       if( d.isExported() )
       {
-        sp = d.getModule().findSourceProducerFor( fqn );
-        if( sp != null )
-        {
-          return sp;
-        }
+        sps.addAll( d.getModule().findSourceProducersFor( fqn ) );
       }
     }
-    return null;
+    return sps;
   }
 
   @Override

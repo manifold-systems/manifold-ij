@@ -40,6 +40,9 @@ import manifold.ij.fs.IjFile;
 import manifold.ij.psi.ManifoldLightMethodBuilder;
 import manifold.ij.psi.ManifoldPsiElementFactory;
 
+
+import static manifold.api.sourceprod.ISourceProducer.ProducerKind.Supplemental;
+
 /**
  */
 public class ManifoldAugmentProvider extends PsiAugmentProvider
@@ -52,7 +55,7 @@ public class ManifoldAugmentProvider extends PsiAugmentProvider
       return Collections.emptyList();
     }
 
-    if( !(element instanceof PsiClass) || !element.isValid() || !element.isPhysical() || !PsiMethod.class.isAssignableFrom( cls ) )
+    if( !(element instanceof PsiClass) || !element.isValid() || !PsiMethod.class.isAssignableFrom( cls ) )
     {
       return Collections.emptyList();
     }
@@ -93,7 +96,7 @@ public class ManifoldAugmentProvider extends PsiAugmentProvider
     ManModule manModule = ManProject.getModule( module.getIjModule() );
     for( ISourceProducer sp : manModule.getSourceProducers() )
     {
-      if( sp instanceof ITypeProcessor )
+      if( sp.getProducerKind() == Supplemental )
       {
         if( sp.isType( fqn ) )
         {
@@ -293,7 +296,16 @@ public class ManifoldAugmentProvider extends PsiAugmentProvider
 
   private Module getModule( PsiElement element )
   {
-    return ProjectRootManager.getInstance( element.getProject() )
-      .getFileIndex().getModuleForFile( element.getContainingFile().getVirtualFile() );
+    if( element.isPhysical() )
+    {
+      return ProjectRootManager.getInstance( element.getProject() )
+        .getFileIndex().getModuleForFile( element.getContainingFile().getVirtualFile() );
+    }
+    JavaFacadePsiClass javaFacadePsiClass = element.getContainingFile().getUserData( JavaFacadePsiClass.KEY_JAVAFACADE );
+    if( javaFacadePsiClass != null )
+    {
+      return javaFacadePsiClass.getModule();
+    }
+    return null;
   }
 }

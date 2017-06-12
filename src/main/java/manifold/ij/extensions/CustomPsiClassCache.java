@@ -13,6 +13,7 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.PsiModificationTrackerImpl;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import manifold.api.fs.IFile;
 import manifold.api.host.AbstractTypeSystemListener;
@@ -23,6 +24,10 @@ import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.util.cache.FqnCache;
 import manifold.util.cache.FqnCacheNode;
+
+
+import static manifold.api.sourceprod.ISourceProducer.ProducerKind.Partial;
+import static manifold.api.sourceprod.ISourceProducer.ProducerKind.Primary;
 
 public class CustomPsiClassCache extends AbstractTypeSystemListener
 {
@@ -56,23 +61,46 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
 
     if( node == null )
     {
-      ISourceProducer sp = module.findSourceProducerFor( fqn );
-      if( sp != null && !(sp instanceof ITypeProcessor) )
+      Set<ISourceProducer> sps = module.findSourceProducersFor( fqn );
+      ISourceProducer found = null;
+      if( !sps.isEmpty() )
       {
-        PsiClass delegate = createPsiClass( module, fqn, sp );
-        List<IFile> files = sp.findFilesForType( fqn );
-        JavaFacadePsiClass psiFacadeClass = new JavaFacadePsiClass( delegate, files, fqn );
-        map.add( fqn, psiFacadeClass );
-        for( IFile file: files )
+        String result = "";
+        for( ISourceProducer sp : sps )
         {
-          _psi2Class.put( file.getPath().getPathString(), psiFacadeClass );
+          if( sp.getProducerKind() == Primary ||
+              sp.getProducerKind() == Partial )
+          {
+            if( found != null && (found.getProducerKind() == Primary || sp.getProducerKind() == Primary) )
+            {
+              //## todo: how better to handle this?
+              throw new UnsupportedOperationException( "The type, " + fqn + ", has conflicting source producers: '" +
+                                                       found.getClass().getName() + "' and '" + sp.getClass().getName() + "'" );
+            }
+            found = sp;
+            result = sp.produce( fqn, result, null );
+          }
+        }
+
+        if( found != null )
+        {
+          PsiClass delegate = createPsiClass( module, fqn, result );
+          List<IFile> files = found.findFilesForType( fqn );
+          JavaFacadePsiClass psiFacadeClass = new JavaFacadePsiClass( delegate, files, fqn );
+          map.add( fqn, psiFacadeClass );
+          for( IFile file : files )
+          {
+            _psi2Class.put( file.getPath().getPathString(), psiFacadeClass );
+          }
         }
       }
-      else
+
+      if( found == null )
       {
         // cache the miss
         map.add( fqn );
       }
+
       node = map.getNode( fqn );
     }
 
@@ -90,10 +118,9 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
     project.getFileModificationManager().getManRefresher().addTypeLoaderListenerAsWeakRef( this );
   }
 
-  private PsiClass createPsiClass( ManModule module, String fqn, ISourceProducer sp )
+  private PsiClass createPsiClass( ManModule module, String fqn, String source )
   {
     PsiManager manager = PsiManagerImpl.getInstance( module.getIjProject() );
-    String source = sp.produce( fqn, null ); //## todo: maybe provide a DiagnosticListener for error handling?
     final PsiJavaFile aFile = createDummyJavaFile( fqn, manager, source );
     final PsiClass[] classes = aFile.getClasses();
     return classes[0];
