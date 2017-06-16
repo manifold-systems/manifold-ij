@@ -12,17 +12,17 @@ import com.intellij.psi.impl.light.LightVariableBuilder;
 
 /**
  */
-public class ManifoldLightParameterImpl extends LightParameter
+public class ManLightParameterImpl extends LightParameter
 {
   private final LightIdentifier myNameIdentifier;
 
-  public ManifoldLightParameterImpl( String name, PsiType type, PsiElement declarationScope, Language language )
+  public ManLightParameterImpl( String name, PsiType type, PsiElement declarationScope, Language language )
   {
     super( name, type, declarationScope, language );
     PsiManager manager = declarationScope.getManager();
     myNameIdentifier = new LightIdentifier( manager, name );
     ReflectionUtil.setFinalFieldPerReflection( LightVariableBuilder.class, this, LightModifierList.class,
-                                               new ManifoldLightModifierListImpl( manager, language ) );
+                                               new ManLightModifierListImpl( manager, language ) );
   }
 
   @Override
@@ -31,9 +31,9 @@ public class ManifoldLightParameterImpl extends LightParameter
     return myNameIdentifier;
   }
 
-  public ManifoldLightParameterImpl setModifiers( String... modifiers )
+  public ManLightParameterImpl setModifiers( String... modifiers )
   {
-    ManifoldLightModifierListImpl modifierList = new ManifoldLightModifierListImpl( getManager(), getLanguage(), modifiers );
+    ManLightModifierListImpl modifierList = new ManLightModifierListImpl( getManager(), getLanguage(), modifiers );
     ReflectionUtil.setFinalFieldPerReflection( LightVariableBuilder.class, this, LightModifierList.class, modifierList );
     return this;
   }

@@ -33,19 +33,18 @@ import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
 import manifold.api.sourceprod.ISourceProducer;
-import manifold.api.sourceprod.ITypeProcessor;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
-import manifold.ij.psi.ManifoldLightMethodBuilder;
-import manifold.ij.psi.ManifoldPsiElementFactory;
+import manifold.ij.psi.ManLightMethodBuilder;
+import manifold.ij.psi.ManPsiElementFactory;
 
 
 import static manifold.api.sourceprod.ISourceProducer.ProducerKind.Supplemental;
 
 /**
  */
-public class ManifoldAugmentProvider extends PsiAugmentProvider
+public class ManAugmentProvider extends PsiAugmentProvider
 {
   public <E extends PsiElement> List<E> getAugments( PsiElement element, Class<E> cls )
   {
@@ -149,9 +148,9 @@ public class ManifoldAugmentProvider extends PsiAugmentProvider
   {
     if( null != refMethod )
     {
-      ManifoldPsiElementFactory manPsiElemFactory = ManifoldPsiElementFactory.getInstance();
+      ManPsiElementFactory manPsiElemFactory = ManPsiElementFactory.instance();
       String methodName = refMethod.getName();
-      ManifoldLightMethodBuilder method = manPsiElemFactory.createLightMethod( psiClass.getManager(), methodName )
+      ManLightMethodBuilder method = manPsiElemFactory.createLightMethod( psiClass.getManager(), methodName )
         .withMethodReturnType( refMethod.getReturnType() )
         .withContainingClass( psiClass );
       PsiElement navElem = findExtensionMethodNavigationElement( extClass, refMethod );
@@ -211,7 +210,7 @@ public class ManifoldAugmentProvider extends PsiAugmentProvider
     return null;
   }
 
-  private void addModifier( PsiMethod psiMethod, ManifoldLightMethodBuilder method, String modifier )
+  private void addModifier( PsiMethod psiMethod, ManLightMethodBuilder method, String modifier )
   {
     if( psiMethod.hasModifierProperty( modifier ) )
     {

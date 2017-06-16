@@ -7,6 +7,13 @@
   <!-- please see http://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
   <idea-version since-build="This value is patched by the build script"/>
 
+  <actions>
+      <group id="Manifold.New">
+          <action id="Manifold.NewExtensionClass" class="manifold.ij.actions.CreateExtensionMethodsClassAction"/>
+          <add-to-group group-id="NewGroup1" anchor="last"/>
+      </group>
+  </actions>
+
   <project-components>
     <component>
       <implementation-class>manifold.ij.core.ManProjectComponent</implementation-class>
@@ -16,7 +23,7 @@
   <extensions defaultExtensionNs="com.intellij">
     <java.elementFinder implementation="manifold.ij.extensions.ManTypeFinder"/>
     <gotoDeclarationHandler implementation="manifold.ij.extensions.ManGotoDeclarationHandler"/>
-    <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManifoldAugmentProvider"/>
+    <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManAugmentProvider"/>
     <methodReferencesSearch implementation="manifold.ij.extensions.ExtensionMethodUsageSearcher"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionClassAnnotator"/>
     <!--<java.shortNamesCache implementation="gw.plugin.ij.extensions.CustomPsiShortNamesCache"/>-->

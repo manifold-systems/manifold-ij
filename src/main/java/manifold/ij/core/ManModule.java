@@ -88,6 +88,7 @@ public class ManModule extends SimpleModule
     return getProject().getFileSystem();
   }
 
+  @SuppressWarnings("Duplicates")
   @Override
   public Set<ISourceProducer> findSourceProducersFor( String fqn )
   {
@@ -102,6 +103,26 @@ public class ManModule extends SimpleModule
       if( d.isExported() )
       {
         sps.addAll( d.getModule().findSourceProducersFor( fqn ) );
+      }
+    }
+    return sps;
+  }
+
+  @SuppressWarnings("Duplicates")
+  @Override
+  public Set<ISourceProducer> findSourceProducersFor( IFile file )
+  {
+    Set<ISourceProducer> sps = super.findSourceProducersFor( file );
+    if( !sps.isEmpty() )
+    {
+      return sps;
+    }
+    sps = new HashSet<>();
+    for( Dependency d : getDependencies() )
+    {
+      if( d.isExported() )
+      {
+        sps.addAll( d.getModule().findSourceProducersFor( file ) );
       }
     }
     return sps;

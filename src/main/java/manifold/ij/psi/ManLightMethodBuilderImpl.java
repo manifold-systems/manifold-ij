@@ -25,69 +25,69 @@ import com.intellij.util.StringBuilderSpinAllocator;
 
 /**
  */
-public class ManifoldLightMethodBuilderImpl extends LightMethodBuilder implements ManifoldLightMethodBuilder
+public class ManLightMethodBuilderImpl extends LightMethodBuilder implements ManLightMethodBuilder
 {
   private final LightIdentifier _nameIdentifier;
   private ASTNode _astNode;
 
-  public ManifoldLightMethodBuilderImpl( PsiManager manager, String name )
+  public ManLightMethodBuilderImpl( PsiManager manager, String name )
   {
     super( manager, JavaLanguage.INSTANCE, name,
-           new LightParameterListBuilder( manager, JavaLanguage.INSTANCE ), new ManifoldLightModifierListImpl( manager, JavaLanguage.INSTANCE ) );
+           new LightParameterListBuilder( manager, JavaLanguage.INSTANCE ), new ManLightModifierListImpl( manager, JavaLanguage.INSTANCE ) );
     _nameIdentifier = new LightIdentifier( manager, name );
   }
 
   @Override
-  public ManifoldLightMethodBuilder withNavigationElement( PsiElement navigationElement )
+  public ManLightMethodBuilder withNavigationElement( PsiElement navigationElement )
   {
     setNavigationElement( navigationElement );
     return this;
   }
 
   @Override
-  public ManifoldLightMethodBuilder withModifier( @PsiModifier.ModifierConstant String modifier )
+  public ManLightMethodBuilder withModifier( @PsiModifier.ModifierConstant String modifier )
   {
     addModifier( modifier );
     return this;
   }
 
   @Override
-  public ManifoldLightMethodBuilder withMethodReturnType( PsiType returnType )
+  public ManLightMethodBuilder withMethodReturnType( PsiType returnType )
   {
     setMethodReturnType( returnType );
     return this;
   }
 
   @Override
-  public ManifoldLightMethodBuilder withParameter( String name, PsiType type )
+  public ManLightMethodBuilder withParameter( String name, PsiType type )
   {
-    addParameter( new ManifoldLightParameterImpl( name, type, this, JavaLanguage.INSTANCE ) );
+    addParameter( new ManLightParameterImpl( name, type, this, JavaLanguage.INSTANCE ) );
     return this;
   }
 
   @Override
-  public ManifoldLightMethodBuilder withException( PsiClassType type )
+  public ManLightMethodBuilder withException( PsiClassType type )
   {
     addException( type );
     return this;
   }
 
   @Override
-  public ManifoldLightMethodBuilder withException( String fqName )
+  public ManLightMethodBuilder withException( String fqName )
   {
     addException( fqName );
     return this;
   }
 
   @Override
-  public ManifoldLightMethodBuilder withContainingClass( PsiClass containingClass )
+  public ManLightMethodBuilder withContainingClass( PsiClass containingClass )
   {
     setContainingClass( containingClass );
     return this;
   }
 
   @Override
-  public ManifoldLightMethodBuilder withTypeParameter( PsiTypeParameter typeParameter )
+  public ManLightMethodBuilder withTypeParameter( PsiTypeParameter typeParameter )
   {
     addTypeParameter( typeParameter );
     return this;
@@ -214,12 +214,10 @@ public class ManifoldLightMethodBuilderImpl extends LightMethodBuilder implement
   @Override
   public void delete() throws IncorrectOperationException
   {
-    // simple do nothing
   }
 
   @Override
   public void checkDelete() throws IncorrectOperationException
   {
-    // simple do nothing
   }
 }

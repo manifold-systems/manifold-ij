@@ -15,7 +15,7 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.searches.MethodReferencesSearch;
 import com.intellij.util.Processor;
-import manifold.ij.psi.ManifoldLightMethodBuilder;
+import manifold.ij.psi.ManLightMethodBuilder;
 
 /**
  * Forward the search to the augmented light method on the extended class
@@ -54,7 +54,7 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
           }
           for( PsiMethod m : extendedClass.findMethodsByName( method.getName(), false ) )
           {
-            if( m instanceof ManifoldLightMethodBuilder )
+            if( m instanceof ManLightMethodBuilder )
             {
               if( m.getNavigationElement().equals( method.getNavigationElement() ) )
               {

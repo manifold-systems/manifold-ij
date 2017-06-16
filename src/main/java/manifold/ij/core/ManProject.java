@@ -293,13 +293,13 @@ public class ManProject
   }
 
   /**
-   * <p>This will add items to the Gosu classpath, but only under very specific circumstances.
+   * <p>This will add items to the classpath, but only under very specific circumstances.
    * <p>If both of the following conditions are met:
    * <ul>
    * <li>The JAR's manifest contains a Class-Path entry</li>
    * <li>The Class-Path entry contains a space-delimited list of URIs</li>
    * </ul>
-   * <p>Then the entries will be parsed and added to the Gosu classpath.
+   * <p>Then the entries will be parsed and added to the classpath.
    * <p>
    * <p>This logic also handles strange libraries packaged pre-Maven such as xalan:xalan:2.4.1
    * <p>

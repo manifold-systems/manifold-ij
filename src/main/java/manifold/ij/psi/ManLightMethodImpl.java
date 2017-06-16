@@ -12,18 +12,18 @@ import com.intellij.util.IncorrectOperationException;
 
 /**
  */
-public class ManifoldLightMethodImpl extends LightMethod implements ManifoldLightMethod
+public class ManLightMethodImpl extends LightMethod implements ManLightMethod
 {
   private final PsiMethod _method;
 
-  public ManifoldLightMethodImpl( PsiManager manager, PsiMethod valuesMethod, PsiClass psiClass )
+  public ManLightMethodImpl( PsiManager manager, PsiMethod valuesMethod, PsiClass psiClass )
   {
     super( manager, valuesMethod, psiClass );
     _method = valuesMethod;
   }
 
   @Override
-  public ManifoldLightMethod withNavigationElement( PsiElement navigationElement )
+  public ManLightMethod withNavigationElement( PsiElement navigationElement )
   {
     setNavigationElement( navigationElement );
     return this;
@@ -44,7 +44,7 @@ public class ManifoldLightMethodImpl extends LightMethod implements ManifoldLigh
 
   public PsiElement copy()
   {
-    return new ManifoldLightMethodImpl( myManager, (PsiMethod)_method.copy(), getContainingClass() );
+    return new ManLightMethodImpl( myManager, (PsiMethod)_method.copy(), getContainingClass() );
   }
 
   public ASTNode getNode()
@@ -68,12 +68,10 @@ public class ManifoldLightMethodImpl extends LightMethod implements ManifoldLigh
   @Override
   public void delete() throws IncorrectOperationException
   {
-    // simple do nothing
   }
 
   @Override
   public void checkDelete() throws IncorrectOperationException
   {
-    // simple do nothing
   }
 }

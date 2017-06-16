@@ -14,32 +14,32 @@ import com.intellij.util.IncorrectOperationException;
 
 /**
  */
-public class ManifoldLightFieldBuilderImpl extends LightFieldBuilder implements ManifoldLightFieldBuilder
+public class ManLightFieldBuilderImpl extends LightFieldBuilder implements ManLightFieldBuilder
 {
   protected final LightIdentifier _nameIdentifier;
 
-  public ManifoldLightFieldBuilderImpl( PsiManager manager, String name, PsiType type )
+  public ManLightFieldBuilderImpl( PsiManager manager, String name, PsiType type )
   {
     super( manager, name, type );
     _nameIdentifier = new LightIdentifier( manager, name );
   }
 
   @Override
-  public ManifoldLightFieldBuilder withContainingClass( PsiClass psiClass )
+  public ManLightFieldBuilder withContainingClass( PsiClass psiClass )
   {
     setContainingClass( psiClass );
     return this;
   }
 
   @Override
-  public ManifoldLightFieldBuilder withModifier( @PsiModifier.ModifierConstant String modifier )
+  public ManLightFieldBuilder withModifier( @PsiModifier.ModifierConstant String modifier )
   {
     ((LightModifierList)getModifierList()).addModifier( modifier );
     return this;
   }
 
   @Override
-  public ManifoldLightFieldBuilder withNavigationElement( PsiElement navigationElement )
+  public ManLightFieldBuilder withNavigationElement( PsiElement navigationElement )
   {
     setNavigationElement( navigationElement );
     return this;
@@ -72,12 +72,10 @@ public class ManifoldLightFieldBuilderImpl extends LightFieldBuilder implements 
   @Override
   public void delete() throws IncorrectOperationException
   {
-    // simple do nothing
   }
 
   @Override
   public void checkDelete() throws IncorrectOperationException
   {
-    // simple do nothing
   }
 }

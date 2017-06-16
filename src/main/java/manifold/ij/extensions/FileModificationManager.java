@@ -78,7 +78,6 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
   }
 
   // Type creation and refresh
-  // This method does NOT get invoked when a Gosu class gets created, why?
   // Also, this will not fire when a file is created externally (Use VirtualFileManager.VFS_CHANGES)
   public void transactionCompleted( final Document doc, final PsiFile psiFile )
   {

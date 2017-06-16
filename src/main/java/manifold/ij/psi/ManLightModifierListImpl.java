@@ -17,13 +17,13 @@ import java.util.Set;
 
 /**
  */
-public class ManifoldLightModifierListImpl extends LightModifierList
+public class ManLightModifierListImpl extends LightModifierList
 {
   private static final Set<String> ALL_MODIFIERS = new HashSet<>( Arrays.asList( PsiModifier.MODIFIERS ) );
 
   private final Map<String, PsiAnnotation> _annotations;
 
-  public ManifoldLightModifierListImpl( PsiManager manager, final Language language, String... modifiers )
+  public ManLightModifierListImpl( PsiManager manager, final Language language, String... modifiers )
   {
     super( manager, language, modifiers );
     _annotations = new HashMap<>();
