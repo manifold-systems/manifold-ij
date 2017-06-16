@@ -117,6 +117,11 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
 
   public void after( final List<? extends VFileEvent> events )
   {
+    if( _project.isDisposed() )
+    {
+      return;
+    }
+
     for( VFileEvent event : events )
     {
       final VirtualFile file = event.getFile();

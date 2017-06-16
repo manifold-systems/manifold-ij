@@ -36,6 +36,37 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
            PlatformIcons.CLASS_ICON );
   }
 
+  @Override
+  public void update( AnActionEvent e )
+  {
+    super.update( e );
+
+    boolean enabled;
+    final DataContext dataContext = e.getDataContext();
+
+    final IdeView view = LangDataKeys.IDE_VIEW.getData( dataContext );
+    if( view == null )
+    {
+      enabled = false;
+    }
+    else
+    {
+      final Project project = PlatformDataKeys.PROJECT.getData( dataContext );
+
+      final PsiDirectory dir = view.getOrChooseDirectory();
+      if( dir == null || project == null )
+      {
+        enabled = false;
+      }
+      else
+      {
+        PsiPackage pkg = JavaDirectoryService.getInstance().getPackage( dir );
+        enabled = pkg != null;
+      }
+    }
+    e.getPresentation().setEnabled( enabled );
+  }
+
   public void actionPerformed( AnActionEvent e )
   {
     final DataContext dataContext = e.getDataContext();
@@ -136,7 +167,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
     File pkg = new File( srcDir, "extensions" + File.separatorChar + fqnExtended.replace( '.', File.separatorChar ) );
     //noinspection ResultOfMethodCallIgnored
     pkg.mkdirs();
-    VirtualFile pkgFile = LocalFileSystem.getInstance().findFileByIoFile( pkg );
+    VirtualFile pkgFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile( pkg );
     dir = dir.getManager().findDirectory( pkgFile );
     return dir;
   }

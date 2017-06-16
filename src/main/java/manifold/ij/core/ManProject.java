@@ -61,7 +61,7 @@ public class ManProject
 
   public static Collection<ManProject> getAllProjects()
   {
-    return PROJECTS.values();
+    return PROJECTS.values().stream().filter( p -> !p.getNativeProject().isDisposed() ).collect( Collectors.toSet() );
   }
 
   public static Project projectFrom( ManModule module )
@@ -94,6 +94,11 @@ public class ManProject
 
   private static ManProject getProject( Project project )
   {
+    if( project.isDisposed() )
+    {
+      return null;
+    }
+
     ManProject manProject = PROJECTS.get( project );
     if( manProject == null )
     {
@@ -165,6 +170,8 @@ public class ManProject
   {
     _projectConnection.disconnect();
     _projectConnection = null;
+    PROJECTS.remove( getNativeProject() );
+    _fileModificationManager.getManRefresher().nukeFromOrbit();
   }
 
   private void addTypeRefreshListener() {
@@ -273,7 +280,7 @@ public class ManProject
     List<IDirectory> sourceRoots = new ArrayList<>( sourcePaths );
     scanPaths( classpath, sourceRoots );
 
-    return new ManModule( this, ijModule, classpath, sourcePaths, outputPath, getExcludedFolders( ijModule ) );
+    return new ManModule( this, ijModule, classpath, sourceRoots, outputPath, getExcludedFolders( ijModule ) );
   }
 
   private static void scanPaths( List<IDirectory> paths, List<IDirectory> roots )

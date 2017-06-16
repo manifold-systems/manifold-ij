@@ -29,7 +29,12 @@ public class StubBuilder
 {
   public SrcClass make( String fqn, ManModule module )
   {
-    PsiClass psiClass = JavaPsiFacade.getInstance( module.getIjProject() ).findClass( fqn, GlobalSearchScope.moduleScope( module.getIjModule() ) );
+     JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance( module.getIjProject() );
+     PsiClass psiClass = javaPsiFacade.findClass( fqn, GlobalSearchScope.moduleScope( module.getIjModule() ) );
+     if( psiClass == null )
+     {
+       psiClass = javaPsiFacade.findClass( fqn, GlobalSearchScope.allScope( module.getIjProject() ) );
+     }
     return makeSrcClass( fqn, psiClass, module );
   }
 
