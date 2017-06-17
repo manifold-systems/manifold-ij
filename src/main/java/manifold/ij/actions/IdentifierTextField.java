@@ -10,7 +10,6 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.PlainDocument;
-import org.jetbrains.annotations.NotNull;
 
 public class IdentifierTextField extends JTextField
 {
@@ -33,7 +32,6 @@ public class IdentifierTextField extends JTextField
     _bAcceptUnderscore = bAcceptUnderscore;
   }
 
-  @NotNull
   @Override
   protected Document createDefaultModel()
   {
@@ -76,7 +74,7 @@ public class IdentifierTextField extends JTextField
     }
   }
 
-  public static boolean isValidIdentifier( @NotNull CharSequence seqId, boolean acceptDot )
+  public static boolean isValidIdentifier( CharSequence seqId, boolean acceptDot )
   {
     if( seqId.length() == 0 || !Character.isJavaIdentifierStart( seqId.charAt( 0 ) ) )
     {

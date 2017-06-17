@@ -104,7 +104,7 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
       node = map.getNode( fqn );
     }
 
-    return node.getUserData();
+    return node == null ? null : node.getUserData();
   }
 
   private void listenToChanges( ManProject project )
