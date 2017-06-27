@@ -26,6 +26,7 @@
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManAugmentProvider"/>
     <methodReferencesSearch implementation="manifold.ij.extensions.ExtensionMethodUsageSearcher"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionClassAnnotator"/>
+    <daemon.highlightInfoFilter implementation="manifold.ij.extensions.ManHighlightInfoFilter"/>
   </extensions>
 
 </idea-plugin>

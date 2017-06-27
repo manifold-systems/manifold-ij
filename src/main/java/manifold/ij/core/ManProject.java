@@ -12,9 +12,11 @@ import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
 import com.intellij.util.messages.MessageBusConnection;
 import java.io.File;
@@ -37,6 +39,7 @@ import manifold.api.fs.jar.JarFileDirectoryImpl;
 import manifold.api.host.Dependency;
 import manifold.api.host.IModule;
 import manifold.ij.extensions.FileModificationManager;
+import manifold.ij.extensions.JavaFacadePsiClass;
 import manifold.ij.extensions.ModuleClasspathListener;
 import manifold.ij.extensions.ModuleRefreshListener;
 import manifold.ij.fs.IjFileSystem;
@@ -88,6 +91,31 @@ public class ManProject
       {
         return mm;
       }
+    }
+    return null;
+  }
+
+  public static Module getIjModule( PsiElement element )
+  {
+    if( element.isPhysical() )
+    {
+      return ProjectRootManager.getInstance( element.getProject() )
+        .getFileIndex().getModuleForFile( element.getContainingFile().getVirtualFile() );
+    }
+    JavaFacadePsiClass javaFacadePsiClass = element.getContainingFile().getUserData( JavaFacadePsiClass.KEY_JAVAFACADE );
+    if( javaFacadePsiClass != null )
+    {
+      return javaFacadePsiClass.getModule();
+    }
+    return null;
+  }
+
+  public static ManModule getModule( PsiElement element )
+  {
+    Module ijModule = getIjModule( element );
+    if( ijModule != null )
+    {
+      return getModule( ijModule );
     }
     return null;
   }

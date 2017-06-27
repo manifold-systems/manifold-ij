@@ -2,7 +2,6 @@ package manifold.ij.extensions;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbService;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
@@ -16,9 +15,11 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.augment.PsiAugmentProvider;
 import com.intellij.psi.util.TypeConversionUtil;
+import com.intellij.util.IncorrectOperationException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,9 +74,18 @@ public class ManAugmentProvider extends PsiAugmentProvider
     return (List<E>)augFeatures;
   }
 
+  protected PsiType inferType( PsiTypeElement typeElement )
+  {
+    if( null == typeElement || DumbService.isDumb( typeElement.getProject() ) )
+    {
+      return null;
+    }
+    return VarHandler.instance().inferType( typeElement );
+  }
+
   private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures )
   {
-    Module module = getModule( psiClass );
+    Module module = ManProject.getIjModule( psiClass );
     if( module != null )
     {
       addMethods( fqn, psiClass, augFeatures, ManProject.getModule( module ) );
@@ -125,8 +135,11 @@ public class ManAugmentProvider extends PsiAugmentProvider
                 if( srcMethod != null )
                 {
                   PsiMethod extMethod = makePsiMethod( srcMethod, psiClass );
-                  PsiMethod plantedMethod = plantMethodInPsiClass( extMethod, psiClass, classes[0] );
-                  augFeatures.add( plantedMethod );
+                  if( extMethod != null )
+                  {
+                    PsiMethod plantedMethod = plantMethodInPsiClass( extMethod, psiClass, classes[0] );
+                    augFeatures.add( plantedMethod );
+                  }
                 }
               }
             }
@@ -141,7 +154,16 @@ public class ManAugmentProvider extends PsiAugmentProvider
     PsiElementFactory elementFactory = JavaPsiFacade.getInstance( psiClass.getProject() ).getElementFactory();
     StringBuilder sb = new StringBuilder();
     method.render( sb, 0 );
-    return elementFactory.createMethodFromText( sb.toString(), psiClass );
+    try
+    {
+      return elementFactory.createMethodFromText( sb.toString(), psiClass );
+    }
+    catch( IncorrectOperationException ioe )
+    {
+      // the text of the method does not conform to method grammar, probably being edited in an IJ editor,
+      // ignore these since the editor provides error information
+      return null;
+    }
   }
 
   private PsiMethod plantMethodInPsiClass( PsiMethod refMethod, PsiClass psiClass, PsiClass extClass )
@@ -291,20 +313,5 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return false;
     }
     return extendedFqn.equals( param.getType().getName() );
-  }
-
-  private Module getModule( PsiElement element )
-  {
-    if( element.isPhysical() )
-    {
-      return ProjectRootManager.getInstance( element.getProject() )
-        .getFileIndex().getModuleForFile( element.getContainingFile().getVirtualFile() );
-    }
-    JavaFacadePsiClass javaFacadePsiClass = element.getContainingFile().getUserData( JavaFacadePsiClass.KEY_JAVAFACADE );
-    if( javaFacadePsiClass != null )
-    {
-      return javaFacadePsiClass.getModule();
-    }
-    return null;
   }
 }
