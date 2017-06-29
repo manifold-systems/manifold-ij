@@ -81,7 +81,7 @@ public class ModuleClasspathListener implements ModuleRootListener
     {
       return true;
     }
-    List list1copy = new ArrayList<>( list1 );
+    List<IDirectory> list1copy = new ArrayList<>( list1 );
     list1copy.removeAll( list2 );
     return list1copy.size() != 0;
   }

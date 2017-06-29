@@ -71,7 +71,7 @@ public class StubBuilder
     }
     for( PsiClassType superType : psiClass.getImplementsListTypes() )
     {
-      srcClass.iface( makeSrcType( superType ) );
+      srcClass.addInterface( makeSrcType( superType ) );
     }
   }
 

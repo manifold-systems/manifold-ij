@@ -86,12 +86,17 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
         if( psiMethod != null )
         {
           PsiParameter[] parameters = psiMethod.getParameterList().getParameters();
+          PsiType[] argTypes = methodCall.getArgumentList().getExpressionTypes();
           for( int i = 0; i < parameters.length; i++ )
           {
             PsiParameter param = parameters[i];
+            if( argTypes.length <= i )
+            {
+              return true;
+            }
             if( !isStructuralType( param.getTypeElement() ) )
             {
-              if( !param.getType().isAssignableFrom( methodCall.getArgumentList().getExpressionTypes()[i] ) )
+              if( !param.getType().isAssignableFrom( argTypes[i] ) )
               {
                 return true;
               }

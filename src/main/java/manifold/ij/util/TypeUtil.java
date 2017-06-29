@@ -92,7 +92,7 @@ public class TypeUtil
       {
         continue;
       }
-      if( toMi.getContainingClass().getModifierList().findAnnotation( "manifold.ext.api.ExtensionMethod" ) != null )
+      if( toMi.getContainingClass().getModifierList().findAnnotation( "manifold.ext.ExtensionMethod" ) != null )
       {
         continue;
       }

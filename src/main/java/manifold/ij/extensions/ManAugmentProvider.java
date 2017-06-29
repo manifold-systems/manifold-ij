@@ -262,6 +262,8 @@ public class ManAugmentProvider extends PsiAugmentProvider
 
     String name = method.getSimpleName();
     srcMethod.name( name );
+
+    @SuppressWarnings("unchecked")
     List<SrcType> typeParams = method.getTypeVariables();
 
     // extension method must reflect extended type's type vars before its own
@@ -272,7 +274,9 @@ public class ManAugmentProvider extends PsiAugmentProvider
       srcMethod.addTypeVar( typeVar );
     }
 
+    @SuppressWarnings("unchecked")
     List<SrcParameter> params = method.getParameters();
+
     for( int i = 1; i < params.size(); i++ )
     {
       // exclude This param
@@ -301,6 +305,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     {
       return false;
     }
+    @SuppressWarnings("unchecked")
     List<SrcParameter> params = method.getParameters();
     if( params.size() == 0 )
     {
@@ -308,7 +313,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     }
     SrcParameter param = params.get( 0 );
     List<SrcAnnotationExpression> annotations = param.getAnnotations();
-    if( annotations.size() > 0 && annotations.get( 0 ).getType().endsWith( ".This" ) )
+    if( annotations.size() > 0 && annotations.get( 0 ).getAnnotationType().endsWith( ".This" ) )
     {
       return false;
     }
