@@ -5,7 +5,6 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiFile;
@@ -16,16 +15,11 @@ import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeCastExpression;
 import com.intellij.psi.PsiTypeElement;
+import com.intellij.psi.impl.source.tree.java.PsiLocalVariableImpl;
 import com.intellij.psi.util.PsiUtil;
-import manifold.api.sourceprod.ISourceProducer;
-import manifold.ij.core.ManModule;
-import manifold.ij.core.ManProject;
 import manifold.ij.util.TypeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-
-import static manifold.api.sourceprod.ISourceProducer.ProducerKind.Supplemental;
 
 /**
  * Unfortunately IJ doesn't provide a way to augment a type with interfaces, so we are stuck with filtering errors
@@ -65,16 +59,27 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       PsiTypeElement castType = ((PsiTypeCastExpression)elem).getCastType();
       if( isStructuralType( castType ) )
       {
-        // ignore incompatible cast type involving structure
-        return false;
+        if( TypeUtil.isStructurallyAssignable( castType.getType(), ((PsiTypeCastExpression)elem).getType(), false ) )
+        {
+          // ignore incompatible cast type involving structure
+          return false;
+        }
       }
     }
     else if( firstElem instanceof PsiIdentifier )
     {
-      if( isStructuralType( findTypeElement( firstElem ) ) )
+      PsiTypeElement lhsType = findTypeElement( firstElem );
+      if( isStructuralType( lhsType ) )
       {
-        // ignore incompatible type in assignment involving structure
-        return false;
+        PsiType initType = findInitializerType( firstElem );
+        if( initType != null )
+        {
+          if( TypeUtil.isStructurallyAssignable( lhsType.getType(), initType, false ) )
+          {
+            // ignore incompatible type in assignment involving structure
+            return false;
+          }
+        }
       }
     }
     else if( hi.getDescription().contains( "cannot be applied to" ) )
@@ -115,6 +120,21 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       }
     }
     return true;
+  }
+
+  private PsiType findInitializerType( PsiElement firstElem )
+  {
+    PsiElement csr = firstElem;
+    while( csr != null && !(csr instanceof PsiLocalVariableImpl) )
+    {
+      csr = csr.getParent();
+    }
+    if( csr instanceof PsiLocalVariableImpl )
+    {
+      PsiExpression initializer = ((PsiLocalVariableImpl)csr).getInitializer();
+      return initializer == null ? null : initializer.getType();
+    }
+    return null;
   }
 
 //## todo: implementing this is not efficient to say the least, so for now we will always check for structural assignability
