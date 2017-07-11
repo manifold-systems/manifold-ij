@@ -96,7 +96,9 @@ public class IjFile extends IjResource implements IFile
   @Override
   public String getExtension()
   {
-    return _virtualFile != null ? _virtualFile.getExtension() : FileUtil.getExtension( _path );
+    return _virtualFile != null
+           ? _virtualFile.getExtension() == null ? "" : _virtualFile.getExtension()
+           : FileUtil.getExtension( _path );
   }
 
   @Override

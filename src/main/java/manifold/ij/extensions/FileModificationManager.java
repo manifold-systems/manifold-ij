@@ -7,6 +7,7 @@ package manifold.ij.extensions;
 import com.intellij.injected.editor.VirtualFileWindow;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.impl.ModuleRootEventImpl;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -118,6 +119,11 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
   public void after( final List<? extends VFileEvent> events )
   {
     if( _project.isDisposed() )
+    {
+      return;
+    }
+
+    if( DumbService.getInstance( _project ).isDumb() )
     {
       return;
     }
