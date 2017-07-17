@@ -213,11 +213,34 @@ public class ManModule extends SimpleModule
         sourceProducers = dep.getModule().getSourceProducers();
         if( sourceProducers != null )
         {
-          all.addAll( sourceProducers );
+          addIfAbsent( all, sourceProducers );
         }
       }
     }
     return all;
+  }
+
+  private void addIfAbsent( Set<ISourceProducer> all, Set<ISourceProducer> sourceProducers )
+  {
+    for( ISourceProducer sp: sourceProducers )
+    {
+      if( isAbsent( all, sp ) )
+      {
+        all.add( sp );
+      }
+    }
+  }
+
+  private boolean isAbsent( Set<ISourceProducer> all, ISourceProducer sp )
+  {
+    for( ISourceProducer existingSp: all )
+    {
+      if( existingSp.getClass().equals( sp.getClass() ) )
+      {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override

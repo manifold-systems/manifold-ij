@@ -83,6 +83,7 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
   public void transactionCompleted( final Document doc, final PsiFile psiFile )
   {
     VirtualFile file = FileUtil.toVirtualFile( psiFile );
+    //System.out.println( psiFile.getText() );
     if( file instanceof VirtualFileWindow )
     {
       file = ((VirtualFileWindow)file).getDelegate();

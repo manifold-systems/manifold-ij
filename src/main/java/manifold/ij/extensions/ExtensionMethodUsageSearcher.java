@@ -15,6 +15,8 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.searches.MethodReferencesSearch;
 import com.intellij.util.Processor;
+import manifold.ext.api.Extension;
+import manifold.ext.api.This;
 import manifold.ij.psi.ManLightMethodBuilder;
 
 /**
@@ -33,7 +35,7 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
 
     PsiMethod method = p.getMethod();
     PsiClass extensionClass = resolveInReadAction( p.getProject(), method::getContainingClass );
-    PsiAnnotation extensionAnno = resolveInReadAction( p.getProject(), () -> extensionClass.getModifierList().findAnnotation( "manifold.ext.api.Extension" ) );
+    PsiAnnotation extensionAnno = resolveInReadAction( p.getProject(), () -> extensionClass.getModifierList().findAnnotation( Extension.class.getName() ) );
     if( extensionAnno == null )
     {
       return;
@@ -41,9 +43,27 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
 
     PsiMethod augmentedMethod = resolveInReadAction( p.getProject(), () ->
     {
+      if( method.getModifierList().findAnnotation( Extension.class.getName() ) != null )
+      {
+        String fqn = extensionClass.getQualifiedName().substring( "extensions.".length() );
+        fqn = fqn.substring( 0, fqn.lastIndexOf( '.' ) );
+        PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, GlobalSearchScope.allScope( p.getProject() ) );
+
+        for( PsiMethod m : extendedClass.findMethodsByName( method.getName(), false ) )
+        {
+          if( m instanceof ManLightMethodBuilder )
+          {
+            if( m.getNavigationElement().equals( method.getNavigationElement() ) )
+            {
+              return m;
+            }
+          }
+        }
+      }
+
       for( PsiParameter psiParam : method.getParameterList().getParameters() )
       {
-        if( psiParam.getModifierList().findAnnotation( "manifold.ext.api.This" ) != null )
+        if( psiParam.getModifierList().findAnnotation( This.class.getName() ) != null )
         {
           String fqn = extensionClass.getQualifiedName().substring( "extensions.".length() );
           fqn = fqn.substring( 0, fqn.lastIndexOf( '.' ) );

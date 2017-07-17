@@ -139,7 +139,7 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
 
     if( map != null )
     {
-      System.out.println( "Refreshing: " + request.toString() );
+      //System.out.println( "Refreshing: " + request.toString() );
       for( ISourceProducer sp: request.module.getSourceProducers() )
       {
         if( sp instanceof ITypeProcessor )
@@ -147,12 +147,12 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
           for( String fqn: sp.getTypesForFile( request.file ) )
           {
             map.remove( fqn );
-            System.out.println( "REMOVED: " + fqn );
+            //System.out.println( "REMOVED: " + fqn );
             for( IFile f: sp.findFilesForType( fqn ) )
             {
               String pathString = f.getPath().getPathString();
-              System.out.println( _psi2Class.remove( pathString ) );
-              System.out.println( "REMOVED PSI: " + pathString );
+              _psi2Class.remove( pathString );
+              //System.out.println( "REMOVED PSI: " + pathString );
             }
           }
           System.out.println();

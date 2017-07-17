@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import manifold.api.fs.IFile;
 import manifold.api.gen.AbstractSrcMethod;
-import manifold.api.gen.SrcAnnotationExpression;
 import manifold.api.gen.SrcClass;
 import manifold.api.gen.SrcMethod;
 import manifold.api.gen.SrcParameter;
@@ -34,6 +33,8 @@ import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
 import manifold.api.sourceprod.ISourceProducer;
+import manifold.ext.api.Extension;
+import manifold.ext.api.This;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
@@ -181,6 +182,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
         method.withNavigationElement( navElem );
       }
       addModifier( refMethod, method, PsiModifier.PUBLIC );
+      addModifier( refMethod, method, PsiModifier.STATIC );
       addModifier( refMethod, method, PsiModifier.PACKAGE_LOCAL );
       addModifier( refMethod, method, PsiModifier.PROTECTED );
 
@@ -249,14 +251,21 @@ public class ManAugmentProvider extends PsiAugmentProvider
 
     SrcMethod srcMethod = new SrcMethod( srcClass );
     long modifiers = method.getModifiers();
-    if( extendedType.isInterface() )
+
+    boolean isInstanceExtensionMethod = isInstanceExtensionMethod( method, extendedType.getQualifiedName() );
+
+    if( extendedType.isInterface() && isInstanceExtensionMethod )
     {
       // extension method must be default method in interface to not require implementation
       modifiers |= 0x80000000000L; //Flags.DEFAULT;
     }
 
-    // remove static
-    srcMethod.modifiers( modifiers & ~Modifier.STATIC );
+    if( isInstanceExtensionMethod )
+    {
+      // remove static
+      modifiers &= ~Modifier.STATIC;
+    }
+    srcMethod.modifiers( modifiers );
 
     srcMethod.returns( method.getReturnType() );
 
@@ -268,7 +277,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
 
     // extension method must reflect extended type's type vars before its own
     int extendedTypeVarCount = extendedType.getTypeParameterList().getTypeParameters().length;
-    for( int i = extendedTypeVarCount; i < typeParams.size(); i++ )
+    for( int i = isInstanceExtensionMethod ? extendedTypeVarCount : 0; i < typeParams.size(); i++ )
     {
       SrcType typeVar = typeParams.get( i );
       srcMethod.addTypeVar( typeVar );
@@ -277,7 +286,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     @SuppressWarnings("unchecked")
     List<SrcParameter> params = method.getParameters();
 
-    for( int i = 1; i < params.size(); i++ )
+    for( int i = isInstanceExtensionMethod ? 1 : 0; i < params.size(); i++ )
     {
       // exclude This param
 
@@ -299,24 +308,42 @@ public class ManAugmentProvider extends PsiAugmentProvider
     return srcMethod;
   }
 
-  private boolean isExtensionMethod( AbstractSrcMethod method, String extendedFqn )
+  private boolean isExtensionMethod( AbstractSrcMethod method, String extendedType )
   {
     if( !Modifier.isStatic( (int)method.getModifiers() ) || Modifier.isPrivate( (int)method.getModifiers() ) )
     {
       return false;
     }
-    @SuppressWarnings("unchecked")
-    List<SrcParameter> params = method.getParameters();
+
+    if( method.hasAnnotation( Extension.class ) )
+    {
+      return true;
+    }
+
+    return hasThisAnnotation( method, extendedType );
+  }
+  private boolean isInstanceExtensionMethod( AbstractSrcMethod method, String extendedType )
+  {
+    if( !Modifier.isStatic( (int)method.getModifiers() ) || Modifier.isPrivate( (int)method.getModifiers() ) )
+    {
+      return false;
+    }
+
+    return hasThisAnnotation( method, extendedType );
+  }
+
+  private boolean hasThisAnnotation( AbstractSrcMethod method, String extendedType )
+  {
+    List params = method.getParameters();
     if( params.size() == 0 )
     {
       return false;
     }
-    SrcParameter param = params.get( 0 );
-    List<SrcAnnotationExpression> annotations = param.getAnnotations();
-    if( annotations.size() > 0 && annotations.get( 0 ).getAnnotationType().endsWith( ".This" ) )
+    SrcParameter param = (SrcParameter)params.get( 0 );
+    if( !param.hasAnnotation( This.class ) )
     {
       return false;
     }
-    return extendedFqn.equals( param.getType().getName() );
+    return param.getType().getName().equals( extendedType );
   }
 }

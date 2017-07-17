@@ -19,6 +19,7 @@ repositories {
 
 dependencies {
   compile group: 'org.manifold-systems', name: 'manifold', version: manifoldVersion
+  compile group: 'org.manifold-systems', name: "manifold-ext", version: manifoldVersion
 }
 
 compileJava {

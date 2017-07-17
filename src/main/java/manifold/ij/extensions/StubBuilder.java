@@ -1,6 +1,7 @@
 package manifold.ij.extensions;
 
 import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiField;
@@ -8,15 +9,21 @@ import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiModifierList;
+import com.intellij.psi.PsiModifierListOwner;
+import com.intellij.psi.PsiNameValuePair;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiPrimitiveType;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.search.GlobalSearchScope;
 import java.lang.reflect.Modifier;
+import manifold.api.gen.SrcAnnotated;
+import manifold.api.gen.SrcAnnotationExpression;
+import manifold.api.gen.SrcArgument;
 import manifold.api.gen.SrcClass;
 import manifold.api.gen.SrcField;
 import manifold.api.gen.SrcMethod;
+import manifold.api.gen.SrcParameter;
 import manifold.api.gen.SrcRawExpression;
 import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
@@ -192,6 +199,7 @@ public class StubBuilder
   private void addMethod( SrcClass srcClass, PsiMethod method )
   {
     SrcMethod srcMethod = new SrcMethod( srcClass );
+    addAnnotations( srcMethod, method );
     srcMethod.modifiers( getModifiers( method.getModifierList() ) );
     String name = method.getName();
     srcMethod.name( name );
@@ -205,7 +213,9 @@ public class StubBuilder
     }
     for( PsiParameter param : method.getParameterList().getParameters() )
     {
-      srcMethod.addParam( param.getName(), makeSrcType( param.getType() ) );
+      SrcParameter srcParam = new SrcParameter( param.getName(), makeSrcType( param.getType() ) );
+      addAnnotations( srcParam, param );
+      srcMethod.addParam( srcParam );
     }
     for( PsiClassType throwType : method.getThrowsList().getReferencedTypes() )
     {
@@ -216,6 +226,20 @@ public class StubBuilder
                         new SrcRawStatement()
                           .rawText( "throw new RuntimeException();" ) ) );
     srcClass.addMethod( srcMethod );
+  }
+
+  private void addAnnotations( SrcAnnotated<?> srcAnnotated, PsiModifierListOwner annotated )
+  {
+    for( PsiAnnotation psiAnno : annotated.getModifierList().getAnnotations() )
+    {
+      SrcAnnotationExpression annoExpr = new SrcAnnotationExpression( psiAnno.getQualifiedName() );
+      for( PsiNameValuePair value : psiAnno.getParameterList().getAttributes() )
+      {
+        SrcArgument srcArg = new SrcArgument( new SrcRawExpression( value.getLiteralValue() ) );
+        annoExpr.addArgument( srcArg ).name( value.getName() );
+      }
+      srcAnnotated.addAnnotation( annoExpr );
+    }
   }
 
   private String getValueForType( PsiType type )

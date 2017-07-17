@@ -16,6 +16,8 @@ import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeCastExpression;
 import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.impl.source.tree.java.PsiLocalVariableImpl;
+import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
+import com.intellij.psi.impl.source.tree.java.PsiReferenceExpressionImpl;
 import com.intellij.psi.util.PsiUtil;
 import manifold.ij.util.TypeUtil;
 import org.jetbrains.annotations.NotNull;
@@ -51,6 +53,21 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     PsiElement elem = firstElem.getParent();
     if( elem == null )
     {
+      return true;
+    }
+
+    if( isInvalidStaticMethodOnInterface( hi ) )
+    {
+      PsiElement lhsType = ((PsiReferenceExpressionImpl)((PsiMethodCallExpressionImpl)elem.getParent()).getMethodExpression().getQualifierExpression()).resolve();
+      if( lhsType instanceof JavaFacadePsiClass )
+      {
+        PsiClass declaringClass = ((PsiMethodCallExpressionImpl)elem.getParent()).resolveMethod().getContainingClass();
+        if( declaringClass == ((JavaFacadePsiClass)lhsType).getDelegate() )
+        {
+          // ignore "Static method may be invoked on containing interface class only" errors where the method really is directly on a the interface, albeit the delegate
+          return false;
+        }
+      }
       return true;
     }
 
@@ -120,6 +137,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       }
     }
     return true;
+  }
+
+  private boolean isInvalidStaticMethodOnInterface( HighlightInfo hi )
+  {
+    return hi.getDescription().contains( "Static method may be invoked on containing interface class only" );
   }
 
   private PsiType findInitializerType( PsiElement firstElem )
