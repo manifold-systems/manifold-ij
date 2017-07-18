@@ -1,11 +1,15 @@
 plugins {
-  id 'org.jetbrains.intellij' version '0.2.0'
+  id 'org.jetbrains.intellij' version '0.2.14'
 }
 
 description = 'Manifold :: IJ'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+wrapper {
+  gradleVersion '4.0.1'
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 
 tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
@@ -19,7 +23,7 @@ repositories {
 
 dependencies {
   compile group: 'org.manifold-systems', name: 'manifold', version: manifoldVersion
-  compile group: 'org.manifold-systems', name: "manifold-ext", version: manifoldVersion
+  compile group: 'org.manifold-systems', name: 'manifold-ext', version: manifoldVersion
 }
 
 compileJava {
