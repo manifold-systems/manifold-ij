@@ -40,7 +40,11 @@ public class IjJarDirectory extends IjDirectory
   @Override
   public String relativePath( IResource resource )
   {
-    return ((IjResource)resource)._path.substring( _path.length() + 2 );
+    if( ((IjResource)resource)._path.length() > _path.length() + 2 )
+    {
+      return ((IjResource)resource)._path.substring( _path.length() + 2 );
+    }
+    return _path;
   }
 
   @Override

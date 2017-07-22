@@ -19,7 +19,6 @@ import com.intellij.psi.impl.source.tree.java.PsiLocalVariableImpl;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiReferenceExpressionImpl;
 import com.intellij.psi.util.PsiUtil;
-import manifold.ij.util.TypeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -76,11 +75,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       PsiTypeElement castType = ((PsiTypeCastExpression)elem).getCastType();
       if( isStructuralType( castType ) )
       {
-        if( TypeUtil.isStructurallyAssignable( castType.getType(), ((PsiTypeCastExpression)elem).getType(), false ) )
-        {
+//        if( TypeUtil.isStructurallyAssignable( castType.getType(), ((PsiTypeCastExpression)elem).getType(), false ) )
+//        {
           // ignore incompatible cast type involving structure
           return false;
-        }
+//        }
       }
     }
     else if( firstElem instanceof PsiIdentifier )
@@ -91,11 +90,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
         PsiType initType = findInitializerType( firstElem );
         if( initType != null )
         {
-          if( TypeUtil.isStructurallyAssignable( lhsType.getType(), initType, false ) )
-          {
+//          if( TypeUtil.isStructurallyAssignable( lhsType.getType(), initType, false ) )
+//          {
             // ignore incompatible type in assignment involving structure
             return false;
-          }
+//          }
         }
       }
     }
@@ -123,14 +122,14 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
                 return true;
               }
             }
-            else
-            {
-              boolean nominal = false;//typeExtensionNominallyExtends( methodCall.getArgumentList().getExpressionTypes()[i], param.getTypeElement() );
-              if( !TypeUtil.isStructurallyAssignable( param.getType(), methodCall.getArgumentList().getExpressionTypes()[i], !nominal ) )
-              {
-                return true;
-              }
-            }
+//            else
+//            {
+//              boolean nominal = false;//typeExtensionNominallyExtends( methodCall.getArgumentList().getExpressionTypes()[i], param.getTypeElement() );
+//              if( !TypeUtil.isStructurallyAssignable( param.getType(), methodCall.getArgumentList().getExpressionTypes()[i], !nominal ) )
+//              {
+//                return true;
+//              }
+//            }
           }
           return false;
         }
