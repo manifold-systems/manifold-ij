@@ -36,22 +36,33 @@ import com.intellij.util.containers.HashMap;
 import com.intellij.util.messages.MessageBusConnection;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
 import manifold.api.fs.IFile;
 import manifold.api.sourceprod.ISourceProducer;
-import manifold.ij.core.IjManifoldHost;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.internal.host.ManifoldHost;
 import manifold.internal.javac.InMemoryClassJavaFileObject;
 import manifold.internal.javac.JavaParser;
+import manifold.util.StreamUtil;
+import org.jetbrains.annotations.NotNull;
 
 /**
  */
@@ -292,22 +303,13 @@ public class HotSwapComponent implements DebuggerManagerListener
               }
               if( !sourceFiles.isEmpty() )
               {
-                ManModule prevModule = IjManifoldHost.getModule();
-                IjManifoldHost.setModule( module );
-                try
+                Collection<InMemoryClassJavaFileObject> result = compileManifoldFiles( sourceFiles );
+                result = result.stream().filter( e -> fqns.contains( e.getClassName() ) ).collect( Collectors.toList() );
+                Map<String, File> classes = makeTempFiles( result );
+                progress.setText( DebuggerBundle.message( "progress.hotswap.scanning.path", filePath ) );
+                for( Map.Entry<String, File> e : classes.entrySet() )
                 {
-                  Collection<InMemoryClassJavaFileObject> result = JavaParser.instance().compile( sourceFiles, Arrays.asList( "-g", "-nowarn", "-Xlint:none", "-proc:none", "-parameters" ), null );
-                  result = result.stream().filter( e -> fqns.contains( e.getClassName() ) ).collect( Collectors.toList() );
-                  Map<String, File> classes = makeTempFiles( result );
-                  progress.setText( DebuggerBundle.message( "progress.hotswap.scanning.path", filePath ) );
-                  for( Map.Entry<String, File> e : classes.entrySet() )
-                  {
-                    container.put( e.getKey(), new HotSwapFile( e.getValue() ) );
-                  }
-                }
-                finally
-                {
-                  IjManifoldHost.setModule( prevModule );
+                  container.put( e.getKey(), new HotSwapFile( e.getValue() ) );
                 }
               }
             }
@@ -316,6 +318,100 @@ public class HotSwapComponent implements DebuggerManagerListener
       }
     }
     return true;
+  }
+
+  private Collection<InMemoryClassJavaFileObject> compileManifoldFiles( Set<JavaFileObject> sourceFiles )
+  {
+    URLClassLoader cl = makeCompilationClassLoader();
+    try
+    {
+      Class<?> manifoldHostClass = Class.forName( ManifoldHost.class.getName(), true, cl );
+      Method bootstrapMethod = manifoldHostClass.getMethod( "bootstrap", List.class, List.class );
+      bootstrapMethod.invoke( null, Collections.emptyList(), makeCompilerClassPath() );
+
+      Class<?> javaParserClass = Class.forName( JavaParser.class.getName(), true, cl );
+      Method instanceMethod = javaParserClass.getMethod( "instance" );
+      Object javaParser = instanceMethod.invoke( null );
+      Method compileMethod = javaParserClass.getMethod( "compile", Collection.class, Iterable.class, DiagnosticCollector.class );
+      Collection result = (Collection)compileMethod.invoke( javaParser, sourceFiles, Arrays.asList( "-g", "-nowarn", "-Xlint:none", "-proc:none", "-parameters" ), null );
+      //noinspection unchecked
+      return (Collection)result.stream().map( f -> makeInMemoryClassJavaFileObject( (SimpleJavaFileObject)f ) ).collect( Collectors.toList() );
+    }
+    catch( Exception e )
+    {
+      throw new RuntimeException( e );
+    }
+  }
+
+  private InMemoryClassJavaFileObject makeInMemoryClassJavaFileObject( SimpleJavaFileObject f )
+  {
+    String fqn = f.toUri().getPath().substring( 1 ).replace( '/', '.' );
+    int iDot = fqn.lastIndexOf( '.' );
+    fqn = fqn.substring( 0, iDot );
+    InMemoryClassJavaFileObject memF = new InMemoryClassJavaFileObject( fqn, f.getKind() );
+    try( OutputStream os = memF.openOutputStream();
+         InputStream in = f.openInputStream() )
+    {
+      os.write( StreamUtil.getContent( in ) );
+    }
+    catch( IOException e )
+    {
+      throw new RuntimeException( e );
+    }
+    return memF;
+  }
+
+  @NotNull
+  private URLClassLoader makeCompilationClassLoader()
+  {
+    return new URLClassLoader( makeClassLoaderClassPath() );
+  }
+
+  private List<File> makeCompilerClassPath()
+  {
+    List<File> outputRoots = new ArrayList<>();
+    ApplicationManager.getApplication().runReadAction(
+      () -> {
+         final List<VirtualFile> allDirs = OrderEnumerator.orderEntries( getIjProject() ).withoutSdk().getPathsList().getRootDirs();
+         for( VirtualFile dir : allDirs )
+         {
+           outputRoots.add( new File( getPath( dir ) ) );
+         }
+       } );
+    return outputRoots;
+  }
+
+  private URL[] makeClassLoaderClassPath()
+  {
+    List<URL> outputRoots = new ArrayList<>();
+        ApplicationManager.getApplication().runReadAction(
+          () -> {
+             final List<VirtualFile> allDirs = OrderEnumerator.orderEntries( getIjProject() ).withoutSdk().getPathsList().getRootDirs();
+             for( VirtualFile dir : allDirs )
+             {
+               try
+               {
+                 outputRoots.add( new File( getPath( dir ) ).toURI().toURL() );
+               }
+               catch( MalformedURLException e )
+               {
+                 throw new RuntimeException( e );
+               }
+             }
+           } );
+        return outputRoots.toArray( new URL[outputRoots.size()] );
+  }
+
+  @NotNull
+  private String getPath( VirtualFile dir )
+  {
+    String url = dir.getUrl();
+    String path = dir.getPath();
+    if( url.startsWith( "jar:" ) && path.endsWith( "!/" ) )
+    {
+      path = path.substring( 0, path.length()-2 );
+    }
+    return path.replace( '/', File.separatorChar );
   }
 
   private Map<String, File> makeTempFiles( Collection<InMemoryClassJavaFileObject> result )
