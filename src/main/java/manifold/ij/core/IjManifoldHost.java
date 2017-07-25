@@ -11,6 +11,12 @@ import manifold.internal.host.DefaultManifoldHost;
 public class IjManifoldHost extends DefaultManifoldHost
 {
   @Override
+  public boolean isBootstrapped()
+  {
+    return true;
+  }
+
+  @Override
   public void addTypeLoaderListenerAsWeakRef( Object ctx, ITypeLoaderListener listener )
   {
     if( ctx == null )
