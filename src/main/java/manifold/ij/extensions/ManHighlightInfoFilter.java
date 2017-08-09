@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Unfortunately IJ doesn't provide a way to augment a type with interfaces, so we are stuck with filtering errors
+ * Unfortunately IJ doesn't provide a way to augment a type with interfaces, so we are stuck with suppressing errors
  */
 public class ManHighlightInfoFilter implements HighlightInfoFilter
 {
@@ -202,7 +202,13 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     if( typeElem != null )
     {
       PsiClass psiClass = PsiUtil.resolveClassInType( typeElem.getType() );
-      PsiAnnotation structuralAnno = psiClass == null ? null : psiClass.getModifierList().findAnnotation( "manifold.ext.api.Structural" );
+      if( psiClass == null )
+      {
+        return false;
+      }
+      PsiAnnotation structuralAnno = psiClass.getModifierList() == null
+                                     ? null
+                                     : psiClass.getModifierList().findAnnotation( "manifold.ext.api.Structural" );
       if( structuralAnno != null )
       {
         return true;

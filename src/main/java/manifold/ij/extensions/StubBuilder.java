@@ -84,13 +84,18 @@ public class StubBuilder
 
   private SrcType makeSrcType( PsiType type )
   {
-    SrcType srcType = new SrcType( type.getCanonicalText() );
+    SrcType srcType;
     if( type instanceof PsiClassType )
     {
+      srcType = new SrcType( ((PsiClassType)type).rawType().getCanonicalText() );
       for( PsiType typeParam : ((PsiClassType)type).getParameters() )
       {
         srcType.addTypeParam( makeSrcType( typeParam ) );
       }
+    }
+    else
+    {
+      srcType = new SrcType( type.getCanonicalText() );
     }
     return srcType;
   }
