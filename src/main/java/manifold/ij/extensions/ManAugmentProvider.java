@@ -32,7 +32,7 @@ import manifold.api.gen.SrcParameter;
 import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
-import manifold.api.sourceprod.ISourceProducer;
+import manifold.api.type.ITypeManifold;
 import manifold.ext.api.Extension;
 import manifold.ext.api.This;
 import manifold.ij.core.ManModule;
@@ -42,7 +42,7 @@ import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManPsiElementFactory;
 
 
-import static manifold.api.sourceprod.ISourceProducer.ProducerKind.Supplemental;
+import static manifold.api.type.ITypeManifold.ProducerKind.Supplemental;
 
 /**
  */
@@ -104,7 +104,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
   private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures, ManModule module )
   {
     ManModule manModule = ManProject.getModule( module.getIjModule() );
-    for( ISourceProducer sp : manModule.getSourceProducers() )
+    for( ITypeManifold sp : manModule.getTypeManifolds() )
     {
       if( sp.getProducerKind() == Supplemental )
       {

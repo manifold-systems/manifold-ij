@@ -14,9 +14,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import manifold.api.sourceprod.ISourceProducer;
-import manifold.api.sourceprod.ITypeProcessor;
-import manifold.api.sourceprod.TypeName;
+import manifold.api.type.ITypeManifold;
+import manifold.api.type.ITypeProcessor;
+import manifold.api.type.TypeName;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 
@@ -74,7 +74,7 @@ public class ManTypeFinder extends PsiElementFinder
     Set<PsiClass> children = new HashSet<>();
     for( ManModule mm : modules )
     {
-      for( ISourceProducer sp : mm.getSourceProducers() )
+      for( ITypeManifold sp : mm.getTypeManifolds() )
       {
         if( sp instanceof ITypeProcessor )
         {
@@ -117,7 +117,7 @@ public class ManTypeFinder extends PsiElementFinder
     PsiManager manager = PsiManagerImpl.getInstance( scope.getProject() );
     for( ManModule mm : modules )
     {
-      for( ISourceProducer sp : mm.getSourceProducers() )
+      for( ITypeManifold sp : mm.getTypeManifolds() )
       {
         if( sp instanceof ITypeProcessor )
         {
@@ -157,7 +157,7 @@ public class ManTypeFinder extends PsiElementFinder
       PsiManager manager = PsiManagerImpl.getInstance( manProject.getNativeProject() );
       for( ManModule mm : modules )
       {
-        for( ISourceProducer sp : mm.getSourceProducers() )
+        for( ITypeManifold sp : mm.getTypeManifolds() )
         {
           if( sp instanceof ITypeProcessor )
           {

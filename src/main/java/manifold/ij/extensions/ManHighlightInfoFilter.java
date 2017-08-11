@@ -169,7 +169,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 //    PsiClassType rawType = ((PsiClassType)psiType).rawType();
 //    rawType.getSuperTypes()
 //    ManModule module = ManProject.getModule( typeElement );
-//    for( ISourceProducer sp : module.getSourceProducers() )
+//    for( ITypeManifold sp : module.getTypeManifolds() )
 //    {
 //      if( sp.getProducerKind() == Supplemental )
 //      {

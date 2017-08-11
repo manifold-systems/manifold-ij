@@ -55,7 +55,7 @@ import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import manifold.api.fs.IFile;
-import manifold.api.sourceprod.ISourceProducer;
+import manifold.api.type.ITypeManifold;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.internal.host.ManifoldHost;
@@ -278,15 +278,15 @@ public class HotSwapComponent implements DebuggerManagerListener
         if( file.lastModified() > timeStamp )
         {
           IFile ifile = _manProject.getFileSystem().getIFile( file );
-          Set<ISourceProducer> sps = new HashSet<>();
+          Set<ITypeManifold> sps = new HashSet<>();
           for( ManModule module: _manProject.findRootModules() )
           {
-            sps.addAll( module.findSourceProducersFor( ifile ) );
+            sps.addAll( module.findTypeManifoldsFor( ifile ) );
           }
           if( !sps.isEmpty() )
           {
             Set<String> fqns = new HashSet<>();
-            for( ISourceProducer sp: sps )
+            for( ITypeManifold sp: sps )
             {
               fqns.addAll( Arrays.asList( sp.getTypesForFile( ifile ) ) );
             }

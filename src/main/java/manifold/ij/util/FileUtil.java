@@ -11,7 +11,7 @@ import com.intellij.util.indexing.IndexingDataKeys;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import manifold.api.sourceprod.ISourceProducer;
+import manifold.api.type.ITypeManifold;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjDirectory;
@@ -103,8 +103,8 @@ public class FileUtil
   public static Set<String> typesForFile( IjFile file, ManModule module )
   {
     Set<String> typeNames = new HashSet<>();
-    Set<ISourceProducer> sourceProducers = module.getSourceProducers();
-    for( ISourceProducer sp : sourceProducers )
+    Set<ITypeManifold> typeManifolds = module.getTypeManifolds();
+    for( ITypeManifold sp : typeManifolds )
     {
       String[] fqns = sp.getTypesForFile( file );
       if( fqns.length > 0 )

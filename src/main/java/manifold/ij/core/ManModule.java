@@ -14,8 +14,8 @@ import manifold.api.fs.IDirectory;
 import manifold.api.fs.IFile;
 import manifold.api.fs.IFileSystem;
 import manifold.api.host.Dependency;
-import manifold.api.sourceprod.ISourceProducer;
-import manifold.api.sourceprod.TypeName;
+import manifold.api.type.ITypeManifold;
+import manifold.api.type.TypeName;
 import manifold.internal.host.SimpleModule;
 
 /**
@@ -26,7 +26,7 @@ public class ManModule extends SimpleModule
   private Module _ijModule;
   private List<Dependency> _dependencies;
   private List<IDirectory> _excludedDirs;
-  private URLClassLoader _sourceProducerClassLoader;
+  private URLClassLoader _typeManifoldClassLoader;
 
   ManModule( ManProject manProject, Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePath, IDirectory outputPath, List<IDirectory> excludedDirs )
   {
@@ -37,7 +37,7 @@ public class ManModule extends SimpleModule
     _dependencies = new ArrayList<>();
 
     // Indirectly calls our addRegistered() override, which creates a class loader witih this module's classpath
-    initializeSourceProducers();
+    initializeTypeManifolds();
   }
 
   @Override
@@ -90,9 +90,9 @@ public class ManModule extends SimpleModule
 
   @SuppressWarnings("Duplicates")
   @Override
-  public Set<ISourceProducer> findSourceProducersFor( String fqn )
+  public Set<ITypeManifold> findTypeManifoldsFor( String fqn )
   {
-    Set<ISourceProducer> sps = super.findSourceProducersFor( fqn );
+    Set<ITypeManifold> sps = super.findTypeManifoldsFor( fqn );
     if( !sps.isEmpty() )
     {
       return sps;
@@ -102,7 +102,7 @@ public class ManModule extends SimpleModule
     {
       if( d.isExported() )
       {
-        sps.addAll( d.getModule().findSourceProducersFor( fqn ) );
+        sps.addAll( d.getModule().findTypeManifoldsFor( fqn ) );
       }
     }
     return sps;
@@ -110,9 +110,9 @@ public class ManModule extends SimpleModule
 
   @SuppressWarnings("Duplicates")
   @Override
-  public Set<ISourceProducer> findSourceProducersFor( IFile file )
+  public Set<ITypeManifold> findTypeManifoldsFor( IFile file )
   {
-    Set<ISourceProducer> sps = super.findSourceProducersFor( file );
+    Set<ITypeManifold> sps = super.findTypeManifoldsFor( file );
     if( !sps.isEmpty() )
     {
       return sps;
@@ -122,7 +122,7 @@ public class ManModule extends SimpleModule
     {
       if( d.isExported() )
       {
-        sps.addAll( d.getModule().findSourceProducersFor( file ) );
+        sps.addAll( d.getModule().findTypeManifoldsFor( file ) );
       }
     }
     return sps;
@@ -156,13 +156,13 @@ public class ManModule extends SimpleModule
    * @see #initializeModuleClassLoader()
    */
   @Override
-  protected void addRegistered( Set<ISourceProducer> sps )
+  protected void addRegistered( Set<ITypeManifold> sps )
   {
     initializeModuleClassLoader();
     ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
-    if( _sourceProducerClassLoader != null )
+    if( _typeManifoldClassLoader != null )
     {
-      Thread.currentThread().setContextClassLoader( _sourceProducerClassLoader );
+      Thread.currentThread().setContextClassLoader( _typeManifoldClassLoader );
     }
     try
     {
@@ -193,36 +193,36 @@ public class ManModule extends SimpleModule
           throw new RuntimeException( e );
         }
       } ).toArray( URL[]::new );
-    _sourceProducerClassLoader = new URLClassLoader( urls, getClass().getClassLoader() );
+    _typeManifoldClassLoader = new URLClassLoader( urls, getClass().getClassLoader() );
   }
 
   @Override
-  public Set<ISourceProducer> getSourceProducers()
+  public Set<ITypeManifold> getTypeManifolds()
   {
-    Set<ISourceProducer> all = new HashSet<>();
-    Set<ISourceProducer> sourceProducers = super.getSourceProducers();
-    if( sourceProducers != null )
+    Set<ITypeManifold> all = new HashSet<>();
+    Set<ITypeManifold> typeManifolds = super.getTypeManifolds();
+    if( typeManifolds != null )
     {
-      all.addAll( sourceProducers );
+      all.addAll( typeManifolds );
     }
 
     for( Dependency dep : getDependencies() )
     {
       if( dep.isExported() )
       {
-        sourceProducers = dep.getModule().getSourceProducers();
-        if( sourceProducers != null )
+        typeManifolds = dep.getModule().getTypeManifolds();
+        if( typeManifolds != null )
         {
-          addIfAbsent( all, sourceProducers );
+          addIfAbsent( all, typeManifolds );
         }
       }
     }
     return all;
   }
 
-  private void addIfAbsent( Set<ISourceProducer> all, Set<ISourceProducer> sourceProducers )
+  private void addIfAbsent( Set<ITypeManifold> all, Set<ITypeManifold> typeManifolds )
   {
-    for( ISourceProducer sp: sourceProducers )
+    for( ITypeManifold sp: typeManifolds )
     {
       if( isAbsent( all, sp ) )
       {
@@ -231,9 +231,9 @@ public class ManModule extends SimpleModule
     }
   }
 
-  private boolean isAbsent( Set<ISourceProducer> all, ISourceProducer sp )
+  private boolean isAbsent( Set<ITypeManifold> all, ITypeManifold sp )
   {
-    for( ISourceProducer existingSp: all )
+    for( ITypeManifold existingSp: all )
     {
       if( existingSp.getClass().equals( sp.getClass() ) )
       {
@@ -273,7 +273,7 @@ public class ManModule extends SimpleModule
         result.add( fqn );
       }
     }
-    for( ISourceProducer sp : getSourceProducers() )
+    for( ITypeManifold sp : getTypeManifolds() )
     {
       Arrays.stream( sp.getTypesForFile( file ) ).forEach( result::add );
     }

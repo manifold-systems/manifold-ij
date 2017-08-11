@@ -18,16 +18,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import manifold.api.fs.IFile;
 import manifold.api.host.AbstractTypeSystemListener;
 import manifold.api.host.RefreshRequest;
-import manifold.api.sourceprod.ISourceProducer;
-import manifold.api.sourceprod.ITypeProcessor;
+import manifold.api.type.ITypeManifold;
+import manifold.api.type.ITypeProcessor;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.util.cache.FqnCache;
 import manifold.util.cache.FqnCacheNode;
 
 
-import static manifold.api.sourceprod.ISourceProducer.ProducerKind.Partial;
-import static manifold.api.sourceprod.ISourceProducer.ProducerKind.Primary;
+import static manifold.api.type.ITypeManifold.ProducerKind.Partial;
+import static manifold.api.type.ITypeManifold.ProducerKind.Primary;
 
 public class CustomPsiClassCache extends AbstractTypeSystemListener
 {
@@ -61,12 +61,12 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
 
     if( node == null )
     {
-      Set<ISourceProducer> sps = module.findSourceProducersFor( fqn );
-      ISourceProducer found = null;
+      Set<ITypeManifold> sps = module.findTypeManifoldsFor( fqn );
+      ITypeManifold found = null;
       if( !sps.isEmpty() )
       {
         String result = "";
-        for( ISourceProducer sp : sps )
+        for( ITypeManifold sp : sps )
         {
           if( sp.getProducerKind() == Primary ||
               sp.getProducerKind() == Partial )
@@ -140,7 +140,7 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
     if( map != null )
     {
       //System.out.println( "Refreshing: " + request.toString() );
-      for( ISourceProducer sp: request.module.getSourceProducers() )
+      for( ITypeManifold sp: request.module.getTypeManifolds() )
       {
         if( sp instanceof ITypeProcessor )
         {

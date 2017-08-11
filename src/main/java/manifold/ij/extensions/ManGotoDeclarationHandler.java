@@ -10,7 +10,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiReference;
 import java.util.List;
-import manifold.api.sourceprod.SourcePosition;
+import manifold.api.type.SourcePosition;
 
 
 /**
