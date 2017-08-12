@@ -84,6 +84,13 @@ public class HotSwapComponent implements DebuggerManagerListener
     _timeStamps = new HashMap<>();
   }
 
+  public void sessionCreated( DebuggerSession session )
+  {
+  }
+  public void sessionRemoved( DebuggerSession session )
+  {
+  }
+
   @Override
   public void sessionAttached( DebuggerSession session )
   {
