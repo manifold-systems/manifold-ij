@@ -121,7 +121,7 @@ public class StubBuilder
     return sb.toString();
   }
 
-  private long getModifiers( PsiModifierList modifierList )
+  public static long getModifiers( PsiModifierList modifierList )
   {
     long modifiers = 0;
     if( modifierList.hasExplicitModifier( PsiModifier.ABSTRACT ) )
