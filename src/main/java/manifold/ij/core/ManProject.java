@@ -1,6 +1,7 @@
 package manifold.ij.core;
 
 import com.intellij.ProjectTopics;
+import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilerPaths;
 import com.intellij.openapi.module.Module;
@@ -46,6 +47,7 @@ import manifold.ij.extensions.ModuleRefreshListener;
 import manifold.ij.fs.IjFileSystem;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LocklessLazyVar;
+import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
 
 /**
  */
@@ -53,6 +55,7 @@ public class ManProject
 {
   private static final Map<Project, ManProject> PROJECTS = new ConcurrentWeakHashMap<>();
   private static final String JAR_INDICATOR = ".jar!";
+  private static final String XPLUGIN_MANIFOLD = "-Xplugin:Manifold";
 
   private final Project _ijProject;
   private IjFileSystem _fs;
@@ -183,6 +186,19 @@ public class ManProject
     addModuleRefreshListener();
     addModuleClasspathListener();
     addHotSwapComponent();
+    addCompilerArgs();
+  }
+
+  private void addCompilerArgs()
+  {
+    JpsJavaCompilerOptions javacOptions = JavacConfiguration.getOptions( _ijProject, JavacConfiguration.class );
+    String options = javacOptions.ADDITIONAL_OPTIONS_STRING;
+    options = options == null ? "" : options;
+    if( !options.contains( XPLUGIN_MANIFOLD ) )
+    {
+      options = XPLUGIN_MANIFOLD + (options.isEmpty() ? "" : " ") + options;
+    }
+    javacOptions.ADDITIONAL_OPTIONS_STRING = options;
   }
 
   private void addHotSwapComponent()
