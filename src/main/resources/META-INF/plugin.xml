@@ -1,6 +1,6 @@
 <idea-plugin version="2">
   <id>manifold.ij</id>
-  <name>Manifold Plugin for IntelliJ</name>
+  <name>Manifold</name>
   <description>This value is patched by the build script</description>
   <version>This value is patched by the build script</version>
   <vendor email="manifold-systems@googlegroups.com" url="http://manifold.systems">manifold.systems</vendor>
