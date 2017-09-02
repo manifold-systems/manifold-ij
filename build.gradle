@@ -55,3 +55,8 @@ patchPluginXml {
   untilBuild '999.*'
   pluginDescription 'IntelliJ IDEA plugin for Manifold'
 }
+
+publishPlugin {
+  username = System.getenv()['JB_PUBLISH_USER']
+  password = System.getenv()['JB_PUBLISH_PASS']
+}
