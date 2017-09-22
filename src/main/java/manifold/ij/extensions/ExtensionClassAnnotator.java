@@ -8,6 +8,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
@@ -15,6 +16,7 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiPackageStatement;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiPrimitiveType;
+import com.intellij.psi.PsiType;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.impl.source.PsiJavaCodeReferenceElementImpl;
 import com.intellij.psi.impl.source.PsiJavaFileImpl;
@@ -33,6 +35,7 @@ import manifold.ext.api.This;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
+import org.jetbrains.annotations.NotNull;
 
 
 import static manifold.api.type.ITypeManifold.ProducerKind.Supplemental;
@@ -88,7 +91,7 @@ public class ExtensionClassAnnotator implements Annotator
           holder.createErrorAnnotation( range, ExtIssueMsg.MSG_THIS_FIRST.get() );
         }
 
-        if( param.getType() instanceof PsiPrimitiveType || !param.getType().getCanonicalText().equals( extendedClassName ) )
+        if( param.getType() instanceof PsiPrimitiveType || !getRawTypeName( param ).equals( extendedClassName ) )
         {
           PsiClass extendClassSym = JavaPsiFacade.getInstance( element.getProject() )
             .findClass( extendedClassName, GlobalSearchScope.allScope( element.getProject() ) );
@@ -103,7 +106,7 @@ public class ExtensionClassAnnotator implements Annotator
       else if( i == 0 &&
                Modifier.isStatic( (int)modifiers ) &&
                Modifier.isPublic( (int)modifiers ) &&
-               param.getType().getCanonicalText().equals( extendedClassName ) )
+               getRawTypeName( param ).equals( extendedClassName ) )
       {
         TextRange range = new TextRange( param.getTextRange().getStartOffset(),
                                          param.getTextRange().getEndOffset() );
@@ -127,6 +130,17 @@ public class ExtensionClassAnnotator implements Annotator
         holder.createWarningAnnotation( range, ExtIssueMsg.MSG_MUST_NOT_BE_PRIVATE.get( psiMethod.getName() ) );
       }
     }
+  }
+
+  @NotNull
+  private String getRawTypeName( PsiParameter param )
+  {
+    PsiType type = param.getType();
+    if( type instanceof PsiClassType )
+    {
+      type = ((PsiClassType)type).rawType();
+    }
+    return type.getCanonicalText();
   }
 
   private void verifyExtensionInterfaces( PsiElement element, AnnotationHolder holder )

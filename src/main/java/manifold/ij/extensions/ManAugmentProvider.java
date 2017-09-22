@@ -1,6 +1,7 @@
 package manifold.ij.extensions;
 
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
@@ -50,6 +51,9 @@ public class ManAugmentProvider extends PsiAugmentProvider
 {
   public <E extends PsiElement> List<E> getAugments( PsiElement element, Class<E> cls )
   {
+    // Module is assigned to user-data via ManTypeFinder, which loads the psiClass (element)
+    Module context = element.getUserData( ModuleUtil.KEY_MODULE );
+
     if( DumbService.getInstance( element.getProject() ).isDumb() )
     {
       // skip processing during index rebuild
@@ -69,7 +73,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return Collections.emptyList();
     }
 
-    addMethods( className, psiClass, augFeatures );
+    addMethods( className, psiClass, context, augFeatures );
 
     //noinspection unchecked
     return (List<E>)augFeatures;
@@ -84,26 +88,25 @@ public class ManAugmentProvider extends PsiAugmentProvider
     return VarHandler.instance().inferType( typeElement );
   }
 
-  private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures )
+  private void addMethods( String fqn, PsiClass psiClass, Module context, List<PsiElement> augFeatures )
   {
-    Module module = ManProject.getIjModule( psiClass );
-    if( module != null )
+    if( context != null )
     {
-      addMethods( fqn, psiClass, augFeatures, ManProject.getModule( module ) );
+      addMethods( fqn, psiClass, augFeatures, context );
     }
     else
     {
       ManProject manProject = ManProject.manProjectFrom( psiClass.getProject() );
       for( ManModule manModule : manProject.getModules() )
       {
-        addMethods( fqn, psiClass, augFeatures, manModule );
+        addMethods( fqn, psiClass, augFeatures, manModule.getIjModule() );
       }
     }
   }
 
-  private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures, ManModule module )
+  private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures, Module module )
   {
-    ManModule manModule = ManProject.getModule( module.getIjModule() );
+    ManModule manModule = ManProject.getModule( module );
     for( ITypeManifold sp : manModule.getTypeManifolds() )
     {
       if( sp.getProducerKind() == Supplemental )
@@ -119,7 +122,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
               continue;
             }
 
-            PsiFile psiFile = PsiManager.getInstance( module.getIjModule().getProject() ).findFile( vFile );
+            PsiFile psiFile = PsiManager.getInstance( module.getProject() ).findFile( vFile );
             PsiJavaFile psiJavaFile = (PsiJavaFile)psiFile;
             PsiClass[] classes = psiJavaFile.getClasses();
             if( classes.length > 0 )

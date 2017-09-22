@@ -6,6 +6,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilerPaths;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.DependencyScope;
 import com.intellij.openapi.roots.LibraryOrderEntry;
@@ -13,7 +14,6 @@ import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
@@ -101,16 +101,18 @@ public class ManProject
 
   public static Module getIjModule( PsiElement element )
   {
-    if( element.isPhysical() )
+    Module module = ModuleUtil.findModuleForPsiElement( element );
+    if( module != null )
     {
-      return ProjectRootManager.getInstance( element.getProject() )
-        .getFileIndex().getModuleForFile( element.getContainingFile().getVirtualFile() );
+      return module;
     }
+
     JavaFacadePsiClass javaFacadePsiClass = element.getContainingFile().getUserData( JavaFacadePsiClass.KEY_JAVAFACADE );
     if( javaFacadePsiClass != null )
     {
       return javaFacadePsiClass.getModule();
     }
+
     return null;
   }
 

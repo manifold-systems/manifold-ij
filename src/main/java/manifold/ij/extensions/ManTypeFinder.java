@@ -24,24 +24,13 @@ import manifold.ij.core.ManProject;
  */
 public class ManTypeFinder extends PsiElementFinder
 {
-  private static ManTypeFinder INSTANCE = null;
-  public static ManTypeFinder instance()
-  {
-    return INSTANCE;
-  }
-
-  public ManTypeFinder()
-  {
-    INSTANCE = this;
-  }
-
   @Override
   public PsiClass findClass( String fqn, GlobalSearchScope globalSearchScope )
   {
     List<ManModule> modules = findModules( globalSearchScope );
     for( ManModule m : modules )
     {
-      JavaFacadePsiClass psiClass = CustomPsiClassCache.instance().getPsiClass( m, fqn );
+      PsiClass psiClass = CustomPsiClassCache.instance().getPsiClass( m, fqn );
       if( psiClass != null )
       {
         return psiClass;

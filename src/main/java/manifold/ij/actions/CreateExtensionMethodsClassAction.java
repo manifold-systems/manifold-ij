@@ -18,11 +18,11 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiPackage;
 import com.intellij.psi.util.ClassUtil;
 import com.intellij.util.IncorrectOperationException;
-import com.intellij.util.PlatformIcons;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import javax.swing.ImageIcon;
 import manifold.ij.util.ManBundle;
 
 /**
@@ -33,7 +33,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
   {
     super( ManBundle.message( "new.ext.method.class.menu.action.text" ),
            ManBundle.message( "new.ext.method.class.menu.action.description" ),
-           PlatformIcons.CLASS_ICON );
+           new ImageIcon( ManBundle.class.getResource( "/manifold/ij/icons/manifold_20.png" ) ) );
   }
 
   @Override

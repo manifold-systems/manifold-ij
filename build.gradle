@@ -27,7 +27,7 @@ dependencies {
 }
 
 compileJava {
-  options.compilerArgs << '-proc:none'
+  options.compilerArgs += ['-proc:none', '-Xplugin:Manifold']
 }
 
 afterEvaluate {
