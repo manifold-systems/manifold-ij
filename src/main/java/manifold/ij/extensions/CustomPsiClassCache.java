@@ -28,16 +28,18 @@ import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.util.cache.FqnCache;
 import manifold.util.cache.FqnCacheNode;
-import manifold.util.concurrent.ConcurrentHashSet;
 
 
 import static manifold.api.type.ITypeManifold.ProducerKind.*;
 
+/**
+ * Caches JavaFacadePsiClasses corresponding with type manifold produced classes
+ * as well as PsiClasses extended with manifold extensions.
+ */
 public class CustomPsiClassCache extends AbstractTypeSystemListener
 {
   private static final CustomPsiClassCache INSTANCE = new CustomPsiClassCache();
   private boolean _addedListener;
-  private Set<String> _shortCircuitCache = new ConcurrentHashSet<>();
 
 
   public static CustomPsiClassCache instance()
@@ -49,18 +51,6 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
   private final ConcurrentHashMap<ManModule, FqnCache<PsiClass>> _type2Class = new ConcurrentHashMap<>();
 
   public PsiClass getPsiClass( ManModule module, String fqn )
-  {
-    if( _shortCircuitCache.contains( fqn ) )
-    {
-      return null;
-    }
-
-    PsiClass psiClass = _getPsiClass( module, fqn );
-    psiClass = addExtensions( module, fqn, psiClass );
-    return psiClass;
-  }
-
-  private PsiClass _getPsiClass( ManModule module, String fqn )
   {
     listenToChanges( module.getProject() );
 
@@ -75,6 +65,9 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
         return psiFacadeClass;
       }
     }
+
+    // cache null initially to prevent circularity
+    map.add( fqn );
 
     if( node == null )
     {
@@ -121,7 +114,12 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
       node = map.getNode( fqn );
     }
 
-    return node == null ? null : node.getUserData();
+    PsiClass psiClass = node == null ? null : node.getUserData();
+    if( psiClass != null )
+    {
+      psiClass = addExtensions( module, fqn, psiClass );
+    }
+    return psiClass;
   }
 
   private PsiClass addExtensions( ManModule module, String fqn, PsiClass psiClass )
@@ -130,34 +128,26 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
 
     if( psiClass == null )
     {
-      _shortCircuitCache.add( fqn );
-      try
+      if( isExtended( module, fqn ) )
       {
-        if( isExtended( module, fqn ) )
+        // Find the class excluding our ManTypeFinder to avoid circularity
+        psiClass = JavaPsiFacade.getInstance( module.getIjProject() ).findClass( fqn, GlobalSearchScope.allScope( module.getIjProject() ) );
+        if( psiClass instanceof ClsClassImpl )
         {
-          // Find the class excluding our ManTypeFinder to avoid circularity
-          psiClass = JavaPsiFacade.getInstance( module.getIjProject() ).findClass( fqn, GlobalSearchScope.allScope( module.getIjProject() ) );
-          if( psiClass instanceof ClsClassImpl )
-          {
-            psiClass = ((ClsClassImpl)psiClass).getSourceMirrorClass();
-          }
-          if( psiClass != null )
-          {
-            // Copy the the psi file because we need separate versions per module --
-            // we add the module to the psiClass' user-data via the ModuleUtil.KEY_MODULE (see below).
-            // In turn ManAugmentProvider get the module from the user-data so it can augment the class
-            // in the proper context i.e., we don't actually add the extension methods here, instead
-            // they are added later via the ManAugmentProvider.
-            psiClass = makeCopy( psiClass );
-            //insertInterfaces( module, psiClass );
-            FqnCache<PsiClass> map = _type2Class.computeIfAbsent( module, k -> new FqnCache<>() );
-            map.add( fqn, psiClass );
-          }
+          psiClass = ((ClsClassImpl)psiClass).getSourceMirrorClass();
         }
-      }
-      finally
-      {
-        _shortCircuitCache.remove( fqn );
+        if( psiClass != null )
+        {
+          // Copy the the psi file because we need separate versions per module --
+          // we add the module to the psiClass' user-data via the ModuleUtil.KEY_MODULE (see below).
+          // In turn ManAugmentProvider get the module from the user-data so it can augment the class
+          // in the proper context i.e., we don't actually add the extension methods here, instead
+          // they are added later via the ManAugmentProvider.
+          psiClass = makeCopy( psiClass );
+          //insertInterfaces( module, psiClass );
+          FqnCache<PsiClass> map = _type2Class.computeIfAbsent( module, k -> new FqnCache<>() );
+          map.add( fqn, psiClass );
+        }
       }
     }
     else if( facade != null )
@@ -174,6 +164,9 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
     return psiClass;
   }
 
+// For some reason unknown to me the interfaces inserted into the classes are not recognized
+// in IJ.  It could be because the interfaces reside in a module inaccessible to the class.
+//
 //  private void insertInterfaces( ManModule module, PsiClass psiClass )
 //  {
 //    PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory( psiClass.getProject() );
