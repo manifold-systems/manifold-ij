@@ -66,7 +66,7 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
       }
     }
 
-    // cache null initially to prevent circularity
+    // cache null initially to prevent circularity with re-entry to ManTypeFinder
     map.add( fqn );
 
     if( node == null )

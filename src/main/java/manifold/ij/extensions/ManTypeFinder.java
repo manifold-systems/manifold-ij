@@ -17,15 +17,45 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import manifold.api.type.ITypeManifold;
-import manifold.api.type.ITypeProcessor;
 import manifold.api.type.TypeName;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+
+
+import static manifold.api.type.ITypeManifold.ProducerKind.Supplemental;
+
 
 /**
  */
 public class ManTypeFinder extends PsiElementFinder
 {
+  @Override
+  public PsiClass[] findClasses( String fqn, GlobalSearchScope globalSearchScope )
+  {
+    if( DumbService.getInstance( globalSearchScope.getProject() ).isDumb() )
+    {
+      // skip processing during index rebuild
+      return null;
+    }
+
+//    if( fqn.startsWith( "abc." ) )
+//    {
+//      System.out.println( fqn + " : " + globalSearchScope );
+//    }
+
+    List<PsiClass> psiClasses = new ArrayList<>();
+    List<ManModule> modules = findModules( globalSearchScope );
+    for( ManModule m : modules )
+    {
+      PsiClass psiClass = CustomPsiClassCache.instance().getPsiClass( globalSearchScope, m, fqn );
+      if( psiClass != null )
+      {
+        psiClasses.add( psiClass );
+      }
+    }
+    return psiClasses.toArray( new PsiClass[psiClasses.size()] );
+  }
+
   @Override
   public PsiClass findClass( String fqn, GlobalSearchScope globalSearchScope )
   {
@@ -34,6 +64,11 @@ public class ManTypeFinder extends PsiElementFinder
       // skip processing during index rebuild
       return null;
     }
+
+//    if( fqn.startsWith( "abc." ) )
+//    {
+//      System.out.println( fqn + " : " + globalSearchScope );
+//    }
 
     List<ManModule> modules = findModules( globalSearchScope );
 
@@ -82,7 +117,7 @@ public class ManTypeFinder extends PsiElementFinder
     {
       for( ITypeManifold sp : mm.getTypeManifolds() )
       {
-        if( sp instanceof ITypeProcessor )
+        if( sp.getProducerKind() == Supplemental )
         {
           continue;
         }
@@ -125,7 +160,7 @@ public class ManTypeFinder extends PsiElementFinder
     {
       for( ITypeManifold sp : mm.getTypeManifolds() )
       {
-        if( sp instanceof ITypeProcessor )
+        if( sp.getProducerKind() == Supplemental )
         {
           continue;
         }
@@ -165,7 +200,7 @@ public class ManTypeFinder extends PsiElementFinder
       {
         for( ITypeManifold sp : mm.getTypeManifolds() )
         {
-          if( sp instanceof ITypeProcessor )
+          if( sp.getProducerKind() == Supplemental )
           {
             continue;
           }
@@ -178,16 +213,5 @@ public class ManTypeFinder extends PsiElementFinder
       }
     }
     return null;
-  }
-
-  @Override
-  public PsiClass[] findClasses( String s, GlobalSearchScope globalSearchScope )
-  {
-    PsiClass gsType = findClass( s, globalSearchScope );
-    if( gsType != null )
-    {
-      return new PsiClass[]{gsType};
-    }
-    return new PsiClass[0];
   }
 }
