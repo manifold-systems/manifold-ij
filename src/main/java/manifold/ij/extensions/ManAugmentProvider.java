@@ -1,8 +1,10 @@
 package manifold.ij.extensions;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.DumbService;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
@@ -51,8 +53,16 @@ public class ManAugmentProvider extends PsiAugmentProvider
 {
   public <E extends PsiElement> List<E> getAugments( PsiElement element, Class<E> cls )
   {
+    return ApplicationManager.getApplication().runReadAction( (Computable<List<E>>)() -> _getAugments( element, cls  ) );
+  }
+  public <E extends PsiElement> List<E> _getAugments( PsiElement element, Class<E> cls )
+  {
     // Module is assigned to user-data via ManTypeFinder, which loads the psiClass (element)
     Module context = element.getUserData( ModuleUtil.KEY_MODULE );
+    if( context == null )
+    {
+      return Collections.emptyList();
+    }
 
     if( DumbService.getInstance( element.getProject() ).isDumb() )
     {

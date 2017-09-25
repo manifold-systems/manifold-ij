@@ -99,11 +99,11 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
       _typeRefresher.scheduleTask( getRefreshTaskId( file ), TYPE_REFRESH_DELAY_MS, refresher );
     }
 
-    // process inner class changes
-    if( psiFile instanceof PsiClassOwner )
-    {
-      _manRefresher.modified( getIFile( psiFile, file ) );
-    }
+//    // process inner class changes
+//    if( psiFile instanceof PsiClassOwner )
+//    {
+//      _manRefresher.modified( getIFile( psiFile, file ) );
+//    }
   }
 
   private IjFile getIFile( PsiFile psiFile, VirtualFile file )
@@ -156,7 +156,7 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
         }
         else
         {
-          fireModifiedEvent( file );
+          ApplicationManager.getApplication().runReadAction( () -> fireModifiedEvent( file ) );
         }
       }
     }

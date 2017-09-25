@@ -45,7 +45,7 @@ public class StubBuilder
     return makeSrcClass( fqn, psiClass, module );
   }
 
-  private SrcClass makeSrcClass( String fqn, PsiClass psiClass, ManModule module )
+  public SrcClass makeSrcClass( String fqn, PsiClass psiClass, ManModule module )
   {
     SrcClass srcClass = new SrcClass( fqn, getKind( psiClass ) )
       .modifiers( getModifiers( psiClass.getModifierList() ) );

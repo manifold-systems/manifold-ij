@@ -50,7 +50,7 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
   private final ConcurrentHashMap<String, PsiClass> _psi2Class = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<ManModule, FqnCache<PsiClass>> _type2Class = new ConcurrentHashMap<>();
 
-  public PsiClass getPsiClass( ManModule module, String fqn )
+  public PsiClass getPsiClass( GlobalSearchScope scope, ManModule module, String fqn )
   {
     listenToChanges( module.getProject() );
 
@@ -115,14 +115,12 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
     }
 
     PsiClass psiClass = node == null ? null : node.getUserData();
-    if( psiClass != null )
-    {
-      psiClass = addExtensions( module, fqn, psiClass );
-    }
+    psiClass = addExtensions( scope, module, fqn, psiClass );
+
     return psiClass;
   }
 
-  private PsiClass addExtensions( ManModule module, String fqn, PsiClass psiClass )
+  private PsiClass addExtensions( GlobalSearchScope scope, ManModule module, String fqn, PsiClass psiClass )
   {
     JavaFacadePsiClass facade = psiClass instanceof JavaFacadePsiClass ? (JavaFacadePsiClass)psiClass : null;
 
@@ -131,10 +129,36 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
       if( isExtended( module, fqn ) )
       {
         // Find the class excluding our ManTypeFinder to avoid circularity
-        psiClass = JavaPsiFacade.getInstance( module.getIjProject() ).findClass( fqn, GlobalSearchScope.allScope( module.getIjProject() ) );
+        psiClass = JavaPsiFacade.getInstance( module.getIjProject() ).findClass( fqn, scope );
+
+// An alternative technique: create a source stub from the file and wrap it, has promise, but also has bugs I have yet to figure out
+//        if( psiClass != null )
+//        {
+//          final SrcClass srcClass = new StubBuilder().makeSrcClass( fqn, psiClass, module );
+//          final String source = srcClass.render( new StringBuilder(), 0 ).toString();
+//          PsiClass delegate = createPsiClass( module, fqn, source );
+//          facade = new JavaFacadePsiClass( delegate, files, fqn );
+//          FqnCache<PsiClass> map = _type2Class.computeIfAbsent( module, k -> new FqnCache<>() );
+//          map.add( fqn, facade );
+//          for( IFile file : files )
+//          {
+//            _psi2Class.put( file.getPath().getPathString(), facade );
+//          }
+//          psiClass = facade.getDelegate();
+//        }
+
+        //
+        // Make a copy of it..
+        //
+
         if( psiClass instanceof ClsClassImpl )
         {
+          // ClsClassImpl does not support copy(), so we get its source mirror and use that
           psiClass = ((ClsClassImpl)psiClass).getSourceMirrorClass();
+          if( psiClass == null )
+          {
+            throw new IllegalStateException( "Mirror failure" );
+          }
         }
         if( psiClass != null )
         {
@@ -289,7 +313,7 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
 
     if( map != null )
     {
-      //System.out.println( "Refreshing: " + request.toString() );
+      System.out.println( "Refreshing: " + request.toString() );
       for( ITypeManifold sp : request.module.getTypeManifolds() )
       {
         if( sp instanceof ITypeProcessor )
@@ -305,7 +329,7 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
               //System.out.println( "REMOVED PSI: " + pathString );
             }
           }
-          System.out.println();
+          //System.out.println();
         }
       }
 

@@ -279,4 +279,10 @@ public class ManModule extends SimpleModule
     }
     return result.toArray( new String[result.size()] );
   }
+
+  @Override
+  public String toString()
+  {
+    return getName();
+  }
 }

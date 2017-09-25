@@ -1,6 +1,7 @@
 package manifold.ij.extensions;
 
 import com.intellij.openapi.module.impl.scopes.ModuleWithDependenciesScope;
+import com.intellij.openapi.project.DumbService;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElementFinder;
@@ -9,6 +10,7 @@ import com.intellij.psi.PsiPackage;
 import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Processor;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -27,10 +29,17 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public PsiClass findClass( String fqn, GlobalSearchScope globalSearchScope )
   {
+    if( DumbService.getInstance( globalSearchScope.getProject() ).isDumb() )
+    {
+      // skip processing during index rebuild
+      return null;
+    }
+
     List<ManModule> modules = findModules( globalSearchScope );
+
     for( ManModule m : modules )
     {
-      PsiClass psiClass = CustomPsiClassCache.instance().getPsiClass( m, fqn );
+      PsiClass psiClass = CustomPsiClassCache.instance().getPsiClass( globalSearchScope, m, fqn );
       if( psiClass != null )
       {
         return psiClass;
@@ -50,7 +59,8 @@ public class ManTypeFinder extends PsiElementFinder
     else
     {
       ManProject manProject = ManProject.manProjectFrom( globalSearchScope.getProject() );
-      modules = manProject.getModules();
+      modules = new ArrayList<>( manProject.getModules() );
+      modules.removeIf( module -> !globalSearchScope.isSearchInModuleContent( module.getIjModule() ) );
     }
     return modules;
   }
@@ -58,7 +68,14 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public PsiClass[] getClasses( PsiPackage psiPackage, GlobalSearchScope scope )
   {
+    if( DumbService.getInstance( scope.getProject() ).isDumb() )
+    {
+      // skip processing during index rebuild
+      return null;
+    }
+
     List<ManModule> modules = findModules( scope );
+
     String parentPackage = psiPackage.getQualifiedName();
     Set<PsiClass> children = new HashSet<>();
     for( ManModule mm : modules )
@@ -75,7 +92,7 @@ public class ManTypeFinder extends PsiElementFinder
         {
           if( child.kind == TypeName.Kind.TYPE )
           {
-            PsiClass psiClass = CustomPsiClassCache.instance().getPsiClass( mm, child.name );
+            PsiClass psiClass = CustomPsiClassCache.instance().getPsiClass( scope, mm, child.name );
             if( psiClass != null )
             {
               children.add( psiClass );
