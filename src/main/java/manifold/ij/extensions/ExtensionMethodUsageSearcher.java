@@ -1,6 +1,7 @@
 package manifold.ij.extensions;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
@@ -47,7 +48,7 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
       {
         String fqn = extensionClass.getQualifiedName().substring( "extensions.".length() );
         fqn = fqn.substring( 0, fqn.lastIndexOf( '.' ) );
-        PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, GlobalSearchScope.allScope( p.getProject() ) );
+        PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( ModuleUtilCore.findModuleForPsiElement( method ) ) );
 
         for( PsiMethod m : extendedClass.findMethodsByName( method.getName(), false ) )
         {
@@ -67,7 +68,7 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
         {
           String fqn = extensionClass.getQualifiedName().substring( "extensions.".length() );
           fqn = fqn.substring( 0, fqn.lastIndexOf( '.' ) );
-          PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, GlobalSearchScope.allScope( p.getProject() ) );
+          PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( ModuleUtilCore.findModuleForPsiElement( method ) ) );
           if( extendedClass == null )
           {
             continue;

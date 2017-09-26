@@ -10,6 +10,7 @@ import com.intellij.lang.Language;
 import com.intellij.navigation.ItemPresentation;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
+import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.Key;
@@ -473,7 +474,10 @@ public class JavaFacadePsiClass implements PsiClass
   @Override
   public GlobalSearchScope getResolveScope()
   {
-    return GlobalSearchScope.allScope( getProject() );
+    // i have no idea what i'm doing
+    //return getDelegate().getResolveScope();
+    return GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( ModuleUtilCore.findModuleForPsiElement( getDelegate() ) );
+    //return GlobalSearchScope.allScope( getProject() );
   }
 
   
