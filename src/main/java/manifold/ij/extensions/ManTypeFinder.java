@@ -1,7 +1,11 @@
 package manifold.ij.extensions;
 
+import com.intellij.openapi.application.ReadActionProcessor;
 import com.intellij.openapi.module.impl.scopes.ModuleWithDependenciesScope;
 import com.intellij.openapi.project.DumbService;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.PackageIndex;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElementFinder;
@@ -20,6 +24,7 @@ import manifold.api.type.ITypeManifold;
 import manifold.api.type.TypeName;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import org.jetbrains.annotations.NotNull;
 
 
 import static manifold.api.type.ITypeManifold.ProducerKind.Supplemental;
@@ -29,6 +34,14 @@ import static manifold.api.type.ITypeManifold.ProducerKind.Supplemental;
  */
 public class ManTypeFinder extends PsiElementFinder
 {
+  private final Project _project;
+
+
+  public ManTypeFinder( Project project )
+  {
+    _project = project;
+  }
+
   @Override
   public PsiClass[] findClasses( String fqn, GlobalSearchScope globalSearchScope )
   {
@@ -83,7 +96,7 @@ public class ManTypeFinder extends PsiElementFinder
     return null;
   }
 
-  public static List<ManModule> findModules( GlobalSearchScope globalSearchScope )
+  public List<ManModule> findModules( GlobalSearchScope globalSearchScope )
   {
     List<ManModule> modules;
     if( globalSearchScope instanceof ModuleWithDependenciesScope )
@@ -160,11 +173,6 @@ public class ManTypeFinder extends PsiElementFinder
     {
       for( ITypeManifold sp : mm.getTypeManifolds() )
       {
-        if( sp.getProducerKind() == Supplemental )
-        {
-          continue;
-        }
-
         Collection<TypeName> typeNames = sp.getTypeNames( parentPackage );
         for( TypeName child : typeNames )
         {
@@ -183,32 +191,36 @@ public class ManTypeFinder extends PsiElementFinder
   }
 
   @Override
-  public boolean processPackageDirectories( PsiPackage psiPackage, GlobalSearchScope scope, Processor<PsiDirectory> consumer )
-  {
-    return super.processPackageDirectories( psiPackage, scope, consumer );
+  public boolean processPackageDirectories(@NotNull PsiPackage psiPackage,
+                                           @NotNull final GlobalSearchScope scope,
+                                           @NotNull final Processor<PsiDirectory> consumer,
+                                           boolean includeLibrarySources) {
+    final PsiManager psiManager = PsiManager.getInstance( _project );
+    return PackageIndex.getInstance( _project )
+      .getDirsByPackageName(psiPackage.getQualifiedName(), includeLibrarySources)
+      .forEach(new ReadActionProcessor<VirtualFile>() {
+        @Override
+        public boolean processInReadAction(final VirtualFile dir) {
+          if (!scope.contains(dir)) return true;
+          PsiDirectory psiDir = psiManager.findDirectory(dir);
+          return psiDir == null || consumer.process(psiDir);
+        }
+      });
   }
 
   @Override
   public PsiPackage findPackage( String fqn )
   {
-    //!! For some reason this method has no Scope argument, so we include all projects in the search :/
-    for( ManProject manProject : ManProject.getAllProjects() )
+    List<ManModule> modules = ManProject.manProjectFrom( _project ).getModules();
+    PsiManager manager = PsiManagerImpl.getInstance( _project );
+    for( ManModule mm : modules )
     {
-      List<ManModule> modules = manProject.getModules();
-      PsiManager manager = PsiManagerImpl.getInstance( manProject.getNativeProject() );
-      for( ManModule mm : modules )
+      //## todo: should we cache these?
+      for( ITypeManifold sp : mm.getTypeManifolds() )
       {
-        for( ITypeManifold sp : mm.getTypeManifolds() )
+        if( sp.isPackage( fqn ) )
         {
-          if( sp.getProducerKind() == Supplemental )
-          {
-            continue;
-          }
-
-          if( sp.isPackage( fqn ) )
-          {
-            return new NonDirectoryPackage( manager, fqn );
-          }
+          return new NonDirectoryPackage( manager, fqn );
         }
       }
     }

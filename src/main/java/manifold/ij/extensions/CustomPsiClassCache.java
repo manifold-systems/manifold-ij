@@ -137,6 +137,7 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
 //          final SrcClass srcClass = new StubBuilder().makeSrcClass( fqn, psiClass, module );
 //          final String source = srcClass.render( new StringBuilder(), 0 ).toString();
 //          PsiClass delegate = createPsiClass( module, fqn, source );
+//          List<IFile> files = findFilesForType( module, fqn );
 //          facade = new JavaFacadePsiClass( delegate, files, fqn );
 //          FqnCache<PsiClass> map = _type2Class.computeIfAbsent( module, k -> new FqnCache<>() );
 //          map.add( fqn, facade );
@@ -187,6 +188,17 @@ public class CustomPsiClassCache extends AbstractTypeSystemListener
     psiClass = facade != null ? facade : psiClass;
     return psiClass;
   }
+
+//  private List<IFile> findFilesForType( ManModule module, String fqn )
+//  {
+//    Set<ITypeManifold> sps = module.findTypeManifoldsFor( fqn );
+//    Set<IFile> files = new LinkedHashSet<>();
+//    for( ITypeManifold sp: sps )
+//    {
+//      files.addAll( sp.findFilesForType( fqn ) );
+//    }
+//    return new ArrayList<>( files );
+//  }
 
 // For some reason unknown to me the interfaces inserted into the classes are not recognized
 // in IJ.  It could be because the interfaces reside in a module inaccessible to the class.
