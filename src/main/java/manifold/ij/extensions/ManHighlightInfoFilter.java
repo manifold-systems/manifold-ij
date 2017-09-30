@@ -58,10 +58,10 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     if( isInvalidStaticMethodOnInterface( hi ) )
     {
       PsiElement lhsType = ((PsiReferenceExpressionImpl)((PsiMethodCallExpressionImpl)elem.getParent()).getMethodExpression().getQualifierExpression()).resolve();
-      if( lhsType instanceof JavaFacadePsiClass )
+      if( lhsType instanceof ManifoldPsiClass || lhsType instanceof ManifoldExtendedPsiClass )
       {
-        PsiClass declaringClass = ((PsiMethodCallExpressionImpl)elem.getParent()).resolveMethod().getContainingClass();
-        if( declaringClass == ((JavaFacadePsiClass)lhsType).getDelegate() )
+        PsiMethod psiMethod = ((PsiMethodCallExpressionImpl)elem.getParent()).resolveMethod();
+        if( psiMethod.getContainingClass().isInterface() )
         {
           // ignore "Static method may be invoked on containing interface class only" errors where the method really is directly on a the interface, albeit the delegate
           return false;
@@ -70,6 +70,18 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return true;
     }
 
+    //##
+    //## structural interface extensions cannot be added to the psiClass, so for now we suppress "incompatible type errors" or similar involving a structural interface extension.
+    //##
+    Boolean x = acceptInterfaceError( hi, firstElem, elem );
+    if( x != null ) return x;
+
+    return true;
+  }
+
+  @Nullable
+  private Boolean acceptInterfaceError( @NotNull HighlightInfo hi, PsiElement firstElem, PsiElement elem )
+  {
     if( elem instanceof PsiTypeCastExpression )
     {
       PsiTypeElement castType = ((PsiTypeCastExpression)elem).getCastType();
@@ -135,7 +147,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
         }
       }
     }
-    return true;
+    return null;
   }
 
   private boolean isInvalidStaticMethodOnInterface( HighlightInfo hi )

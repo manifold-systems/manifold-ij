@@ -1,7 +1,6 @@
 package manifold.ij.extensions;
 
 import com.intellij.openapi.application.ReadActionProcessor;
-import com.intellij.openapi.module.impl.scopes.ModuleWithDependenciesScope;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.PackageIndex;
@@ -16,7 +15,6 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Processor;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,19 +46,14 @@ public class ManTypeFinder extends PsiElementFinder
     if( DumbService.getInstance( globalSearchScope.getProject() ).isDumb() )
     {
       // skip processing during index rebuild
-      return null;
+      return PsiClass.EMPTY_ARRAY;
     }
-
-//    if( fqn.startsWith( "abc." ) )
-//    {
-//      System.out.println( fqn + " : " + globalSearchScope );
-//    }
 
     List<PsiClass> psiClasses = new ArrayList<>();
     List<ManModule> modules = findModules( globalSearchScope );
     for( ManModule m : modules )
     {
-      PsiClass psiClass = CustomPsiClassCache.instance().getPsiClass( globalSearchScope, m, fqn );
+      PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( globalSearchScope, m, fqn );
       if( psiClass != null )
       {
         psiClasses.add( psiClass );
@@ -78,16 +71,11 @@ public class ManTypeFinder extends PsiElementFinder
       return null;
     }
 
-//    if( fqn.startsWith( "abc." ) )
-//    {
-//      System.out.println( fqn + " : " + globalSearchScope );
-//    }
-
     List<ManModule> modules = findModules( globalSearchScope );
 
     for( ManModule m : modules )
     {
-      PsiClass psiClass = CustomPsiClassCache.instance().getPsiClass( globalSearchScope, m, fqn );
+      PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( globalSearchScope, m, fqn );
       if( psiClass != null )
       {
         return psiClass;
@@ -96,20 +84,11 @@ public class ManTypeFinder extends PsiElementFinder
     return null;
   }
 
-  public List<ManModule> findModules( GlobalSearchScope globalSearchScope )
+  private List<ManModule> findModules( GlobalSearchScope scope )
   {
-    List<ManModule> modules;
-    if( globalSearchScope instanceof ModuleWithDependenciesScope )
-    {
-      ManModule manModule = ManProject.getModule( ((ModuleWithDependenciesScope)globalSearchScope).getModule() );
-      modules = Collections.singletonList( manModule );
-    }
-    else
-    {
-      ManProject manProject = ManProject.manProjectFrom( globalSearchScope.getProject() );
-      modules = new ArrayList<>( manProject.getModules() );
-      modules.removeIf( module -> !globalSearchScope.isSearchInModuleContent( module.getIjModule() ) );
-    }
+    ManProject manProject = ManProject.manProjectFrom( scope.getProject() );
+    List<ManModule> modules = new ArrayList<>( manProject.getModules() );
+    modules.removeIf( module -> !scope.isSearchInModuleContent( module.getIjModule() ) );
     return modules;
   }
 
@@ -119,7 +98,7 @@ public class ManTypeFinder extends PsiElementFinder
     if( DumbService.getInstance( scope.getProject() ).isDumb() )
     {
       // skip processing during index rebuild
-      return null;
+      return PsiClass.EMPTY_ARRAY;
     }
 
     List<ManModule> modules = findModules( scope );
@@ -140,7 +119,7 @@ public class ManTypeFinder extends PsiElementFinder
         {
           if( child.kind == TypeName.Kind.TYPE )
           {
-            PsiClass psiClass = CustomPsiClassCache.instance().getPsiClass( scope, mm, child.name );
+            PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( scope, mm, child.name );
             if( psiClass != null )
             {
               children.add( psiClass );
@@ -166,6 +145,11 @@ public class ManTypeFinder extends PsiElementFinder
   public PsiPackage[] getSubPackages( PsiPackage psiPackage, GlobalSearchScope scope )
   {
     List<ManModule> modules = findModules( scope );
+    if( modules.isEmpty() )
+    {
+      return PsiPackage.EMPTY_ARRAY;
+    }
+
     String parentPackage = psiPackage.getQualifiedName();
     Set<PsiPackage> children = new HashSet<>();
     PsiManager manager = PsiManagerImpl.getInstance( scope.getProject() );
@@ -173,6 +157,11 @@ public class ManTypeFinder extends PsiElementFinder
     {
       for( ITypeManifold sp : mm.getTypeManifolds() )
       {
+        if( sp.getProducerKind() == Supplemental )
+        {
+          continue;
+        }
+
         Collection<TypeName> typeNames = sp.getTypeNames( parentPackage );
         for( TypeName child : typeNames )
         {
@@ -187,7 +176,7 @@ public class ManTypeFinder extends PsiElementFinder
     {
       return children.toArray( new PsiPackage[children.size()] );
     }
-    return super.getSubPackages( psiPackage, scope );
+    return PsiPackage.EMPTY_ARRAY;
   }
 
   @Override
@@ -215,10 +204,9 @@ public class ManTypeFinder extends PsiElementFinder
     PsiManager manager = PsiManagerImpl.getInstance( _project );
     for( ManModule mm : modules )
     {
-      //## todo: should we cache these?
       for( ITypeManifold sp : mm.getTypeManifolds() )
       {
-        if( sp.isPackage( fqn ) )
+        if( sp.getProducerKind() != Supplemental && sp.isPackage( fqn ) )
         {
           return new NonDirectoryPackage( manager, fqn );
         }

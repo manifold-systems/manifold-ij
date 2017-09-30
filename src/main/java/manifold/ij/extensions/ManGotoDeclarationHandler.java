@@ -32,7 +32,7 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
           PsiFile file = resolve.getContainingFile();
           if( file != null )
           {
-            JavaFacadePsiClass facade = file.getUserData( JavaFacadePsiClass.KEY_JAVAFACADE );
+            ManifoldPsiClass facade = file.getUserData( ManifoldPsiClass.KEY_MANIFOLD_PSI_CLASS );
             if( facade != null )
             {
               PsiAnnotation[] annotations = ((PsiModifierListOwner)resolve).getModifierList().getAnnotations();
@@ -49,7 +49,7 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     return null;
   }
 
-  private PsiElement findTargetFeature( PsiAnnotation psiAnnotation, JavaFacadePsiClass facade )
+  private PsiElement findTargetFeature( PsiAnnotation psiAnnotation, ManifoldPsiClass facade )
   {
     PsiAnnotationMemberValue value = psiAnnotation.findAttributeValue( SourcePosition.FEATURE );
     String featureName = StringUtil.unquoteString( value.getText() );

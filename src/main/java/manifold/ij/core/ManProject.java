@@ -41,7 +41,7 @@ import manifold.api.host.Dependency;
 import manifold.api.host.IModule;
 import manifold.ij.extensions.FileModificationManager;
 import manifold.ij.extensions.HotSwapComponent;
-import manifold.ij.extensions.JavaFacadePsiClass;
+import manifold.ij.extensions.ManifoldPsiClass;
 import manifold.ij.extensions.ModuleClasspathListener;
 import manifold.ij.extensions.ModuleRefreshListener;
 import manifold.ij.fs.IjFileSystem;
@@ -107,7 +107,7 @@ public class ManProject
       return module;
     }
 
-    JavaFacadePsiClass javaFacadePsiClass = element.getContainingFile().getUserData( JavaFacadePsiClass.KEY_JAVAFACADE );
+    ManifoldPsiClass javaFacadePsiClass = element.getContainingFile().getUserData( ManifoldPsiClass.KEY_MANIFOLD_PSI_CLASS );
     if( javaFacadePsiClass != null )
     {
       return javaFacadePsiClass.getModule();

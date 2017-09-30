@@ -53,12 +53,13 @@ public class ManAugmentProvider extends PsiAugmentProvider
 {
   public <E extends PsiElement> List<E> getAugments( PsiElement element, Class<E> cls )
   {
-    return ApplicationManager.getApplication().runReadAction( (Computable<List<E>>)() -> _getAugments( element, cls  ) );
+    return ApplicationManager.getApplication().runReadAction( (Computable<List<E>>)() -> getAugments( null, element, cls ) );
   }
-  public <E extends PsiElement> List<E> _getAugments( PsiElement element, Class<E> cls )
+
+  public <E extends PsiElement> List<E> getAugments( Module module, PsiElement element, Class<E> cls )
   {
     // Module is assigned to user-data via ManTypeFinder, which loads the psiClass (element)
-    Module context = element.getUserData( ModuleUtil.KEY_MODULE );
+    Module context = module != null ? module : element.getUserData( ModuleUtil.KEY_MODULE );
     if( context == null )
     {
       return Collections.emptyList();
@@ -335,6 +336,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
 
     return hasThisAnnotation( method, extendedType );
   }
+
   private boolean isInstanceExtensionMethod( AbstractSrcMethod method, String extendedType )
   {
     if( !Modifier.isStatic( (int)method.getModifiers() ) || Modifier.isPrivate( (int)method.getModifiers() ) )

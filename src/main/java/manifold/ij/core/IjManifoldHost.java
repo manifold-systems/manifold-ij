@@ -32,7 +32,7 @@ public class IjManifoldHost extends DefaultManifoldHost
 
   private void addToAllProjectsWithWarning( ITypeLoaderListener listener )
   {
-    System.out.println( "Warning: Null ctx, adding listener to ALL projects." );
+    System.out.println( "Information: Null ctx, adding listener to ALL projects." );
     for( ManProject p : ManProject.getAllProjects() )
     {
       p.getFileModificationManager().getManRefresher().addTypeLoaderListenerAsWeakRef( listener );
