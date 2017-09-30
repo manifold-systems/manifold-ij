@@ -7,12 +7,14 @@ import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
+import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiPackageStatement;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiPrimitiveType;
@@ -23,6 +25,7 @@ import com.intellij.psi.impl.source.PsiJavaFileImpl;
 import com.intellij.psi.impl.source.PsiMethodImpl;
 import com.intellij.psi.impl.source.tree.java.ImplementsListElement;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.util.ClassUtil;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import manifold.ExtIssueMsg;
@@ -57,9 +60,17 @@ public class ExtensionClassAnnotator implements Annotator
 
     if( psiExtensionClass != null )
     {
+      // The enclosing class a @Extension class, verify usage of @This etc.
+
       verifyPackage( element, holder );
       verifyExtensionInterfaces( element, holder );
       verifyExtensionMethods( element, holder );
+    }
+    else
+    {
+      // The enclosing class is *not* an extension class; usage of @This or @Extension on methods are errors
+
+      errrantThisOrExtension( element, holder );
     }
   }
 
@@ -295,5 +306,22 @@ public class ExtensionClassAnnotator implements Annotator
     }
 
     return null;
+  }
+
+  private void errrantThisOrExtension( PsiElement element, AnnotationHolder holder )
+  {
+    if( element instanceof PsiModifierList )
+    {
+      PsiModifierList mods = (PsiModifierList)element;
+      PsiAnnotation annotation;
+      if( (annotation = mods.findAnnotation( Extension.class.getName() )) != null ||
+          (annotation = mods.findAnnotation( This.class.getName() )) != null)
+      {
+        TextRange range = new TextRange( annotation.getTextRange().getStartOffset(),
+                                         annotation.getTextRange().getEndOffset() );
+        //noinspection ConstantConditions
+        holder.createErrorAnnotation( range, ExtIssueMsg.MSG_NOT_IN_EXTENSION_CLASS.get( ClassUtil.extractClassName( annotation.getQualifiedName() ) ) );
+      }
+    }
   }
 }
