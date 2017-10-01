@@ -1,5 +1,7 @@
 package manifold.ij.extensions;
 
+import com.intellij.navigation.ItemPresentation;
+import com.intellij.navigation.ItemPresentationProviders;
 import com.intellij.openapi.module.Module;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiField;
@@ -68,6 +70,23 @@ public class ManifoldExtendedPsiClass extends LightClass implements PsiExtensibl
     super( delegate, delegate.getLanguage() );
     _module = ManProject.getModule( module );
   }
+
+
+  @Override
+  public boolean isPhysical()
+  {
+    // Returns the delegate's value here so that this type can work with ManShortNamesCache.
+    // See DefaultClassNavigationContributor#processElementsWithName(), and its call to isPhysical()
+    return getDelegate().isPhysical();
+  }
+
+  @Override
+  public ItemPresentation getPresentation()
+  {
+    // Necessary for ManShortNamesCache
+    return ItemPresentationProviders.getItemPresentation( getDelegate() );
+  }
+
 
   @Override
   public PsiMethod[] getMethods()

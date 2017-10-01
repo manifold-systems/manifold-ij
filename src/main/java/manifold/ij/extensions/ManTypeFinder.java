@@ -84,7 +84,7 @@ public class ManTypeFinder extends PsiElementFinder
     return null;
   }
 
-  private List<ManModule> findModules( GlobalSearchScope scope )
+  public static List<ManModule> findModules( GlobalSearchScope scope )
   {
     ManProject manProject = ManProject.manProjectFrom( scope.getProject() );
     List<ManModule> modules = new ArrayList<>( manProject.getModules() );

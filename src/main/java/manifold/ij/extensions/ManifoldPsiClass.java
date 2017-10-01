@@ -5,6 +5,8 @@
 package manifold.ij.extensions;
 
 import com.intellij.ide.util.PsiNavigationSupport;
+import com.intellij.navigation.ItemPresentation;
+import com.intellij.navigation.ItemPresentationProviders;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.module.ModuleUtilCore;
@@ -16,7 +18,6 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
-import com.intellij.psi.impl.PsiManagerEx;
 import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.light.LightClass;
 import com.intellij.psi.util.ClassUtil;
@@ -66,6 +67,31 @@ public class ManifoldPsiClass extends LightClass
   }
 
   @Override
+  public PsiFile getContainingFile()
+  {
+    // Returns the actual PsiFile backing this type, necessary for ManShortNamesCache
+
+    final List<PsiFile> rawFiles = getRawFiles();
+    // Sometimes there is no backing file e.g., SystemProperties class
+    return rawFiles.isEmpty() ? null : rawFiles.get( 0 );
+  }
+
+  @Override
+  public boolean isPhysical()
+  {
+    // Returns 'true' here so that this type works with ManShortNamesCache.
+    // See DefaultClassNavigationContributor#processElementsWithName(), and its call to isPhysical()
+    return true;
+  }
+
+  @Override
+  public ItemPresentation getPresentation()
+  {
+    // Necessary for ManShortNamesCache
+    return ItemPresentationProviders.getItemPresentation( this );
+  }
+
+  @Override
   public String getQualifiedName()
   {
     return _fqn;
@@ -86,12 +112,6 @@ public class ManifoldPsiClass extends LightClass
   public boolean isWritable()
   {
     return true;
-  }
-
-  @Override
-  public PsiManagerEx getManager()
-  {
-    return _files.isEmpty() ? null : (PsiManagerEx)_files.get( 0 ).getManager();
   }
 
   public List<PsiFile> getRawFiles()

@@ -22,6 +22,7 @@
 
   <extensions defaultExtensionNs="com.intellij">
     <java.elementFinder order="first" implementation="manifold.ij.extensions.ManTypeFinder"/>
+    <java.shortNamesCache implementation="manifold.ij.extensions.ManShortNamesCache"/>
     <gotoDeclarationHandler implementation="manifold.ij.extensions.ManGotoDeclarationHandler"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManAugmentProvider"/>
     <methodReferencesSearch implementation="manifold.ij.extensions.ExtensionMethodUsageSearcher"/>
