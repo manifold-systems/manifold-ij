@@ -1,6 +1,8 @@
 package manifold.ij.extensions;
 
 import com.intellij.openapi.application.ReadActionProcessor;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.impl.scopes.ModuleWithDependenciesScope;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.PackageIndex;
@@ -15,6 +17,7 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Processor;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -43,6 +46,8 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public PsiClass[] findClasses( String fqn, GlobalSearchScope globalSearchScope )
   {
+    //System.out.println( "PsiClass[] findClasses() : " + fqn + " : " + globalSearchScope );
+
     if( DumbService.getInstance( globalSearchScope.getProject() ).isDumb() )
     {
       // skip processing during index rebuild
@@ -65,6 +70,8 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public PsiClass findClass( String fqn, GlobalSearchScope globalSearchScope )
   {
+    //System.out.println( "findClass() : " + fqn + " : " + globalSearchScope );
+
     if( DumbService.getInstance( globalSearchScope.getProject() ).isDumb() )
     {
       // skip processing during index rebuild
@@ -86,6 +93,12 @@ public class ManTypeFinder extends PsiElementFinder
 
   public static List<ManModule> findModules( GlobalSearchScope scope )
   {
+    if( scope instanceof ModuleWithDependenciesScope )
+    {
+      Module module = ((ModuleWithDependenciesScope)scope).getModule();
+      return Collections.singletonList( ManProject.getModule( module ) );
+    }
+
     ManProject manProject = ManProject.manProjectFrom( scope.getProject() );
     List<ManModule> modules = new ArrayList<>( manProject.getModules() );
     modules.removeIf( module -> !scope.isSearchInModuleContent( module.getIjModule() ) );
@@ -95,6 +108,8 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public PsiClass[] getClasses( PsiPackage psiPackage, GlobalSearchScope scope )
   {
+    //System.out.println( "getClasses() : " + psiPackage + " : " + scope );
+
     if( DumbService.getInstance( scope.getProject() ).isDumb() )
     {
       // skip processing during index rebuild
@@ -144,6 +159,8 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public PsiPackage[] getSubPackages( PsiPackage psiPackage, GlobalSearchScope scope )
   {
+    //System.out.println( "getSubPackages() : " + psiPackage + " : " + scope );
+
     List<ManModule> modules = findModules( scope );
     if( modules.isEmpty() )
     {
@@ -184,6 +201,8 @@ public class ManTypeFinder extends PsiElementFinder
                                            @NotNull final GlobalSearchScope scope,
                                            @NotNull final Processor<PsiDirectory> consumer,
                                            boolean includeLibrarySources) {
+    //System.out.println( "processDirectories() : " + psiPackage + " : " + scope );
+
     final PsiManager psiManager = PsiManager.getInstance( _project );
     return PackageIndex.getInstance( _project )
       .getDirsByPackageName(psiPackage.getQualifiedName(), includeLibrarySources)
@@ -200,6 +219,8 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public PsiPackage findPackage( String fqn )
   {
+    //System.out.println( "findPackage() : " + fqn );
+
     List<ManModule> modules = ManProject.manProjectFrom( _project ).getModules();
     PsiManager manager = PsiManagerImpl.getInstance( _project );
     for( ManModule mm : modules )

@@ -42,7 +42,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 {
   private static final ManifoldPsiClassCache INSTANCE = new ManifoldPsiClassCache();
   private Set<Project> _addedListeners = ContainerUtil.newConcurrentSet();
-  private Set<String> _shortcircuit = new HashSet<>();
+  private ThreadLocal<Set<String>> _shortcircuit = new ThreadLocal<>();
 
 
   public static ManifoldPsiClassCache instance()
@@ -55,12 +55,12 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
   public PsiClass getPsiClass( GlobalSearchScope scope, ManModule module, String fqn )
   {
-    if( _shortcircuit.contains( fqn ) )
+    if( isShortCircuit( fqn ) )
     {
       return null;
     }
 
-    _shortcircuit.add( fqn );
+    addShortCircuit( fqn );
     try
     {
       listenToChanges( module.getProject() );
@@ -96,8 +96,34 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     }
     finally
     {
-      _shortcircuit.remove( fqn );
+      removeShortCircuit( fqn );
     }
+  }
+
+  private void addShortCircuit( String fqn )
+  {
+    initShortCircuit();
+    _shortcircuit.get().add( fqn );
+  }
+
+  private void initShortCircuit()
+  {
+    if( _shortcircuit.get() == null )
+    {
+      _shortcircuit.set( new HashSet<>() );
+    }
+  }
+
+  private void removeShortCircuit( String fqn )
+  {
+    initShortCircuit();
+    _shortcircuit.get().remove( fqn );
+  }
+
+  private boolean isShortCircuit( String fqn )
+  {
+    initShortCircuit();
+    return _shortcircuit.get().contains( fqn );
   }
 
   /**

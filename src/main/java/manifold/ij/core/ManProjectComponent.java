@@ -26,10 +26,13 @@ public class ManProjectComponent implements ProjectComponent
   @Override
   public void projectOpened()
   {
-    StartupManagerImpl.getInstance( _project ).registerStartupActivity(
-      () -> ApplicationManager.getApplication().invokeLater(
-        () -> ApplicationManager.getApplication().runWriteAction(
-          () -> ManProject.manProjectFrom( _project ).projectOpened() ) ) );
+//    StartupManagerImpl.getInstance( _project ).registerStartupActivity(
+//      () -> ApplicationManager.getApplication().invokeLater(
+//        () -> ApplicationManager.getApplication().runWriteAction(
+//          () -> ManProject.manProjectFrom( _project ).projectOpened() ) ) );
+
+    StartupManagerImpl.getInstance( _project ).registerStartupActivity( () ->
+      ApplicationManager.getApplication().runReadAction( () -> ManProject.manProjectFrom( _project ).projectOpened() ) );
   }
 
   @Override
