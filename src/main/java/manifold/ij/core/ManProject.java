@@ -26,6 +26,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -247,10 +248,11 @@ public class ManProject
   public List<ManModule> findRootModules()
   {
     List<ManModule> roots = new ArrayList<>( getModules() );
-    for( ManModule module : roots )
+    for( ManModule module : new ArrayList<>( roots ) )
     {
       for( Dependency d : module.getDependencies() )
       {
+        //noinspection SuspiciousMethodCalls
         roots.remove( d.getModule() );
       }
     }
@@ -333,7 +335,7 @@ public class ManProject
     List<IDirectory> sourceRoots = new ArrayList<>( sourcePaths );
     scanPaths( classpath, sourceRoots );
 
-    return new ManModule( this, ijModule, classpath, sourceRoots, outputPath, getExcludedFolders( ijModule ) );
+    return new ManModule( this, ijModule, classpath, sourceRoots, Collections.singletonList( outputPath ), getExcludedFolders( ijModule ) );
   }
 
   private static void scanPaths( List<IDirectory> paths, List<IDirectory> roots )
