@@ -17,6 +17,13 @@ public class IjManifoldHost extends DefaultManifoldHost
   }
 
   @Override
+  public ClassLoader getActualClassLoader()
+  {
+    // Use the IJ Plugin class loader
+    return getClass().getClassLoader();
+  }
+
+  @Override
   public void addTypeLoaderListenerAsWeakRef( Object ctx, ITypeLoaderListener listener )
   {
     if( ctx == null )

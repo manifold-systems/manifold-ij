@@ -28,7 +28,7 @@ public class ManModule extends SimpleModule
   private List<IDirectory> _excludedDirs;
   private URLClassLoader _typeManifoldClassLoader;
 
-  ManModule( ManProject manProject, Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePath, IDirectory outputPath, List<IDirectory> excludedDirs )
+  ManModule( ManProject manProject, Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePath, List<IDirectory> outputPath, List<IDirectory> excludedDirs )
   {
     super( classpath, sourcePath, outputPath );
     _ijModule = ijModule;

@@ -1,4 +1,4 @@
-<idea-plugin version="2">
+<idea-plugin>
   <id>manifold.ij</id>
   <name>Manifold</name>
   <description>This value is patched by the build script</description>
