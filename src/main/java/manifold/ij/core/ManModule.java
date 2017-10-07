@@ -92,6 +92,10 @@ public class ManModule extends SimpleModule
   @Override
   public Set<ITypeManifold> findTypeManifoldsFor( String fqn )
   {
+    return findTypeManifoldsFor( fqn, this );
+  }
+  private Set<ITypeManifold> findTypeManifoldsFor( String fqn, ManModule root )
+  {
     Set<ITypeManifold> sps = super.findTypeManifoldsFor( fqn );
     if( !sps.isEmpty() )
     {
@@ -100,9 +104,9 @@ public class ManModule extends SimpleModule
     sps = new HashSet<>();
     for( Dependency d : getDependencies() )
     {
-      if( d.isExported() )
+      if( this == root || d.isExported() )
       {
-        sps.addAll( d.getModule().findTypeManifoldsFor( fqn ) );
+        sps.addAll( ((ManModule)d.getModule()).findTypeManifoldsFor( fqn, root ) );
       }
     }
     return sps;
@@ -112,6 +116,10 @@ public class ManModule extends SimpleModule
   @Override
   public Set<ITypeManifold> findTypeManifoldsFor( IFile file )
   {
+    return findTypeManifoldsFor( file, this );
+  }
+  private Set<ITypeManifold> findTypeManifoldsFor( IFile file, ManModule root )
+  {
     Set<ITypeManifold> sps = super.findTypeManifoldsFor( file );
     if( !sps.isEmpty() )
     {
@@ -120,9 +128,9 @@ public class ManModule extends SimpleModule
     sps = new HashSet<>();
     for( Dependency d : getDependencies() )
     {
-      if( d.isExported() )
+      if( this == root || d.isExported() )
       {
-        sps.addAll( d.getModule().findTypeManifoldsFor( file ) );
+        sps.addAll( ((ManModule)d.getModule()).findTypeManifoldsFor( file, root ) );
       }
     }
     return sps;

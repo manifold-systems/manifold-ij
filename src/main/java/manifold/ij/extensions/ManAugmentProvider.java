@@ -35,6 +35,7 @@ import manifold.api.gen.SrcParameter;
 import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
+import manifold.api.host.Dependency;
 import manifold.api.type.ITypeManifold;
 import manifold.ext.api.Extension;
 import manifold.ext.api.This;
@@ -117,6 +118,10 @@ public class ManAugmentProvider extends PsiAugmentProvider
 
   private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures, Module module )
   {
+    addMethods( fqn, psiClass, augFeatures, module, module );
+  }
+  private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures, Module start, Module module )
+  {
     ManModule manModule = ManProject.getModule( module );
     for( ITypeManifold sp : manModule.getTypeManifolds() )
     {
@@ -160,6 +165,13 @@ public class ManAugmentProvider extends PsiAugmentProvider
             }
           }
         }
+      }
+    }
+    for( Dependency d : manModule.getDependencies() )
+    {
+      if( module == start || d.isExported() )
+      {
+        addMethods( fqn, psiClass, augFeatures, start, ((ManModule)d.getModule()).getIjModule() );
       }
     }
   }
