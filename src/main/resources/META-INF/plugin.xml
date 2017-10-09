@@ -3,7 +3,7 @@
   <name>Manifold</name>
   <description>This value is patched by the build script</description>
   <version>This value is patched by the build script</version>
-  <vendor email="manifold-systems@googlegroups.com" url="http://manifold.systems">manifold.systems</vendor>
+  <vendor email="admin@manifold.systems" url="http://manifold.systems">manifold.systems</vendor>
   <!-- please see http://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
   <idea-version since-build="This value is patched by the build script"/>
 
