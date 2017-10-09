@@ -143,7 +143,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 //              }
 //            }
           }
-          return false;
+          return true;
         }
       }
     }

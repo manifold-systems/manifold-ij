@@ -11,6 +11,7 @@ import com.intellij.util.Processor;
 import com.intellij.util.containers.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import manifold.api.host.Dependency;
 import manifold.api.type.ITypeManifold;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
@@ -35,24 +36,40 @@ public class ManShortNamesCache extends PsiShortNamesCache
     Set<PsiClass> psiClasses = new HashSet<>();
     for( ManModule module: ManTypeFinder.findModules( scope ) )
     {
-      for( ITypeManifold tm: module.getTypeManifolds() )
+      findPsiClasses( name, scope, psiClasses, module );
+    }
+    return psiClasses.toArray( new PsiClass[psiClasses.size()] );
+  }
+
+  private void findPsiClasses( @NotNull @NonNls String name, @NotNull GlobalSearchScope scope, Set<PsiClass> psiClasses, ManModule module )
+  {
+    findPsiClasses( name, scope, psiClasses, module, module );
+  }
+  private void findPsiClasses( @NotNull @NonNls String name, @NotNull GlobalSearchScope scope, Set<PsiClass> psiClasses, ManModule start, ManModule module )
+  {
+    for( ITypeManifold tm: module.getTypeManifolds() )
+    {
+      if( tm.getProducerKind() == ITypeManifold.ProducerKind.Supplemental )
       {
-        if( tm.getProducerKind() == ITypeManifold.ProducerKind.Supplemental )
+        continue;
+      }
+      for( String fqn: tm.getAllTypeNames() )
+      {
+        String simpleName = ClassUtil.extractClassName( fqn );
+        if( simpleName.equals( name ) )
         {
-          continue;
-        }
-        for( String fqn: tm.getAllTypeNames() )
-        {
-          String simpleName = ClassUtil.extractClassName( fqn );
-          if( simpleName.equals( name ) )
-          {
-            PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( scope, module, fqn );
-            psiClasses.add( psiClass );
-          }
+          PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( scope, module, fqn );
+          psiClasses.add( psiClass );
         }
       }
     }
-    return psiClasses.toArray( new PsiClass[psiClasses.size()] );
+    for( Dependency d : module.getDependencies() )
+    {
+      if( module == start || d.isExported() )
+      {
+        findPsiClasses( name, scope, psiClasses, start, (ManModule)d.getModule() );
+      }
+    }
   }
 
   @NotNull
@@ -70,13 +87,29 @@ public class ManShortNamesCache extends PsiShortNamesCache
     final ManProject manProject = ManProject.manProjectFrom( _psiManager.getProject() );
     for( ManModule module: manProject.findRootModules() )
     {
-      for( ITypeManifold tm: module.getTypeManifolds() )
+      findClassFqns( dest, module );
+    }
+  }
+
+  private void findClassFqns( @NotNull HashSet<String> dest, ManModule module )
+  {
+    findClassFqns( dest, module, module );
+  }
+  private void findClassFqns( @NotNull HashSet<String> dest, ManModule start, ManModule module )
+  {
+    for( ITypeManifold tm: module.getTypeManifolds() )
+    {
+      if( tm.getProducerKind() == ITypeManifold.ProducerKind.Supplemental )
       {
-        if( tm.getProducerKind() == ITypeManifold.ProducerKind.Supplemental )
-        {
-          continue;
-        }
-        dest.addAll( tm.getAllTypeNames().stream().map( ClassUtil::extractClassName ).collect( Collectors.toList() ) );
+        continue;
+      }
+      dest.addAll( tm.getAllTypeNames().stream().map( ClassUtil::extractClassName ).collect( Collectors.toList() ) );
+    }
+    for( Dependency d : module.getDependencies() )
+    {
+      if( module == start || d.isExported() )
+      {
+        findClassFqns( dest, start, (ManModule)d.getModule() );
       }
     }
   }
@@ -105,7 +138,7 @@ public class ManShortNamesCache extends PsiShortNamesCache
   @Override
   public boolean processMethodsWithName( @NonNls @NotNull String name, @NotNull GlobalSearchScope scope, @NotNull Processor<PsiMethod> processor )
   {
-    return false;
+    return true;
   }
 
   @NotNull
