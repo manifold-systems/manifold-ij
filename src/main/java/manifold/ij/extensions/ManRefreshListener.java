@@ -132,19 +132,44 @@ public class ManRefreshListener
       String[] fqns = module.getTypesForFile( file );
       RefreshRequest request = new RefreshRequest( file, fqns, module, module, kind );
       List<ITypeLoaderListener> listeners = getListeners();
-      for( ITypeLoaderListener listener : listeners )
+      switch( kind )
       {
-        if( listener.notifyEarly() )
-        {
-          listener.refreshedTypes( request );
-        }
+        case CREATION:
+          // for creation the file system needs to be updated first before other listeners
+          notifyEarlyListeners( request, listeners );
+          notifyNonearlyListeners( request, listeners );
+          break;
+
+        case DELETION:
+        case MODIFICATION:
+          // for deletion the file system needs to be updated after other listeners
+          notifyNonearlyListeners( request, listeners );
+          notifyEarlyListeners( request, listeners );
+          break;
       }
-      for( ITypeLoaderListener listener : listeners )
+      notifyEarlyListeners( request, listeners );
+      notifyNonearlyListeners( request, listeners );
+    }
+  }
+
+  private void notifyNonearlyListeners( RefreshRequest request, List<ITypeLoaderListener> listeners )
+  {
+    for( ITypeLoaderListener listener : listeners )
+    {
+      if( !listener.notifyEarly() )
       {
-        if( !listener.notifyEarly() )
-        {
-          listener.refreshedTypes( request );
-        }
+        listener.refreshedTypes( request );
+      }
+    }
+  }
+
+  private void notifyEarlyListeners( RefreshRequest request, List<ITypeLoaderListener> listeners )
+  {
+    for( ITypeLoaderListener listener : listeners )
+    {
+      if( listener.notifyEarly() )
+      {
+        listener.refreshedTypes( request );
       }
     }
   }
