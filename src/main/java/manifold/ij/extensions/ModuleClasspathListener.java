@@ -149,6 +149,11 @@ public class ModuleClasspathListener implements ModuleRootListener
 
   private void changeSourceRoots( ManModule manModule )
   {
+    if( !manModule.getIjModule().getProject().isInitialized() )
+    {
+      return;
+    }
+
     manModule.getProject().reset();
   }
 

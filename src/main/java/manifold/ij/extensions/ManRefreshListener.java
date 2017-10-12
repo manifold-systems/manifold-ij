@@ -8,7 +8,6 @@ import com.intellij.openapi.project.Project;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import manifold.api.fs.IResource;
 import manifold.api.host.ITypeLoaderListener;
@@ -47,6 +46,7 @@ public class ManRefreshListener
     }
   }
 
+  @SuppressWarnings("unused")
   public void removeTypeLoaderListener( ITypeLoaderListener l )
   {
     for( WeakReference<ITypeLoaderListener> ref : _listeners )
@@ -130,24 +130,22 @@ public class ManRefreshListener
     for( ManModule module: _manProject.getModules() )
     {
       String[] fqns = module.getTypesForFile( file );
-      if( fqns.length > 0 )
+      RefreshRequest request = new RefreshRequest( file, fqns, module, module, kind );
+      List<ITypeLoaderListener> listeners = getListeners();
+      for( ITypeLoaderListener listener : listeners )
       {
-        RefreshRequest request = new RefreshRequest( file, fqns, module, module, kind );
-        for( ITypeLoaderListener listener : getListeners() )
+        if( listener.notifyEarly() )
+        {
+          listener.refreshedTypes( request );
+        }
+      }
+      for( ITypeLoaderListener listener : listeners )
+      {
+        if( !listener.notifyEarly() )
         {
           listener.refreshedTypes( request );
         }
       }
     }
-  }
-
-  private String toString( Set<String> set )
-  {
-    String s = "";
-    for( String e : set )
-    {
-      s += e + " ";
-    }
-    return s;
   }
 }
