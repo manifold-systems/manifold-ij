@@ -49,10 +49,6 @@ public class ManShortNamesCache extends PsiShortNamesCache
   {
     for( ITypeManifold tm: module.getTypeManifolds() )
     {
-      if( tm.getProducerKind() == ITypeManifold.ProducerKind.Supplemental )
-      {
-        continue;
-      }
       for( String fqn: tm.getAllTypeNames() )
       {
         String simpleName = ClassUtil.extractClassName( fqn );
