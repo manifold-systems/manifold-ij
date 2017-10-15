@@ -124,6 +124,11 @@ public class ManTypeFinder extends PsiElementFinder
     {
       for( ITypeManifold sp : mm.getTypeManifolds() )
       {
+        if( sp.getProducerKind() == Supplemental )
+        {
+          continue;
+        }
+
         Collection<TypeName> typeNames = sp.getTypeNames( parentPackage );
         for( TypeName child : typeNames )
         {
