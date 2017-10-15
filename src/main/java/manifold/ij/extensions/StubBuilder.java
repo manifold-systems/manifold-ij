@@ -100,7 +100,7 @@ public class StubBuilder
     return srcType;
   }
 
-  static String makeTypeVar( PsiTypeParameter typeVar )
+  public static String makeTypeVar( PsiTypeParameter typeVar )
   {
     StringBuilder sb = new StringBuilder();
     sb.append( typeVar.getName() );

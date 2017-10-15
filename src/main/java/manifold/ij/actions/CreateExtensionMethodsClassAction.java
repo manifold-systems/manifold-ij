@@ -8,22 +8,29 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.LangDataKeys;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.DumbAware;
+import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaDirectoryService;
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiPackage;
+import com.intellij.psi.PsiTypeParameter;
+import com.intellij.psi.impl.JavaPsiFacadeEx;
 import com.intellij.psi.util.ClassUtil;
+import com.intellij.util.Function;
 import com.intellij.util.IncorrectOperationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import javax.swing.ImageIcon;
+import manifold.ij.extensions.StubBuilder;
 import manifold.ij.util.ManBundle;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 
@@ -96,6 +103,10 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
       {
         public PsiFile createFile( String name, String fqnExtended )
         {
+          if( DumbService.getInstance( project ).isDumb() )
+          {
+            DumbService.getInstance( project ).waitForSmartMode();
+          }
           return doCreate( dir, name, fqnExtended );
         }
 
@@ -118,8 +129,10 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
 
   private PsiFile doCreate( PsiDirectory dir, String className, String fqnExtended ) throws IncorrectOperationException
   {
+    Project project = dir.getProject();
+
     String fileName = className + ".java";
-    VirtualFile srcRoot = ProjectRootManager.getInstance( dir.getProject() ).getFileIndex().getSourceRootForFile( dir.getVirtualFile() );
+    VirtualFile srcRoot = ProjectRootManager.getInstance( project ).getFileIndex().getSourceRootForFile( dir.getVirtualFile() );
     dir = getPsiDirectoryForExtensionClass( dir, fqnExtended, srcRoot );
 
     final PsiPackage pkg = JavaDirectoryService.getInstance().getPackage( dir );
@@ -137,7 +150,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
       "\n" +
       "@Extension\n" +
       "public class " + className + " {\n" +
-      "  public static void helloWorld(@This " + ClassUtil.extractClassName( fqnExtended ) + " thiz) {\n" +
+      "  public static " + processTypeVars( dir, fqnExtended, StubBuilder::makeTypeVar ) + " void helloWorld(@This " + ClassUtil.extractClassName( fqnExtended ) + processTypeVars( dir, fqnExtended, PsiNamedElement::getName ) + " thiz) {\n" +
       "    System.out.println(\"hello world!\");\n" +
       "  }\n" +
       "}";
@@ -162,6 +175,50 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
     }
 
     return file;
+  }
+
+  private String processTypeVars( PsiDirectory dir, String fqnExtended, Function<PsiTypeParameter,String> processor )
+  {
+    boolean alt = false;
+    DumbService dumbService = DumbService.getInstance( dir.getProject() );
+    if( dumbService.isDumb() )
+    {
+      dumbService.setAlternativeResolveEnabled( alt = true );
+    }
+    try
+    {
+      PsiClass extendedClass = JavaPsiFacadeEx.getInstanceEx( dir.getProject() ).findClass( fqnExtended );
+      if( extendedClass == null )
+      {
+        return "";
+      }
+      PsiTypeParameter[] typeParameters = extendedClass.getTypeParameters();
+      if( typeParameters.length == 0 )
+      {
+        return "";
+      }
+
+      StringBuilder sb = new StringBuilder();
+      sb.append( "<" );
+      for( int i = 0; i < typeParameters.length; i++ )
+      {
+        PsiTypeParameter tp = typeParameters[i];
+        if( i > 0 )
+        {
+          sb.append( ", " );
+        }
+        sb.append( processor.fun( tp ) );
+      }
+      sb.append( ">" );
+      return sb.toString();
+    }
+    finally
+    {
+      if( alt )
+      {
+        dumbService.setAlternativeResolveEnabled( false );
+      }
+    }
   }
 
   private PsiDirectory getPsiDirectoryForExtensionClass( PsiDirectory dir, String fqnExtended, VirtualFile srcRoot )

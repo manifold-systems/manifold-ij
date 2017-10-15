@@ -9,6 +9,7 @@ import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.impl.search.MethodUsagesSearcher;
@@ -36,7 +37,11 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
 
     PsiMethod method = p.getMethod();
     PsiClass extensionClass = resolveInReadAction( p.getProject(), method::getContainingClass );
-    PsiAnnotation extensionAnno = resolveInReadAction( p.getProject(), () -> extensionClass.getModifierList().findAnnotation( Extension.class.getName() ) );
+    PsiAnnotation extensionAnno = resolveInReadAction( p.getProject(), () ->
+      {
+        PsiModifierList modifierList = extensionClass.getModifierList();
+        return modifierList == null ? null : modifierList.findAnnotation( Extension.class.getName() );
+      } );
     if( extensionAnno == null )
     {
       return;
