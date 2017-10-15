@@ -18,7 +18,6 @@ import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent;
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent;
-import com.intellij.psi.PsiClassOwner;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
 import com.intellij.testFramework.LightVirtualFile;
@@ -33,7 +32,9 @@ import manifold.ij.util.FileUtil;
 
 public class FileModificationManager implements PsiDocumentTransactionListener, BulkFileListener
 {
-  public static int TYPE_REFRESH_DELAY_MS = 0;
+  @SuppressWarnings("FieldCanBeLocal")
+  private static int TYPE_REFRESH_DELAY_MS = 0;
+
   private final DelayedRunner _typeRefresher = new DelayedRunner();
   private final Project _project;
   private final ManProject _manProject;
@@ -124,7 +125,19 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
       return;
     }
 
-    if( DumbService.getInstance( _project ).isDumb() )
+    DumbService dumb = DumbService.getInstance( _project );
+    if( dumb.isDumb() )
+    {
+      dumb.smartInvokeLater( () -> _after( events ) );
+    }
+    else
+    {
+      _after( events );
+    }
+  }
+  private void _after( final List<? extends VFileEvent> events )
+  {
+    if( _project.isDisposed() )
     {
       return;
     }

@@ -9,6 +9,7 @@ import com.intellij.openapi.actionSystem.LangDataKeys;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -24,6 +25,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import javax.swing.ImageIcon;
 import manifold.ij.util.ManBundle;
+import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 
 /**
  */
@@ -61,7 +63,8 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
       else
       {
         PsiPackage pkg = JavaDirectoryService.getInstance().getPackage( dir );
-        enabled = pkg != null;
+        ProjectFileIndex projectFileIndex = ProjectRootManager.getInstance( project).getFileIndex();
+        enabled = pkg != null && projectFileIndex.isUnderSourceRootOfType( dir.getVirtualFile(), JavaModuleSourceRootTypes.SOURCES );
       }
     }
     e.getPresentation().setEnabled( enabled );
@@ -163,7 +166,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
 
   private PsiDirectory getPsiDirectoryForExtensionClass( PsiDirectory dir, String fqnExtended, VirtualFile srcRoot )
   {
-    String srcDir = srcRoot.getPath().replace( '/', '\\' );
+    String srcDir = srcRoot.getPath().replace( '/', File.separatorChar );
     File pkg = new File( srcDir, "extensions" + File.separatorChar + fqnExtended.replace( '.', File.separatorChar ) );
     //noinspection ResultOfMethodCallIgnored
     pkg.mkdirs();
