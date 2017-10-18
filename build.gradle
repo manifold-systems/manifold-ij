@@ -53,7 +53,21 @@ intellij {
 patchPluginXml {
   sinceBuild '141.1010'
   untilBuild '999.*'
-  pluginDescription 'IntelliJ IDEA plugin for Manifold'
+  pluginDescription   '<![CDATA[\n' +
+                      '<b><a href="http://manifold.systems/">Manifold</a> support for IntelliJ IDEA.</b><br>' +
+                      '<br>' +
+                      '<p>At its core <a href="https://manifold.systems/">Manifold</a> is a unique framework to dynamically and seamlessly extend\n' +
+                      'Java\'s type system. Building on this core framework Manifold provides a set of\n' +
+                      'key features found in other programming languages and platforms:</p>\n' +
+                      '<ul>\n' +
+                      '<li><strong>Type-safe Metaprogramming</strong> -- similar in concept to <a href="https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/information-rich-themes-v4.pdf">F# <em>type providers</em></a></li>\n' +
+                      '<li><strong>Extension Methods</strong> -- comparable to the same feature in <a href="https://kotlinlang.org/docs/reference/extensions.html">Kotlin</a> and <a href="https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/extension-methods">C#</a></li>\n' +
+                      '<li><strong>Structural Typing</strong> -- much like interfaces in <a href="https://www.typescriptlang.org/docs/handbook/interfaces.html">TypeScript</a> and <a href="https://tour.golang.org/methods/10">Go</a></li>\n' +
+                      '</ul>\n' +
+                      '<p>Leveraging these key features Manifold delivers a powerful set of Java extensions including <strong>JSON</strong>\n' +
+                      'integration, <strong>JavaScript</strong> interop, <strong>Structural typing</strong>, seamless <strong>extension libraries</strong> to Java\'s\n' +
+                      'runtime classes, and (coming soon) type-safe access to raw <strong>SQL</strong> and <strong>DDL</strong>.</p>' +
+                      ']]>'
 }
 
 publishPlugin {
