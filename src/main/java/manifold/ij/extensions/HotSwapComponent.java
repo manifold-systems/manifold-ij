@@ -332,7 +332,17 @@ public class HotSwapComponent implements DebuggerManagerListener
     URLClassLoader cl = makeCompilationClassLoader();
     try
     {
-      Class<?> manifoldHostClass = Class.forName( ManifoldHost.class.getName(), true, cl );
+      Class<?> manifoldHostClass;
+      try
+      {
+        manifoldHostClass = Class.forName( ManifoldHost.class.getName(), true, cl );
+      }
+      catch( ClassNotFoundException cnfe )
+      {
+        // The project does not have manifold as a dependency
+        return Collections.emptyList();
+      }
+
       Method bootstrapMethod = manifoldHostClass.getMethod( "bootstrap", List.class, List.class );
       bootstrapMethod.invoke( null, Collections.emptyList(), makeCompilerClassPath() );
 
