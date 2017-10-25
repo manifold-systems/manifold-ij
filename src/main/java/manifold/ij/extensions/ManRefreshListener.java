@@ -135,20 +135,18 @@ public class ManRefreshListener
       switch( kind )
       {
         case CREATION:
-          // for creation the file system needs to be updated first before other listeners
+        case MODIFICATION:
+          // for creation the file system needs to be updated *before* other listeners
           notifyEarlyListeners( request, listeners );
           notifyNonearlyListeners( request, listeners );
           break;
 
         case DELETION:
-        case MODIFICATION:
-          // for deletion the file system needs to be updated after other listeners
+          // for deletion the file system needs to be updated *after* other listeners
           notifyNonearlyListeners( request, listeners );
           notifyEarlyListeners( request, listeners );
           break;
       }
-      notifyEarlyListeners( request, listeners );
-      notifyNonearlyListeners( request, listeners );
     }
   }
 

@@ -9,7 +9,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.impl.ModuleRootEventImpl;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.newvfs.BulkFileListener;
 import com.intellij.openapi.vfs.newvfs.events.VFileCopyEvent;
@@ -115,7 +114,33 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
   // BulkRefreshListener
   public void before( final List<? extends VFileEvent> events )
   {
-    // Nothing to do
+    if( _project.isDisposed() )
+    {
+      return;
+    }
+
+    DumbService dumb = DumbService.getInstance( _project );
+    if( !dumb.isDumb() )
+    {
+      _before( events );
+    }
+  }
+
+  private void _before( final List<? extends VFileEvent> events )
+  {
+    if( _project.isDisposed() )
+    {
+      return;
+    }
+
+    for( VFileEvent event : events )
+    {
+      final VirtualFile file = event.getFile();
+      if( file != null )
+      {
+        processRenameBefore( event );
+      }
+    }
   }
 
   public void after( final List<? extends VFileEvent> events )
@@ -132,9 +157,10 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
     }
     else
     {
-      _after( events );
+      ApplicationManager.getApplication().invokeLater( () ->_after( events ) );
     }
   }
+
   private void _after( final List<? extends VFileEvent> events )
   {
     if( _project.isDisposed() )
@@ -147,11 +173,7 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
       final VirtualFile file = event.getFile();
       if( file != null )
       {
-        if( event instanceof VFilePropertyChangeEvent )
-        {
-          processPropertyChangeEvent( (VFilePropertyChangeEvent)event );
-        }
-        else if( event instanceof VFileMoveEvent )
+        if( event instanceof VFileMoveEvent )
         {
           processFileMoveEvent( (VFileMoveEvent)event );
         }
@@ -167,11 +189,48 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
         {
           processFileCopyEvent( (VFileCopyEvent)event );
         }
+        else if( event instanceof VFilePropertyChangeEvent )
+        {
+          processRenameAfter( event );
+        }
         else
         {
           ApplicationManager.getApplication().runReadAction( () -> fireModifiedEvent( file ) );
         }
       }
+    }
+  }
+
+  private void processRenameBefore( VFileEvent event )
+  {
+    if( event instanceof VFilePropertyChangeEvent )
+    {
+      if( ((VFilePropertyChangeEvent)event).getPropertyName().equals( VirtualFile.PROP_NAME ) )
+      { // collect file renames
+        VirtualFile originalFile = event.getFile();
+        if( originalFile instanceof LightVirtualFile )
+        {
+          return;
+        }
+
+        // Handle the Deletion *before* it is renamed
+        fireDeletedEvent( originalFile );
+      }
+    }
+  }
+
+  private void processRenameAfter( VFileEvent event )
+  {
+    if( ((VFilePropertyChangeEvent)event).getPropertyName().equals( VirtualFile.PROP_NAME ) )
+    { // collect file renames
+      VirtualFile renamedFile = event.getFile();
+      if( renamedFile instanceof LightVirtualFile )
+      {
+        return;
+      }
+
+      // Handle the Creation *after* it is renamed
+      fireCreatedEvent( renamedFile );
     }
   }
 
@@ -189,28 +248,6 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
     IFile oldFile = _manProject.getFileSystem().getIFile( new File( oldFileName ) );
     fireDeletedEvent( oldFile );
     fireCreatedEvent( newFile );
-  }
-
-  private void processPropertyChangeEvent( VFilePropertyChangeEvent event )
-  {
-    if( event.getFile().isDirectory() )
-    { // a source folder could have been renamed
-      ManProject.manProjectFrom( _project ).getModuleClasspathListener().rootsChanged( new ModuleRootEventImpl( _project, false ) );
-    }
-
-    if( event.getPropertyName().equals( VirtualFile.PROP_NAME ) )
-    { // collect file renames
-      final VirtualFile newFile = event.getFile();
-      if( newFile instanceof LightVirtualFile )
-      {
-        return;
-      }
-
-      final String oldFileName = (String)event.getOldValue();
-      final IFile oldFile = FileUtil.toIDirectory( _project, newFile.getParent() ).file( oldFileName );
-      fireDeletedEvent( oldFile );
-      fireCreatedEvent( FileUtil.toIResource( _project, newFile ) );
-    }
   }
 
   private void fireModifiedEvent( VirtualFile file )
