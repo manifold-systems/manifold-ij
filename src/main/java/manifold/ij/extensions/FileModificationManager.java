@@ -138,7 +138,10 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
       final VirtualFile file = event.getFile();
       if( file != null )
       {
-        processRenameBefore( event );
+        if( isMoveOrRename( event ) )
+        {
+          processRenameBefore( event );
+        }
       }
     }
   }
@@ -173,11 +176,7 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
       final VirtualFile file = event.getFile();
       if( file != null )
       {
-        if( event instanceof VFileMoveEvent )
-        {
-          processFileMoveEvent( (VFileMoveEvent)event );
-        }
-        else if( event instanceof VFileCreateEvent )
+        if( event instanceof VFileCreateEvent )
         {
           fireCreatedEvent( file );
         }
@@ -189,11 +188,11 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
         {
           processFileCopyEvent( (VFileCopyEvent)event );
         }
-        else if( event instanceof VFilePropertyChangeEvent )
+        else if( isMoveOrRename( event ) )
         {
           processRenameAfter( event );
         }
-        else
+        else // modified
         {
           ApplicationManager.getApplication().runReadAction( () -> fireModifiedEvent( file ) );
         }
@@ -201,52 +200,40 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
     }
   }
 
+  private boolean isMoveOrRename( VFileEvent event )
+  {
+    return event instanceof VFilePropertyChangeEvent && ((VFilePropertyChangeEvent)event).getPropertyName().equals( VirtualFile.PROP_NAME ) ||
+           event instanceof VFileMoveEvent;
+  }
+
   private void processRenameBefore( VFileEvent event )
   {
-    if( event instanceof VFilePropertyChangeEvent )
+    VirtualFile originalFile = event.getFile();
+    if( originalFile instanceof LightVirtualFile )
     {
-      if( ((VFilePropertyChangeEvent)event).getPropertyName().equals( VirtualFile.PROP_NAME ) )
-      { // collect file renames
-        VirtualFile originalFile = event.getFile();
-        if( originalFile instanceof LightVirtualFile )
-        {
-          return;
-        }
-
-        // Handle the Deletion *before* it is renamed
-        fireDeletedEvent( originalFile );
-      }
+      return;
     }
+
+    // Handle the Deletion *before* it is renamed
+    fireDeletedEvent( originalFile );
   }
 
   private void processRenameAfter( VFileEvent event )
   {
-    if( ((VFilePropertyChangeEvent)event).getPropertyName().equals( VirtualFile.PROP_NAME ) )
-    { // collect file renames
-      VirtualFile renamedFile = event.getFile();
-      if( renamedFile instanceof LightVirtualFile )
-      {
-        return;
-      }
-
-      // Handle the Creation *after* it is renamed
-      fireCreatedEvent( renamedFile );
+    VirtualFile renamedFile = event.getFile();
+    if( renamedFile instanceof LightVirtualFile )
+    {
+      return;
     }
+
+    // Handle the Creation *after* it is renamed
+    fireCreatedEvent( renamedFile );
   }
 
   private void processFileCopyEvent( VFileCopyEvent event )
   {
     String newFileName = event.getNewParent().getPath() + "/" + event.getNewChildName();
     IFile newFile = _manProject.getFileSystem().getIFile( new File( newFileName ) );
-    fireCreatedEvent( newFile );
-  }
-
-  private void processFileMoveEvent( VFileMoveEvent event )
-  {
-    VirtualFile newFile = event.getFile();
-    String oldFileName = event.getOldParent().getPath() + "/" + newFile.getName();
-    IFile oldFile = _manProject.getFileSystem().getIFile( new File( oldFileName ) );
-    fireDeletedEvent( oldFile );
     fireCreatedEvent( newFile );
   }
 
