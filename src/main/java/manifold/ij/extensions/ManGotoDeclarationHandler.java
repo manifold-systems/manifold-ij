@@ -20,6 +20,11 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
   @Override
   public PsiElement getGotoDeclarationTarget( PsiElement sourceElement, Editor editor )
   {
+    if( sourceElement == null )
+    {
+      return null;
+    }
+
     PsiElement parent = sourceElement.getParent();
     if( parent != null )
     {
