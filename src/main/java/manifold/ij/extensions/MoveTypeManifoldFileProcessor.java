@@ -18,7 +18,6 @@ import com.intellij.refactoring.util.MoveRenameUsageInfo;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.Query;
-import com.intellij.util.WaitFor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,8 +32,7 @@ public class MoveTypeManifoldFileProcessor extends MoveFileHandler
   @Override
   public boolean canProcessElement( PsiFile element )
   {
-    String fqn = getFqnForFile( element );
-    return fqn != null;
+    return getFqnsForFile( element ).length > 0;
   }
 
   @Override
@@ -49,8 +47,7 @@ public class MoveTypeManifoldFileProcessor extends MoveFileHandler
   {
     Module mod = ModuleUtilCore.findModuleForPsiElement( psiFile );
     ManModule module = ManProject.getModule( mod );
-    String fqn = getFqnForFile( psiFile );
-    PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ), module, fqn );
+    PsiClass psiClass = findPsiClass( psiFile );
     if( psiClass == null )
     {
       return Collections.emptyList();
@@ -82,11 +79,7 @@ public class MoveTypeManifoldFileProcessor extends MoveFileHandler
           return;
         }
 
-        Module mod = ModuleUtilCore.findModuleForPsiElement( newFile );
-        ManModule module = ManProject.getModule( mod );
-        String fqn = getFqnForFile( newFile );
-
-        PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ), module, fqn );
+        PsiClass psiClass = findPsiClass( newFile );
         if( psiClass == null )
         {
           return;
@@ -107,7 +100,20 @@ public class MoveTypeManifoldFileProcessor extends MoveFileHandler
     // nothing to do
   }
 
-  private String getFqnForFile( PsiFile element )
+  private String[] getFqnsForFile( PsiFile element )
+  {
+    Module mod = ModuleUtilCore.findModuleForPsiElement( element );
+    if( mod == null )
+    {
+      return new String[0];
+    }
+
+    ManModule module = ManProject.getModule( mod );
+    return module.getTypesForFile( FileUtil.toIFile( module.getProject(), element.getVirtualFile() ) );
+  }
+
+  @Nullable
+  private PsiClass findPsiClass( PsiFileSystemItem element )
   {
     Module mod = ModuleUtilCore.findModuleForPsiElement( element );
     if( mod == null )
@@ -116,11 +122,16 @@ public class MoveTypeManifoldFileProcessor extends MoveFileHandler
     }
 
     ManModule module = ManProject.getModule( mod );
-    String[] fqns = module.getTypesForFile( FileUtil.toIFile( module.getProject(), ((PsiFileSystemItem)element).getVirtualFile() ) );
-    if( fqns.length != 1 )
+    String[] fqns = module.getTypesForFile( FileUtil.toIFile( module.getProject(), element.getVirtualFile() ) );
+    PsiClass psiClass = null;
+    for( String fqn: fqns )
     {
-      return null;
+      psiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ), module, fqn );
+      if( psiClass != null )
+      {
+        break;
+      }
     }
-    return fqns[0];
+    return psiClass;
   }
 }

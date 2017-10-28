@@ -109,15 +109,8 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
     }
 
     ManModule module = ManProject.getModule( mod );
-    String[] fqns = module.getTypesForFile( FileUtil.toIFile( module.getProject(), ((PsiFileSystemItem)element).getVirtualFile() ) );
-    if( fqns.length != 1 )
-    {
-      //## todo: ?
-      return;
-    }
 
-    String fqn = fqns[0];
-    PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ), module, fqn );
+    PsiClass psiClass = findPsiClass( (PsiFileSystemItem)element, module );
     if( psiClass == null )
     {
       return;
@@ -132,6 +125,22 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
         ref.resolve() == null && !(ref instanceof PsiPolyVariantReference && ((PsiPolyVariantReference)ref).multiResolve( true ).length > 0) ) );
     }
     _usages = usages;
+  }
+
+  @Nullable
+  private PsiClass findPsiClass( @NotNull PsiFileSystemItem element, ManModule module )
+  {
+    String[] fqns = module.getTypesForFile( FileUtil.toIFile( module.getProject(), element.getVirtualFile() ) );
+    PsiClass psiClass = null;
+    for( String fqn: fqns )
+    {
+      psiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ), module, fqn );
+      if( psiClass != null )
+      {
+        break;
+      }
+    }
+    return psiClass;
   }
 
   @Nullable
@@ -153,24 +162,13 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
         }
 
         ManModule module = ManProject.getModule( ijModule );
-        String[] fqns = module.getTypesForFile( FileUtil.toIFile( module.getProject(), ((PsiFileSystemItem)element).getVirtualFile() ) );
-        if( fqns.length != 1 )
-        {
-          //## todo: ?
-          return;
-        }
-
-        String fqn = fqns[0];
-        PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ), module, fqn );
+        PsiClass psiClass = findPsiClass( (PsiFileSystemItem)element, module );
         if( psiClass == null )
         {
           return;
         }
 
-        String name = newName;
-        int iDot = name.indexOf( '.' );
-        name = iDot < 0 ? newName : newName.substring( 0, iDot );
-        RenameUtil.doRename( psiClass, name, _usages.toArray( new UsageInfo[_usages.size()] ), element.getProject(), elementListener );
+        RenameUtil.doRename( psiClass, psiClass.getName(), _usages.toArray( new UsageInfo[_usages.size()] ), element.getProject(), elementListener );
       } ) );
   }
 }
