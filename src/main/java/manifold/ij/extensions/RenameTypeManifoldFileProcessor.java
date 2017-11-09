@@ -12,6 +12,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileSystemItem;
 import com.intellij.psi.PsiPolyVariantReference;
 import com.intellij.psi.PsiReference;
+import com.intellij.psi.impl.light.AbstractLightClass;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.refactoring.listeners.RefactoringElementListener;
@@ -32,6 +33,14 @@ import manifold.ij.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This processor renames a Manifold *type* reference in source code.  It extends the psi File processor
+ * so it can substitute a referenced Manifold type with the type's corresponding resource file; the base class
+ * renames the file.  This class also collects all code references to the Manifold type so that it can later rename
+ * them in its getPostRenameCallback() override.  Additionally, this class creates its own rename dialog so
+ * it can select only the file base name in the text field; it excludes the file extension to make it clearer
+ * only the name should be changed.
+ */
 public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 {
   private List<UsageInfo> _usages = Collections.emptyList();
@@ -74,11 +83,12 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 
   private PsiElement maybeGetResourceFile( PsiElement element )
   {
-    if( element instanceof ManifoldPsiClass )
+    ManifoldPsiClass manifoldClass = getManifoldClass( element );
+    if( manifoldClass != null )
     {
       // Must refactor the corresponding resource file...
 
-      List<PsiFile> rawFiles = ((ManifoldPsiClass)element).getRawFiles();
+      List<PsiFile> rawFiles = manifoldClass.getRawFiles();
       if( rawFiles.size() == 1 )
       {
         //## todo; ?
@@ -86,6 +96,20 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
       }
     }
     return element;
+  }
+
+  private ManifoldPsiClass getManifoldClass( PsiElement element )
+  {
+    if( element instanceof ManifoldPsiClass )
+    {
+      ManifoldPsiClass manClass = (ManifoldPsiClass)element;
+      return manClass.getContainingClass() == null ? manClass : null;
+    }
+    if( element instanceof AbstractLightClass )
+    {
+      return getManifoldClass( ((AbstractLightClass)element).getDelegate() );
+    }
+    return null;
   }
 
   @NotNull
@@ -116,7 +140,7 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
       return;
     }
 
-    Query<PsiReference> search = ReferencesSearch.search( psiClass, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ) );
+    Query<PsiReference> search = ReferencesSearch.search( psiClass, GlobalSearchScope.allScope( mod.getProject() ) );
     List<UsageInfo> usages = new ArrayList<>();
     for( PsiReference ref: search.findAll() )
     {

@@ -22,10 +22,10 @@
   <idea-version since-build="This value is patched by the build script"/>
 
   <actions>
-      <group id="Manifold.New">
-          <action id="Manifold.NewExtensionClass" class="manifold.ij.actions.CreateExtensionMethodsClassAction"/>
-          <add-to-group group-id="NewGroup1" anchor="last"/>
-      </group>
+    <group id="Manifold.New">
+      <action id="Manifold.NewExtensionClass" class="manifold.ij.actions.CreateExtensionMethodsClassAction"/>
+      <add-to-group group-id="NewGroup1" anchor="last"/>
+    </group>
   </actions>
 
   <project-components>
@@ -35,15 +35,18 @@
   </project-components>
 
   <extensions defaultExtensionNs="com.intellij">
-    <java.elementFinder implementation="manifold.ij.extensions.ManTypeFinder" order="first" />
+    <java.elementFinder implementation="manifold.ij.extensions.ManTypeFinder" order="first"/>
     <java.shortNamesCache implementation="manifold.ij.extensions.ManShortNamesCache"/>
     <gotoDeclarationHandler implementation="manifold.ij.extensions.ManGotoDeclarationHandler"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManAugmentProvider"/>
+    <!--<annotator language="" implementationClass="manifold.ij.extensions.ManifoldPsiClassAnnotator"/>-->
     <methodReferencesSearch implementation="manifold.ij.extensions.ExtensionMethodUsageSearcher"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionClassAnnotator"/>
     <daemon.highlightInfoFilter implementation="manifold.ij.extensions.ManHighlightInfoFilter"/>
     <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameTypeManifoldFileProcessor" order="first"/>
     <moveFileHandler implementation="manifold.ij.extensions.MoveTypeManifoldFileProcessor" order="first"/>
+    <findUsagesHandlerFactory implementation="manifold.ij.extensions.ManifoldFindUsagesHandlerFactory" order="first"/>
+    <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameResourceElementProcessor" order="first"/>
   </extensions>
 
 </idea-plugin>

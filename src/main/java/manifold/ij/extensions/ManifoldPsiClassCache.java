@@ -20,7 +20,9 @@ import com.intellij.util.containers.ContainerUtil;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.tools.DiagnosticCollector;
 import manifold.api.fs.IFile;
 import manifold.api.host.AbstractTypeSystemListener;
 import manifold.api.host.RefreshRequest;
@@ -30,6 +32,7 @@ import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.util.cache.FqnCache;
 import manifold.util.cache.FqnCacheNode;
+import org.jetbrains.annotations.Nullable;
 
 
 import static manifold.api.type.ITypeManifold.ProducerKind.*;
@@ -136,6 +139,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     if( !sps.isEmpty() )
     {
       String result = "";
+      DiagnosticCollector issues = new DiagnosticCollector();
       for( ITypeManifold sp : sps )
       {
         if( sp.getProducerKind() == Primary ||
@@ -148,15 +152,16 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
                                                      found.getClass().getName() + "' and '" + sp.getClass().getName() + "'" );
           }
           found = sp;
-          result = sp.produce( fqn, result, null );
+          result = sp.produce( fqn, result, issues );
         }
       }
 
       if( found != null )
       {
         PsiClass delegate = createPsiClass( module, fqn, result );
+        delegate = maybeGetInnerClass( fqn, delegate );
         List<IFile> files = found.findFilesForType( fqn );
-        ManifoldPsiClass psiFacadeClass = new ManifoldPsiClass( delegate, files, fqn );
+        ManifoldPsiClass psiFacadeClass = new ManifoldPsiClass( delegate, files, fqn, issues );
         map.add( fqn, psiFacadeClass );
         for( IFile file : files )
         {
@@ -171,6 +176,22 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       map.add( fqn );
     }
     return map.getNode( fqn );
+  }
+
+  @Nullable
+  private PsiClass maybeGetInnerClass( String fqn, PsiClass delegate )
+  {
+    String delegateFqn = delegate.getQualifiedName();
+    if( delegateFqn.length() < fqn.length() )
+    {
+      String rest = fqn.substring( delegateFqn.length() + 1 );
+      for( StringTokenizer tokenizer = new StringTokenizer( rest, "." ); tokenizer.hasMoreTokens(); )
+      {
+        String innerName = tokenizer.nextToken();
+        delegate = delegate.findInnerClassByName( innerName, false );
+      }
+    }
+    return delegate;
   }
 
   private PsiClass addExtensions( GlobalSearchScope scope, ManModule module, String fqn, PsiClass psiClass )

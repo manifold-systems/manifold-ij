@@ -11,6 +11,7 @@ import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiReference;
 import java.util.List;
 import manifold.api.type.SourcePosition;
+import org.jetbrains.annotations.Nullable;
 
 
 /**
@@ -34,19 +35,10 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
         PsiElement resolve = ref.resolve();
         if( resolve != null )
         {
-          PsiFile file = resolve.getContainingFile();
-          if( file != null )
+          PsiElement target = find( resolve );
+          if( target != null )
           {
-            ManifoldPsiClass facade = file.getUserData( ManifoldPsiClass.KEY_MANIFOLD_PSI_CLASS );
-            if( facade != null )
-            {
-              PsiAnnotation[] annotations = ((PsiModifierListOwner)resolve).getModifierList().getAnnotations();
-              if( annotations != null && annotations.length > 0 &&
-                  annotations[0].getQualifiedName().equals( SourcePosition.class.getName() ) )
-              {
-                return findTargetFeature( annotations[0], facade );
-              }
-            }
+            return target;
           }
         }
       }
@@ -54,7 +46,33 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     return null;
   }
 
-  private PsiElement findTargetFeature( PsiAnnotation psiAnnotation, ManifoldPsiClass facade )
+  public static PsiElement find( PsiElement resolve )
+  {
+    PsiFile file = resolve.getContainingFile();
+    if( file != null )
+    {
+      ManifoldPsiClass facade = file.getUserData( ManifoldPsiClass.KEY_MANIFOLD_PSI_CLASS );
+      if( facade != null )
+      {
+        PsiElement annotations = find( (PsiModifierListOwner)resolve, facade );
+        if( annotations != null ) return annotations;
+      }
+    }
+    return null;
+  }
+
+  public static PsiElement find( PsiModifierListOwner resolve, ManifoldPsiClass facade )
+  {
+    PsiAnnotation[] annotations = resolve.getModifierList().getAnnotations();
+    if( annotations != null && annotations.length > 0 &&
+        annotations[0].getQualifiedName().equals( SourcePosition.class.getName() ) )
+    {
+      return findTargetFeature( annotations[0], facade );
+    }
+    return null;
+  }
+
+  private static PsiElement findTargetFeature( PsiAnnotation psiAnnotation, ManifoldPsiClass facade )
   {
     PsiAnnotationMemberValue value = psiAnnotation.findAttributeValue( SourcePosition.FEATURE );
     String featureName = StringUtil.unquoteString( value.getText() );

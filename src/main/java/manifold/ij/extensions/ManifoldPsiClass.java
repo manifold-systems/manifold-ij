@@ -24,6 +24,7 @@ import com.intellij.psi.util.ClassUtil;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.Icon;
+import javax.tools.DiagnosticCollector;
 import manifold.api.fs.IFile;
 import manifold.ij.fs.IjFile;
 
@@ -34,18 +35,20 @@ public class ManifoldPsiClass extends LightClass
   private List<PsiFile> _files;
   private List<IFile> _ifiles;
   private String _fqn;
+  private DiagnosticCollector _issues;
 
-  public ManifoldPsiClass( PsiClass delegate, List<IFile> files, String fqn )
+  public ManifoldPsiClass( PsiClass delegate, List<IFile> files, String fqn, DiagnosticCollector issues )
   {
     super( delegate );
 
-    initialize( delegate, files, fqn );
+    initialize( delegate, files, fqn, issues );
   }
 
-  public void initialize( PsiClass delegate, List<IFile> files, String fqn )
+  public void initialize( PsiClass delegate, List<IFile> files, String fqn, DiagnosticCollector issues )
   {
     _ifiles = files;
     _fqn = fqn;
+    _issues = issues;
     PsiManager manager = PsiManagerImpl.getInstance( delegate.getProject() );
     _files = new ArrayList<>( _ifiles.size() );
     for( IFile ifile : _ifiles )
@@ -169,12 +172,17 @@ public class ManifoldPsiClass extends LightClass
   @Override
   public PsiElement copy()
   {
-    return new ManifoldPsiClass( (PsiClass)getDelegate().copy(), _ifiles, _fqn );
+    return new ManifoldPsiClass( (PsiClass)getDelegate().copy(), _ifiles, _fqn, _issues );
   }
 
   public Module getModule()
   {
     return ProjectRootManager.getInstance( getProject() ).getFileIndex()
       .getModuleForFile( getRawFiles().get( 0 ).getVirtualFile() );
+  }
+
+  public DiagnosticCollector getIssues()
+  {
+    return _issues;
   }
 }
