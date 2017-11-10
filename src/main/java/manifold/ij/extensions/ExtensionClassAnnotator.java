@@ -13,6 +13,7 @@ import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.PsiKeyword;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiPackageStatement;
@@ -23,7 +24,7 @@ import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.impl.source.PsiJavaCodeReferenceElementImpl;
 import com.intellij.psi.impl.source.PsiJavaFileImpl;
 import com.intellij.psi.impl.source.PsiMethodImpl;
-import com.intellij.psi.impl.source.tree.java.ImplementsListElement;
+import com.intellij.psi.impl.source.tree.java.ReferenceListElement;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.ClassUtil;
 import java.lang.reflect.Modifier;
@@ -157,7 +158,8 @@ public class ExtensionClassAnnotator implements Annotator
   private void verifyExtensionInterfaces( PsiElement element, AnnotationHolder holder )
   {
     if( element instanceof PsiJavaCodeReferenceElementImpl &&
-        ((PsiJavaCodeReferenceElementImpl)element).getTreeParent() instanceof ImplementsListElement )
+        ((PsiJavaCodeReferenceElementImpl)element).getTreeParent() instanceof ReferenceListElement &&
+        ((PsiJavaCodeReferenceElementImpl)element).getTreeParent().getText().startsWith( PsiKeyword.IMPLEMENTS ) )
     {
       final PsiElement resolve = element.getReference().resolve();
       if( resolve instanceof PsiExtensibleClass )
