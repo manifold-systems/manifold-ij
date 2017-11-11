@@ -8,8 +8,9 @@ The plugin currently supports most high-level IntelliJ features including:
 * Feature highlighting
 * Error reporting
 * Code completion
-* Go to declaration
+* Navigation
 * Usage searching
+* Refactoring
 * Structural typing
 * Debugging
 
