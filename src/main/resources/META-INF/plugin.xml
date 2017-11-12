@@ -35,6 +35,7 @@
   </project-components>
 
   <extensions defaultExtensionNs="com.intellij">
+    <frameworkSupport implementation="manifold.ij.extensions.ManSupportProvider"/>
     <java.elementFinder implementation="manifold.ij.extensions.ManTypeFinder" order="first, before java"/>
     <java.shortNamesCache implementation="manifold.ij.extensions.ManShortNamesCache"/>
     <gotoDeclarationHandler implementation="manifold.ij.extensions.ManGotoDeclarationHandler"/>
