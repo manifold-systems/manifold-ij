@@ -97,7 +97,10 @@ public class ManProject
         return mm;
       }
     }
-    return null;
+
+    // The module may not yet be committed to the project
+    // e.g., a new module added in Module Structure dialog, but not yet saved.
+    return manProject.defineModule( module );
   }
 
   public static Module getIjModule( PsiElement element )

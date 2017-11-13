@@ -23,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Facilitates adding manifold-all and tools.jar when creating a new project.
+ * Similarly, ManFrameworkType supports the same thing at the module level.
  */
 public class ManSupportProvider extends FrameworkSupportProviderBase
 {
@@ -44,7 +46,7 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
     addToolsJar( rootModel );
   }
 
-  private void addToolsJar( @NotNull ModifiableRootModel rootModel )
+  static void addToolsJar( @NotNull ModifiableRootModel rootModel )
   {
     if( hasToolsJar( rootModel ) )
     {
@@ -63,7 +65,7 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
     sdkModificator.commitChanges();
   }
 
-  private boolean hasToolsJar( ModifiableRootModel rootModel )
+  private static boolean hasToolsJar( ModifiableRootModel rootModel )
   {
     for( VirtualFile file : rootModel.getSdk().getRootProvider().getFiles( OrderRootType.CLASSES ) )
     {
@@ -75,7 +77,7 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
     return false;
   }
 
-  private VirtualFile findToolsJarFile( ModifiableRootModel rootModel )
+  private static VirtualFile findToolsJarFile( ModifiableRootModel rootModel )
   {
     File file = new File( System.getProperty( "java.home" ) );
     if( file.getName().equalsIgnoreCase( "jre" ) )
