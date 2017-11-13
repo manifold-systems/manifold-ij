@@ -9,6 +9,7 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.SdkModificator;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.OrderRootType;
@@ -53,7 +54,7 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
       return;
     }
 
-    VirtualFile toolsJarFile = findToolsJarFile( rootModel );
+    VirtualFile toolsJarFile = findToolsJarFile( rootModel.getProject() );
     if( toolsJarFile == null )
     {
       Notifications.Bus.notify( new Notification( "Project JDK", "tools.jar not found!", "Please add tools.jar to your JDK", NotificationType.ERROR ) );
@@ -77,7 +78,7 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
     return false;
   }
 
-  private static VirtualFile findToolsJarFile( ModifiableRootModel rootModel )
+  static VirtualFile findToolsJarFile( Project project )
   {
     File file = new File( System.getProperty( "java.home" ) );
     if( file.getName().equalsIgnoreCase( "jre" ) )
@@ -95,7 +96,7 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
       return null;
     }
 
-    IjFile ijFile = (IjFile)ManProject.manProjectFrom( rootModel.getProject() ).getFileSystem().getIFile( file );
+    IjFile ijFile = (IjFile)ManProject.manProjectFrom( project ).getFileSystem().getIFile( file );
     return ijFile.getVirtualFile();
   }
 
