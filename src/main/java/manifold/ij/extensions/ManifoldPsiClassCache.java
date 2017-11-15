@@ -188,7 +188,12 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       for( StringTokenizer tokenizer = new StringTokenizer( rest, "." ); tokenizer.hasMoreTokens(); )
       {
         String innerName = tokenizer.nextToken();
-        delegate = delegate.findInnerClassByName( innerName, false );
+        PsiClass innerClass = delegate.findInnerClassByName( innerName, false );
+        if( innerClass == null )
+        {
+          break;
+        }
+        delegate = innerClass;
       }
     }
     return delegate;
@@ -313,7 +318,10 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       if( removedFacade != null )
       {
         ((PsiModificationTrackerImpl)removedFacade.getManager().getModificationTracker()).incCounter();
-        map.remove( removedFacade.getQualifiedName() );
+        if( map != null )
+        {
+          map.remove( removedFacade.getQualifiedName() );
+        }
       }
     }
   }
