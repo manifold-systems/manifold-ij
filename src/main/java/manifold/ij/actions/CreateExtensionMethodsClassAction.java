@@ -150,7 +150,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
       "\n" +
       "@Extension\n" +
       "public class " + className + " {\n" +
-      "  public static " + processTypeVars( dir, fqnExtended, StubBuilder::makeTypeVar ) + " void helloWorld(@This " + ClassUtil.extractClassName( fqnExtended ) + processTypeVars( dir, fqnExtended, PsiNamedElement::getName ) + " thiz) {\n" +
+      "  public static " + processTypeVars( dir, fqnExtended, StubBuilder::makeTypeVar ) + "void helloWorld(@This " + ClassUtil.extractClassName( fqnExtended ) + processTypeVars( dir, fqnExtended, PsiNamedElement::getName ) + " thiz) {\n" +
       "    System.out.println(\"hello world!\");\n" +
       "  }\n" +
       "}";
@@ -209,7 +209,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
         }
         sb.append( processor.fun( tp ) );
       }
-      sb.append( ">" );
+      sb.append( "> " );
       return sb.toString();
     }
     finally
