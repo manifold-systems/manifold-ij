@@ -82,7 +82,7 @@ public class ManifoldPsiClassAnnotator implements Annotator
     }
   }
 
-  protected static PsiClass getContainingClass( PsiElement element )
+  public static PsiClass getContainingClass( PsiElement element )
   {
     final PsiClass psiClass = PsiTreeUtil.getParentOfType( element, PsiClass.class, false );
     if( psiClass == null )

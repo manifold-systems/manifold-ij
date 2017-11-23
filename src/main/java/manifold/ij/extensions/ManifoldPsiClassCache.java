@@ -308,6 +308,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
       for( String type : request.types )
       {
+        //removeDependentTypes( type, map, module );
         map.remove( type );
       }
     }
@@ -325,6 +326,30 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       }
     }
   }
+
+//  private void removeDependentTypes( String type, FqnCache<PsiClass> map, ManModule module )
+//  {
+//    GlobalSearchScope scope = GlobalSearchScope.moduleScope( module.getIjModule() );
+//    PsiClass psiClass = JavaPsiFacade.getInstance( module.getProject().getNativeProject() ).findClass( type, scope );
+//    if( psiClass == null )
+//    {
+//      return;
+//    }
+//
+//    Query<PsiReference> search = ReferencesSearch.search( psiClass, scope );
+//    for( PsiReference ref : search.findAll() )
+//    {
+//      PsiElement element = ref.getElement();
+//      if( element != null )
+//      {
+//        PsiClass referringClass = ManifoldPsiClassAnnotator.getContainingClass( element );
+//        if( referringClass != null )
+//        {
+//          map.remove( referringClass.getQualifiedName() );
+//        }
+//      }
+//    }
+//  }
 
   @Override
   public void refreshed()

@@ -7,6 +7,7 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiFileSystemItem;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiNameValuePair;
@@ -29,10 +30,51 @@ import org.jetbrains.annotations.NotNull;
 public class ResourceToManifoldUtil
 {
   /**
+   * Find the Manifold PisClass corresponding with a resource file.
+   * @param fileElem a psiFile, normally this should be a resource file
+   * @return The corresponding Manifold PsiClass or null
+   */
+  public static PsiClass findPsiClass( PsiFileSystemItem fileElem )
+  {
+    Project project = fileElem.getProject();
+    ManProject manProject = ManProject.manProjectFrom( project );
+    VirtualFile virtualFile = fileElem.getVirtualFile();
+    if( virtualFile == null )
+    {
+      return null;
+    }
+    for( ManModule module : manProject.getModules() )
+    {
+      IjFile file = FileUtil.toIFile( manProject, virtualFile );
+      Set<ITypeManifold> set = module.findTypeManifoldsFor( file );
+      if( set != null )
+      {
+        for( ITypeManifold tf : set )
+        {
+          if( tf.getProducerKind() == ITypeManifold.ProducerKind.Primary )
+          {
+            String[] fqns = tf.getTypesForFile( file );
+            for( String fqn : fqns )
+            {
+              PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ), module, fqn );
+              if( psiClass != null )
+              {
+                return psiClass;
+              }
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
    * Given a PsiElement in a resource file, find the corresponding declared member[s] in the Manifold generated PsiClass for the resource file.
    * Note this functionality depends on the generated PsiClass annotating its members with @SourcePosition.
    *
-   * @param element An element inside a resource file that corresponds with a declared field, method, or inner class inside a Manifold PsiClass.
+   * @param element An element inside a resource file (or the psiFile itself) that corresponds with a declared field, method, or inner class
+   *                inside a Manifold PsiClass or the PsiClass itself.
    * @return The declared Java PsiElement[s] inside the Manifold PsiClass corresponding with the resource file element.  Note there can be more
    *   than one PsiElement i.e., when the resource element is a "property" and has corresponding "getter" and "setter" methods in the PsiClass.
    */
@@ -45,6 +87,15 @@ public class ResourceToManifoldUtil
         return Collections.singletonList( element );
       }
       return Collections.emptyList();
+    }
+
+    if( element instanceof PsiFile )
+    {
+      PsiClass psiClass = findPsiClass( (PsiFile)element );
+      if( psiClass != null )
+      {
+        return Collections.singletonList( psiClass );
+      }
     }
 
     List<PsiElement> result = new ArrayList<>();

@@ -283,7 +283,7 @@ public class ManModule extends SimpleModule
     }
     for( ITypeManifold sp : getTypeManifolds() )
     {
-      Arrays.stream( sp.getTypesForFile( file ) ).forEach( result::add );
+      result.addAll( Arrays.asList( sp.getTypesForFile( file ) ) );
     }
     return result.toArray( new String[result.size()] );
   }
