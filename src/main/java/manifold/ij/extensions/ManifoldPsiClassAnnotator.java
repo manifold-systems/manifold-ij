@@ -8,10 +8,13 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassOwner;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiFileSystemItem;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import manifold.ij.core.ManModule;
@@ -31,12 +34,19 @@ public class ManifoldPsiClassAnnotator implements Annotator
     }
 
     List<PsiElement> javaElems = ResourceToManifoldUtil.findJavaElementsFor( element );
+    Set<Diagnostic> handled = new HashSet<>();
     for( PsiElement javaElem: javaElems )
     {
       PsiClass psiClass = getContainingClass( javaElem );
       if( psiClass == null )
       {
         continue;
+      }
+
+      if( PsiErrorClassUtil.isErrorClass( psiClass ) && element instanceof PsiFileSystemItem )
+      {
+        holder.createErrorAnnotation( new TextRange( 0, element.getContainingFile().getTextLength() ), PsiErrorClassUtil.getErrorFrom( psiClass ).getMessage() );
+        return;
       }
 
       ManModule manModule = ManProject.getModule( element );
@@ -52,30 +62,38 @@ public class ManifoldPsiClassAnnotator implements Annotator
         continue;
       }
 
-      for( Object issue : issues.getDiagnostics() )
+      for( Object obj : issues.getDiagnostics() )
       {
-        Diagnostic d = (Diagnostic)issue;
-
-        if( element.getTextOffset() > d.getStartPosition() ||
-            element.getTextOffset() + element.getTextLength() <= d.getStartPosition() )
+        Diagnostic issue = (Diagnostic)obj;
+        if( handled.contains( issue ) )
         {
           continue;
         }
 
-        TextRange range = new TextRange( element.getTextRange().getStartOffset(),
-                                         element.getTextRange().getEndOffset() );
-        switch( d.getKind() )
+        handled.add( issue );
+        
+        if( element.getTextOffset() > issue.getStartPosition() ||
+            element.getTextOffset() + element.getTextLength() <= issue.getStartPosition() )
+        {
+          continue;
+        }
+
+        PsiElement deepestElement = element.getContainingFile().findElementAt( (int)issue.getStartPosition() );
+
+        TextRange range = new TextRange( deepestElement.getTextRange().getStartOffset(),
+                                         deepestElement.getTextRange().getEndOffset() );
+        switch( issue.getKind() )
         {
           case ERROR:
-            holder.createErrorAnnotation( range, d.getMessage( Locale.getDefault() ) );
+            holder.createErrorAnnotation( range, issue.getMessage( Locale.getDefault() ) );
             break;
           case WARNING:
           case MANDATORY_WARNING:
-            holder.createWarningAnnotation( range, d.getMessage( Locale.getDefault() ) );
+            holder.createWarningAnnotation( range, issue.getMessage( Locale.getDefault() ) );
             break;
           case NOTE:
           case OTHER:
-            holder.createInfoAnnotation( range, d.getMessage( Locale.getDefault() ) );
+            holder.createInfoAnnotation( range, issue.getMessage( Locale.getDefault() ) );
             break;
         }
       }

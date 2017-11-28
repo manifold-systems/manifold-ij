@@ -1,6 +1,7 @@
 package manifold.ij.extensions;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 import manifold.api.type.ITypeManifold;
 import manifold.api.type.SourcePosition;
+import manifold.api.type.TypeReference;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
@@ -29,6 +31,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ResourceToManifoldUtil
 {
+  public static final Key<FeaturePath> KEY_FEATURE_PATH = new Key<>( "FeaturePath" );
+
   /**
    * Find the Manifold PisClass corresponding with a resource file.
    * @param fileElem a psiFile, normally this should be a resource file
@@ -124,7 +128,14 @@ public class ResourceToManifoldUtil
               PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ), module, fqn );
               if( psiClass != null )
               {
-                result.addAll( findJavaElementsFor( psiClass, element ) );
+                if( PsiErrorClassUtil.isErrorClass( psiClass ) )
+                {
+                  result.add( psiClass );
+                }
+                else
+                {
+                  result.addAll( findJavaElementsFor( psiClass, element ) );
+                }
               }
             }
           }
@@ -136,31 +147,44 @@ public class ResourceToManifoldUtil
 
   private static List<PsiElement> findJavaElementsFor( PsiClass psiClass, PsiElement element )
   {
+    return findJavaElementsFor( psiClass, element, new FeaturePath( psiClass ) );
+  }
+  private static List<PsiElement> findJavaElementsFor( PsiClass psiClass, PsiElement element, FeaturePath parent )
+  {
     List<PsiElement> result = new ArrayList<>();
     PsiMethod[] methods = psiClass.getMethods();
-    for( PsiMethod method : methods )
+    for( int i = 0; i < methods.length; i++ )
     {
-      if( isJavaElementFor( method, element ) )
+      PsiMethod method = methods[i];
+      if( isJavaElementFor( method, element ) ||
+          element instanceof PsiClass && isJavaElementForType( method, (PsiClass)element ))
       {
         result.add( method );
+        method.putUserData( KEY_FEATURE_PATH, FeaturePath.make( parent, FeaturePath.FeatureType.Method, i, methods.length ) );
       }
     }
     PsiField[] fields = psiClass.getFields();
-    for( PsiField field : fields )
+    for( int i = 0; i < fields.length; i++ )
     {
-      if( isJavaElementFor( field, element ) )
+      PsiField field = fields[i];
+      if( isJavaElementFor( field, element ) ||
+          element instanceof PsiClass && isJavaElementForType( field, (PsiClass)element ) )
       {
         result.add( field );
+        field.putUserData( KEY_FEATURE_PATH, FeaturePath.make( parent, FeaturePath.FeatureType.Field, i, fields.length ) );
       }
     }
     PsiClass[] inners = psiClass.getInnerClasses();
-    for( PsiClass inner : inners )
+    for( int i = 0; i < inners.length; i++ )
     {
-      if( isJavaElementFor( inner, element ) )
+      PsiClass inner = inners[i];
+      if( isJavaElementFor( inner, element ) ||
+          element instanceof PsiClass && isJavaElementForType( inner, (PsiClass)element ) )
       {
         result.add( inner );
+        inner.putUserData( KEY_FEATURE_PATH, FeaturePath.make( parent, FeaturePath.FeatureType.Class, i, inners.length ) );
       }
-      result.addAll( findJavaElementsFor( inner, element ) );
+      result.addAll( findJavaElementsFor( inner, element, new FeaturePath( parent, FeaturePath.FeatureType.Class, i, inners.length ) ) );
     }
     return result;
   }
@@ -178,7 +202,12 @@ public class ResourceToManifoldUtil
       {
         if( pair.getNameIdentifier().getText().equals( SourcePosition.OFFSET ) )
         {
-          offset = Integer.parseInt( pair.getLiteralValue() );
+          String literalValue = pair.getLiteralValue();
+          if( literalValue == null )
+          {
+            return false;
+          }
+          offset = Integer.parseInt( literalValue );
           break;
         }
       }
@@ -189,4 +218,22 @@ public class ResourceToManifoldUtil
     }
     return false;
   }
+  private static boolean isJavaElementForType( PsiModifierListOwner modifierListOwner, PsiClass psiClass )
+  {
+    PsiAnnotation annotation = modifierListOwner.getModifierList().findAnnotation( TypeReference.class.getName() );
+    if( annotation != null )
+    {
+      PsiNameValuePair[] attributes = annotation.getParameterList().getAttributes();
+      for( PsiNameValuePair pair : attributes )
+      {
+        String fqn = pair.getLiteralValue();
+        if( psiClass.getQualifiedName().contains( fqn ) )
+        {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
 }

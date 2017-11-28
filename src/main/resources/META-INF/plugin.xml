@@ -28,6 +28,12 @@
     </group>
   </actions>
 
+  <application-components>
+    <component>
+      <implementation-class>manifold.ij.core.ManApplicationComponent</implementation-class>
+    </component>
+  </application-components>
+
   <project-components>
     <component>
       <implementation-class>manifold.ij.core.ManProjectComponent</implementation-class>
@@ -47,7 +53,6 @@
     <java.shortNamesCache implementation="manifold.ij.extensions.ManShortNamesCache"/>
     <gotoDeclarationHandler implementation="manifold.ij.extensions.ManGotoDeclarationHandler"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManAugmentProvider"/>
-    <!--<annotator language="" implementationClass="manifold.ij.extensions.ManifoldPsiClassAnnotator"/>-->
     <methodReferencesSearch implementation="manifold.ij.extensions.ExtensionMethodUsageSearcher"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionClassAnnotator"/>
     <daemon.highlightInfoFilter implementation="manifold.ij.extensions.ManHighlightInfoFilter"/>

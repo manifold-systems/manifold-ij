@@ -86,7 +86,14 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
       if( node == null )
       {
-        node = createPrimaryType( module, fqn, map );
+        try
+        {
+          node = createPrimaryType( module, fqn, map );
+        }
+        catch( ConflictingTypeManifoldsException e )
+        {
+          return PsiErrorClassUtil.create( module.getIjProject(), e );
+        }
       }
 
 
@@ -142,15 +149,13 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       DiagnosticCollector issues = new DiagnosticCollector();
       for( ITypeManifold sp : sps )
       {
+        if( found != null && (found.getProducerKind() == Primary || sp.getProducerKind() == Primary) )
+        {
+          throw new ConflictingTypeManifoldsException( fqn, found, sp );
+        }
         if( sp.getProducerKind() == Primary ||
             sp.getProducerKind() == Partial )
         {
-          if( found != null && (found.getProducerKind() == Primary || sp.getProducerKind() == Primary) )
-          {
-            //## todo: how better to handle this?
-            throw new UnsupportedOperationException( "The type, " + fqn + ", has conflicting source producers: '" +
-                                                     found.getClass().getName() + "' and '" + sp.getClass().getName() + "'" );
-          }
           found = sp;
           result = sp.produce( fqn, result, issues );
         }

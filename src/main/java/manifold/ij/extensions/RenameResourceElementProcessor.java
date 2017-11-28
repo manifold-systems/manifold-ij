@@ -5,16 +5,14 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.module.ModuleUtilCore;
-import com.intellij.psi.CommonClassNames;
+import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiNamedElement;
-import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiPolyVariantReference;
 import com.intellij.psi.PsiReference;
-import com.intellij.psi.PsiType;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.refactoring.listeners.RefactoringElementListener;
@@ -24,7 +22,6 @@ import com.intellij.refactoring.util.MoveRenameUsageInfo;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.Query;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,11 +32,14 @@ import manifold.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+
+import static manifold.ij.extensions.ResourceToManifoldUtil.KEY_FEATURE_PATH;
+
 /**
  */
 public class RenameResourceElementProcessor extends RenamePsiElementProcessor
 {
-  Map<Pair<String, PsiElement>, List<UsageInfo>> _javaUsages;
+  Map<Pair<FeaturePath, PsiElement>, List<UsageInfo>> _javaUsages;
 
   @Override
   public boolean canProcessElement( @NotNull PsiElement elem )
@@ -74,7 +74,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
   @Override
   public PsiElement substituteElementToRename( PsiElement elem, @Nullable Editor editor )
   {
-    PsiElement[] element = new PsiElement[] {elem};
+    PsiElement[] element = new PsiElement[]{elem};
     findJavaElements( element );
     return element[0];
   }
@@ -155,75 +155,30 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
     _javaUsages = findJavaUsages( element[0], javaElems );
   }
 
-  static Map<Pair<String, PsiElement>, List<UsageInfo>> findJavaUsages( PsiElement element, List<PsiElement> javaElems )
+  static Map<Pair<FeaturePath, PsiElement>, List<UsageInfo>> findJavaUsages( PsiElement element, List<PsiElement> javaElems )
   {
     if( !(element instanceof PsiNamedElement) || javaElems.isEmpty() )
     {
       return Collections.emptyMap();
     }
 
-    PsiMethod isser = null;
-    PsiMethod getter = null;
-    PsiMethod setter = null;
-    PsiElement other = null;
-
+    Map<Pair<FeaturePath, PsiElement>, List<UsageInfo>> allUsages = new HashMap<>();
     for( PsiElement javaElem : javaElems )
     {
-      if( javaElem instanceof PsiMethod )
+      if( javaElem == null )
       {
-        String propName = getPropertyNameFromGetter( (PsiMethod)javaElem );
-        if( propName != null )
-        {
-          if( ((PsiMethod)javaElem).getName().startsWith( "is" ) )
-          {
-            isser = (PsiMethod)javaElem;
-          }
-          else
-          {
-            getter = (PsiMethod)javaElem;
-          }
-        }
-        else
-        {
-          propName = getPropertyNameFromSetter( (PsiMethod)javaElem );
-          if( propName != null )
-          {
-            setter = (PsiMethod)javaElem;
-          }
-          else
-          {
-            other = javaElem;
-          }
-        }
+        continue;
       }
-      else
+
+      List<UsageInfo> usages = findUsages( javaElem, element );
+      if( !usages.isEmpty() )
       {
-        other = javaElem;
+        FeaturePath path = javaElem.getUserData( KEY_FEATURE_PATH );
+        allUsages.put( new Pair<>( path, javaElem ), usages );
       }
     }
-
-    Map<Pair<String, PsiElement>, List<UsageInfo>> allUsages = new HashMap<>();
-
-    addUsages( "is", isser, allUsages, element );
-    addUsages( "get", getter, allUsages, element );
-    addUsages( "set", setter, allUsages, element );
-    addUsages( "", other, allUsages, element );
 
     return allUsages;
-  }
-
-  private static void addUsages( String prefix, PsiElement elem, Map<Pair<String, PsiElement>, List<UsageInfo>> allUsages, PsiElement element )
-  {
-    if( elem == null )
-    {
-      return;
-    }
-
-    List<UsageInfo> usages = findUsages( elem, element );
-    if( !usages.isEmpty() )
-    {
-      allUsages.put( new Pair<>( prefix, elem ), usages );
-    }
   }
 
   private static List<UsageInfo> findUsages( PsiElement element, PsiElement ctx )
@@ -246,77 +201,6 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
     return usages;
   }
 
-  private static String getPropertyNameFromGetter( PsiMethod method )
-  {
-    PsiParameter[] params = method.getParameterList().getParameters();
-    if( params.length != 0 )
-    {
-      return null;
-    }
-    String name = method.getName();
-    String propertyName = null;
-    for( String prefix : Arrays.asList( "get", "is" ) )
-    {
-      if( name.length() > prefix.length() &&
-          name.startsWith( prefix ) )
-      {
-        if( prefix.equals( "is" ) &&
-            (!method.getReturnType().equals( PsiType.BOOLEAN ) &&
-             !method.getReturnType().equals( PsiType.getTypeByName( CommonClassNames.JAVA_LANG_BOOLEAN, method.getProject(), GlobalSearchScope.allScope( method.getProject() ) ) )) )
-        {
-          break;
-        }
-
-        propertyName = name.substring( prefix.length() );
-        char firstChar = propertyName.charAt( 0 );
-        if( firstChar == '_' && propertyName.length() > 1 )
-        {
-          propertyName = propertyName.substring( 1 );
-        }
-        else if( Character.isAlphabetic( firstChar ) &&
-                 !Character.isUpperCase( firstChar ) )
-        {
-          propertyName = null;
-          break;
-        }
-      }
-    }
-    return propertyName;
-  }
-
-  private static String getPropertyNameFromSetter( PsiMethod method )
-  {
-    if( !method.getReturnType().equals( PsiType.VOID ) )
-    {
-      return null;
-    }
-
-    PsiParameter[] params = method.getParameterList().getParameters();
-    if( params.length != 1 )
-    {
-      return null;
-    }
-
-    String name = method.getName();
-    String propertyName = null;
-    if( name.length() > "set".length() &&
-        name.startsWith( "set" ) )
-    {
-      propertyName = name.substring( "set".length() );
-      char firstChar = propertyName.charAt( 0 );
-      if( firstChar == '_' && propertyName.length() > 1 )
-      {
-        propertyName = propertyName.substring( 1 );
-      }
-      else if( Character.isAlphabetic( firstChar ) &&
-               !Character.isUpperCase( firstChar ) )
-      {
-        propertyName = null;
-      }
-    }
-    return propertyName;
-  }
-
   @Nullable
   @Override
   public Runnable getPostRenameCallback( PsiElement element, String newName, RefactoringElementListener elementListener )
@@ -332,13 +216,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
     }
 
     String name = ((PsiNamedElement)element).getName();
-    int iDot = name.lastIndexOf( '.' );
-    if( iDot >= 0 )
-    {
-      // this is to handle properties files, only rename the last part... this needs to improve
-      name = name.substring( iDot+1 );
-    }
-    String newName = JsonUtil.makeIdentifier( name );
+    String newBaseName = JsonUtil.makeIdentifier( name );
 
     //## find a way to add this as part of the overall rename Undo?
 
@@ -347,18 +225,83 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
     ApplicationManager.getApplication().invokeLater( () ->
                                                        WriteCommandAction.runWriteCommandAction( element.getProject(), () ->
                                                        {
-                                                         for( Map.Entry<Pair<String, PsiElement>, List<UsageInfo>> entry : _javaUsages.entrySet() )
+                                                         for( Map.Entry<Pair<FeaturePath, PsiElement>, List<UsageInfo>> entry : _javaUsages.entrySet() )
                                                          {
-                                                           Pair<String, PsiElement> key = entry.getKey();
+                                                           Pair<FeaturePath, PsiElement> key = entry.getKey();
                                                            List<UsageInfo> value = entry.getValue();
-                                                           StringBuilder baseName = new StringBuilder( newName );
-                                                           String prefix = key.getFirst();
-                                                           if( prefix.length() > 0 )
+                                                           String newFeatureName = newBaseName;
+                                                           FeaturePath path = key.getFirst();
+                                                           if( path != null )
                                                            {
-                                                             baseName.setCharAt( 0, Character.toUpperCase( baseName.charAt( 0 ) ) );
+                                                             newFeatureName = findFeatureName( path );
+                                                             if( newFeatureName == null )
+                                                             {
+                                                               newFeatureName = newBaseName;
+                                                             }
                                                            }
-                                                           RenameUtil.doRename( key.getSecond(), prefix + baseName, value.toArray( new UsageInfo[value.size()] ), element.getProject(), elementListener );
+                                                           if( newFeatureName != null )
+                                                           {
+                                                             RenameUtil.doRename( key.getSecond(), newFeatureName, value.toArray( new UsageInfo[value.size()] ), element.getProject(), elementListener );
+                                                           }
                                                          }
                                                        } ) );
+  }
+
+  private String findFeatureName( FeaturePath path )
+  {
+    PsiClass root = path.getRoot();
+    String fqn = root.getQualifiedName();
+    PsiClass psiClass = JavaPsiFacade.getInstance( root.getProject() ).findClass( fqn, GlobalSearchScope.moduleScope( ModuleUtilCore.findModuleForPsiElement( root ) ) );
+    if( psiClass == null )
+    {
+      return null;
+    }
+    PsiNamedElement renamedFeature = findFeatureElement( psiClass, path.getChild() );
+    return renamedFeature == null ? null : renamedFeature.getName();
+  }
+
+  private PsiNamedElement findFeatureElement( PsiClass psiClass, FeaturePath child )
+  {
+    if( child == null )
+    {
+      return psiClass;
+    }
+
+    PsiNamedElement result = null;
+
+    switch( child.getFeatureType() )
+    {
+      case Class:
+      {
+        PsiClass[] innerClasses = psiClass.getInnerClasses();
+        if( innerClasses.length == child.getCount() )
+        {
+          result = findFeatureElement( innerClasses[child.getIndex()], child.getChild() );
+        }
+        break;
+      }
+
+      case Method:
+      {
+        PsiMethod[] methods = psiClass.getMethods();
+        if( methods.length == child.getCount() )
+        {
+          result = methods[child.getIndex()];
+        }
+        break;
+      }
+
+      case Field:
+        PsiField[] fields = psiClass.getFields();
+        if( fields.length == child.getCount() )
+        {
+          result = fields[child.getIndex()];
+        }
+        break;
+
+      default:
+        throw new IllegalStateException( "Unhandled feature type: " + child.getFeatureType() );
+    }
+    return result;
   }
 }
