@@ -11,7 +11,7 @@ public class PsiErrorClassUtil
 {
   private static final Key<Exception> KEY_ERROR_MESSAGE = new Key<>( "ErrorClassMessage" );
 
-  public static PsiClass create( Project project, ConflictingTypeManifoldsException e )
+  public static PsiClass create( Project project, Exception e )
   {
     PsiClass errorClass = JavaPsiFacade.getInstance( project ).getParserFacade().createClassFromText( "", null );
     errorClass.putUserData( KEY_ERROR_MESSAGE, e );
