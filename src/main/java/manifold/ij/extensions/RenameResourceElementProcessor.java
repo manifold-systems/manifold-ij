@@ -9,8 +9,10 @@ import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiNamedElement;
+import com.intellij.psi.PsiPlainTextFile;
 import com.intellij.psi.PsiPolyVariantReference;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -34,6 +36,7 @@ import org.jetbrains.annotations.Nullable;
 
 
 import static manifold.ij.extensions.ResourceToManifoldUtil.KEY_FEATURE_PATH;
+import static manifold.ij.extensions.ResourceToManifoldUtil.findFakePlainTextElement;
 
 /**
  */
@@ -94,7 +97,8 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
       {
         return Collections.emptyList();
       }
-      PsiElement elemAt = target.getContainingFile().findElementAt( target.getTextOffset() );
+      PsiFile containingFile = target.getContainingFile();
+      PsiElement elemAt = containingFile instanceof PsiPlainTextFile ? target : containingFile.findElementAt( target.getTextOffset() );
       while( elemAt != null && (!(elemAt instanceof PsiNamedElement) /*|| oldName != null && !((PsiNamedElement)elemAt).getName().equals( oldName )*/) )
       {
         elemAt = elemAt.getParent();
@@ -126,6 +130,10 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
           element[0] = elemAt;
         }
       }
+    }
+    else if( element[0] instanceof PsiPlainTextFile )
+    {
+      element[0] = findFakePlainTextElement( (PsiPlainTextFile)element[0] );
     }
     return javaElems;
   }

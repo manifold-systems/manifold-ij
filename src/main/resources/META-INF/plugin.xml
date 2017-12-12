@@ -59,6 +59,7 @@
     <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameTypeManifoldFileProcessor" order="first"/>
     <moveFileHandler implementation="manifold.ij.extensions.MoveTypeManifoldFileProcessor" order="first"/>
     <findUsagesHandlerFactory implementation="manifold.ij.extensions.ManifoldFindUsagesHandlerFactory" order="first"/>
+    <lang.findUsagesProvider language="TEXT" implementationClass="manifold.ij.extensions.TextFindUsagesProvider"/>
     <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameResourceElementProcessor" order="first"/>
   </extensions>
 

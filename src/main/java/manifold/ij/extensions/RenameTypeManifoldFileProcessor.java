@@ -10,6 +10,8 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileSystemItem;
+import com.intellij.psi.PsiNamedElement;
+import com.intellij.psi.PsiPlainTextFile;
 import com.intellij.psi.PsiPolyVariantReference;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.impl.light.AbstractLightClass;
@@ -44,11 +46,32 @@ import org.jetbrains.annotations.Nullable;
 public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 {
   private List<UsageInfo> _usages = Collections.emptyList();
+  private PsiNamedElement _classDeclElement;
 
   @Override
   public boolean canProcessElement( @NotNull PsiElement element )
   {
-    return super.canProcessElement( maybeGetResourceFile( element ) );
+    return !isElementInsidePlainTextFile( element ) &&
+           super.canProcessElement( maybeGetResourceFile( element ) );
+  }
+
+  private boolean isElementInsidePlainTextFile( PsiElement element )
+  {
+    if( element instanceof PsiPlainTextFile )
+    {
+      PsiElement fakeElement = ResourceToManifoldUtil.findFakePlainTextElement( (PsiPlainTextFile)element );
+      return fakeElement != null && !(fakeElement instanceof PsiPlainTextFile) && !isTopLevelClassDeclaration( fakeElement );
+
+    }
+    return false;
+  }
+
+  private boolean isTopLevelClassDeclaration( PsiElement fakeElement )
+  {
+    List<PsiElement> javaElems = ResourceToManifoldUtil.findJavaElementsFor( fakeElement );
+    return javaElems.size() == 1 &&
+           javaElems.get( 0 ) instanceof PsiClass &&
+           ((PsiClass)javaElems.get( 0 )).getContainingClass() == null;
   }
 
   @Override
@@ -140,7 +163,7 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
       return;
     }
 
-    Query<PsiReference> search = ReferencesSearch.search( psiClass, GlobalSearchScope.allScope( mod.getProject() ) );
+    Query<PsiReference> search = ReferencesSearch.search( psiClass, GlobalSearchScope.projectScope( mod.getProject() ) );
     List<UsageInfo> usages = new ArrayList<>();
     for( PsiReference ref: search.findAll() )
     {
@@ -149,6 +172,15 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
         ref.resolve() == null && !(ref instanceof PsiPolyVariantReference && ((PsiPolyVariantReference)ref).multiResolve( true ).length > 0) ) );
     }
     _usages = usages;
+
+    if( psiClass instanceof ManifoldPsiClass )
+    {
+      PsiElement fakeElement = ManGotoDeclarationHandler.find( psiClass, (ManifoldPsiClass)psiClass );
+      if( fakeElement instanceof PsiNamedElement && isTopLevelClassDeclaration( fakeElement ) )
+      {
+        _classDeclElement = (PsiNamedElement)fakeElement;
+      }
+    }
   }
 
   @Nullable
@@ -171,10 +203,10 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
   @Override
   public Runnable getPostRenameCallback( PsiElement element, String newName, RefactoringElementListener elementListener )
   {
-    return _usages.isEmpty() ? null : () -> renameManifoldTypeRefs( element, newName, elementListener );
+    return _usages.isEmpty() ? null : () -> renameManifoldTypeRefs( element, elementListener );
   }
 
-  private void renameManifoldTypeRefs( PsiElement element, String newName, RefactoringElementListener elementListener )
+  private void renameManifoldTypeRefs( PsiElement element, RefactoringElementListener elementListener )
   {
     ApplicationManager.getApplication().invokeLater( () ->
       WriteCommandAction.runWriteCommandAction( element.getProject(), () ->
@@ -193,6 +225,12 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
         }
 
         RenameUtil.doRename( psiClass, psiClass.getName(), _usages.toArray( new UsageInfo[_usages.size()] ), element.getProject(), elementListener );
+
+        // for plain text files, also rename a class name declaration if such a thing exists e.g., javascript class declaration
+        if( _classDeclElement != null )
+        {
+          _classDeclElement.setName( psiClass.getName() == null ? "" : psiClass.getName() );
+        }
       } ) );
   }
 }

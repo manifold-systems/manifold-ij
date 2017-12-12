@@ -1,5 +1,12 @@
 package manifold.ij.extensions;
 
+import com.intellij.ide.DataManager;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
+import com.intellij.openapi.editor.CaretModel;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.actions.EditorActionUtil;
+import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -13,7 +20,9 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiNameValuePair;
 import com.intellij.psi.PsiNamedElement;
+import com.intellij.psi.PsiPlainTextFile;
 import com.intellij.psi.search.GlobalSearchScope;
+import java.awt.KeyboardFocusManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +44,9 @@ public class ResourceToManifoldUtil
 
   /**
    * Find the Manifold PisClass corresponding with a resource file.
+   *
    * @param fileElem a psiFile, normally this should be a resource file
+   *
    * @return The corresponding Manifold PsiClass or null
    */
   public static PsiClass findPsiClass( PsiFileSystemItem fileElem )
@@ -79,8 +90,9 @@ public class ResourceToManifoldUtil
    *
    * @param element An element inside a resource file (or the psiFile itself) that corresponds with a declared field, method, or inner class
    *                inside a Manifold PsiClass or the PsiClass itself.
+   *
    * @return The declared Java PsiElement[s] inside the Manifold PsiClass corresponding with the resource file element.  Note there can be more
-   *   than one PsiElement i.e., when the resource element is a "property" and has corresponding "getter" and "setter" methods in the PsiClass.
+   * than one PsiElement i.e., when the resource element is a "property" and has corresponding "getter" and "setter" methods in the PsiClass.
    */
   public static List<PsiElement> findJavaElementsFor( @NotNull PsiElement element )
   {
@@ -95,10 +107,21 @@ public class ResourceToManifoldUtil
 
     if( element instanceof PsiFile )
     {
-      PsiClass psiClass = findPsiClass( (PsiFile)element );
-      if( psiClass != null )
+      if( element instanceof PsiPlainTextFile )
       {
-        return Collections.singletonList( psiClass );
+        element = findFakePlainTextElement( (PsiPlainTextFile)element );
+        if( element == null )
+        {
+          return Collections.emptyList();
+        }
+      }
+      else
+      {
+        PsiClass psiClass = findPsiClass( (PsiFile)element );
+        if( psiClass != null )
+        {
+          return Collections.singletonList( psiClass );
+        }
       }
     }
 
@@ -145,19 +168,136 @@ public class ResourceToManifoldUtil
     return result;
   }
 
+  static PsiElement findFakePlainTextElement( PsiPlainTextFile psiTextFile )
+  {
+    try
+    {
+      int start = getWordAtCaretStart( psiTextFile.getVirtualFile().getPath() );
+      if( start < 0 )
+      {
+        return null;
+      }
+
+      int end = getWordAtCaretEnd( psiTextFile.getVirtualFile().getPath() );
+      if( end < 0 )
+      {
+        return null;
+      }
+
+      String name = psiTextFile.getText().substring( start, end );
+
+      return new FakeTargetElement( psiTextFile, start, end - start, name );
+    }
+    catch( Exception e )
+    {
+      return null;
+    }
+  }
+
+  private static int getWordAtCaretStart( String filePath )
+  {
+    Editor[] editor = new Editor[1];
+    editor[0] = DataManager.getInstance().getDataContext( KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner() ).getData( PlatformDataKeys.EDITOR );
+    if( !(editor[0] instanceof EditorImpl) )
+    {
+      return -1;
+    }
+
+    EditorImpl editorImpl = (EditorImpl)editor[0];
+    if( !editorImpl.getVirtualFile().getPath().equals( filePath ) )
+    {
+      return -1;
+    }
+
+    CaretModel cm = editorImpl.getCaretModel();
+    Document document = editorImpl.getDocument();
+    int offset = cm.getOffset();
+    if( offset == 0 )
+    {
+      return 0;
+    }
+    int lineNumber = cm.getLogicalPosition().line;
+    int newOffset = offset - 1;
+    int minOffset = lineNumber > 0 ? document.getLineEndOffset( lineNumber - 1 ) : 0;
+    for( ; newOffset > minOffset; newOffset-- )
+    {
+      if( EditorActionUtil.isWordOrLexemeStart( editorImpl, newOffset, false ) )
+      {
+        break;
+      }
+    }
+
+    return newOffset;
+  }
+
+  private static int getWordAtCaretEnd( String filePath )
+  {
+    Editor[] editor = new Editor[1];
+    editor[0] = DataManager.getInstance().getDataContext( KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner() ).getData( PlatformDataKeys.EDITOR );
+    if( !(editor[0] instanceof EditorImpl) )
+    {
+      return -1;
+    }
+
+    EditorImpl editorImpl = (EditorImpl)editor[0];
+    if( !editorImpl.getVirtualFile().getPath().equals( filePath ) )
+    {
+      return -1;
+    }
+
+    CaretModel cm = editorImpl.getCaretModel();
+    Document document = editorImpl.getDocument();
+    int offset = cm.getOffset();
+
+    if( offset >= document.getTextLength() - 1 || document.getLineCount() == 0 )
+    {
+      return offset;
+    }
+
+    int newOffset = offset + 1;
+
+    int lineNumber = cm.getLogicalPosition().line;
+    int maxOffset = document.getLineEndOffset( lineNumber );
+    if( newOffset > maxOffset )
+    {
+      if( lineNumber + 1 >= document.getLineCount() )
+      {
+        return offset;
+      }
+      maxOffset = document.getLineEndOffset( lineNumber + 1 );
+    }
+    for( ; newOffset < maxOffset; newOffset++ )
+    {
+      if( EditorActionUtil.isWordOrLexemeEnd( editorImpl, newOffset, false ) )
+      {
+        break;
+      }
+    }
+
+    return newOffset;
+  }
+
   private static List<PsiElement> findJavaElementsFor( PsiClass psiClass, PsiElement element )
   {
     return findJavaElementsFor( psiClass, element, new FeaturePath( psiClass ) );
   }
+
   private static List<PsiElement> findJavaElementsFor( PsiClass psiClass, PsiElement element, FeaturePath parent )
   {
     List<PsiElement> result = new ArrayList<>();
+
+    if( isJavaElementFor( psiClass, element ) )
+    {
+      result.add( psiClass );
+      psiClass.putUserData( KEY_FEATURE_PATH, FeaturePath.make( parent, FeaturePath.FeatureType.Class, 0, 1 ) );
+    }
+
     PsiMethod[] methods = psiClass.getMethods();
     for( int i = 0; i < methods.length; i++ )
     {
       PsiMethod method = methods[i];
       if( isJavaElementFor( method, element ) ||
-          element instanceof PsiClass && isJavaElementForType( method, (PsiClass)element ))
+          element instanceof PsiClass && isJavaElementForType( method, (PsiClass)element ) )
       {
         result.add( method );
         method.putUserData( KEY_FEATURE_PATH, FeaturePath.make( parent, FeaturePath.FeatureType.Method, i, methods.length ) );
@@ -218,6 +358,7 @@ public class ResourceToManifoldUtil
     }
     return false;
   }
+
   private static boolean isJavaElementForType( PsiModifierListOwner modifierListOwner, PsiClass psiClass )
   {
     PsiAnnotation annotation = modifierListOwner.getModifierList().findAnnotation( TypeReference.class.getName() );

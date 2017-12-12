@@ -1,23 +1,35 @@
 package manifold.ij.extensions;
 
+import com.intellij.ide.DataManager;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.Language;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.impl.PsiElementBase;
+import com.intellij.psi.meta.PsiMetaData;
+import com.intellij.psi.meta.PsiMetaOwner;
+import com.intellij.util.ArrayUtil;
 import com.intellij.util.IncorrectOperationException;
+import java.awt.KeyboardFocusManager;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
-*/
-class FakeTargetElement extends PsiElementBase
+ */
+class FakeTargetElement extends PsiElementBase implements PsiMetaOwner, PsiMetaData, PsiNamedElement
 {
   private final PsiFile _file;
   private final int _iOffset;
-  private final int _iLength;
-  private final String _name;
+  private int _iLength;
+  private String _name;
 
   FakeTargetElement( PsiFile file, int iOffset, int iLength, String name )
   {
@@ -184,6 +196,63 @@ class FakeTargetElement extends PsiElementBase
   }
 
   @Override
+  public PsiElement getDeclaration()
+  {
+    return this;
+  }
+
+  @Override
+  public String getName( PsiElement context )
+  {
+    return getName();
+  }
+
+  @Override
+  public String getName()
+  {
+    return _name;
+  }
+
+  @Override
+  public PsiElement setName( @NotNull String name ) throws IncorrectOperationException
+  {
+    findDocument().replaceString( _iOffset, _iOffset + _name.length(), name );
+    _iLength += name.length() - _name.length();
+    _name = name;
+    return this;
+  }
+
+  private Document findDocument()
+  {
+    Editor editor = DataManager.getInstance().getDataContext( KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner() ).getData( PlatformDataKeys.EDITOR );
+    if( editor instanceof EditorImpl )
+    {
+      EditorImpl editorImpl = (EditorImpl)editor;
+      if( editorImpl.getVirtualFile().getPath().equals( _file.getVirtualFile().getPath() ) )
+      {
+        // get document from current editor
+        return editorImpl.getDocument();
+      }
+    }
+
+    // get document from file
+    return _file.getViewProvider().getDocument();
+  }
+
+  @Override
+  public void init( PsiElement element )
+  {
+
+  }
+
+  @NotNull
+  @Override
+  public Object[] getDependences()
+  {
+    return ArrayUtil.EMPTY_OBJECT_ARRAY;
+  }
+
+  @Override
   public void accept( PsiElementVisitor visitor )
   {
   }
@@ -216,4 +285,10 @@ class FakeTargetElement extends PsiElementBase
     return null;
   }
 
+  @Nullable
+  @Override
+  public PsiMetaData getMetaData()
+  {
+    return this;
+  }
 }

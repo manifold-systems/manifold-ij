@@ -11,7 +11,6 @@ import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiReference;
 import java.util.List;
 import manifold.api.type.SourcePosition;
-import org.jetbrains.annotations.Nullable;
 
 
 /**
@@ -51,7 +50,7 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     PsiFile file = resolve.getContainingFile();
     if( file != null )
     {
-      ManifoldPsiClass facade = file.getUserData( ManifoldPsiClass.KEY_MANIFOLD_PSI_CLASS );
+      ManifoldPsiClass facade = resolve instanceof ManifoldPsiClass ? (ManifoldPsiClass)resolve : file.getUserData( ManifoldPsiClass.KEY_MANIFOLD_PSI_CLASS );
       if( facade != null )
       {
         PsiElement annotations = find( (PsiModifierListOwner)resolve, facade );
