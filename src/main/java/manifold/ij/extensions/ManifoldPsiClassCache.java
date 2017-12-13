@@ -149,13 +149,13 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       DiagnosticCollector issues = new DiagnosticCollector();
       for( ITypeManifold sp : sps )
       {
-        if( found != null && (found.getProducerKind() == Primary || sp.getProducerKind() == Primary) )
-        {
-          throw new ConflictingTypeManifoldsException( fqn, found, sp );
-        }
         if( sp.getProducerKind() == Primary ||
             sp.getProducerKind() == Partial )
         {
+          if( found != null && (found.getProducerKind() == Primary || sp.getProducerKind() == Primary) )
+          {
+            throw new ConflictingTypeManifoldsException( fqn, found, sp );
+          }
           found = sp;
           result = sp.produce( fqn, result, issues );
         }
