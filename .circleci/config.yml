@@ -1,0 +1,43 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:8-jdk
+      
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.daemon=false
+      TERM: dumb
+      TZ: /usr/share/zoneinfo/America/Los_Angeles
+
+    branches:
+      ignore:
+        - /rel\/.*/
+    
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "build.gradle" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+      - run: 
+          name: Run tests
+          command: ./gradlew check
+      - run:
+          name: Create test metadata folder
+          command: sudo mkdir -p ~/junit/
+      - run:
+          name: Collect test metadata
+          command: sudo find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/junit/ \;
+      - run:
+          name: Collect test stdout
+          command: sudo find . -type f -regex ".*/build/test-results/.*-output.txt" -exec cp {} ~/junit/ \;
+      - store_artifacts:
+          path: ~/junit
+      - store_test_results:
+          path: ~/junit
+
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "build.gradle" }}

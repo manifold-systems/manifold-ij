@@ -1,3 +1,5 @@
+import java.util.concurrent.TimeUnit
+
 plugins {
   id 'org.jetbrains.intellij' version '0.2.17'
 }
@@ -5,7 +7,7 @@ plugins {
 description = 'Manifold :: IJ'
 
 wrapper {
-  gradleVersion '4.1'
+  gradleVersion = '4.4'
 }
 
 sourceCompatibility = JavaVersion.VERSION_1_8
@@ -17,37 +19,28 @@ tasks.withType(JavaCompile) {
 
 repositories {
   mavenLocal()
-  mavenCentral()
-  maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+  jcenter()
+  maven { url 'https://oss.jfrog.org/artifactory/libs-snapshot' }
 }
 
 dependencies {
   compile group: 'systems.manifold', name: 'manifold', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-ext', version: manifoldVersion
+  testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+configurations.all {
+  resolutionStrategy.cacheChangingModulesFor 0, TimeUnit.SECONDS //always check for new SNAPSHOTs
 }
 
 compileJava {
   options.compilerArgs += ['-proc:none', '-Xplugin:Manifold']
 }
 
-afterEvaluate {
-  task downloadDependencies(type: Exec) {
-    configurations.testRuntime.files
-    commandLine 'echo', 'Downloaded all dependencies'
-  }
-}
-
 intellij {
   pluginName project.name
-  version '2017.2.5' // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
+  version '2017.3.1' // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
   plugins = ['ASM Bytecode Outline:0.3.5'] //include ASM in the sandbox by default. Nice.
-
-  downloadSources true
-
-  //if running on CI, don't download sources
-  if(System.getenv('CI') != null) {
-    downloadSources false
-  }
 }
 
 patchPluginXml {
@@ -56,6 +49,6 @@ patchPluginXml {
 }
 
 publishPlugin {
-  username = System.getenv()['JB_PUBLISH_USER']
-  password = System.getenv()['JB_PUBLISH_PASS']
+  username = System.getenv('JB_PUBLISH_USER')
+  password = System.getenv('JB_PUBLISH_PASS')
 }
