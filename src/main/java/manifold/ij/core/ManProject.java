@@ -182,7 +182,7 @@ public class ManProject
     return _modules.get();
   }
 
-  public void projectOpened()
+  void projectOpened()
   {
     _applicationConnection = ApplicationManager.getApplication().getMessageBus().connect();
     _projectConnection = _ijProject.getMessageBus().connect();
@@ -267,20 +267,17 @@ public class ManProject
     ModuleManager moduleManager = ModuleManager.getInstance( _ijProject );
     Module[] allIjModules = moduleManager.getModules();
 
-    List<IDirectory> allSourcePaths = new ArrayList<>();
+    // create modules
     Map<Module, ManModule> modules = new HashMap<>();
     List<ManModule> allModules = new ArrayList<>();
     for( Module ijModule : allIjModules )
     {
       final ManModule module = defineModule( ijModule );
-      if( module != null )
-      {
-        allSourcePaths.addAll( module.getSourcePath() );
-        modules.put( ijModule, module );
-        allModules.add( module );
-      }
+      modules.put( ijModule, module );
+      allModules.add( module );
     }
 
+    // add module dependencies
     for( Module ijModule : allIjModules )
     {
       final ManModule module = modules.get( ijModule );
@@ -292,6 +289,12 @@ public class ManProject
           module.addDependency( new Dependency( moduleDep, isExported( ijModule, child ) ) );
         }
       }
+    }
+
+    // finally, initialize the type manifolds for each module
+    for( ManModule manModule: allModules )
+    {
+      manModule.initializeTypeManifolds();
     }
 
     return allModules;
@@ -319,7 +322,7 @@ public class ManProject
     return false;
   }
 
-  ManModule defineModule( Module ijModule )
+  private ManModule defineModule( Module ijModule )
   {
     List<VirtualFile> sourceFolders = getSourceRoots( ijModule );
     VirtualFile outputPath = CompilerPaths.getModuleOutputDirectory( ijModule, false );
@@ -328,7 +331,7 @@ public class ManProject
                          outputPath == null ? null : getFileSystem().getIDirectory( outputPath ) );
   }
 
-  public ManModule createModule( Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePaths, IDirectory outputPath )
+  private ManModule createModule( Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePaths, IDirectory outputPath )
   {
     // Maybe expand paths to include Class-Path attribute from Manifest...
     classpath = addFromManifestClassPath( classpath );

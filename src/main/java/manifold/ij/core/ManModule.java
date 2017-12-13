@@ -35,9 +35,6 @@ public class ManModule extends SimpleModule
     _manProject = manProject;
     _excludedDirs = excludedDirs;
     _dependencies = new ArrayList<>();
-
-    // Indirectly calls our addRegistered() override, which creates a class loader witih this module's classpath
-    initializeTypeManifolds();
   }
 
   @Override
@@ -184,14 +181,15 @@ public class ManModule extends SimpleModule
 
   private void initializeModuleClassLoader()
   {
-    List<IDirectory> classpath = getJavaClassPath();
+    List<IDirectory> classpath = getCollectiveJavaClassPath();
     if( classpath == null || classpath.isEmpty() )
     {
       return;
     }
 
     URL[] urls = classpath.stream().map(
-      dir -> {
+      dir ->
+      {
         try
         {
           return dir.toURI().toURL();
@@ -201,54 +199,9 @@ public class ManModule extends SimpleModule
           throw new RuntimeException( e );
         }
       } ).toArray( URL[]::new );
+
+    // note this classloader is used exclusively for finding a loading type manifold services
     _typeManifoldClassLoader = new URLClassLoader( urls, getClass().getClassLoader() );
-  }
-
-  @Override
-  public Set<ITypeManifold> getTypeManifolds()
-  {
-    Set<ITypeManifold> all = new HashSet<>();
-    Set<ITypeManifold> typeManifolds = super.getTypeManifolds();
-    if( typeManifolds != null )
-    {
-      all.addAll( typeManifolds );
-    }
-
-    for( Dependency dep : getDependencies() )
-    {
-      if( dep.isExported() )
-      {
-        typeManifolds = dep.getModule().getTypeManifolds();
-        if( typeManifolds != null )
-        {
-          addIfAbsent( all, typeManifolds );
-        }
-      }
-    }
-    return all;
-  }
-
-  private void addIfAbsent( Set<ITypeManifold> all, Set<ITypeManifold> typeManifolds )
-  {
-    for( ITypeManifold sp: typeManifolds )
-    {
-      if( isAbsent( all, sp ) )
-      {
-        all.add( sp );
-      }
-    }
-  }
-
-  private boolean isAbsent( Set<ITypeManifold> all, ITypeManifold sp )
-  {
-    for( ITypeManifold existingSp: all )
-    {
-      if( existingSp.getClass().equals( sp.getClass() ) )
-      {
-        return false;
-      }
-    }
-    return true;
   }
 
   @Override
@@ -262,6 +215,26 @@ public class ManModule extends SimpleModule
       if( d.isExported() )
       {
         all.addAll( d.getModule().getSourcePath() );
+      }
+    }
+    return all;
+  }
+
+  @Override
+  public List<IDirectory> getCollectiveJavaClassPath()
+  {
+    return getCollectiveJavaClassPath( this );
+  }
+  private List<IDirectory> getCollectiveJavaClassPath( ManModule root )
+  {
+    List<IDirectory> all = new ArrayList<>();
+    all.addAll( getJavaClassPath() );
+
+    for( Dependency d : getDependencies() )
+    {
+      if( this == root || d.isExported() )
+      {
+        all.addAll( ((ManModule)d.getModule()).getCollectiveJavaClassPath( root ) );
       }
     }
     return all;
