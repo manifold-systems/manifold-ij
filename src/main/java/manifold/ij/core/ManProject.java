@@ -45,7 +45,9 @@ import manifold.ij.extensions.HotSwapComponent;
 import manifold.ij.extensions.ManifoldPsiClass;
 import manifold.ij.extensions.ModuleClasspathListener;
 import manifold.ij.extensions.ModuleRefreshListener;
+import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
+import manifold.internal.host.ManifoldHost;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -479,12 +481,21 @@ public class ManProject
 
   private IDirectory toDirectory( VirtualFile file )
   {
-    String sourcePath = file.getPath();
-    if( sourcePath.contains( JAR_INDICATOR ) )
+    String url = file.getUrl();
+    if( url.contains( JAR_INDICATOR ) )
     {
-      sourcePath = sourcePath.substring( 0, sourcePath.length() - 2 );
+      url = url.substring( 0, url.length() - 2 );
+      try
+      {
+        IjFile ijFile = (IjFile)ManifoldHost.getFileSystem().getIFile( new URL( url ) );
+        file = ijFile.getVirtualFile();
+      }
+      catch( MalformedURLException e )
+      {
+        throw new RuntimeException( e );
+      }
     }
-    return getFileSystem().getIDirectory( new File( sourcePath ) );
+    return getFileSystem().getIDirectory( file );
   }
 
   public static List<IDirectory> getClassPaths( Module ijModule )
@@ -493,7 +504,7 @@ public class ManProject
     for( Iterator<String> it = paths.iterator(); it.hasNext(); )
     {
       String url = it.next();
-      if( dependencyChainContains( ijModule, url, new ArrayList<Module>() ) )
+      if( dependencyChainContains( ijModule, url, new ArrayList<>() ) )
       {
         it.remove();
       }
