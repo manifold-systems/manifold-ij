@@ -3,7 +3,8 @@ jobs:
   build:
     docker:
       - image: circleci/openjdk:8-jdk
-      
+      - image: circleci/openjdk:9-jdk
+
     environment:
       GRADLE_OPTS: -Dorg.gradle.daemon=false
       TERM: dumb
@@ -15,29 +16,95 @@ jobs:
     
     steps:
       - checkout
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "build.gradle" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
-      - run: 
-          name: Run tests
-          command: ./gradlew check
+#      - restore_cache:
+#          keys:
+#          - v1-dependencies-{{ checksum "build.gradle" }}
+#          # fallback to using the latest cache if no exact match is found
+#          - v1-dependencies-
       - run:
-          name: Create test metadata folder
-          command: sudo mkdir -p ~/junit/
+          name: Java version check
+          command: java -version
       - run:
-          name: Collect test metadata
-          command: sudo find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/junit/ \;
+          name: Java location check
+          command: ls -al /usr/lib/jvm/
       - run:
-          name: Collect test stdout
-          command: sudo find . -type f -regex ".*/build/test-results/.*-output.txt" -exec cp {} ~/junit/ \;
-      - store_artifacts:
-          path: ~/junit
-      - store_test_results:
-          path: ~/junit
+          name: Dump env
+          command: env
+      - run:
+          name: Compile project and test classes
+          command: ./gradlew jar testClasses --stacktrace
 
-      - save_cache:
-          paths:
-            - ~/.gradle
-          key: v1-dependencies-{{ checksum "build.gradle" }}
+  test8:
+    docker:
+      - image: circleci/openjdk:8-jdk
+
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.daemon=false
+      TERM: dumb
+      TZ: /usr/share/zoneinfo/America/Los_Angeles
+
+    steps:
+      - run:
+          name: Java version check
+          command: java -version
+      - run:
+          name: Java location check
+          command: ls -al /usr/lib/jvm/
+      - run:
+          name: Dump env
+          command: env
+      - run:
+          name: Run tests
+          command: ./gradlew check --stacktrace
+
+  test9:
+    docker:
+      - image: circleci/openjdk:9-jdk
+
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.daemon=false
+      TERM: dumb
+      TZ: /usr/share/zoneinfo/America/Los_Angeles
+
+    steps:
+      - run:
+          name: Java version check
+          command: java -version
+      - run:
+          name: Java location check
+          command: ls -al /usr/lib/jvm/
+      - run:
+          name: Dump env
+          command: env
+      - run:
+          name: Run tests
+          command: ./gradlew check --stacktrace
+
+#      - run:
+#          name: Run tests
+#          command: ./gradlew check --stacktrace
+#      - run:
+#          name: Create test metadata folder
+#          command: sudo mkdir -p ~/junit/
+#      - run:
+#          name: Collect test metadata
+#          command: sudo find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/junit/ \;
+#      - run:
+#          name: Collect test stdout
+#          command: sudo find . -type f -regex ".*/build/test-results/.*-output.txt" -exec cp {} ~/junit/ \;
+#      - store_artifacts:
+#          path: ~/junit
+#      - store_test_results:
+#          path: ~/junit
+#
+#      - save_cache:
+#          paths:
+#            - ~/.gradle
+#          key: v1-dependencies-{{ checksum "build.gradle" }}
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test8
+      - test9
