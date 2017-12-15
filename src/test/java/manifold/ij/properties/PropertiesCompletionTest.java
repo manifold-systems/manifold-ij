@@ -10,8 +10,8 @@ public class PropertiesCompletionTest extends AbstractManifoldCodeInsightTest
 {
   public void testCompletionLevel1() throws Exception
   {
-    myFixture.copyFileToProject( "xyz/MyProperties.properties" );
-    myFixture.configureByFile( "xyz/TestPropertiesCompletion_Level1.java" );
+    myFixture.copyFileToProject( "properties/sample/MyProperties.properties" );
+    myFixture.configureByFile( "properties/completion/TestPropertiesCompletion_Level1.java" );
 
     LookupElement[] complete = myFixture.complete( CompletionType.BASIC );
     List<String> strings = myFixture.getLookupElementStrings();
@@ -20,8 +20,8 @@ public class PropertiesCompletionTest extends AbstractManifoldCodeInsightTest
 
   public void testCompletionLevel2() throws Exception
   {
-    myFixture.copyFileToProject( "xyz/MyProperties.properties" );
-    myFixture.configureByFile( "xyz/TestPropertiesCompletion_Level2.java" );
+    myFixture.copyFileToProject( "properties/sample/MyProperties.properties" );
+    myFixture.configureByFile( "properties/completion/TestPropertiesCompletion_Level2.java" );
 
     LookupElement[] complete = myFixture.complete( CompletionType.BASIC );
     List<String> strings = myFixture.getLookupElementStrings();
