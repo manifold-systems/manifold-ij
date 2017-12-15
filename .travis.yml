@@ -12,4 +12,5 @@ env:
 
 script:
 - jdk_switcher use ${TEST_JRE}
+- ./gradlew --version
 - ./gradlew check
