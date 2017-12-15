@@ -23,3 +23,9 @@ Changes you make are instantly available in your code:
 Install the plugin directly from IntelliJ via: `Settings | Plugins | Browse Repositories | Manifold`
 
 Visit the [Manifold website](http://manifold.systems/) for more information.
+
+# Development
+
+The plugin can be compiled and tested against different API versions. The default value lives in the `ijVersion` property in the root `gradle.properties` file.
+
+To override this value from the command line, invoke like so: `gradlew check -PijVersion=15.0.6`
