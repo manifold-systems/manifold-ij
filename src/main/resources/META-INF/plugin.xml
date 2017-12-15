@@ -61,6 +61,7 @@
     <findUsagesHandlerFactory implementation="manifold.ij.extensions.ManifoldFindUsagesHandlerFactory" order="first"/>
     <lang.findUsagesProvider language="TEXT" implementationClass="manifold.ij.extensions.TextFindUsagesProvider"/>
     <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameResourceElementProcessor" order="first"/>
+    <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameExtensionMethodProcessor" order="first"/>
   </extensions>
 
 </idea-plugin>

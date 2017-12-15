@@ -9,11 +9,11 @@ public class ExtCompletionTest extends AbstractManifoldCodeInsightTest
 {
   public void testCompletionLevel1() throws Exception
   {
-    //myFixture.copyFileToProject( "image/sample/Logo.png" );
+    myFixture.copyFileToProject( "extensions/java/lang/String/MyStringExt.java" );
     myFixture.configureByFile( "ext/completion/TestExtCompletion_1.java" );
 
     LookupElement[] complete = myFixture.completeBasic();
     List<String> strings = myFixture.getLookupElementStrings();
-    assertTrue( strings.containsAll( Arrays.asList( "substringAfter", "substringBefore" ) ) );
+    assertTrue( strings.containsAll( Arrays.asList( "substringAfter", "substringBefore", "helloWorld" ) ) );
   }
 }
