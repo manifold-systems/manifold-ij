@@ -10,6 +10,10 @@ env:
   - TEST_JRE=oraclejdk9 IJVERSION=2017.3.1
   - IJVERSION=LATEST_EAP
 
+install:
+- ./gradlew --version
+- ./gradlew jar testClasses
+
 script:
 - jdk_switcher use ${TEST_JRE}
 - ./gradlew --version
