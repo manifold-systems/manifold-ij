@@ -111,7 +111,7 @@ public abstract class AbstractManifoldCodeInsightTest extends LightCodeInsightFi
     public Sdk getSdk()
     {
       return _sdk == null
-             ? _sdk = JavaSdk.getInstance().createJdk( getJdkVersion(), getPath_JdkRoot(), false )
+             ? _sdk = JavaSdk.getInstance().createJdk( getJdkVersion(), getPath_JdkRoot() + File.separatorChar + getJdkVersion(), false )
              : _sdk;
     }
 

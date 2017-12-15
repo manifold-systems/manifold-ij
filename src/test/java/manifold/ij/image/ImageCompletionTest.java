@@ -18,15 +18,13 @@ public class ImageCompletionTest extends AbstractManifoldCodeInsightTest
     assertTrue( strings.containsAll( Arrays.asList( "get" ) ) );
   }
 
-//!! not working for some reason
-//
-//  public void testCompletionLevel2() throws Exception
-//  {
-//    myFixture.copyFileToProject( "image/sample/Logo.png" );
-//    myFixture.configureByFile( "image/completion/TestImageCompletion_2.java" );
-//
-//    LookupElement[] complete = myFixture.complete( CompletionType.BASIC );
-//    List<String> strings = myFixture.getLookupElementStrings();
-//    assertTrue( strings.containsAll( Arrays.asList( "getImage", "getIconHeight", "getIconWidth" ) ) );
-//  }
+  public void testCompletionLevel2() throws Exception
+  {
+    myFixture.copyFileToProject( "image/sample/Logo.png" );
+    myFixture.configureByFile( "image/completion/TestImageCompletion_2.java" );
+
+    LookupElement[] complete = myFixture.complete( CompletionType.BASIC );
+    List<String> strings = myFixture.getLookupElementStrings();
+    assertTrue( strings.containsAll( Arrays.asList( "getImage", "getIconHeight", "getIconWidth" ) ) );
+  }
 }
