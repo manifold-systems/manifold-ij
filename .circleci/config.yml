@@ -38,7 +38,7 @@ jobs:
       - save_cache:
           paths:
             - ~/manifold-ij
-          key: v1-repo-{{ checksum .Environment.CIRCLE_SHA1 }}
+          key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
       - save_cache:
           paths:
             - ~/.gradle
