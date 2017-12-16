@@ -105,7 +105,7 @@ jobs:
     steps:
       - run:
           name: Add openjdk-8 to machine
-          command: sudo apt-get install openjdk-8-jre
+          command: sudo apt-get install openjdk-8-jre-headless
       - run:
           name: Java version check
           command: java -version
