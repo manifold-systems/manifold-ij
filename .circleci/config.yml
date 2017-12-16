@@ -106,5 +106,9 @@ workflows:
   build_and_test:
     jobs:
       - build
-      - test8
-      - test9
+      - test8:
+          requires:
+            - build
+      - test9:
+          requires:
+            - build
