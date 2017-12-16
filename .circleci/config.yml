@@ -10,9 +10,9 @@ jobs:
       TERM: dumb
       TZ: /usr/share/zoneinfo/America/Los_Angeles
 
-    branches:
-      ignore:
-        - /rel\/.*/
+#    branches:
+#      ignore:
+#        - /rel\/.*/
     
     steps:
       - checkout
