@@ -3,7 +3,6 @@ jobs:
   build:
     docker:
       - image: circleci/openjdk:8-jdk
-      - image: circleci/openjdk:9-jdk
 
     working_directory: ~/manifold-ij
 
@@ -47,6 +46,7 @@ jobs:
   test8:
     docker:
       - image: circleci/openjdk:8-jdk
+      - image: circleci/openjdk:9-jdk
 
     working_directory: ~/manifold-ij
 
