@@ -7,17 +7,21 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.LanguageLevelProjectExtension;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.PsiTestUtil;
-import com.intellij.testFramework.fixtures.LightCodeInsightFixtureTestCase;
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import manifold.util.PathUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public abstract class AbstractManifoldCodeInsightTest extends LightCodeInsightFixtureTestCase
+public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeInsightFixtureTestCase
 {
   @Override
   protected void setUp() throws Exception
@@ -126,5 +130,42 @@ public abstract class AbstractManifoldCodeInsightTest extends LightCodeInsightFi
       PsiTestUtil.addLibrary( module, findToolsJar() );
       return module;
     }
+
+    /**
+     * Override to handle real files, not "temp:" files (we use real files, not fake in-memory files,
+     * which conflict with some manifold features such as Json where we expect a file to have a valid URL)
+     */
+    @Nullable
+    @Override
+    public VirtualFile createSourcesRoot( @NotNull Module module )
+    {
+      VirtualFile srcRoot = VirtualFileManager.getInstance().refreshAndFindFileByUrl( "file://" + myFixture.getTempDirFixture().getTempDirPath() );
+      assert srcRoot != null;
+      srcRoot.refresh( false, false );
+      cleanSourceRoot( srcRoot );
+      registerSourceRoot( module.getProject(), srcRoot );
+      return srcRoot;
+    }
+
+    private void cleanSourceRoot( @NotNull VirtualFile contentRoot )
+    {
+      try
+      {
+        LocalFileSystem tempFs = (LocalFileSystem)contentRoot.getFileSystem();
+        for( VirtualFile child : contentRoot.getChildren() )
+        {
+          if( !tempFs.exists( child ) )
+          {
+            tempFs.createChildFile( this, contentRoot, child.getName() );
+          }
+          child.delete( this );
+        }
+      }
+      catch( IOException e )
+      {
+        throw new RuntimeException( e );
+      }
+    }
+
   }
 }

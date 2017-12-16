@@ -17,4 +17,15 @@ public class JsonCompletionTest extends AbstractManifoldCodeInsightTest
     List<String> strings = myFixture.getLookupElementStrings();
     assertTrue( strings.containsAll( Arrays.asList( "getFirstName","setFirstName", "getLastName","setLastName", "getAge","setAge", "toJson", "toXml" ) ) );
   }
+
+  public void testParsing() throws Exception
+  {
+    myFixture.copyFileToProject( "json/sample/Outside.json" );
+    myFixture.copyFileToProject( "json/sample/Junk.json" );
+    myFixture.configureByFiles( "json/completion/TestJsonParsing_1.java" );
+
+    myFixture.complete( CompletionType.BASIC );
+    List<String> strings = myFixture.getLookupElementStrings();
+    assertTrue( strings.containsAll( Arrays.asList( "charAt" ) ) );
+  }
 }
