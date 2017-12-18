@@ -7,6 +7,8 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actions.EditorActionUtil;
 import com.intellij.openapi.editor.impl.EditorImpl;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -20,6 +22,7 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiNameValuePair;
 import com.intellij.psi.PsiNamedElement;
+import com.intellij.psi.PsiPlainText;
 import com.intellij.psi.PsiPlainTextFile;
 import com.intellij.psi.search.GlobalSearchScope;
 import java.awt.KeyboardFocusManager;
@@ -105,9 +108,15 @@ public class ResourceToManifoldUtil
       return Collections.emptyList();
     }
 
+    if( element instanceof PsiPlainText )
+    {
+      // can happen in tests
+      element = element.getContainingFile();
+    }
+
     if( element instanceof PsiFile )
     {
-      if( element instanceof PsiPlainTextFile )
+      if( element instanceof PsiPlainTextFile && isFileOpenInCurrentEditor( (PsiFile)element ) )
       {
         element = findFakePlainTextElement( (PsiPlainTextFile)element );
         if( element == null )
@@ -172,13 +181,13 @@ public class ResourceToManifoldUtil
   {
     try
     {
-      int start = getWordAtCaretStart( psiTextFile.getVirtualFile().getPath() );
+      int start = getWordAtCaretStart( psiTextFile.getProject(), psiTextFile.getVirtualFile().getPath() );
       if( start < 0 )
       {
         return null;
       }
 
-      int end = getWordAtCaretEnd( psiTextFile.getVirtualFile().getPath() );
+      int end = getWordAtCaretEnd( psiTextFile.getProject(), psiTextFile.getVirtualFile().getPath() );
       if( end < 0 )
       {
         return null;
@@ -194,10 +203,16 @@ public class ResourceToManifoldUtil
     }
   }
 
-  private static int getWordAtCaretStart( String filePath )
+  private static boolean isFileOpenInCurrentEditor( PsiFile file )
+  {
+    Editor editor = getActiveEditor( file.getProject() );
+    return editor instanceof EditorImpl && ((EditorImpl)editor).getVirtualFile().getPath().equals( file.getVirtualFile().getPath() );
+  }
+
+  private static int getWordAtCaretStart( Project project, String filePath )
   {
     Editor[] editor = new Editor[1];
-    editor[0] = DataManager.getInstance().getDataContext( KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner() ).getData( PlatformDataKeys.EDITOR );
+    editor[0] = getActiveEditor( project );
     if( !(editor[0] instanceof EditorImpl) )
     {
       return -1;
@@ -230,10 +245,10 @@ public class ResourceToManifoldUtil
     return newOffset;
   }
 
-  private static int getWordAtCaretEnd( String filePath )
+  private static int getWordAtCaretEnd( Project project, String filePath )
   {
     Editor[] editor = new Editor[1];
-    editor[0] = DataManager.getInstance().getDataContext( KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner() ).getData( PlatformDataKeys.EDITOR );
+    editor[0] = getActiveEditor( project );
     if( !(editor[0] instanceof EditorImpl) )
     {
       return -1;
@@ -377,4 +392,16 @@ public class ResourceToManifoldUtil
     return false;
   }
 
+  public static Editor getActiveEditor( Project project )
+  {
+    if( FileEditorManager.getInstance( project ) instanceof FileEditorManagerImpl )
+    {
+      // get the active editor without having to use the dispatch thread, which otherwise can cause deadlock
+      return DataManager.getInstance().getDataContext( KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner() ).getData( PlatformDataKeys.EDITOR );
+    }
+    else
+    {
+      return FileEditorManager.getInstance( project ).getSelectedTextEditor();
+    }
+  }
 }

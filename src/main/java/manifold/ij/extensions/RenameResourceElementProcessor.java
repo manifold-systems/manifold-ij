@@ -12,6 +12,7 @@ import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiNamedElement;
+import com.intellij.psi.PsiPlainText;
 import com.intellij.psi.PsiPlainTextFile;
 import com.intellij.psi.PsiPolyVariantReference;
 import com.intellij.psi.PsiReference;
@@ -131,8 +132,9 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
         }
       }
     }
-    else if( element[0] instanceof PsiPlainTextFile )
+    else if( element[0] instanceof PsiPlainTextFile || element[0] instanceof PsiPlainText )
     {
+      element[0] = element[0] instanceof PsiPlainText ? element[0].getContainingFile() : element[0];
       element[0] = findFakePlainTextElement( (PsiPlainTextFile)element[0] );
     }
     return javaElems;

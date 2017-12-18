@@ -11,6 +11,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileSystemItem;
 import com.intellij.psi.PsiNamedElement;
+import com.intellij.psi.PsiPlainText;
 import com.intellij.psi.PsiPlainTextFile;
 import com.intellij.psi.PsiPolyVariantReference;
 import com.intellij.psi.PsiReference;
@@ -57,6 +58,11 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 
   private boolean isElementInsidePlainTextFile( PsiElement element )
   {
+    if( element instanceof PsiPlainText )
+    {
+      element = element.getContainingFile();
+    }
+
     if( element instanceof PsiPlainTextFile )
     {
       PsiElement fakeElement = ResourceToManifoldUtil.findFakePlainTextElement( (PsiPlainTextFile)element );
