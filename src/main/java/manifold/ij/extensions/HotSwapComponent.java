@@ -56,6 +56,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import manifold.api.fs.IFile;
 import manifold.api.type.ITypeManifold;
+import manifold.ij.core.IjManifoldHost;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.internal.host.ManifoldHost;
@@ -285,22 +286,25 @@ public class HotSwapComponent implements DebuggerManagerListener
         if( file.lastModified() > timeStamp )
         {
           IFile ifile = _manProject.getFileSystem().getIFile( file );
-          Set<ITypeManifold> sps = new HashSet<>();
+          Set<ITypeManifold> seen = new HashSet<>();
           for( ManModule module: _manProject.findRootModules() )
           {
-            sps.addAll( module.findTypeManifoldsFor( ifile ) );
-          }
-          if( !sps.isEmpty() )
-          {
-            Set<String> fqns = new HashSet<>();
-            for( ITypeManifold sp: sps )
+            Set<ITypeManifold> typeManifolds = module.findTypeManifoldsFor( ifile );
+            if( !typeManifolds.isEmpty() )
             {
-              fqns.addAll( Arrays.asList( sp.getTypesForFile( ifile ) ) );
-            }
-            Set<JavaFileObject> sourceFiles = new HashSet<>();
-            for( ManModule module: _manProject.findRootModules() )
-            {
-              for( String fqn: fqns )
+              Set<String> fqns = new HashSet<>();
+              for( ITypeManifold sp : typeManifolds )
+              {
+                if( seen.contains( sp ) )
+                {
+                  continue;
+                }
+                fqns.addAll( Arrays.asList( sp.getTypesForFile( ifile ) ) );
+              }
+              seen.addAll( typeManifolds );
+
+              Set<JavaFileObject> sourceFiles = new HashSet<>();
+              for( String fqn : fqns )
               {
                 JavaFileObject sourceFile = module.produceFile( fqn, null );
                 if( sourceFile != null )
@@ -310,13 +314,21 @@ public class HotSwapComponent implements DebuggerManagerListener
               }
               if( !sourceFiles.isEmpty() )
               {
-                Collection<InMemoryClassJavaFileObject> result = compileManifoldFiles( sourceFiles );
-                result = result.stream().filter( e -> fqns.contains( e.getClassName() ) ).collect( Collectors.toList() );
-                Map<String, File> classes = makeTempFiles( result );
-                progress.setText( DebuggerBundle.message( "progress.hotswap.scanning.path", filePath ) );
-                for( Map.Entry<String, File> e : classes.entrySet() )
+                ManModule previousModule = ((IjManifoldHost)ManifoldHost.instance()).setCurrentModule( module );
+                try
                 {
-                  container.put( e.getKey(), new HotSwapFile( e.getValue() ) );
+                  Collection<InMemoryClassJavaFileObject> result = compileManifoldFiles( sourceFiles );
+                  result = result.stream().filter( e -> fqns.contains( e.getClassName() ) ).collect( Collectors.toList() );
+                  Map<String, File> classes = makeTempFiles( result );
+                  progress.setText( DebuggerBundle.message( "progress.hotswap.scanning.path", filePath ) );
+                  for( Map.Entry<String, File> e : classes.entrySet() )
+                  {
+                    container.put( e.getKey(), new HotSwapFile( e.getValue() ) );
+                  }
+                }
+                finally
+                {
+                  ((IjManifoldHost)ManifoldHost.instance()).setCurrentModule( previousModule );
                 }
               }
             }

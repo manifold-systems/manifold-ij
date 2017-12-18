@@ -1,9 +1,7 @@
 package manifold.ij.extensions;
 
-import com.intellij.ide.DataManager;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.Language;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.impl.EditorImpl;
@@ -18,7 +16,6 @@ import com.intellij.psi.meta.PsiMetaData;
 import com.intellij.psi.meta.PsiMetaOwner;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.IncorrectOperationException;
-import java.awt.KeyboardFocusManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -224,7 +221,7 @@ class FakeTargetElement extends PsiElementBase implements PsiMetaOwner, PsiMetaD
 
   private Document findDocument()
   {
-    Editor editor = DataManager.getInstance().getDataContext( KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner() ).getData( PlatformDataKeys.EDITOR );
+    Editor editor = ResourceToManifoldUtil.getActiveEditor( getProject() );
     if( editor instanceof EditorImpl )
     {
       EditorImpl editorImpl = (EditorImpl)editor;
