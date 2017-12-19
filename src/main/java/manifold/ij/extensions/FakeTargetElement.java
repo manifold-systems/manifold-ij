@@ -129,7 +129,7 @@ class FakeTargetElement extends PsiElementBase implements PsiMetaOwner, PsiMetaD
   @Override
   public boolean isPhysical()
   {
-    return true;
+    return false;
   }
 
   @Override

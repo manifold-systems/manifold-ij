@@ -22,5 +22,23 @@ public class JsUsagesTest extends AbstractManifoldCodeInsightTest
   {
     Collection<UsageInfo> usageInfos = myFixture.testFindUsages( "js/usages/MyJsClass_Caret_MethodDeclaration.js", "js/usages/TestJsUsages_Method_FromDeclaration.java" );
     assertEquals( 1, usageInfos.size() );
+    //noinspection ConstantConditions
+    assertEquals( "js.hi", usageInfos.iterator().next().getElement().getText() );
+  }
+
+  public void testFindUsages_Getter_FromDeclaration() throws Exception
+  {
+    Collection<UsageInfo> usageInfos = myFixture.testFindUsages( "js/usages/MyJsClass_Caret_GetterDeclaration.js", "js/usages/TestJsUsages_Getter_FromDeclaration.java" );
+    assertEquals( 1, usageInfos.size() );
+    //noinspection ConstantConditions
+    assertEquals( "js.getYeah", usageInfos.iterator().next().getElement().getText() );
+  }
+
+  public void testFindUsages_Setter_FromDeclaration() throws Exception
+  {
+    Collection<UsageInfo> usageInfos = myFixture.testFindUsages( "js/usages/MyJsClass_Caret_SetterDeclaration.js", "js/usages/TestJsUsages_Setter_FromDeclaration.java" );
+    assertEquals( 1, usageInfos.size() );
+    //noinspection ConstantConditions
+    assertEquals( "js.setYeah", usageInfos.iterator().next().getElement().getText() );
   }
 }

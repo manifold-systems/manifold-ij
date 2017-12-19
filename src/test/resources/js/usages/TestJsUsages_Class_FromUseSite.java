@@ -7,6 +7,6 @@ public class TestJsUsage_Class_FromUseSite {
     <caret>MyJsClass js = new MyJsClass();
     js.hi();
     System.out.println( js.getYeah() );
-    js.setFong( "hi" );
+    js.setYeah( "hi" );
   }
 }

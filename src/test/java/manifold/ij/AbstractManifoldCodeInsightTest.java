@@ -92,7 +92,7 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
 
   private String findToolsJar()
   {
-    String toolsJar = new File(System.getProperty("java.home")).getParent() + File.separator + "lib" + File.separator + "tools.jar";
+    String toolsJar = getPath_JdkRoot() + File.separatorChar + getJdkVersion() + File.separator + "lib" + File.separator + "tools.jar";
     if( !PathUtil.isFile( PathUtil.create( toolsJar ) ) )
     {
       throw new RuntimeException( "Could not find tools.jar" );
@@ -115,7 +115,7 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
     public Sdk getSdk()
     {
       return _sdk == null
-             ? _sdk = JavaSdk.getInstance().createJdk( System.getProperty("java.runtime.version"), new File(System.getProperty("java.home")).getParent(), false )
+             ? _sdk = JavaSdk.getInstance().createJdk( getJdkVersion(), getPath_JdkRoot() + File.separatorChar + getJdkVersion(), false )
              : _sdk;
     }
 
@@ -156,7 +156,15 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
         {
           if( !tempFs.exists( child ) )
           {
-            tempFs.createChildFile( this, contentRoot, child.getName() );
+            try
+            {
+              tempFs.createChildFile( this, contentRoot, child.getName() );
+            }
+            catch( IOException ignore )
+            {
+
+            }
+
           }
           child.delete( this );
         }

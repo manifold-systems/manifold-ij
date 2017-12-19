@@ -55,6 +55,10 @@ public class ManShortNamesCache extends PsiShortNamesCache
         if( simpleName.equals( name ) )
         {
           PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( scope, module, fqn );
+          if( psiClass == null )
+          {
+            throw new IllegalStateException( "No PsiClass for: " + fqn );
+          }
           psiClasses.add( psiClass );
         }
       }

@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actions.EditorActionUtil;
 import com.intellij.openapi.editor.impl.EditorImpl;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl;
 import com.intellij.openapi.project.Project;
@@ -206,7 +207,14 @@ public class ResourceToManifoldUtil
   private static boolean isFileOpenInCurrentEditor( PsiFile file )
   {
     Editor editor = getActiveEditor( file.getProject() );
-    return editor instanceof EditorImpl && ((EditorImpl)editor).getVirtualFile().getPath().equals( file.getVirtualFile().getPath() );
+    if( editor == null )
+    {
+      return false;
+    }
+
+    VirtualFile editorFile = FileDocumentManager.getInstance().getFile( editor.getDocument() );
+    return editorFile != null && editorFile.getPath().equals( file.getVirtualFile().getPath() );
+
   }
 
   private static int getWordAtCaretStart( Project project, String filePath )
