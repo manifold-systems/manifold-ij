@@ -1,0 +1,20 @@
+{
+  "$schema": "http://mydomain.com/WebScraperCrawl#",
+  "id": "http://mydomain.com/WebScraperCrawl#",
+  "properties": {
+    "foo": {
+      "$ref": "#/definitions/crawlStepTyp"
+    }
+  },
+  "definitions": {
+    "crawlStepType": {
+      "type": "string",
+      "enum": [
+        "C",
+        "P",
+        "I"
+      ],
+      "required": ["type"]
+    }
+  }
+}
