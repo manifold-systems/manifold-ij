@@ -37,14 +37,11 @@ compileJava {
   options.compilerArgs += ['-proc:none', '-Xplugin:Manifold']
 }
 
-String getIjVersion() {
-  return System.getProperty('ijVersion') ?: defaultIjVersion
-}
-
 intellij {
   pluginName project.name
-  version getIjVersion() // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
-  plugins = ['ASM Bytecode Outline:0.3.5'] //include ASM in the sandbox by default. Nice.
+  if(project.hasProperty('ijVersion')) {
+    version ijVersion
+  }
 }
 
 patchPluginXml {
