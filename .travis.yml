@@ -11,7 +11,7 @@ env:
   matrix:
   - IDEA_VERSION=2016.3.1
   - IDEA_VERSION=2017.3.1
-  - IDEA_VERSION=2017.3.1
+  - #intentionally blank; absence of IDEA_VERSION env var means sandbox will use latest EAP snapshot
 
 #install:
 #- ./gradlew --version
