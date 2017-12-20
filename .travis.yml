@@ -1,20 +1,28 @@
 language: java
 
 jdk:
-#  - oraclejdk8
-#  - oraclejdk9
   - openjdk8
+  - oraclejdk8
+#  - oraclejdk9
+
 env:
-  - IJVERSION=2016.3.1
-  - TEST_JRE=oraclejdk8 IJVERSION=2017.3.1
-  - TEST_JRE=oraclejdk9 IJVERSION=2017.3.1
-  - IJVERSION=LATEST_EAP
+  global: 
+    - TERM=dumb
+  matrix:
+  - IDEA_VERSION=2016.3.1
+  - IDEA_VERSION=2017.3.1
+  - IDEA_VERSION=2017.3.1
 
-install:
-- ./gradlew --version
-- ./gradlew jar testClasses
+#install:
+#- ./gradlew --version
+#- ./gradlew jar testClasses
+#
+#script:
+#- jdk_switcher use ${TEST_JRE}
+#- ./gradlew --version
+#- ./gradlew check
 
-script:
-- jdk_switcher use ${TEST_JRE}
-- ./gradlew --version
-- ./gradlew check
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
