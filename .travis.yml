@@ -3,31 +3,16 @@ language: java
 jdk:
   - openjdk8
   - oraclejdk8
-  - oraclejdk9
+#  - oraclejdk9 #known break
 
 env:
   global: 
     - TERM=dumb
   matrix:
-  - MANIFOLD_VERSION=0.5-alpha      IDEA_VERSION=2016.3.1
-  - MANIFOLD_VERSION=0.6-alpha      IDEA_VERSION=2016.3.1
-  - MANIFOLD_VERSION=0.7-alpha      IDEA_VERSION=2016.3.1
-  - MANIFOLD_VERSION=0.8-SNAPSHOT   IDEA_VERSION=2016.3.1
-  - MANIFOLD_VERSION=LATEST         IDEA_VERSION=2016.3.1
-  - MANIFOLD_VERSION=RELEASE        IDEA_VERSION=2016.3.1
-  - MANIFOLD_VERSION=0.5-alpha      IDEA_VERSION=2017.3.1
-  - MANIFOLD_VERSION=0.6-alpha      IDEA_VERSION=2017.3.1
-  - MANIFOLD_VERSION=0.7-alpha      IDEA_VERSION=2017.3.1
-  - MANIFOLD_VERSION=0.9-SNAPSHOT   IDEA_VERSION=2017.3.1
-  - MANIFOLD_VERSION=LATEST         IDEA_VERSION=2017.3.1
-  - MANIFOLD_VERSION=RELEASE        IDEA_VERSION=2017.3.1
-  - MANIFOLD_VERSION=0.7-alpha      IDEA_VERSION=2017.3.1
-  - MANIFOLD_VERSION=0.5-alpha      #intentionally blank; absence of IDEA_VERSION env var means sandbox will use latest EAP snapshot
-  - MANIFOLD_VERSION=0.6-alpha      #intentionally blank; absence of IDEA_VERSION env var means sandbox will use latest EAP snapshot
-  - MANIFOLD_VERSION=0.7-alpha      #intentionally blank; absence of IDEA_VERSION env var means sandbox will use latest EAP snapshot
-  - MANIFOLD_VERSION=0.8-SNAPSHOT   #intentionally blank; absence of IDEA_VERSION env var means sandbox will use latest EAP snapshot
-  - MANIFOLD_VERSION=LATEST         #intentionally blank; absence of IDEA_VERSION env var means sandbox will use latest EAP snapshot
-  - MANIFOLD_VERSION=RELEASE        #intentionally blank; absence of IDEA_VERSION env var means sandbox will use latest EAP snapshot
+  - IDEA_VERSION=15.0.6
+  - IDEA_VERSION=2016.3.1
+  - IDEA_VERSION=2017.3.1
+  - #intentionally blank; absence of IDEA_VERSION env var means sandbox will use latest EAP snapshot
 
 #install:
 #- ./gradlew --version
