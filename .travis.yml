@@ -24,5 +24,5 @@ env:
 
 cache:
   directories:
-    - $HOME/.gradle/caches/
+    - $HOME/.gradle/caches/modules-2/
     - $HOME/.gradle/wrapper/
