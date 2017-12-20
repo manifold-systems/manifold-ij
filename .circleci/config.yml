@@ -43,10 +43,9 @@ jobs:
             - ~/.gradle
           key: v1-dependencies-{{ checksum "build.gradle" }}
 
-  test8:
+  test8_LATEST_EAP_SNAPSHOT:
     docker:
       - image: circleci/openjdk:8-jdk
-      - image: circleci/openjdk:9-jdk
 
     working_directory: ~/manifold-ij
 
@@ -74,6 +73,102 @@ jobs:
       - run:
           name: Run tests
           command: ./gradlew check --stacktrace
+      - run:
+          name: Create test metadata folder
+          command: sudo mkdir -p ~/junit/xml
+      - run:
+          name: Create test stdout folder
+          command: sudo mkdir -p ~/junit/stdout
+      - run:
+          name: Collect test metadata
+          command: sudo find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/junit/xml/ \;
+      - run:
+          name: Collect test stdout
+          command: sudo find . -type f -regex ".*/build/test-results/.*-output.txt" -exec cp {} ~/junit/stdout/ \;
+      - store_artifacts:
+          path: ~/junit
+      - store_test_results:
+          path: ~/junit
+
+  test8_2017.3.1:
+    docker:
+      - image: circleci/openjdk:8-jdk
+
+    working_directory: ~/manifold-ij
+
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.daemon=false
+      TERM: dumb
+      TZ: /usr/share/zoneinfo/America/Los_Angeles
+      IJVERSION: 2017.3.1
+
+    steps:
+      - restore_cache:
+          keys:
+            - v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "build.gradle" }}
+      - run:
+          name: Java version check
+          command: java -version
+      - run:
+          name: Java location check
+          command: ls -al /usr/lib/jvm/
+      - run:
+          name: Dump env
+          command: env
+      - run:
+          name: Run tests
+          command: ./gradlew check -PijVersion=${IJVERSION} --stacktrace
+      - run:
+          name: Create test metadata folder
+          command: sudo mkdir -p ~/junit/xml
+      - run:
+          name: Create test stdout folder
+          command: sudo mkdir -p ~/junit/stdout
+      - run:
+          name: Collect test metadata
+          command: sudo find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/junit/xml/ \;
+      - run:
+          name: Collect test stdout
+          command: sudo find . -type f -regex ".*/build/test-results/.*-output.txt" -exec cp {} ~/junit/stdout/ \;
+      - store_artifacts:
+          path: ~/junit
+      - store_test_results:
+          path: ~/junit
+
+  test8_2016.3.1:
+    docker:
+      - image: circleci/openjdk:8-jdk
+
+    working_directory: ~/manifold-ij
+
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.daemon=false
+      TERM: dumb
+      TZ: /usr/share/zoneinfo/America/Los_Angeles
+      IJVERSION: 2016.3.1
+
+    steps:
+      - restore_cache:
+          keys:
+            - v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "build.gradle" }}
+      - run:
+          name: Java version check
+          command: java -version
+      - run:
+          name: Java location check
+          command: ls -al /usr/lib/jvm/
+      - run:
+          name: Dump env
+          command: env
+      - run:
+          name: Run tests
+          command: ./gradlew check -PijVersion=${IJVERSION} --stacktrace
       - run:
           name: Create test metadata folder
           command: sudo mkdir -p ~/junit/xml
@@ -146,9 +241,15 @@ workflows:
   build_and_test:
     jobs:
       - build
-      - test8:
+      - test8_LATEST_EAP_SNAPSHOT:
           requires:
             - build
-      - test9:
+      - test8_2017.3.1:
           requires:
             - build
+      - test8_2016.3.1:
+          requires:
+            - build
+#      - test9:
+#          requires:
+#            - build
