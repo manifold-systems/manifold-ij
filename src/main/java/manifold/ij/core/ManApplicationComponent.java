@@ -15,6 +15,10 @@ public class ManApplicationComponent implements ApplicationComponent
     registerAnnotatorWithAllLanguages();
   }
 
+  @Override
+  public void disposeComponent() {
+  }
+
   private void registerAnnotatorWithAllLanguages()
   {
     for( Language lang: Language.getRegisteredLanguages() )

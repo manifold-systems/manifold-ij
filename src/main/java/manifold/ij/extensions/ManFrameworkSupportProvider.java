@@ -6,6 +6,7 @@ import com.intellij.framework.addSupport.FrameworkSupportInModuleProvider;
 import com.intellij.ide.util.frameworkSupport.FrameworkSupportModel;
 import com.intellij.ide.util.projectWizard.ModuleBuilder;
 import com.intellij.jarRepository.RepositoryLibrarySupportInModuleConfigurable;
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
@@ -68,7 +69,9 @@ public class ManFrameworkSupportProvider extends FrameworkSupportInModuleProvide
   public boolean isEnabledForModuleType( @NotNull ModuleType moduleType )
   {
     // ? return moduleType instanceof JavaModuleType;
-    return true;
+
+    // We are using RepositoryLibrarySupportInModuleConfigurable, which is available starting in IDEA v17.x
+    return ApplicationInfo.getInstance().getBuild().getBaselineVersion() >= 17;
   }
 
 }
