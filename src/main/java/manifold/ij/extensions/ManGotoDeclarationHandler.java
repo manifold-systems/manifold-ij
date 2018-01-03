@@ -7,9 +7,12 @@ import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationMemberValue;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiReference;
 import java.util.List;
+import java.util.Objects;
+import manifold.api.darkj.DarkJavaTypeManifold;
 import manifold.api.type.SourcePosition;
 
 
@@ -62,12 +65,27 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
 
   public static PsiElement find( PsiModifierListOwner resolve, ManifoldPsiClass facade )
   {
-    PsiAnnotation[] annotations = resolve.getModifierList().getAnnotations();
-    if( annotations != null && annotations.length > 0 &&
-        annotations[0].getQualifiedName().equals( SourcePosition.class.getName() ) )
+    PsiModifierList modifierList = resolve.getModifierList();
+    if( modifierList == null )
+    {
+      return null;
+    }
+
+    PsiAnnotation[] annotations = modifierList.getAnnotations();
+    if( annotations.length > 0 &&
+        Objects.equals( annotations[0].getQualifiedName(), SourcePosition.class.getName() ) )
     {
       return findTargetFeature( annotations[0], facade );
     }
+
+    if( !facade.getRawFiles().isEmpty() &&
+        DarkJavaTypeManifold.FILE_EXTENSIONS.stream()
+          .anyMatch( ext -> ext.equalsIgnoreCase( facade.getRawFiles().get( 0 ).getVirtualFile().getExtension() ) ) )
+    {
+      // DarkJava is Java
+      return facade.getRawFiles().get( 0 ).findElementAt( resolve.getTextOffset() );
+    }
+
     return null;
   }
 

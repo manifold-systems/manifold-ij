@@ -16,6 +16,7 @@ import com.intellij.testFramework.PsiTestUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import manifold.util.PathUtil;
 import org.jetbrains.annotations.NotNull;
@@ -71,7 +72,7 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
    */
   protected List<String> getLibs()
   {
-    return Arrays.asList( "manifold-all-0.7-SNAPSHOT.jar" );
+    return Collections.singletonList( "manifold-all-0.8-SNAPSHOT.jar" );
   }
 
   /**
