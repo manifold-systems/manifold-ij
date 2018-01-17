@@ -189,7 +189,8 @@ public class ExtensionClassAnnotator implements Annotator
     }
 
     String packageName = ((PsiPackageStatement)element).getPackageName();
-    if( !packageName.startsWith( ExtensionManifold.EXTENSIONS_PACKAGE + '.' ) )
+    int iExt = packageName.indexOf( ExtensionManifold.EXTENSIONS_PACKAGE + '.' );
+    if( iExt < 0 )
     {
       TextRange range = new TextRange( element.getTextRange().getStartOffset(),
                                        element.getTextRange().getEndOffset() );
@@ -221,12 +222,8 @@ public class ExtensionClassAnnotator implements Annotator
 
   private String getExtendedClassName( String packageName )
   {
-    int iDot = packageName.indexOf( '.' );
-    if( iDot < 0 )
-    {
-      return "";
-    }
-    return packageName.substring( iDot + 1 );
+    int iExt = packageName.indexOf( ExtensionManifold.EXTENSIONS_PACKAGE + '.' );
+    return packageName.substring( iExt + ExtensionManifold.EXTENSIONS_PACKAGE.length() + 1 );
   }
 
   private boolean isInterfaceMadeStructuralByExtension( PsiClass psiExtentionInterface )

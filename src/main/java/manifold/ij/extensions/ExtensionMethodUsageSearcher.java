@@ -17,9 +17,11 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.searches.MethodReferencesSearch;
 import com.intellij.util.Processor;
+import manifold.ext.ExtensionManifold;
 import manifold.ext.api.Extension;
 import manifold.ext.api.This;
 import manifold.ij.psi.ManLightMethodBuilder;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Forward the search to the augmented light method on the extended class
@@ -51,8 +53,7 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
     {
       if( method.getModifierList().findAnnotation( Extension.class.getName() ) != null )
       {
-        String fqn = extensionClass.getQualifiedName().substring( "extensions.".length() );
-        fqn = fqn.substring( 0, fqn.lastIndexOf( '.' ) );
+        String fqn = getExtendedFqn( extensionClass );
         PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( ModuleUtilCore.findModuleForPsiElement( method ) ) );
 
         for( PsiMethod m : extendedClass.findMethodsByName( method.getName(), false ) )
@@ -71,8 +72,7 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
       {
         if( psiParam.getModifierList().findAnnotation( This.class.getName() ) != null )
         {
-          String fqn = extensionClass.getQualifiedName().substring( "extensions.".length() );
-          fqn = fqn.substring( 0, fqn.lastIndexOf( '.' ) );
+          String fqn = getExtendedFqn( extensionClass );
           PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( ModuleUtilCore.findModuleForPsiElement( method ) ) );
           if( extendedClass == null )
           {
@@ -97,6 +97,16 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
       MethodReferencesSearch.SearchParameters searchParams = new MethodReferencesSearch.SearchParameters( augmentedMethod, searchScope, p.isStrictSignatureSearch(), p.getOptimizer() );
       super.processQuery( searchParams, consumer );
     }
+  }
+
+  @NotNull
+  private String getExtendedFqn( PsiClass extensionClass )
+  {
+    String fqn = extensionClass.getQualifiedName();
+    int iExt = fqn.indexOf( ExtensionManifold.EXTENSIONS_PACKAGE + '.' );
+    fqn = fqn.substring( iExt + ExtensionManifold.EXTENSIONS_PACKAGE.length() + 1 );
+    fqn = fqn.substring( 0, fqn.lastIndexOf( '.' ) );
+    return fqn;
   }
 
   static <T> T resolveInReadAction( Project p, Computable<T> computable )

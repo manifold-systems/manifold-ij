@@ -224,7 +224,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
   private PsiDirectory getPsiDirectoryForExtensionClass( PsiDirectory dir, String fqnExtended, VirtualFile srcRoot )
   {
     String srcDir = srcRoot.getPath().replace( '/', File.separatorChar );
-    File pkg = new File( srcDir, "extensions" + File.separatorChar + fqnExtended.replace( '.', File.separatorChar ) );
+    File pkg = new File( srcDir, IdentifierTextField.makeValidIdentifier( dir.getProject().getName(), true, true ).replace( '.', File.separatorChar ) + File.separatorChar  + "extensions" + File.separatorChar + fqnExtended.replace( '.', File.separatorChar ) );
     //noinspection ResultOfMethodCallIgnored
     pkg.mkdirs();
     VirtualFile pkgFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile( pkg );
