@@ -10,9 +10,12 @@ import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
+import com.intellij.psi.PsiTreeChangeAdapter;
+import com.intellij.psi.PsiTreeChangeEvent;
 import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.PsiModificationTrackerImpl;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -32,6 +35,7 @@ import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.util.cache.FqnCache;
 import manifold.util.cache.FqnCacheNode;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 
@@ -260,13 +264,15 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
   private void listenToChanges( ManProject project )
   {
-    if( _addedListeners.contains( project.getNativeProject() ) )
+    Project ijProject = project.getNativeProject();
+    if( _addedListeners.contains( ijProject ) )
     {
       return;
     }
 
-    _addedListeners.add( project.getNativeProject() );
+    _addedListeners.add( ijProject );
     project.getFileModificationManager().getManRefresher().addTypeLoaderListenerAsWeakRef( this );
+    PsiManager.getInstance( ijProject ).addPsiTreeChangeListener( new PsiTreeChangeHandler() );
   }
 
   private PsiClass createPsiClass( ManModule module, String fqn, String source )
@@ -365,5 +371,28 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
   {
     _psi2Class.clear();
     _type2Class.clear();
+  }
+
+  private class PsiTreeChangeHandler extends PsiTreeChangeAdapter
+  {
+    /**
+     * Handle when callers of FileManagerImpl.invalidateAllPsi() send this event.
+     * Basically we need to listen to property change events here that are not file
+     * oriented, but instead are PSI-oriented, and that pretty much rip out all psi
+     * from underneath this cache.
+     */
+    @Override
+    public void propertyChanged( @NotNull PsiTreeChangeEvent event )
+    {
+      PsiFile file = event.getFile();
+      String propertyName = event.getPropertyName();
+      if( file == null &&
+          (propertyName == null
+           || propertyName.equals( PsiTreeChangeEvent.PROP_FILE_TYPES )
+           || propertyName.equals( PsiTreeChangeEvent.PROP_ROOTS )) )
+      {
+        refreshed();
+      }
+    }
   }
 }

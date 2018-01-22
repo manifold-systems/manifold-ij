@@ -136,11 +136,11 @@ public class ManifoldExtendedPsiClass extends LightClass implements PsiExtensibl
     return _extensionsCache.findMethodsByName( name, checkBases );
   }
 
-  @Override
-  public boolean isValid()
-  {
-    return true;
-  }
+//  @Override
+//  public boolean isValid()
+//  {
+//    return true;
+//  }
 
   //## see comment on getInterfaces() above
 //

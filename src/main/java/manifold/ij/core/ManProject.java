@@ -8,17 +8,21 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.DependencyScope;
 import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.openapi.vfs.impl.jar.CoreJarVirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
+import com.intellij.util.PathsList;
 import com.intellij.util.messages.MessageBusConnection;
 import java.io.File;
 import java.net.MalformedURLException;
@@ -158,6 +162,7 @@ public class ManProject
   {
     _fs = new IjFileSystem( this );
     _modules = LocklessLazyVar.make( () -> ApplicationManager.getApplication().<List<ManModule>>runReadAction( this::defineModules ) );
+    addCompilerArgs(); // in case manifold jar was added we might need to update compiler args
   }
 
   public void reset()
@@ -204,9 +209,76 @@ public class ManProject
     options = options == null ? "" : options;
     if( !options.contains( XPLUGIN_MANIFOLD ) )
     {
-      options = XPLUGIN_MANIFOLD + (options.isEmpty() ? "" : " ") + options;
+      options = XPLUGIN_MANIFOLD + maybeGetProcessorPath() + (options.isEmpty() ? "" : " ") + options;
+    }
+    else if( findJdkVersion() >= 9 && !options.contains( "-processorpath" ) )
+    {
+      options = maybeGetProcessorPath() + (options.isEmpty() ? "" : " ") + options;
     }
     javacOptions.ADDITIONAL_OPTIONS_STRING = options;
+  }
+
+  private String maybeGetProcessorPath()
+  {
+    int jdkVersion = findJdkVersion();
+    if( jdkVersion >= 9 )
+    {
+      PathsList pathsList = ProjectRootManager.getInstance( _ijProject ).orderEntries().withoutSdk().librariesOnly().getPathsList();
+      for( VirtualFile path: pathsList.getVirtualFiles() )
+      {
+        String extension = path.getExtension();
+        if( extension != null && extension.equals( "jar" ) && path.getNameWithoutExtension().contains( "manifold-" ) )
+        {
+          try
+          {
+            return " -processorpath " + new File( new URL( path.getUrl() ).getFile() ).getAbsolutePath() ;
+          }
+          catch( MalformedURLException e )
+          {
+            return "";
+          }
+        }
+      }
+    }
+    return "";
+  }
+
+  private int findJdkVersion()
+  {
+    Sdk projectSdk = ProjectRootManager.getInstance( _ijProject ).getProjectSdk();
+    if( projectSdk == null )
+    {
+      return -1;
+    }
+
+    // expected format:
+    // 'java version "1.8.1"'
+    // 'java version "9.0.1"'
+    // 'java version "10.0.1"'
+    // etc.
+    String version = projectSdk.getVersionString();
+    int iQuote = version.indexOf( '"' );
+    if( iQuote < 0 )
+    {
+      return -1;
+    }
+
+    String verNum = version.substring( iQuote+1 );
+    int iDot = verNum.indexOf( '.' );
+    if( iDot < 0 )
+    {
+      return -1;
+    }
+
+    verNum = verNum.substring( 0, iDot );
+    if( verNum.equals( "1" ) )
+    {
+      return 8;
+    }
+    else
+    {
+      return Integer.parseInt( verNum );
+    }
   }
 
   private void addHotSwapComponent()
