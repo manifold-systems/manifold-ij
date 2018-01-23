@@ -67,6 +67,11 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       return null;
     }
 
+    if( !isValidFqn( fqn ) )
+    {
+      return null;
+    }
+
     addShortCircuit( fqn );
     try
     {
@@ -112,6 +117,13 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     {
       removeShortCircuit( fqn );
     }
+  }
+
+  private boolean isValidFqn( String fqn )
+  {
+    // IJ tries to resolve some pretty strange looking names...
+
+    return !fqn.contains( ".<" ) && !fqn.startsWith( "<" );
   }
 
   private void addShortCircuit( String fqn )

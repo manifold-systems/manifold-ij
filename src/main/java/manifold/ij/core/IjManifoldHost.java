@@ -11,7 +11,7 @@ import manifold.internal.host.DefaultManifoldHost;
 public class IjManifoldHost extends DefaultManifoldHost
 {
   /** this is exclusively for hotspot compilation where we compile (in process)
-   * modified resource files and therefore need a curent module :( */
+   * modified resource files and therefore need a current module :( */
   private final ThreadLocal<ManModule> _currentModule = new ThreadLocal<>();
 
   @Override
