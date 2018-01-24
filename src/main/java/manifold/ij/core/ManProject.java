@@ -19,7 +19,6 @@ import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.openapi.vfs.impl.jar.CoreJarVirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
 import com.intellij.util.PathsList;
@@ -32,9 +31,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -354,15 +354,14 @@ public class ManProject
     // add module dependencies
     for( Module ijModule : allIjModules )
     {
-      final ManModule module = modules.get( ijModule );
-      for( Module child : ModuleRootManager.getInstance( ijModule ).getDependencies() )
-      {
-        IModule moduleDep = modules.get( child );
-        if( moduleDep != null )
-        {
-          module.addDependency( new Dependency( moduleDep, isExported( ijModule, child ) ) );
-        }
-      }
+      addModuleDependencies( modules, modules.get( ijModule ) );
+    }
+
+    // reduce classpaths
+    Set<ManModule> visited = new HashSet<>();
+    for( ManModule manModule: allModules )
+    {
+      manModule.reduceClasspath( visited );
     }
 
     // finally, initialize the type manifolds for each module
@@ -372,6 +371,19 @@ public class ManProject
     }
 
     return allModules;
+  }
+
+  private void addModuleDependencies( Map<Module, ManModule> modules, ManModule manModule )
+  {
+    Module ijModule = manModule.getIjModule();
+    for( Module child : ModuleRootManager.getInstance( ijModule ).getDependencies() )
+    {
+      IModule moduleDep = modules.get( child );
+      if( moduleDep != null )
+      {
+        manModule.addDependency( new Dependency( moduleDep, isExported( ijModule, child ) ) );
+      }
+    }
   }
 
   public static boolean isExported( Module ijModule, Module child )
@@ -400,7 +412,7 @@ public class ManProject
   {
     List<VirtualFile> sourceFolders = getSourceRoots( ijModule );
     VirtualFile outputPath = CompilerPaths.getModuleOutputDirectory( ijModule, false );
-    return createModule( ijModule, getClassPaths( ijModule ),
+    return createModule( ijModule, getInitialClasspaths( ijModule ),
                          sourceFolders.stream().map( this::toDirectory ).collect( Collectors.toList() ),
                          outputPath == null ? null : getFileSystem().getIDirectory( outputPath ) );
   }
@@ -570,17 +582,9 @@ public class ManProject
     return getFileSystem().getIDirectory( file );
   }
 
-  public static List<IDirectory> getClassPaths( Module ijModule )
+  private static List<IDirectory> getInitialClasspaths( Module ijModule )
   {
     List<String> paths = getDirectClassPaths( ijModule );
-    for( Iterator<String> it = paths.iterator(); it.hasNext(); )
-    {
-      String url = it.next();
-      if( dependencyChainContains( ijModule, url, new ArrayList<>() ) )
-      {
-        it.remove();
-      }
-    }
     List<IDirectory> dirs = new ArrayList<>();
     for( String path : paths )
     {
@@ -611,24 +615,6 @@ public class ManProject
       }
     }
     return paths;
-  }
-
-  private static boolean dependencyChainContains( Module ijModule, String path, List<Module> visited )
-  {
-    if( !visited.contains( ijModule ) )
-    {
-      visited.add( ijModule );
-
-      ModuleRootManager rootManager = ModuleRootManager.getInstance( ijModule );
-      for( Module dep : rootManager.getDependencies() )
-      {
-        if( getDirectClassPaths( dep ).contains( path ) || dependencyChainContains( dep, path, visited ) )
-        {
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
   private static String stripExtraCharacters( String fileName )

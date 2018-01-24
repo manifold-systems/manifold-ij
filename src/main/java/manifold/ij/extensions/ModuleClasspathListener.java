@@ -42,20 +42,20 @@ public class ModuleClasspathListener implements ModuleRootListener
     {
       return;
     }
-    boolean processDependencies = true;
-
-    if( processDependencies )
-    {
-      processModuleDependenciesChange( project );
-    }
-
-    final Module[] modules = ModuleManager.getInstance( project ).getModules();
-    for( Module ijModule : modules )
-    {
-      ManModule manModule = ManProject.getModule( ijModule );
-      processClasspathChange( manModule, ijModule );
-      changeSourceRoots( manModule );
-    }
+//    boolean processDependencies = true;
+//
+//    if( processDependencies )
+//    {
+//      processModuleDependenciesChange( project );
+//    }
+//
+//    final Module[] modules = ModuleManager.getInstance( project ).getModules();
+//    for( Module ijModule : modules )
+//    {
+//      ManModule manModule = ManProject.getModule( ijModule );
+//      processClasspathChange( manModule, ijModule );
+//    }
+    resetProject( project );
   }
 
   private boolean shouldProcessRootChanges( Project project )
@@ -70,7 +70,7 @@ public class ModuleClasspathListener implements ModuleRootListener
     List<IDirectory> gosuClasspath = manModule.getJavaClassPath();
     if( areDifferentIgnoringOrder( ijClasspath, gosuClasspath ) )
     {
-      changeClasspath( manModule, ijClasspath, ijSources );
+      resetProject( manModule.getIjProject() );
     }
   }
 
@@ -86,15 +86,15 @@ public class ModuleClasspathListener implements ModuleRootListener
     return list1copy.size() != 0;
   }
 
-  private void processModuleDependenciesChange( Project project )
-  {
-    FP64 ijDependencyFingerprint = computeIJDependencyFingerprint( project );
-    FP64 gosuDependencyFingerprint = computeGosuDependencyFingerprint( project );
-    if( !ijDependencyFingerprint.equals( gosuDependencyFingerprint ) )
-    {
-      changeDependencies( project );
-    }
-  }
+//  private void processModuleDependenciesChange( Project project )
+//  {
+//    FP64 ijDependencyFingerprint = computeIJDependencyFingerprint( project );
+//    FP64 gosuDependencyFingerprint = computeGosuDependencyFingerprint( project );
+//    if( !ijDependencyFingerprint.equals( gosuDependencyFingerprint ) )
+//    {
+//      changeDependencies( project );
+//    }
+//  }
 
   private FP64 computeGosuDependencyFingerprint( Project project )
   {
@@ -140,25 +140,13 @@ public class ModuleClasspathListener implements ModuleRootListener
     return fp;
   }
 
-  // ================================ private part
-
-  private void changeDependencies( Project project )
+  private void resetProject( Project project )
   {
-    ManProject.manProjectFrom( project ).reset();
-  }
-
-  private void changeSourceRoots( ManModule manModule )
-  {
-    if( !manModule.getIjModule().getProject().isInitialized() )
+    if( !project.isInitialized() )
     {
       return;
     }
 
-    manModule.getProject().reset();
-  }
-
-  private void changeClasspath( ManModule manModule, List<IDirectory> classpath, List<IDirectory> sources )
-  {
-    manModule.getProject().reset();
+    ManProject.manProjectFrom( project ).reset();
   }
 }

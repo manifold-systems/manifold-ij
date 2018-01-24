@@ -261,6 +261,48 @@ public class ManModule extends SimpleModule
     return result.toArray( new String[result.size()] );
   }
 
+  /** reduce redundancy, remove paths that exist in dependencies */
+  void reduceClasspath( Set<ManModule> visited )
+  {
+    if( visited.contains( this ) )
+    {
+      return;
+    }
+    visited.add( this );
+
+    List<IDirectory> classpath = getJavaClassPath();
+    for( Dependency dep: getDependencies() )
+    {
+      ManModule depMod = (ManModule)dep.getModule();
+      depMod.reduceClasspath( visited );
+      classpath.removeIf( depMod::hasPath );
+    }
+
+    setJavaClassPath( classpath );
+  }
+
+  private boolean hasPath( IDirectory directory )
+  {
+    List<IDirectory> classpath = getJavaClassPath();
+    if( classpath.contains( directory ) )
+    {
+      return true;
+    }
+
+    for( Dependency dep: getDependencies() )
+    {
+      if( dep.isExported() )
+      {
+        ManModule depMod = (ManModule)dep.getModule();
+        if( depMod.hasPath( directory ) )
+        {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   @Override
   public String toString()
   {
