@@ -53,7 +53,7 @@ import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
 import manifold.internal.host.ManifoldHost;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
-import manifold.util.concurrent.LocklessLazyVar;
+import manifold.util.concurrent.LockingLazyVar;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
 
 /**
@@ -66,7 +66,7 @@ public class ManProject
 
   private final Project _ijProject;
   private IjFileSystem _fs;
-  private LocklessLazyVar<List<ManModule>> _modules;
+  private LockingLazyVar<List<ManModule>> _modules;
   private MessageBusConnection _projectConnection;
   private MessageBusConnection _applicationConnection;
   private MessageBusConnection _permanentProjectConnection;
@@ -161,7 +161,7 @@ public class ManProject
   private void init()
   {
     _fs = new IjFileSystem( this );
-    _modules = LocklessLazyVar.make( () -> ApplicationManager.getApplication().<List<ManModule>>runReadAction( this::defineModules ) );
+    _modules = LockingLazyVar.make( () -> ApplicationManager.getApplication().<List<ManModule>>runReadAction( this::defineModules ) );
     addCompilerArgs(); // in case manifold jar was added we might need to update compiler args
   }
 
