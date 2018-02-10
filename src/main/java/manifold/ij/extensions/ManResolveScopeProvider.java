@@ -11,9 +11,6 @@ import java.util.Set;
 import manifold.api.type.ITypeManifold;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
-import manifold.ij.fs.IjFileSystem;
-import manifold.internal.host.Manifold;
-import manifold.internal.host.ManifoldHost;
 
 /**
  * Provide resolve scope for extended files.

@@ -161,7 +161,7 @@ public class ManModule extends SimpleModule
    * @see #initializeModuleClassLoader()
    */
   @Override
-  protected void addRegistered( Set<ITypeManifold> sps )
+  public void loadRegistered( Set<ITypeManifold> sps )
   {
     initializeModuleClassLoader();
     ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
@@ -171,7 +171,7 @@ public class ManModule extends SimpleModule
     }
     try
     {
-      super.addRegistered( sps );
+      super.loadRegistered( sps );
     }
     finally
     {
