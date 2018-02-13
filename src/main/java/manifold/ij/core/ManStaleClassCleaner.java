@@ -18,8 +18,9 @@ import manifold.api.type.ITypeManifold;
  */
 public class ManStaleClassCleaner implements BuildManagerListener
 {
+
   @Override
-  public void beforeBuildProcessStarted( Project project, UUID sessionId )
+  public void buildStarted( Project project, UUID sessionId, boolean isAutomake )
   {
     ManProject manProject = ManProject.manProjectFrom( project );
     List<ManModule> modules = manProject.getModules();
@@ -34,12 +35,13 @@ public class ManStaleClassCleaner implements BuildManagerListener
         Collection<String> allTypeNames = tm.getAllTypeNames();
         for( String fqn: allTypeNames )
         {
+          List<IFile> filesForType = tm.findFilesForType( fqn );
           for( File classFile: findClassFiles( fqn, outputPath ) )
           {
             long classTimestamp = classFile.lastModified();
-            for( IFile file: tm.findFilesForType( fqn ) )
+            for( IFile file: filesForType )
             {
-              if( file.toJavaFile().lastModified() > classTimestamp )
+              if( file.exists() && file.toJavaFile().lastModified() > classTimestamp )
               {
                 //noinspection ResultOfMethodCallIgnored
                 classFile.delete();
