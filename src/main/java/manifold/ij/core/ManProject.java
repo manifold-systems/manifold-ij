@@ -2,6 +2,7 @@ package manifold.ij.core;
 
 import com.intellij.ProjectTopics;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
+import com.intellij.compiler.server.BuildManagerListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilerPaths;
 import com.intellij.openapi.module.Module;
@@ -199,8 +200,15 @@ public class ManProject
     addModuleRefreshListener();
     addModuleClasspathListener();
     addHotSwapComponent();
+    addStaleClassCleaner();
     addCompilerArgs();
   }
+
+  private void addStaleClassCleaner()
+  {
+    MessageBusConnection connection = _ijProject.getMessageBus().connect( _ijProject );
+    connection.subscribe( BuildManagerListener.TOPIC, new ManStaleClassCleaner() );
+   }
 
   private void addCompilerArgs()
   {
@@ -213,7 +221,7 @@ public class ManProject
     }
     else if( findJdkVersion() >= 9 && !options.contains( "-processorpath" ) )
     {
-      options = maybeGetProcessorPath() + (options.isEmpty() ? "" : " ") + options;
+      options = maybeGetProcessorPath() + ((options.isEmpty() || options.startsWith( " " )) ? "" : " ") + options;
     }
     javacOptions.ADDITIONAL_OPTIONS_STRING = options;
   }
