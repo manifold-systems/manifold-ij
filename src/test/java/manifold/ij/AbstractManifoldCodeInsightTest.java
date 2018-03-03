@@ -98,26 +98,12 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
 
   protected String getPathToLatestManifoldAll()
   {
-    List<URL> urLs = UrlClassLoaderWrapper.wrap( getClass().getClassLoader() ).getURLs();
-    for( URL url: urLs )
+    String path = System.getProperty("path.to.manifold.all");
+    if(path == null)
     {
-      String path = url.toString();
-      if( path.contains( "/manifold/manifold/" ) )
-      {
-        path = path.replace( "/manifold/manifold/", "/manifold/manifold-all/" );
-        path = path.replace( "SNAPSHOT/manifold-", "SNAPSHOT/manifold-all-" );
-        try
-        {
-          path = new File( new URI( path ) ).getAbsolutePath();
-          return path;
-        }
-        catch( URISyntaxException e )
-        {
-          throw new RuntimeException( e );
-        }
-      }
+      throw new RuntimeException( "Failed to add manifold-all.jar" );
     }
-    throw new RuntimeException( "Failed to add manifold-all.jar" );
+    return path;
   }
 
   /**

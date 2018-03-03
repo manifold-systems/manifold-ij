@@ -25,11 +25,18 @@ repositories {
   maven { url 'https://oss.jfrog.org/artifactory/libs-snapshot' }
 }
 
+configurations {
+  manifoldAll
+}
+
 dependencies {
   compile group: 'systems.manifold', name: 'manifold', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-util', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-ext', version: manifoldVersion
+
   testCompile group: 'junit', name: 'junit', version: '4.12'
+
+  manifoldAll group: 'systems.manifold', name: 'manifold-all', version: manifoldVersion
 }
 
 configurations.all {
@@ -63,4 +70,12 @@ patchPluginXml {
 publishPlugin {
   username = System.getenv('JB_PUBLISH_USER')
   password = System.getenv('JB_PUBLISH_PASS')
+}
+
+test {
+  //uncomment below to show stdout/stderr in console
+  //testLogging.showStandardStreams = true
+
+  //set a system property in the test JVM containing the path to manifold-all (it could be under ~/.gradle/caches or ~/.m2/repository)
+  systemProperties = ['path.to.manifold.all':project.configurations.manifoldAll.singleFile.absolutePath]
 }
