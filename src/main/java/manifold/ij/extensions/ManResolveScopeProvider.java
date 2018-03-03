@@ -8,6 +8,7 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.ResolveScopeProvider;
 import com.intellij.psi.search.GlobalSearchScope;
 import java.util.Set;
+import manifold.api.type.ContributorKind;
 import manifold.api.type.ITypeManifold;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
@@ -62,6 +63,6 @@ public class ManResolveScopeProvider extends ResolveScopeProvider
   private boolean isTypeExtendedInModule( String fqn, ManModule module )
   {
     Set<ITypeManifold> tms = module.findTypeManifoldsFor( fqn );
-    return tms.stream().anyMatch( tm -> tm.getProducerKind() == ITypeManifold.ProducerKind.Supplemental );
+    return tms.stream().anyMatch( tm -> tm.getContributorKind() == ContributorKind.Supplemental );
   }
 }

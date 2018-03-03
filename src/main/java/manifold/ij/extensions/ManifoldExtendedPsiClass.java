@@ -167,7 +167,7 @@ public class ManifoldExtendedPsiClass extends LightClass implements PsiExtensibl
 //      {
 //        for( ITypeManifold sp : sps )
 //        {
-//          if( sp.getProducerKind() == Supplemental )
+//          if( sp.getContributorKind() == Supplemental )
 //          {
 //            allExtensions.addAll( findAllExtensions( sp ) );
 //          }

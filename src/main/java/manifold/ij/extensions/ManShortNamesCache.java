@@ -12,6 +12,7 @@ import com.intellij.util.containers.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import manifold.api.host.Dependency;
+import manifold.api.type.ContributorKind;
 import manifold.api.type.ITypeManifold;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
@@ -99,7 +100,7 @@ public class ManShortNamesCache extends PsiShortNamesCache
   {
     for( ITypeManifold tm: module.getTypeManifolds() )
     {
-      if( tm.getProducerKind() == ITypeManifold.ProducerKind.Supplemental )
+      if( tm.getContributorKind() == ContributorKind.Supplemental )
       {
         continue;
       }

@@ -15,9 +15,12 @@ import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.PsiTestUtil;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
+import manifold.internal.runtime.UrlClassLoaderWrapper;
 import manifold.util.PathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -72,7 +75,49 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
    */
   protected List<String> getLibs()
   {
-    return Collections.singletonList( "manifold-all-0.8-SNAPSHOT.jar" );
+    List<URL> urLs = UrlClassLoaderWrapper.wrap( getClass().getClassLoader() ).getURLs();
+    for( URL url: urLs )
+    {
+      String path = url.toString();
+      if( path.contains( "/manifold/manifold/" ) )
+      {
+        path = path.replace( "manifold-", "manifold-all-" );
+        try
+        {
+          path = new File( new URI( path ) ).getAbsolutePath();
+          return Collections.singletonList( path );
+        }
+        catch( URISyntaxException e )
+        {
+          throw new RuntimeException( e );
+        }
+      }
+    }
+    throw new RuntimeException( "Failed to add manifold-all.jar" );
+  }
+
+  protected String getPathToLatestManifoldAll()
+  {
+    List<URL> urLs = UrlClassLoaderWrapper.wrap( getClass().getClassLoader() ).getURLs();
+    for( URL url: urLs )
+    {
+      String path = url.toString();
+      if( path.contains( "/manifold/manifold/" ) )
+      {
+        path = path.replace( "/manifold/manifold/", "/manifold/manifold-all/" );
+        path = path.replace( "SNAPSHOT/manifold-", "SNAPSHOT/manifold-all-" );
+        try
+        {
+          path = new File( new URI( path ) ).getAbsolutePath();
+          return path;
+        }
+        catch( URISyntaxException e )
+        {
+          throw new RuntimeException( e );
+        }
+      }
+    }
+    throw new RuntimeException( "Failed to add manifold-all.jar" );
   }
 
   /**
@@ -124,10 +169,11 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
     protected Module createModule( @NotNull Project project, @NotNull String moduleFilePath )
     {
       Module module = super.createModule( project, moduleFilePath );
-      for( String jarFileName : getLibs() )
-      {
-        PsiTestUtil.addLibrary( module, getPath_LibRoot() + File.separatorChar + jarFileName );
-      }
+//      for( String jarFileName : getLibs() )
+//      {
+//        PsiTestUtil.addLibrary( module, getPath_LibRoot() + File.separatorChar + jarFileName );
+//      }
+      PsiTestUtil.addLibrary( module, getPathToLatestManifoldAll() );
       PsiTestUtil.addLibrary( module, findToolsJar() );
       return module;
     }

@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import manifold.api.fs.IDirectory;
 import manifold.api.fs.IFile;
+import manifold.api.type.ContributorKind;
 import manifold.api.type.ITypeManifold;
 
 /**
@@ -28,7 +29,7 @@ public class ManStaleClassCleaner implements BuildManagerListener
     {
       List<IDirectory> outputPath = manModule.getOutputPath();
       List<ITypeManifold> tms = manModule.getTypeManifolds().stream()
-        .filter( tm -> tm.getProducerKind() != ITypeManifold.ProducerKind.Supplemental )
+        .filter( tm -> tm.getContributorKind() != ContributorKind.Supplemental )
         .collect( Collectors.toList() );
       for( ITypeManifold tm: tms )
       {

@@ -28,7 +28,7 @@ import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 
 
-import static manifold.api.type.ITypeManifold.ProducerKind.Supplemental;
+import static manifold.api.type.ContributorKind.Supplemental;
 
 
 /**
@@ -124,7 +124,7 @@ public class ManTypeFinder extends PsiElementFinder
     {
       for( ITypeManifold sp : mm.getTypeManifolds() )
       {
-        if( sp.getProducerKind() == Supplemental )
+        if( sp.getContributorKind() == Supplemental )
         {
           continue;
         }
@@ -174,7 +174,7 @@ public class ManTypeFinder extends PsiElementFinder
     {
       for( ITypeManifold sp : mm.getTypeManifolds() )
       {
-        if( sp.getProducerKind() == Supplemental )
+        if( sp.getContributorKind() == Supplemental )
         {
           continue;
         }
@@ -227,7 +227,7 @@ public class ManTypeFinder extends PsiElementFinder
     {
       for( ITypeManifold sp : mm.getTypeManifolds() )
       {
-        if( sp.getProducerKind() != Supplemental && sp.isPackage( fqn ) )
+        if( sp.getContributorKind() != Supplemental && sp.isPackage( fqn ) )
         {
           return new NonDirectoryPackage( manager, fqn );
         }

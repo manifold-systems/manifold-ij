@@ -39,7 +39,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 
-import static manifold.api.type.ITypeManifold.ProducerKind.*;
+import static manifold.api.type.ContributorKind.*;
 
 /**
  * Caches PsiClasses corresponding with type manifold produced classes
@@ -165,15 +165,15 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       DiagnosticCollector issues = new DiagnosticCollector();
       for( ITypeManifold sp : sps )
       {
-        if( sp.getProducerKind() == Primary ||
-            sp.getProducerKind() == Partial )
+        if( sp.getContributorKind() == Primary ||
+            sp.getContributorKind() == Partial )
         {
-          if( found != null && (found.getProducerKind() == Primary || sp.getProducerKind() == Primary) )
+          if( found != null && (found.getContributorKind() == Primary || sp.getContributorKind() == Primary) )
           {
             throw new ConflictingTypeManifoldsException( fqn, found, sp );
           }
           found = sp;
-          result = sp.produce( fqn, result, issues );
+          result = sp.contribute( fqn, result, issues );
         }
       }
 
@@ -266,7 +266,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     Set<ITypeManifold> sps = module.findTypeManifoldsFor( fqn );
     for( ITypeManifold sp : sps )
     {
-      if( sp.getProducerKind() == Supplemental )
+      if( sp.getContributorKind() == Supplemental )
       {
         return true;
       }

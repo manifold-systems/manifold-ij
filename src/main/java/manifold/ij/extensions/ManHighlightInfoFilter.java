@@ -183,7 +183,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 //    ManModule module = ManProject.getModule( typeElement );
 //    for( ITypeManifold sp : module.getTypeManifolds() )
 //    {
-//      if( sp.getProducerKind() == Supplemental )
+//      if( sp.getContributorKind() == Supplemental )
 //      {
 //
 //      }

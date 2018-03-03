@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import manifold.api.type.ContributorKind;
 import manifold.api.type.ITypeManifold;
 import manifold.api.type.SourcePosition;
 import manifold.api.type.TypeReference;
@@ -70,7 +71,7 @@ public class ResourceToManifoldUtil
       {
         for( ITypeManifold tf : set )
         {
-          if( tf.getProducerKind() == ITypeManifold.ProducerKind.Primary )
+          if( tf.getContributorKind() == ContributorKind.Primary )
           {
             String[] fqns = tf.getTypesForFile( file );
             for( String fqn : fqns )
@@ -153,7 +154,7 @@ public class ResourceToManifoldUtil
       {
         for( ITypeManifold tf : set )
         {
-          if( tf.getProducerKind() == ITypeManifold.ProducerKind.Primary )
+          if( tf.getContributorKind() == ContributorKind.Primary )
           {
             String[] fqns = tf.getTypesForFile( file );
             for( String fqn : fqns )

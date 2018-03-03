@@ -46,7 +46,7 @@ import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManPsiElementFactory;
 
 
-import static manifold.api.type.ITypeManifold.ProducerKind.Supplemental;
+import static manifold.api.type.ContributorKind.Supplemental;
 
 /**
  */
@@ -125,7 +125,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     ManModule manModule = ManProject.getModule( module );
     for( ITypeManifold sp : manModule.getTypeManifolds() )
     {
-      if( sp.getProducerKind() == Supplemental )
+      if( sp.getContributorKind() == Supplemental )
       {
         if( sp.isType( fqn ) )
         {

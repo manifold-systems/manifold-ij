@@ -42,7 +42,7 @@ import manifold.ij.fs.IjFile;
 import org.jetbrains.annotations.NotNull;
 
 
-import static manifold.api.type.ITypeManifold.ProducerKind.Supplemental;
+import static manifold.api.type.ContributorKind.Supplemental;
 
 /**
  */
@@ -256,7 +256,7 @@ public class ExtensionClassAnnotator implements Annotator
     ManModule manModule = ManProject.getModule( module.getIjModule() );
     for( ITypeManifold sp : manModule.getTypeManifolds() )
     {
-      if( sp.getProducerKind() == Supplemental )
+      if( sp.getContributorKind() == Supplemental )
       {
         if( sp.isType( fqn ) )
         {
