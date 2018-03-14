@@ -4,6 +4,7 @@ import com.intellij.json.psi.JsonProperty;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
@@ -11,6 +12,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiPlainText;
 import com.intellij.psi.PsiPlainTextFile;
@@ -30,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import manifold.util.JsonUtil;
 import manifold.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -43,13 +46,14 @@ import static manifold.ij.extensions.ResourceToManifoldUtil.findFakePlainTextEle
  */
 public class RenameResourceElementProcessor extends RenamePsiElementProcessor
 {
-  Map<Pair<FeaturePath, PsiElement>, List<UsageInfo>> _javaUsages;
+  private Map<Pair<FeaturePath, PsiElement>, List<UsageInfo>> _javaUsages;
 
   @Override
   public boolean canProcessElement( @NotNull PsiElement elem )
   {
     PsiElement[] element = new PsiElement[]{elem};
-    List<PsiElement> javaElems = findJavaElements( element );
+    List<PsiElement> javaElems = _findJavaElements( element );
+
     if( javaElems.isEmpty() )
     {
       return false;
@@ -68,6 +72,23 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
     return true;
   }
 
+  private List<PsiElement> _findJavaElements( PsiElement[] element )
+  {
+    List<PsiElement> javaElems = findJavaElements( element );
+    if( javaElems.isEmpty() )
+    {
+      if( element[0] instanceof PsiModifierListOwner )
+      {
+        element[0] = ManGotoDeclarationHandler.find( (PsiModifierListOwner)element[0] );
+        if( element[0] instanceof FakeTargetElement )
+        {
+          javaElems = findJavaElements( element );
+        }
+      }
+    }
+    return javaElems;
+  }
+
   @Override
   public boolean isInplaceRenameSupported()
   {
@@ -78,7 +99,14 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
   @Override
   public PsiElement substituteElementToRename( PsiElement elem, @Nullable Editor editor )
   {
+    if( elem instanceof PsiModifierListOwner )
+    {
+      return ManGotoDeclarationHandler.find( (PsiModifierListOwner)elem );
+    }
+
     PsiElement[] element = new PsiElement[]{elem};
+    _findJavaElements( element );
+
     findJavaElements( element );
     return element[0];
   }
@@ -90,17 +118,17 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
       return Collections.emptyList();
     }
 
-    List<PsiElement> javaElems = ResourceToManifoldUtil.findJavaElementsFor( element[0] );
-    if( javaElems.isEmpty() )
+    List<PsiModifierListOwner> javaElems = ResourceToManifoldUtil.findJavaElementsFor( element[0] );
+    if( javaElems.isEmpty() && element[0] instanceof PsiModifierListOwner )
     {
-      PsiElement target = ManGotoDeclarationHandler.find( element[0] );
+      PsiElement target = ManGotoDeclarationHandler.find( (PsiModifierListOwner)element[0] );
       if( target == null )
       {
         return Collections.emptyList();
       }
       PsiFile containingFile = target.getContainingFile();
       PsiElement elemAt = containingFile instanceof PsiPlainTextFile ? target : containingFile.findElementAt( target.getTextOffset() );
-      while( elemAt != null && (!(elemAt instanceof PsiNamedElement) /*|| oldName != null && !((PsiNamedElement)elemAt).getName().equals( oldName )*/) )
+      while( elemAt != null && !(elemAt instanceof PsiNamedElement) )
       {
         elemAt = elemAt.getParent();
       }
@@ -137,7 +165,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
       element[0] = element[0] instanceof PsiPlainText ? element[0].getContainingFile() : element[0];
       element[0] = findFakePlainTextElement( (PsiPlainTextFile)element[0] );
     }
-    return javaElems;
+    return javaElems.stream().map( e -> (PsiElement)e ).collect( Collectors.toList() );
   }
 
   @NotNull
@@ -165,7 +193,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
     _javaUsages = findJavaUsages( element[0], javaElems );
   }
 
-  static Map<Pair<FeaturePath, PsiElement>, List<UsageInfo>> findJavaUsages( PsiElement element, List<PsiElement> javaElems )
+  private static Map<Pair<FeaturePath, PsiElement>, List<UsageInfo>> findJavaUsages( PsiElement element, List<PsiElement> javaElems )
   {
     if( !(element instanceof PsiNamedElement) || javaElems.isEmpty() )
     {
@@ -199,7 +227,13 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
 //      return Collections.emptyList();
 //    }
 
-    Query<PsiReference> search = ReferencesSearch.search( element, GlobalSearchScope.moduleScope( ModuleUtilCore.findModuleForPsiElement( ctx ) ) );
+    Module module = ModuleUtilCore.findModuleForPsiElement( ctx );
+    if( module == null )
+    {
+      return Collections.emptyList();
+    }
+
+    Query<PsiReference> search = ReferencesSearch.search( element, GlobalSearchScope.moduleScope( module ) );
     List<UsageInfo> usages = new ArrayList<>();
     for( PsiReference ref : search.findAll() )
     {
@@ -243,7 +277,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
                                                            FeaturePath path = key.getFirst();
                                                            if( path != null )
                                                            {
-                                                             newFeatureName = findFeatureName( path );
+                                                             newFeatureName = findFeatureName( element, path );
                                                              if( newFeatureName == null )
                                                              {
                                                                newFeatureName = newBaseName;
@@ -251,21 +285,34 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
                                                            }
                                                            if( newFeatureName != null )
                                                            {
-                                                             RenameUtil.doRename( key.getSecond(), newFeatureName, value.toArray( new UsageInfo[value.size()] ), element.getProject(), elementListener );
+                                                             PsiElement targetElem = key.getSecond();
+                                                             RenameUtil.doRename( targetElem, newFeatureName, value.toArray( new UsageInfo[value.size()] ), element.getProject(), elementListener );
                                                            }
                                                          }
                                                        } ) );
   }
 
-  private String findFeatureName( FeaturePath path )
+  private String findFeatureName( PsiElement element, FeaturePath path )
   {
     PsiClass root = path.getRoot();
     String fqn = root.getQualifiedName();
-    PsiClass psiClass = JavaPsiFacade.getInstance( root.getProject() ).findClass( fqn, GlobalSearchScope.moduleScope( ModuleUtilCore.findModuleForPsiElement( root ) ) );
+    if( fqn == null )
+    {
+      return null;
+    }
+
+    Module module = ModuleUtilCore.findModuleForPsiElement( element );
+    if( module == null )
+    {
+      return null;
+    }
+
+    PsiClass psiClass = JavaPsiFacade.getInstance( root.getProject() ).findClass( fqn, GlobalSearchScope.moduleScope( module ) );
     if( psiClass == null )
     {
       return null;
     }
+    
     PsiNamedElement renamedFeature = findFeatureElement( psiClass, path.getChild() );
     return renamedFeature == null ? null : renamedFeature.getName();
   }

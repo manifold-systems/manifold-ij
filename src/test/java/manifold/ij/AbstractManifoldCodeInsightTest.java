@@ -106,6 +106,16 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
     return path;
   }
 
+  protected String getPathToLatestManifoldEp()
+  {
+    String path = System.getProperty("path.to.manifold.ep");
+    if(path == null)
+    {
+      throw new RuntimeException( "Failed to add manifold-ext-producer-sample.jar" );
+    }
+    return path;
+  }
+
   /**
    * @return The root directory of JDKs
    */
@@ -160,6 +170,7 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
 //        PsiTestUtil.addLibrary( module, getPath_LibRoot() + File.separatorChar + jarFileName );
 //      }
       PsiTestUtil.addLibrary( module, getPathToLatestManifoldAll() );
+      PsiTestUtil.addLibrary( module, getPathToLatestManifoldEp() );
       PsiTestUtil.addLibrary( module, findToolsJar() );
       return module;
     }

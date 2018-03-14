@@ -10,13 +10,14 @@ import com.intellij.psi.JavaDirectoryService;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiPackage;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Finds usages *from* elements in the resource file
+ * Finds usages from elements in the <i>resource file</i>, as opposed to from code usages
  */
 public class ManifoldFindUsagesHandlerFactory extends JavaFindUsagesHandlerFactory
 {
@@ -30,19 +31,15 @@ public class ManifoldFindUsagesHandlerFactory extends JavaFindUsagesHandlerFacto
   @Override
   public boolean canFindUsages( @NotNull PsiElement element )
   {
-    List<PsiElement> javaElem = ResourceToManifoldUtil.findJavaElementsFor( element );
-    if( !javaElem.isEmpty() )
-    {
-      return super.canFindUsages( javaElem.get( 0 ) );
-    }
-    return false;
+    List<PsiModifierListOwner> javaElem = ResourceToManifoldUtil.findJavaElementsFor( element );
+    return !javaElem.isEmpty() && super.canFindUsages( javaElem.get( 0 ) );
   }
 
   @Nullable
   @Override
   public FindUsagesHandler createFindUsagesHandler( @NotNull PsiElement element, boolean forHighlightUsages )
   {
-    List<PsiElement> javaElements = ResourceToManifoldUtil.findJavaElementsFor( element );
+    List<PsiModifierListOwner> javaElements = ResourceToManifoldUtil.findJavaElementsFor( element );
     if( javaElements.isEmpty() )
     {
       return null;

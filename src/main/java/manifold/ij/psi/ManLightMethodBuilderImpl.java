@@ -22,12 +22,13 @@ import com.intellij.psi.impl.light.LightModifierList;
 import com.intellij.psi.impl.light.LightParameterListBuilder;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.StringBuilderSpinAllocator;
+import org.jetbrains.annotations.NotNull;
 
 /**
  */
 public class ManLightMethodBuilderImpl extends LightMethodBuilder implements ManLightMethodBuilder
 {
-  private final LightIdentifier _nameIdentifier;
+  private LightIdentifier _nameIdentifier;
   private ASTNode _astNode;
 
   public ManLightMethodBuilderImpl( PsiManager manager, String name )
@@ -196,6 +197,12 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
   public String toString()
   {
     return "ManifoldLightMethodBuilder: " + getName();
+  }
+
+  @Override
+  public PsiElement setName( @NotNull String name ) throws IncorrectOperationException
+  {
+    return _nameIdentifier = new LightIdentifier( getManager(), name );
   }
 
   @Override

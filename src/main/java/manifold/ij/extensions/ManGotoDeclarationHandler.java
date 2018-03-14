@@ -3,10 +3,13 @@ package manifold.ij.extensions;
 import com.intellij.codeInsight.navigation.actions.GotoDeclarationHandlerBase;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationMemberValue;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiLiteralExpression;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiReference;
@@ -35,9 +38,9 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
       if( ref != null )
       {
         PsiElement resolve = ref.resolve();
-        if( resolve != null )
+        if( resolve instanceof PsiModifierListOwner )
         {
-          PsiElement target = find( resolve );
+          PsiElement target = find( (PsiModifierListOwner)resolve );
           if( target != null )
           {
             return target;
@@ -48,16 +51,16 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     return null;
   }
 
-  public static PsiElement find( PsiElement resolve )
+  public static PsiElement find( PsiModifierListOwner resolve )
   {
     PsiFile file = resolve.getContainingFile();
     if( file != null )
     {
       ManifoldPsiClass facade = resolve instanceof ManifoldPsiClass ? (ManifoldPsiClass)resolve : file.getUserData( ManifoldPsiClass.KEY_MANIFOLD_PSI_CLASS );
-      if( facade != null )
+      PsiElement annotations = find( resolve, facade );
+      if( annotations != null )
       {
-        PsiElement annotations = find( (PsiModifierListOwner)resolve, facade );
-        if( annotations != null ) return annotations;
+        return annotations;
       }
     }
     return null;
@@ -78,7 +81,7 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
       return findTargetFeature( annotations[0], facade );
     }
 
-    if( !facade.getRawFiles().isEmpty() &&
+    if( facade != null && !facade.getRawFiles().isEmpty() &&
         DarkJavaTypeManifold.FILE_EXTENSIONS.stream()
           .anyMatch( ext -> ext.equalsIgnoreCase( facade.getRawFiles().get( 0 ).getVirtualFile().getExtension() ) ) )
     {
@@ -110,12 +113,22 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     int iOffset = Integer.parseInt( psiAnnotation.findAttributeValue( SourcePosition.OFFSET ).getText() );
     int iLength = Integer.parseInt( psiAnnotation.findAttributeValue( SourcePosition.LENGTH ).getText() );
 
-    List<PsiFile> sourceFiles = facade.getRawFiles();
-    if( iOffset >= 0 )
+    if( facade == null )
     {
-      //PsiElement target = sourceFile.findElementAt( iOffset );
-      //## todo: handle multiple files
-      return new FakeTargetElement( sourceFiles.get( 0 ), iOffset, iLength >= 0 ? iLength : 1, featureName );
+      String path = (String)((PsiLiteralExpression)psiAnnotation.findAttributeValue( SourcePosition.URL )).getValue();
+      VirtualFile vfile = LocalFileSystem.getInstance().findFileByPath( path );
+      PsiFile psiFile = psiAnnotation.getManager().findFile( vfile );
+      return new FakeTargetElement( psiFile, iOffset, iLength >= 0 ? iLength : 1, featureName );
+    }
+    else
+    {
+      List<PsiFile> sourceFiles = facade.getRawFiles();
+      if( iOffset >= 0 )
+      {
+        //PsiElement target = sourceFile.findElementAt( iOffset );
+        //## todo: handle multiple files
+        return new FakeTargetElement( sourceFiles.get( 0 ), iOffset, iLength >= 0 ? iLength : 1, featureName );
+      }
     }
     return facade;
   }

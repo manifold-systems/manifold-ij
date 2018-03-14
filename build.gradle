@@ -28,6 +28,7 @@ repositories {
 
 configurations {
   manifoldAll
+  manifoldEp
 }
 
 dependencies {
@@ -38,6 +39,7 @@ dependencies {
   testCompile group: 'junit', name: 'junit', version: '4.12'
 
   manifoldAll group: 'systems.manifold', name: 'manifold-all', version: manifoldVersion
+  manifoldEp group: 'systems.manifold', name: 'manifold-ext-producer-sample', version: manifoldVersion
 }
 
 configurations.all {
@@ -82,5 +84,6 @@ test {
   }
 
   //set a system property in the test JVM containing the path to manifold-all (it could be under ~/.gradle/caches or ~/.m2/repository)
-  systemProperties = ['path.to.manifold.all':project.configurations.manifoldAll.singleFile.absolutePath]
+  systemProperties = ['path.to.manifold.all':project.configurations.manifoldAll.singleFile.absolutePath,
+                      'path.to.manifold.ep':project.configurations.manifoldEp.files.first()]
 }

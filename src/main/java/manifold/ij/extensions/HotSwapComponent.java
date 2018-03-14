@@ -56,6 +56,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import manifold.api.fs.IFile;
 import manifold.api.type.ITypeManifold;
+import manifold.ext.IExtensionClassProducer;
 import manifold.ij.core.IjManifoldHost;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
@@ -300,6 +301,11 @@ public class HotSwapComponent implements DebuggerManagerListener
                   continue;
                 }
                 fqns.addAll( Arrays.asList( sp.getTypesForFile( ifile ) ) );
+
+                if( sp instanceof IExtensionClassProducer )
+                {
+                  fqns.addAll( ((IExtensionClassProducer)sp).getExtendedTypesForFile( ifile ) );
+                }
               }
               seen.addAll( typeManifolds );
 

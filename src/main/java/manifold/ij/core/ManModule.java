@@ -16,6 +16,7 @@ import manifold.api.fs.IFileSystem;
 import manifold.api.host.Dependency;
 import manifold.api.type.ITypeManifold;
 import manifold.api.type.TypeName;
+import manifold.ext.IExtensionClassProducer;
 import manifold.internal.host.SimpleModule;
 
 /**
@@ -257,6 +258,11 @@ public class ManModule extends SimpleModule
     for( ITypeManifold sp : getTypeManifolds() )
     {
       result.addAll( Arrays.asList( sp.getTypesForFile( file ) ) );
+
+      if( sp instanceof IExtensionClassProducer )
+      {
+        result.addAll( ((IExtensionClassProducer)sp).getExtendedTypesForFile( file ) );
+      }
     }
     return result.toArray( new String[result.size()] );
   }

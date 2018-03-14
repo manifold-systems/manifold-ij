@@ -10,6 +10,7 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileSystemItem;
+import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiPlainText;
 import com.intellij.psi.PsiPlainTextFile;
@@ -74,7 +75,7 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 
   private boolean isTopLevelClassDeclaration( PsiElement fakeElement )
   {
-    List<PsiElement> javaElems = ResourceToManifoldUtil.findJavaElementsFor( fakeElement );
+    List<PsiModifierListOwner> javaElems = ResourceToManifoldUtil.findJavaElementsFor( fakeElement );
     return javaElems.size() == 1 &&
            javaElems.get( 0 ) instanceof PsiClass &&
            ((PsiClass)javaElems.get( 0 )).getContainingClass() == null;

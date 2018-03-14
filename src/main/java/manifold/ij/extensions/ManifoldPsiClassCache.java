@@ -20,6 +20,7 @@ import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.PsiModificationTrackerImpl;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.containers.ContainerUtil;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,7 +31,7 @@ import manifold.api.fs.IFile;
 import manifold.api.host.AbstractTypeSystemListener;
 import manifold.api.host.RefreshRequest;
 import manifold.api.type.ITypeManifold;
-import manifold.api.type.ITypeProcessor;
+import manifold.ext.IExtensionClassProducer;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.util.cache.FqnCache;
@@ -222,10 +223,10 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
   private PsiClass addExtensions( GlobalSearchScope scope, ManModule module, String fqn, PsiClass psiClass )
   {
-    if( isExtended( module, fqn ) )
+    if( isSupplemented( module, fqn ) )
     {
       // Find the class excluding our ManTypeFinder to avoid circularity
-      psiClass = psiClass != null ? psiClass : JavaPsiFacade.getInstance( module.getIjProject() ).findClass( fqn, scope );
+      psiClass = psiClass != null ? psiClass : JavaPsiFacade.getInstance( module.getIjProject() ).findClass( fqn, GlobalSearchScope.allScope( module.getIjProject() ) );
       if( psiClass != null )
       {
         psiClass = new ManifoldExtendedPsiClass( module.getIjModule(), psiClass );
@@ -261,14 +262,21 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 //    throw new IllegalStateException( "Copy class failed for: " + psiClass.getQualifiedName() );
 //  }
 
-  private boolean isExtended( ManModule module, String fqn )
+  private boolean isSupplemented( ManModule module, String fqn )
   {
     Set<ITypeManifold> sps = module.findTypeManifoldsFor( fqn );
-    for( ITypeManifold sp : sps )
+    for( ITypeManifold tm : sps )
     {
-      if( sp.getContributorKind() == Supplemental )
+      if( tm.getContributorKind() == Supplemental )
       {
         return true;
+      }
+      else if( tm instanceof IExtensionClassProducer )
+      {
+        if( ((IExtensionClassProducer)tm).isExtendedType( fqn ) )
+        {
+          return true;
+        }
       }
     }
     return false;
@@ -314,22 +322,18 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     if( map != null )
     {
       // System.out.println( "Refreshing: " + request.toString() );
-      for( ITypeManifold sp : request.module.getTypeManifolds() )
+      for( ITypeManifold tm : request.module.getTypeManifolds() )
       {
-        if( sp instanceof ITypeProcessor )
+        for( String fqn : getSupplementedTypesForFile( tm, request.file ) )
         {
-          for( String fqn : sp.getTypesForFile( request.file ) )
+          map.remove( fqn );
+          //System.out.println( "REMOVED: " + fqn );
+          for( IFile f : tm.findFilesForType( fqn ) )
           {
-            map.remove( fqn );
-            //System.out.println( "REMOVED: " + fqn );
-            for( IFile f : sp.findFilesForType( fqn ) )
-            {
-              String pathString = f.getPath().getPathString();
-              _psi2Class.remove( pathString );
-              //System.out.println( "REMOVED PSI: " + pathString );
-            }
+            String pathString = f.getPath().getPathString();
+            _psi2Class.remove( pathString );
+            //System.out.println( "REMOVED PSI: " + pathString );
           }
-          //System.out.println();
         }
       }
 
@@ -352,6 +356,20 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
         }
       }
     }
+  }
+
+  private Collection<String> getSupplementedTypesForFile( ITypeManifold tm, IFile file )
+  {
+    Set<String> types = new HashSet<>();
+    if( tm.getContributorKind() == Supplemental )
+    {
+      types.addAll( tm.getAllTypeNames() );
+    }
+    else if( tm instanceof IExtensionClassProducer )
+    {
+      types.addAll( ((IExtensionClassProducer)tm).getExtendedTypesForFile( file ) );
+    }
+    return types;
   }
 
 //  private void removeDependentTypes( String type, FqnCache<PsiClass> map, ManModule module )

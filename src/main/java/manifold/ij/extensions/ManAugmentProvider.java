@@ -7,6 +7,7 @@ import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
@@ -16,19 +17,23 @@ import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
+import com.intellij.psi.PsiNameValuePair;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.augment.PsiAugmentProvider;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.util.IncorrectOperationException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import manifold.api.fs.IFile;
 import manifold.api.gen.AbstractSrcMethod;
+import manifold.api.gen.SrcAnnotationExpression;
 import manifold.api.gen.SrcClass;
 import manifold.api.gen.SrcMethod;
 import manifold.api.gen.SrcParameter;
@@ -37,6 +42,8 @@ import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
 import manifold.api.host.Dependency;
 import manifold.api.type.ITypeManifold;
+import manifold.api.type.SourcePosition;
+import manifold.ext.IExtensionClassProducer;
 import manifold.ext.api.Extension;
 import manifold.ext.api.This;
 import manifold.ij.core.ManModule;
@@ -120,16 +127,17 @@ public class ManAugmentProvider extends PsiAugmentProvider
   {
     addMethods( fqn, psiClass, augFeatures, module, module );
   }
+
   private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures, Module start, Module module )
   {
     ManModule manModule = ManProject.getModule( module );
-    for( ITypeManifold sp : manModule.getTypeManifolds() )
+    for( ITypeManifold tm : manModule.getTypeManifolds() )
     {
-      if( sp.getContributorKind() == Supplemental )
+      if( tm.getContributorKind() == Supplemental )
       {
-        if( sp.isType( fqn ) )
+        if( tm.isType( fqn ) )
         {
-          List<IFile> files = sp.findFilesForType( fqn );
+          List<IFile> files = tm.findFilesForType( fqn );
           for( IFile file : files )
           {
             VirtualFile vFile = ((IjFile)file).getVirtualFile();
@@ -141,37 +149,56 @@ public class ManAugmentProvider extends PsiAugmentProvider
             PsiFile psiFile = PsiManager.getInstance( module.getProject() ).findFile( vFile );
             PsiJavaFile psiJavaFile = (PsiJavaFile)psiFile;
             PsiClass[] classes = psiJavaFile.getClasses();
-            if( classes.length > 0 )
-            {
-              SrcClass srcExtClass = new StubBuilder().make( classes[0].getQualifiedName(), manModule );
-              SrcClass scratchClass = new SrcClass( psiClass.getQualifiedName(), psiClass.isInterface() ? SrcClass.Kind.Interface : SrcClass.Kind.Class );
-              for( PsiTypeParameter tv : psiClass.getTypeParameters() )
-              {
-                scratchClass.addTypeVar( new SrcType( StubBuilder.makeTypeVar( tv ) ) );
-              }
-              for( AbstractSrcMethod m : srcExtClass.getMethods() )
-              {
-                SrcMethod srcMethod = addExtensionMethod( scratchClass, m, psiClass );
-                if( srcMethod != null )
-                {
-                  PsiMethod extMethod = makePsiMethod( srcMethod, psiClass );
-                  if( extMethod != null )
-                  {
-                    PsiMethod plantedMethod = plantMethodInPsiClass( extMethod, psiClass, classes[0] );
-                    augFeatures.add( plantedMethod );
-                  }
-                }
-              }
-            }
+            addMethods( psiClass, augFeatures, manModule, classes );
+          }
+        }
+      }
+      else if( tm instanceof IExtensionClassProducer )
+      {
+        IExtensionClassProducer ecp = (IExtensionClassProducer)tm;
+        if( ecp.isExtendedType( fqn ) )
+        {
+          Set<String> extensionClassNames = ecp.getExtensionClasses( fqn );
+          for( String extension : extensionClassNames )
+          {
+            PsiClass extPsiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesScope( manModule.getIjModule() ), manModule, extension );
+            addMethods( psiClass, augFeatures, manModule, new PsiClass[]{extPsiClass} );
           }
         }
       }
     }
+
     for( Dependency d : manModule.getDependencies() )
     {
       if( module == start || d.isExported() )
       {
         addMethods( fqn, psiClass, augFeatures, start, ((ManModule)d.getModule()).getIjModule() );
+      }
+    }
+  }
+
+  private void addMethods( PsiClass psiClass, List<PsiElement> augFeatures, ManModule manModule, PsiClass[] classes )
+  {
+    if( classes.length > 0 )
+    {
+      SrcClass srcExtClass = new StubBuilder().make( classes[0].getQualifiedName(), manModule );
+      SrcClass scratchClass = new SrcClass( psiClass.getQualifiedName(), psiClass.isInterface() ? SrcClass.Kind.Interface : SrcClass.Kind.Class );
+      for( PsiTypeParameter tv : psiClass.getTypeParameters() )
+      {
+        scratchClass.addTypeVar( new SrcType( StubBuilder.makeTypeVar( tv ) ) );
+      }
+      for( AbstractSrcMethod m : srcExtClass.getMethods() )
+      {
+        SrcMethod srcMethod = addExtensionMethod( scratchClass, m, psiClass );
+        if( srcMethod != null )
+        {
+          PsiMethod extMethod = makePsiMethod( srcMethod, psiClass );
+          if( extMethod != null )
+          {
+            PsiMethod plantedMethod = plantMethodInPsiClass( extMethod, psiClass, classes[0] );
+            augFeatures.add( plantedMethod );
+          }
+        }
       }
     }
   }
@@ -207,10 +234,10 @@ public class ManAugmentProvider extends PsiAugmentProvider
       {
         method.withNavigationElement( navElem );
       }
-      addModifier( refMethod, method, PsiModifier.PUBLIC );
-      addModifier( refMethod, method, PsiModifier.STATIC );
-      addModifier( refMethod, method, PsiModifier.PACKAGE_LOCAL );
-      addModifier( refMethod, method, PsiModifier.PROTECTED );
+
+      copyAnnotations( refMethod, method );
+
+      copyModifiers( refMethod, method );
 
       for( PsiTypeParameter tv : refMethod.getTypeParameters() )
       {
@@ -231,6 +258,26 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return method;
     }
     return null;
+  }
+
+  private void copyModifiers( PsiMethod refMethod, ManLightMethodBuilder method )
+  {
+    addModifier( refMethod, method, PsiModifier.PUBLIC );
+    addModifier( refMethod, method, PsiModifier.STATIC );
+    addModifier( refMethod, method, PsiModifier.PACKAGE_LOCAL );
+    addModifier( refMethod, method, PsiModifier.PROTECTED );
+  }
+
+  private void copyAnnotations( PsiMethod refMethod, ManLightMethodBuilder method )
+  {
+    for( PsiAnnotation anno : refMethod.getModifierList().getAnnotations() )
+    {
+      PsiAnnotation psiAnnotation = method.getModifierList().addAnnotation( anno.getQualifiedName() );
+      for( PsiNameValuePair pair : anno.getParameterList().getAttributes() )
+      {
+        psiAnnotation.setDeclaredAttributeValue( pair.getName(), pair.getValue() );
+      }
+    }
   }
 
   private PsiElement findExtensionMethodNavigationElement( PsiClass extClass, PsiMethod plantedMethod )
@@ -276,6 +323,9 @@ public class ManAugmentProvider extends PsiAugmentProvider
     }
 
     SrcMethod srcMethod = new SrcMethod( srcClass );
+
+    copyAnnotations( method, srcMethod );
+
     long modifiers = method.getModifiers();
 
     boolean isInstanceExtensionMethod = isInstanceExtensionMethod( method, extendedType.getQualifiedName() );
@@ -311,7 +361,6 @@ public class ManAugmentProvider extends PsiAugmentProvider
 
     @SuppressWarnings("unchecked")
     List<SrcParameter> params = method.getParameters();
-
     for( int i = isInstanceExtensionMethod ? 1 : 0; i < params.size(); i++ )
     {
       // exclude This param
@@ -326,12 +375,24 @@ public class ManAugmentProvider extends PsiAugmentProvider
     }
 
     srcMethod.body( new SrcStatementBlock()
-                      .addStatement(
-                        new SrcRawStatement()
-                          .rawText( "throw new RuntimeException();" ) ) );
+      .addStatement(
+        new SrcRawStatement()
+          .rawText( "throw new RuntimeException();" ) ) );
 
     //srcClass.addMethod( srcMethod );
     return srcMethod;
+  }
+
+  private void copyAnnotations( AbstractSrcMethod method, SrcMethod srcMethod )
+  {
+    for( Object anno : method.getAnnotations() )
+    {
+      SrcAnnotationExpression annoExpr = (SrcAnnotationExpression)anno;
+      if( annoExpr.getAnnotationType().equals( SourcePosition.class.getName() ) )
+      {
+        srcMethod.addAnnotation( annoExpr );
+      }
+    }
   }
 
   private boolean isExtensionMethod( AbstractSrcMethod method, String extendedType )
