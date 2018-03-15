@@ -26,14 +26,21 @@ class FakeTargetElement extends PsiElementBase implements PsiMetaOwner, PsiMetaD
   private final PsiFile _file;
   private final int _iOffset;
   private int _iLength;
+  private final String _kind;
   private String _name;
 
-  FakeTargetElement( PsiFile file, int iOffset, int iLength, String name )
+  FakeTargetElement( PsiFile file, int iOffset, int iLength, String name, String kind )
   {
     _file = file;
     _iOffset = iOffset;
     _iLength = iLength;
     _name = name;
+    _kind = kind;
+  }
+
+  public String getKind()
+  {
+    return _kind;
   }
 
   @Override

@@ -64,6 +64,7 @@
     <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameResourceElementProcessor" order="first"/>
     <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameExtensionMethodProcessor" order="first"/>
     <resolveScopeProvider implementation="manifold.ij.extensions.ManResolveScopeProvider" order="first"/>
+    <elementDescriptionProvider implementation="manifold.ij.extensions.ManElementDescriptionProvider"/>
   </extensions>
 
 </idea-plugin>

@@ -113,12 +113,15 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     int iOffset = Integer.parseInt( psiAnnotation.findAttributeValue( SourcePosition.OFFSET ).getText() );
     int iLength = Integer.parseInt( psiAnnotation.findAttributeValue( SourcePosition.LENGTH ).getText() );
 
+    PsiLiteralExpression kindExpr = (PsiLiteralExpression)psiAnnotation.findAttributeValue( SourcePosition.KIND );
+    String kind = kindExpr == null ? SourcePosition.DEFAULT_KIND : (String)kindExpr.getValue();
+
     if( facade == null )
     {
       String path = (String)((PsiLiteralExpression)psiAnnotation.findAttributeValue( SourcePosition.URL )).getValue();
       VirtualFile vfile = LocalFileSystem.getInstance().findFileByPath( path );
       PsiFile psiFile = psiAnnotation.getManager().findFile( vfile );
-      return new FakeTargetElement( psiFile, iOffset, iLength >= 0 ? iLength : 1, featureName );
+      return new FakeTargetElement( psiFile, iOffset, iLength >= 0 ? iLength : 1, featureName, kind );
     }
     else
     {
@@ -127,7 +130,7 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
       {
         //PsiElement target = sourceFile.findElementAt( iOffset );
         //## todo: handle multiple files
-        return new FakeTargetElement( sourceFiles.get( 0 ), iOffset, iLength >= 0 ? iLength : 1, featureName );
+        return new FakeTargetElement( sourceFiles.get( 0 ), iOffset, iLength >= 0 ? iLength : 1, featureName, kind );
       }
     }
     return facade;

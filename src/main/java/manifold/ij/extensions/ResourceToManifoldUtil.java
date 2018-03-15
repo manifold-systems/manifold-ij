@@ -215,7 +215,7 @@ public class ResourceToManifoldUtil
 
       String name = psiTextFile.getText().substring( start, end );
 
-      return new FakeTargetElement( psiTextFile, start, end - start, name );
+      return new FakeTargetElement( psiTextFile, start, end - start, name, SourcePosition.DEFAULT_KIND );
     }
     catch( Exception e )
     {
