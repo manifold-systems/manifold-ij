@@ -16,6 +16,8 @@ import com.intellij.psi.PsiPlainText;
 import com.intellij.psi.PsiPlainTextFile;
 import com.intellij.psi.PsiPolyVariantReference;
 import com.intellij.psi.PsiReference;
+import com.intellij.psi.SmartPointerManager;
+import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.impl.light.AbstractLightClass;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.FileUtil;
@@ -48,7 +51,7 @@ import org.jetbrains.annotations.Nullable;
 public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 {
   private List<UsageInfo> _usages = Collections.emptyList();
-  private PsiNamedElement _classDeclElement;
+  private SmartPsiElementPointer<PsiNamedElement> _classDeclElement;
 
   @Override
   public boolean canProcessElement( @NotNull PsiElement element )
@@ -75,10 +78,10 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 
   private boolean isTopLevelClassDeclaration( PsiElement fakeElement )
   {
-    List<PsiModifierListOwner> javaElems = ResourceToManifoldUtil.findJavaElementsFor( fakeElement );
+    Set<PsiModifierListOwner> javaElems = ResourceToManifoldUtil.findJavaElementsFor( fakeElement );
     return javaElems.size() == 1 &&
-           javaElems.get( 0 ) instanceof PsiClass &&
-           ((PsiClass)javaElems.get( 0 )).getContainingClass() == null;
+           javaElems.iterator().next() instanceof PsiClass &&
+           ((PsiClass)javaElems.iterator().next()).getContainingClass() == null;
   }
 
   @Override
@@ -156,6 +159,8 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 
   private void storeTypeManifoldReferences( @NotNull PsiElement element )
   {
+    _classDeclElement = null;
+
     Module mod = ModuleUtilCore.findModuleForPsiElement( element );
     if( mod == null )
     {
@@ -185,7 +190,8 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
       PsiElement fakeElement = ManGotoDeclarationHandler.find( psiClass, (ManifoldPsiClass)psiClass );
       if( fakeElement instanceof PsiNamedElement && isTopLevelClassDeclaration( fakeElement ) )
       {
-        _classDeclElement = (PsiNamedElement)fakeElement;
+        SmartPointerManager smartPointerMgr = SmartPointerManager.getInstance( psiClass.getProject() );
+        _classDeclElement = smartPointerMgr.createSmartPsiElementPointer( (PsiNamedElement)fakeElement );
       }
     }
   }
@@ -234,9 +240,9 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
         RenameUtil.doRename( psiClass, psiClass.getName(), _usages.toArray( new UsageInfo[_usages.size()] ), element.getProject(), elementListener );
 
         // for plain text files, also rename a class name declaration if such a thing exists e.g., javascript class declaration
-        if( _classDeclElement != null )
+        if( _classDeclElement.getElement() != null )
         {
-          _classDeclElement.setName( psiClass.getName() == null ? "" : psiClass.getName() );
+          _classDeclElement.getElement().setName( psiClass.getName() == null ? "" : psiClass.getName() );
         }
       } ) );
   }

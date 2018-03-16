@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import manifold.util.JsonUtil;
 import manifold.util.Pair;
@@ -118,7 +119,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
       return Collections.emptyList();
     }
 
-    List<PsiModifierListOwner> javaElems = ResourceToManifoldUtil.findJavaElementsFor( element[0] );
+    Set<PsiModifierListOwner> javaElems = ResourceToManifoldUtil.findJavaElementsFor( element[0] );
     if( javaElems.isEmpty() && element[0] instanceof PsiModifierListOwner )
     {
       PsiElement target = ManGotoDeclarationHandler.find( (PsiModifierListOwner)element[0] );

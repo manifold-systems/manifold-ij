@@ -5,6 +5,8 @@ import com.intellij.psi.PsiFile;
 import com.intellij.usageView.UsageInfo;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.stream.Collectors;
 import manifold.ij.AbstractManifoldCodeInsightTest;
 
 public class JsonUsagesTest extends AbstractManifoldCodeInsightTest
@@ -47,9 +49,9 @@ public class JsonUsagesTest extends AbstractManifoldCodeInsightTest
     Collection<UsageInfo> usageInfos = myFixture.testFindUsages( "json/usages/Person_Caret_PropertyDeclaration.json", "json/usages/TestJsonUsages_Property.java" );
     assertEquals( 2, usageInfos.size() );
     //noinspection ConstantConditions
-    Iterator<UsageInfo> iterator = usageInfos.iterator();
-    assertEquals( "person.getLastName", iterator.next().getElement().getText() );
-    assertEquals( "person.setLastName", iterator.next().getElement().getText() );
+    Set<String> usagesText = usageInfos.stream().map( e -> e.getElement().getText() ).collect( Collectors.toSet() );
+    assertTrue( usagesText.contains( "person.getLastName" ) );
+    assertTrue( usagesText.contains( "person.setLastName" ) );
   }
 
 //  public void testFindUsages_Getter_FromDeclaration() throws Exception

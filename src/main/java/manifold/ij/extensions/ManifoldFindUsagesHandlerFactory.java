@@ -13,6 +13,7 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiPackage;
 import java.util.List;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,15 +32,15 @@ public class ManifoldFindUsagesHandlerFactory extends JavaFindUsagesHandlerFacto
   @Override
   public boolean canFindUsages( @NotNull PsiElement element )
   {
-    List<PsiModifierListOwner> javaElem = ResourceToManifoldUtil.findJavaElementsFor( element );
-    return !javaElem.isEmpty() && super.canFindUsages( javaElem.get( 0 ) );
+    Set<PsiModifierListOwner> javaElem = ResourceToManifoldUtil.findJavaElementsFor( element );
+    return !javaElem.isEmpty() && super.canFindUsages( javaElem.iterator().next() );
   }
 
   @Nullable
   @Override
   public FindUsagesHandler createFindUsagesHandler( @NotNull PsiElement element, boolean forHighlightUsages )
   {
-    List<PsiModifierListOwner> javaElements = ResourceToManifoldUtil.findJavaElementsFor( element );
+    Set<PsiModifierListOwner> javaElements = ResourceToManifoldUtil.findJavaElementsFor( element );
     if( javaElements.isEmpty() )
     {
       return null;

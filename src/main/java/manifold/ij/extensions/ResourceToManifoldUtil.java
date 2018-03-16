@@ -53,21 +53,23 @@ public class ResourceToManifoldUtil
   static final Key<FeaturePath> KEY_FEATURE_PATH = new Key<>( "FeaturePath" );
 
   /**
-   * Find the Manifold PisClass corresponding with a resource file.
+   * Find the Manifold PisClasses corresponding with a resource file.
    *
    * @param fileElem a psiFile, normally this should be a resource file
    *
-   * @return The corresponding Manifold PsiClass or null
+   * @return The corresponding Manifold PsiClass[es]
    */
-  public static PsiClass findPsiClass( PsiFileSystemItem fileElem )
+  public static Set<PsiClass> findPsiClass( PsiFileSystemItem fileElem )
   {
     Project project = fileElem.getProject();
     ManProject manProject = ManProject.manProjectFrom( project );
     VirtualFile virtualFile = fileElem.getVirtualFile();
     if( virtualFile == null )
     {
-      return null;
+      return Collections.emptySet();
     }
+
+    Set<PsiClass> result = new HashSet<>();
     for( ManModule module : manProject.getModules() )
     {
       IjFile file = FileUtil.toIFile( manProject, virtualFile );
@@ -84,14 +86,14 @@ public class ResourceToManifoldUtil
               PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ), module, fqn );
               if( psiClass != null )
               {
-                return psiClass;
+                result.add( psiClass );
               }
             }
           }
         }
       }
     }
-    return null;
+    return result;
   }
 
   /**
@@ -104,15 +106,15 @@ public class ResourceToManifoldUtil
    * @return The declared Java PsiElement[s] inside the Manifold PsiClass corresponding with the resource file element.  Note there can be more
    * than one PsiElement i.e., when the resource element is a "property" and has corresponding "getter" and "setter" methods in the PsiClass.
    */
-  public static List<PsiModifierListOwner> findJavaElementsFor( @NotNull PsiElement element )
+  public static Set<PsiModifierListOwner> findJavaElementsFor( @NotNull PsiElement element )
   {
     if( element instanceof ManifoldPsiClass )
     {
       if( ((ManifoldPsiClass)element).getContainingClass() != null )
       {
-        return Collections.singletonList( (ManifoldPsiClass)element );
+        return Collections.singleton( (ManifoldPsiClass)element );
       }
-      return Collections.emptyList();
+      return Collections.emptySet();
     }
 
     if( element instanceof PsiPlainText )
@@ -128,20 +130,17 @@ public class ResourceToManifoldUtil
         element = findFakePlainTextElement( (PsiPlainTextFile)element );
         if( element == null )
         {
-          return Collections.emptyList();
+          return Collections.emptySet();
         }
       }
       else
       {
-        PsiClass psiClass = findPsiClass( (PsiFile)element );
-        if( psiClass != null )
-        {
-          return Collections.singletonList( psiClass );
-        }
+        //noinspection unchecked
+        return (Set)findPsiClass( (PsiFile)element );
       }
     }
 
-    List<PsiModifierListOwner> result = new ArrayList<>();
+    Set<PsiModifierListOwner> result = new HashSet<>();
 
     Project project = element.getProject();
     ManProject manProject = ManProject.manProjectFrom( project );
@@ -149,7 +148,7 @@ public class ResourceToManifoldUtil
     VirtualFile virtualFile = containingFile == null ? null : containingFile.getVirtualFile();
     if( virtualFile == null )
     {
-      return Collections.emptyList();
+      return Collections.emptySet();
     }
     for( ManModule module : manProject.getModules() )
     {
