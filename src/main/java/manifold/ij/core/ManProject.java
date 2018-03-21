@@ -64,6 +64,7 @@ public class ManProject
   private static final Map<Project, ManProject> PROJECTS = new ConcurrentWeakHashMap<>();
   private static final String JAR_INDICATOR = ".jar!";
   private static final String XPLUGIN_MANIFOLD = "-Xplugin:Manifold";
+  private static final String XPLUGIN_MANIFOLD_WITH_QUOTES = "-Xplugin:\"Manifold";
 
   private final Project _ijProject;
   private IjFileSystem _fs;
@@ -215,7 +216,7 @@ public class ManProject
     JpsJavaCompilerOptions javacOptions = JavacConfiguration.getOptions( _ijProject, JavacConfiguration.class );
     String options = javacOptions.ADDITIONAL_OPTIONS_STRING;
     options = options == null ? "" : options;
-    if( !options.contains( XPLUGIN_MANIFOLD ) )
+    if( !options.contains( XPLUGIN_MANIFOLD ) && !options.contains( XPLUGIN_MANIFOLD_WITH_QUOTES )  )
     {
       options = XPLUGIN_MANIFOLD + maybeGetProcessorPath() + (options.isEmpty() ? "" : " ") + options;
     }

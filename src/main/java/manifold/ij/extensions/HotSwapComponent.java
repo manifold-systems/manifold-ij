@@ -324,7 +324,7 @@ public class HotSwapComponent implements DebuggerManagerListener
                 try
                 {
                   Collection<InMemoryClassJavaFileObject> result = compileManifoldFiles( sourceFiles );
-                  result = result.stream().filter( e -> fqns.contains( e.getClassName() ) ).collect( Collectors.toList() );
+                  result = result.stream().filter( e -> fqns.stream().anyMatch( fqn -> fqnContains( fqn, e.getClassName() ) ) ).collect( Collectors.toList() );
                   Map<String, File> classes = makeTempFiles( result );
                   progress.setText( DebuggerBundle.message( "progress.hotswap.scanning.path", filePath ) );
                   for( Map.Entry<String, File> e : classes.entrySet() )
@@ -343,6 +343,17 @@ public class HotSwapComponent implements DebuggerManagerListener
       }
     }
     return true;
+  }
+
+  private boolean fqnContains( String fqn, String testFqn )
+  {
+    boolean contains = false;
+    if( testFqn.startsWith( fqn ) )
+    {
+      int len = fqn.length();
+      contains = testFqn.length() == len || testFqn.charAt( len ) == '$';
+    }
+    return contains;
   }
 
   private Collection<InMemoryClassJavaFileObject> compileManifoldFiles( Set<JavaFileObject> sourceFiles )
