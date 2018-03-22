@@ -96,6 +96,11 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
   {
     PsiAnnotationMemberValue value = psiAnnotation.findAttributeValue( SourcePosition.FEATURE );
     String featureName = StringUtil.unquoteString( value.getText() );
+    if( facade != null && featureName.startsWith( facade.getQualifiedName() + '.' ) )
+    {
+      // remove class name qualifier
+      featureName = featureName.substring( facade.getQualifiedName().length() + 1 );
+    }
 //    value = psiAnnotation.findAttributeValue( SourcePosition.TYPE );
 //    if( value != null )
 //    {

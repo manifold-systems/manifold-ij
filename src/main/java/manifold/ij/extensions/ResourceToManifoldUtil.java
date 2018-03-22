@@ -331,7 +331,7 @@ public class ResourceToManifoldUtil
   {
     List<PsiModifierListOwner> result = new ArrayList<>();
 
-    if( isJavaElementFor( psiClass, element ) )
+    if( isJavaElementFor( psiClass, psiClass, element ) )
     {
       result.add( psiClass );
       psiClass.putUserData( KEY_FEATURE_PATH, FeaturePath.make( parent, FeaturePath.FeatureType.Class, 0, 1 ) );
@@ -341,7 +341,7 @@ public class ResourceToManifoldUtil
     for( int i = 0; i < methods.length; i++ )
     {
       PsiMethod method = methods[i];
-      if( isJavaElementFor( method, element ) ||
+      if( isJavaElementFor( psiClass, method, element ) ||
           element instanceof PsiClass && isJavaElementForType( method, (PsiClass)element ) )
       {
         result.add( method );
@@ -352,7 +352,7 @@ public class ResourceToManifoldUtil
     for( int i = 0; i < fields.length; i++ )
     {
       PsiField field = fields[i];
-      if( isJavaElementFor( field, element ) ||
+      if( isJavaElementFor( psiClass, field, element ) ||
           element instanceof PsiClass && isJavaElementForType( field, (PsiClass)element ) )
       {
         result.add( field );
@@ -363,7 +363,7 @@ public class ResourceToManifoldUtil
     for( int i = 0; i < inners.length; i++ )
     {
       PsiClass inner = inners[i];
-      if( isJavaElementFor( inner, element ) ||
+      if( isJavaElementFor( psiClass, inner, element ) ||
           element instanceof PsiClass && isJavaElementForType( inner, (PsiClass)element ) )
       {
         result.add( inner );
@@ -374,7 +374,7 @@ public class ResourceToManifoldUtil
     return result;
   }
 
-  private static boolean isJavaElementFor( PsiModifierListOwner modifierListOwner, PsiElement element )
+  private static boolean isJavaElementFor( PsiClass declaringClass, PsiModifierListOwner modifierListOwner, PsiElement element )
   {
     String targetFeatureName = element.getText();
     if( targetFeatureName == null || targetFeatureName.isEmpty() )
@@ -403,7 +403,7 @@ public class ResourceToManifoldUtil
         else if( pair.getNameIdentifier().getText().equals( SourcePosition.FEATURE ) )
         {
           String featureName = pair.getLiteralValue();
-          if( !featureNameMatches( element, featureName ) )
+          if( !featureNameMatches( declaringClass, element, featureName ) )
           {
             return false;
           }
@@ -414,12 +414,20 @@ public class ResourceToManifoldUtil
     return false;
   }
 
-  private static boolean featureNameMatches( PsiElement element, String featureName )
+  private static boolean featureNameMatches( PsiClass declaringClass, PsiElement element, String featureName )
   {
     return featureName != null &&
            (featureName.equals( element.getText() ) ||
-            (element instanceof NavigationItem && featureName.equals( ((NavigationItem)element).getName() )) ||
-            (element instanceof PsiNamedElement && featureName.equals( ((PsiNamedElement)element).getName() )));
+            (element instanceof NavigationItem && isSame( declaringClass, ((NavigationItem)element).getName(), featureName )) ||
+            (element instanceof PsiNamedElement && isSame( declaringClass, ((PsiNamedElement)element).getName(), featureName )));
+  }
+
+  private static boolean isSame( PsiClass declaringClass, String elemName, String featureName )
+  {
+    return featureName.equals( elemName ) ||
+           (declaringClass != null &&
+            (featureName.equals( declaringClass.getQualifiedName() + '.' + elemName ) ||
+             isSame( declaringClass.getContainingClass(), elemName, featureName )));
   }
 
   private static boolean isJavaElementForType( PsiModifierListOwner modifierListOwner, PsiClass psiClass )

@@ -67,6 +67,11 @@ public class ManStaleClassCleaner implements BuildManagerListener
 
   private void findClassFiles( String fqn, IDirectory outputPath, Set<File> classFiles )
   {
+    if( outputPath == null )
+    {
+      return;
+    }
+    
     File baseOutputDir = outputPath.toJavaFile();
     if( !baseOutputDir.exists() )
     {
