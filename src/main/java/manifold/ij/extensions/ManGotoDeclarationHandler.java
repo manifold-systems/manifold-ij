@@ -10,6 +10,7 @@ import com.intellij.psi.PsiAnnotationMemberValue;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiLiteralExpression;
+import com.intellij.psi.PsiMember;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiReference;
@@ -78,7 +79,7 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     if( annotations.length > 0 &&
         Objects.equals( annotations[0].getQualifiedName(), SourcePosition.class.getName() ) )
     {
-      return findTargetFeature( annotations[0], facade );
+      return findTargetFeature( annotations[0], resolve, facade );
     }
 
     if( facade != null && !facade.getRawFiles().isEmpty() &&
@@ -92,14 +93,18 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     return null;
   }
 
-  private static PsiElement findTargetFeature( PsiAnnotation psiAnnotation, ManifoldPsiClass facade )
+  private static PsiElement findTargetFeature( PsiAnnotation psiAnnotation, PsiModifierListOwner resolve, ManifoldPsiClass facade )
   {
     PsiAnnotationMemberValue value = psiAnnotation.findAttributeValue( SourcePosition.FEATURE );
     String featureName = StringUtil.unquoteString( value.getText() );
-    if( facade != null && featureName.startsWith( facade.getQualifiedName() + '.' ) )
+    if( facade != null )
     {
-      // remove class name qualifier
-      featureName = featureName.substring( facade.getQualifiedName().length() + 1 );
+      String declaringClassFqn = resolve instanceof PsiMember ? ((PsiMember)resolve).getContainingClass().getQualifiedName() : facade.getQualifiedName();
+      if( featureName.startsWith( declaringClassFqn + '.' ) )
+      {
+        // remove class name qualifier
+        featureName = featureName.substring( declaringClassFqn.length() + 1 );
+      }
     }
 //    value = psiAnnotation.findAttributeValue( SourcePosition.TYPE );
 //    if( value != null )

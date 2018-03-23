@@ -374,6 +374,10 @@ public class ResourceToManifoldUtil
     return result;
   }
 
+  /**
+   * Does the Java source member, {@code modifierListOwner}, have a SourcePosition annotation that matches the
+   * name and location of the given {@code element}?
+   */
   private static boolean isJavaElementFor( PsiClass declaringClass, PsiModifierListOwner modifierListOwner, PsiElement element )
   {
     String targetFeatureName = element.getText();
@@ -427,6 +431,7 @@ public class ResourceToManifoldUtil
     return featureName.equals( elemName ) ||
            (declaringClass != null &&
             (featureName.equals( declaringClass.getQualifiedName() + '.' + elemName ) ||
+             elemName.endsWith( '.' + featureName ) ||
              isSame( declaringClass.getContainingClass(), elemName, featureName )));
   }
 
