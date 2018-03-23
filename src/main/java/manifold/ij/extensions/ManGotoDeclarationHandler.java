@@ -99,7 +99,9 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     String featureName = StringUtil.unquoteString( value.getText() );
     if( facade != null )
     {
-      String declaringClassFqn = resolve instanceof PsiMember ? ((PsiMember)resolve).getContainingClass().getQualifiedName() : facade.getQualifiedName();
+      String declaringClassFqn = resolve instanceof PsiMember && ((PsiMember)resolve).getContainingClass() != null
+                                 ? ((PsiMember)resolve).getContainingClass().getQualifiedName()
+                                 : facade.getQualifiedName();
       if( featureName.startsWith( declaringClassFqn + '.' ) )
       {
         // remove class name qualifier
