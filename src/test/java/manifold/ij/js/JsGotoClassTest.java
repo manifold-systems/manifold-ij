@@ -6,7 +6,7 @@ import manifold.ij.extensions.ManifoldPsiClass;
 
 public class JsGotoClassTest extends AbstractManifoldCodeInsightTest
 {
-  public void testCompletion_Type() throws Exception
+  public void testGotoClass() throws Exception
   {
     myFixture.copyFileToProject( "js/sample/MyJsClass.js" );
     List<Object> results = myFixture.getGotoClassResults( "MyJsCla", false, null );

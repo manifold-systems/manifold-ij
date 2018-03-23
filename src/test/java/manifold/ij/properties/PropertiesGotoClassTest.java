@@ -6,7 +6,7 @@ import manifold.ij.extensions.ManifoldPsiClass;
 
 public class PropertiesGotoClassTest extends AbstractManifoldCodeInsightTest
 {
-  public void testCompletion_Type() throws Exception
+  public void testGotoClass() throws Exception
   {
     myFixture.copyFileToProject( "properties/sample/MyProperties.properties" );
     List<Object> results = myFixture.getGotoClassResults( "MyProperti", false, null );
