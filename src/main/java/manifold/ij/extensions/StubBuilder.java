@@ -2,26 +2,18 @@ package manifold.ij.extensions;
 
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiAnnotationMemberValue;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiJavaCodeReferenceElement;
-import com.intellij.psi.PsiLiteralExpression;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiNameValuePair;
 import com.intellij.psi.PsiParameter;
-import com.intellij.psi.PsiPrimitiveType;
-import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeParameter;
-import com.intellij.psi.PsiVariable;
-import com.intellij.psi.impl.source.PsiClassReferenceType;
-import com.intellij.psi.impl.source.tree.java.PsiNameValuePairImpl;
 import com.intellij.psi.search.GlobalSearchScope;
 import java.lang.reflect.Modifier;
 import manifold.api.gen.SrcAnnotated;
@@ -36,6 +28,7 @@ import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
 import manifold.ij.core.ManModule;
+import manifold.ij.util.ComputeUtil;
 
 /**
  */
@@ -43,12 +36,12 @@ public class StubBuilder
 {
   public SrcClass make( String fqn, ManModule module )
   {
-     JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance( module.getIjProject() );
-     PsiClass psiClass = javaPsiFacade.findClass( fqn, GlobalSearchScope.moduleScope( module.getIjModule() ) );
-     if( psiClass == null )
-     {
-       psiClass = javaPsiFacade.findClass( fqn, GlobalSearchScope.allScope( module.getIjProject() ) );
-     }
+    JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance( module.getIjProject() );
+    PsiClass psiClass = javaPsiFacade.findClass( fqn, GlobalSearchScope.moduleScope( module.getIjModule() ) );
+    if( psiClass == null )
+    {
+      psiClass = javaPsiFacade.findClass( fqn, GlobalSearchScope.allScope( module.getIjProject() ) );
+    }
     return makeSrcClass( fqn, psiClass, module );
   }
 
@@ -203,7 +196,7 @@ public class StubBuilder
     srcField.modifiers( getModifiers( field.getModifierList() ) );
     if( Modifier.isFinal( (int)srcField.getModifiers() ) )
     {
-      srcField.initializer( new SrcRawExpression( getValueForType( field.getType() ) ) );
+      srcField.initializer( new SrcRawExpression( ComputeUtil.getDefaultValue( field.getType() ) ) );
     }
     srcClass.addField( srcField );
   }
@@ -234,9 +227,9 @@ public class StubBuilder
       srcMethod.addThrowType( makeSrcType( throwType ) );
     }
     srcMethod.body( new SrcStatementBlock()
-                      .addStatement(
-                        new SrcRawStatement()
-                          .rawText( "throw new RuntimeException();" ) ) );
+      .addStatement(
+        new SrcRawStatement()
+          .rawText( "throw new RuntimeException();" ) ) );
     srcClass.addMethod( srcMethod );
   }
 
@@ -247,7 +240,7 @@ public class StubBuilder
       SrcAnnotationExpression annoExpr = new SrcAnnotationExpression( psiAnno.getQualifiedName() );
       for( PsiNameValuePair value : psiAnno.getParameterList().getAttributes() )
       {
-        Object realValue = computeLiteralValue( value );
+        Object realValue = ComputeUtil.computeLiteralValue( value );
         SrcRawExpression expr = realValue == null ? new SrcRawExpression( null ) : new SrcRawExpression( realValue.getClass(), realValue );
         SrcArgument srcArg = new SrcArgument( expr ).name( value.getName() );
         annoExpr.addArgument( srcArg );
@@ -255,84 +248,4 @@ public class StubBuilder
       srcAnnotated.addAnnotation( annoExpr );
     }
   }
-
-  private Object computeLiteralValue( PsiNameValuePair value )
-  {
-    Object literalValue = null;
-    PsiAnnotationMemberValue detachedValue = value.getDetachedValue();
-    if( detachedValue instanceof PsiReferenceExpression )
-    {
-      PsiElement resolve = ((PsiReferenceExpression)detachedValue).resolve();
-      if( resolve instanceof PsiVariable )
-      {
-        literalValue = ((PsiVariable)resolve).computeConstantValue();
-      }
-    }
-    if( literalValue == null )
-    {
-      if( detachedValue instanceof PsiLiteralExpression )
-      {
-        PsiType type = ((PsiLiteralExpression)detachedValue).getType();
-        if( type instanceof PsiPrimitiveType )
-        {
-          return getPrimitiveValue( ((PsiPrimitiveType)type).getName(), value.getLiteralValue() );
-        }
-        else if( type instanceof PsiClassReferenceType )
-        {
-          int dims = type.getArrayDimensions();
-          if( dims > 0 )
-          {
-            //## todo
-          }
-          else
-          {
-            return value.getLiteralValue();
-          }
-        }
-      }
-      //((PsiPrimitiveType)((PsiLiteralExpression)value.getDetachedValue()).getType()).getName()
-      //((PsiClassReferenceType)((PsiLiteralExpression)value.getDetachedValue()).getType()).getReference().getQualifiedName()
-      literalValue = value.getLiteralValue();
-    }
-    return literalValue == null ? null : literalValue.toString();
-  }
-
-  private Object getPrimitiveValue( String name, String literalValue )
-  {
-    switch( name )
-    {
-      case "boolean":
-        return Boolean.valueOf( literalValue );
-      case "char":
-        return literalValue.charAt( 0 );
-      case "byte":
-        return Byte.valueOf( literalValue );
-      case "short":
-        return Short.valueOf( literalValue );
-      case "int":
-        return Integer.valueOf( literalValue );
-      case "long":
-        return Long.valueOf( literalValue );
-      case "float":
-        return Float.valueOf( literalValue );
-      case "double":
-        return Double.valueOf( literalValue );
-      default:
-        throw new IllegalStateException( "\"" + name + "\" is not a primitive type name" );
-    }
-  }
-
-  private String getValueForType( PsiType type )
-  {
-    if( type instanceof PsiPrimitiveType )
-    {
-      if( type.getCanonicalText().equals( "boolean" ) )
-      {
-        return "false";
-      }
-      return "0";
-    }
-    return "null";
-  }
-
 }
