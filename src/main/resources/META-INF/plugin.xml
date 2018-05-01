@@ -66,6 +66,11 @@
     <resolveScopeProvider implementation="manifold.ij.extensions.ManResolveScopeProvider" order="first"/>
     <elementDescriptionProvider implementation="manifold.ij.extensions.ManElementDescriptionProvider"/>
     <languageInjector implementation="manifold.ij.extensions.ManStringLiteralTemplateInjector" order="first"/>
+    <fileTypeFactory implementation="manifold.ij.template.ManTemplateFileTypeFactory"/>
+    <lang.parserDefinition language="ManTL" implementationClass="manifold.ij.template.psi.ManTemplateParserDefinition"/>
+    <lang.parserDefinition language="ManTemplateJava" implementationClass="manifold.ij.template.psi.ManTemplateJavaParserDefinition"/>
+    <lang.syntaxHighlighterFactory language="ManTL" implementationClass="manifold.ij.template.ManTemplateHighlighterFactory"/>
+    <lang.fileViewProviderFactory language="ManTL" implementationClass="manifold.ij.template.ManTemplateFileViewProviderFactory" order="first"/>
   </extensions>
 
 </idea-plugin>
