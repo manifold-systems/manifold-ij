@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 public class ManTemplateFile extends PsiFileBase
   implements PsiImportHolder //!! must implement PsiImportHolder for full pass analysis and error highlighting to work
 {                            //!! see HighlightVisitorImpl#suitableForFile
-  public ManTemplateFile( @NotNull FileViewProvider viewProvider )
+  ManTemplateFile( @NotNull FileViewProvider viewProvider )
   {
     super( viewProvider, ManTemplateLanguage.INSTANCE );
   }

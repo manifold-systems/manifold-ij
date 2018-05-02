@@ -3,7 +3,6 @@ package manifold.ij.template;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageParserDefinitions;
 import com.intellij.lang.ParserDefinition;
-import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.LanguageFileType;
 import com.intellij.openapi.fileTypes.PlainTextLanguage;
@@ -23,7 +22,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import org.jetbrains.annotations.NotNull;
 import static manifold.ij.template.psi.ManTemplateTokenType.CONTENT;
-import static manifold.ij.template.psi.ManTemplateTokenType.STMT;
 
 public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFileViewProvider
   implements TemplateLanguageFileViewProvider
@@ -42,7 +40,7 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
     {
       return result;
     }
-    TemplateDataElementType created = new TemplateDataElementType( "ManTL_DATA", lang, STMT, CONTENT );
+    TemplateDataElementType created = new ManTemplateDataElementType( "ManTL_DATA", lang, CONTENT );
     TemplateDataElementType prevValue = TEMPLATE_DATA_TO_LANG.putIfAbsent( lang.getID(), created );
 
     return prevValue == null ? created : prevValue;
