@@ -20,6 +20,7 @@ import static manifold.ij.template.psi.ManTemplateTokenType.STMT;
 /**
  * Extends {@link TemplateDataElementType} to support _multiple_ token types, STMT and EXPR, as template data tokens.
  * This is to support keeping track of expression offsets to help the parser differentiate between stmt and expr parsing.
+ *
  * @see manifold.ij.template.psi.ManTemplateJavaParser
  */
 public class ManTemplateDataElementType extends TemplateDataElementType
