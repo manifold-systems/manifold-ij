@@ -72,6 +72,7 @@
     <lang.syntaxHighlighterFactory language="ManTL" implementationClass="manifold.ij.template.ManTemplateHighlighterFactory"/>
     <lang.fileViewProviderFactory language="ManTL" implementationClass="manifold.ij.template.ManTemplateFileViewProviderFactory" order="first"/>
     <lang.treePatcher language="ManTemplateJava" implementationClass="manifold.ij.template.ManTreePatcher"/>
+    <colorSettingsPage implementation="manifold.ij.template.ManTemplateColorSettingsPage"/>
   </extensions>
 
 </idea-plugin>

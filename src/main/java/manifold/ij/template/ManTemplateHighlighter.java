@@ -14,22 +14,17 @@ import static com.intellij.openapi.editor.colors.TextAttributesKey.createTextAtt
 
 public class ManTemplateHighlighter extends SyntaxHighlighterBase
 {
-  private static final TextAttributesKey COMMENT = createTextAttributesKey( "MANTL_COMMENT", DefaultLanguageHighlighterColors.LINE_COMMENT );
-  private static final TextAttributesKey COMMENT_BEGIN = createTextAttributesKey( "MANTL_COMMENT_BEGIN", DefaultLanguageHighlighterColors.LINE_COMMENT );
-  private static final TextAttributesKey COMMENT_END = createTextAttributesKey( "MANTL_COMMENT_END", DefaultLanguageHighlighterColors.LINE_COMMENT );
-  private static final TextAttributesKey EXPR_BRACE_BEGIN = createTextAttributesKey( "MANTL_EXPR_BRACE_BEGIN", DefaultLanguageHighlighterColors.TEMPLATE_LANGUAGE_COLOR );
-  private static final TextAttributesKey EXPR_BRACE_END = createTextAttributesKey( "MANTL_EXPR_BRACE_END", DefaultLanguageHighlighterColors.TEMPLATE_LANGUAGE_COLOR );
-  private static final TextAttributesKey EXPR_ANGLE_BEGIN = createTextAttributesKey( "MANTL_EXPR_ANGLE_BEGIN", DefaultLanguageHighlighterColors.TEMPLATE_LANGUAGE_COLOR );
-  private static final TextAttributesKey STMT_ANGLE_BEGIN = createTextAttributesKey( "MANTL_STMT_ANGLE_BEGIN", DefaultLanguageHighlighterColors.TEMPLATE_LANGUAGE_COLOR );
-  private static final TextAttributesKey DIR_ANGLE_BEGIN = createTextAttributesKey( "MANTL_DIR_ANGLE_BEGIN", DefaultLanguageHighlighterColors.TEMPLATE_LANGUAGE_COLOR );
-  private static final TextAttributesKey ANGLE_END = createTextAttributesKey( "MANTL_DIR_ANGLE_BEGIN", DefaultLanguageHighlighterColors.TEMPLATE_LANGUAGE_COLOR );
+  public static final TextAttributesKey COMMENT = createTextAttributesKey( "MANTL_COMMENT", DefaultLanguageHighlighterColors.LINE_COMMENT );
+  public static final TextAttributesKey DELIMITER = createTextAttributesKey( "MANTL_TEMPLATE_DELIMITER", DefaultLanguageHighlighterColors.MARKUP_TAG );
+  public static final TextAttributesKey DIRECTIVE = createTextAttributesKey( "MANTL_DIRECTIVE", DefaultLanguageHighlighterColors.TEMPLATE_LANGUAGE_COLOR );
 
 //  static final TextAttributesKey BAD_CHARACTER = createTextAttributesKey( "SIMPLE_BAD_CHARACTER",
 //    new TextAttributes( Color.RED, null, null, null, Font.BOLD ) );
 
   //  private static final TextAttributesKey[] BAD_CHAR_KEYS = new TextAttributesKey[]{BAD_CHARACTER};
-  private static final TextAttributesKey[] COMMENT_KEYS = new TextAttributesKey[]{COMMENT, COMMENT_BEGIN, COMMENT_END};
-  private static final TextAttributesKey[] CODE_DELIM_KEYS = new TextAttributesKey[]{EXPR_ANGLE_BEGIN, EXPR_BRACE_BEGIN, EXPR_BRACE_END, STMT_ANGLE_BEGIN, DIR_ANGLE_BEGIN, ANGLE_END};
+  private static final TextAttributesKey[] COMMENT_KEYS = new TextAttributesKey[]{COMMENT};
+  private static final TextAttributesKey[] CODE_DELIM_KEYS = new TextAttributesKey[]{DELIMITER};
+  private static final TextAttributesKey[] DIRECTIVE_KEYS = new TextAttributesKey[]{DIRECTIVE};
   private static final TextAttributesKey[] EMPTY_KEYS = new TextAttributesKey[0];
 
   @NotNull
@@ -57,6 +52,10 @@ public class ManTemplateHighlighter extends SyntaxHighlighterBase
              tokenType == ManTemplateTokenType.ANGLE_END )
     {
       return CODE_DELIM_KEYS;
+    }
+    else if( tokenType == ManTemplateTokenType.DIRECTIVE )
+    {
+      return DIRECTIVE_KEYS;
     }
     return EMPTY_KEYS;
   }
