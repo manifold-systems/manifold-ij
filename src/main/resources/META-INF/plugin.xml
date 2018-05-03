@@ -67,11 +67,12 @@
     <elementDescriptionProvider implementation="manifold.ij.extensions.ManElementDescriptionProvider"/>
     <languageInjector implementation="manifold.ij.extensions.ManStringLiteralTemplateInjector" order="first"/>
     <fileTypeFactory implementation="manifold.ij.template.ManTemplateFileTypeFactory"/>
-    <lang.parserDefinition language="ManTL" implementationClass="manifold.ij.template.psi.ManTemplateParserDefinition"/>
     <lang.parserDefinition language="ManTemplateJava" implementationClass="manifold.ij.template.psi.ManTemplateJavaParserDefinition"/>
+    <lang.treePatcher language="ManTemplateJava" implementationClass="manifold.ij.template.ManTreePatcher"/>
+    <lang.parserDefinition language="ManTL" implementationClass="manifold.ij.template.psi.ManTemplateParserDefinition"/>
     <lang.syntaxHighlighterFactory language="ManTL" implementationClass="manifold.ij.template.ManTemplateHighlighterFactory"/>
     <lang.fileViewProviderFactory language="ManTL" implementationClass="manifold.ij.template.ManTemplateFileViewProviderFactory" order="first"/>
-    <lang.treePatcher language="ManTemplateJava" implementationClass="manifold.ij.template.ManTreePatcher"/>
+    <annotator language="ManTL" implementationClass="manifold.ij.template.ManTemplateAnnotator"/>
     <colorSettingsPage implementation="manifold.ij.template.ManTemplateColorSettingsPage"/>
   </extensions>
 

@@ -107,81 +107,87 @@ public class ManTemplateLexer extends LexerBase
 
       int before = index;
       char c = _text.charAt( index );
-      if( c == '$' && !isInCode() )
+
+      if( isTop( COMMENT_BEGIN ) )
       {
-        index++;
-        if( charIs( index, '{' ) )
+        if( c == '-' )
         {
-          pushStuff();
-          pushToken( EXPR_BRACE_BEGIN, ++index );
-          continue;
-        }
-      }
-      else if( c == '<' && !isInCode() )
-      {
-        index++;
-        if( charIs( index, '%' ) )
-        {
-          pushStuff();
           index++;
-          if( _text.charAt( index ) == '=' )
+          if( charIs( index, '-' ) )
           {
-            pushToken( EXPR_ANGLE_BEGIN, ++index );
-            continue;
-          }
-          else if( charIs( index, '@' ) )
-          {
-            pushToken( DIR_ANGLE_BEGIN, ++index );
-            continue;
-          }
-          else if( charIs( index, '-' ) )
-          {
-            if( charIs( index+1, '-' ) )
+            index++;
+            if( charIs( index, '%' ) )
             {
-              pushToken( COMMENT_BEGIN, index += 2 );
-              continue;
+              index++;
+              if( charIs( index, '>' ) )
+              {
+                pushStuff();
+                pushToken( COMMENT_END, ++index );
+                continue;
+              }
             }
           }
-
-          pushToken( STMT_ANGLE_BEGIN, index );
-          continue;
         }
       }
-      else if( c == '}' && isTop( EXPR_BRACE_BEGIN ) )
+      else
       {
-        pushStuff();
-        pushToken( EXPR_BRACE_END, ++index );
-        continue;
-      }
-      else if( c == '-' && isTop( COMMENT_BEGIN ) )
-      {
-        index++;
-        if( charIs( index, '-' ) )
+        if( c == '$' && !isInCode() )
+        {
+          index++;
+          if( charIs( index, '{' ) )
+          {
+            pushStuff();
+            pushToken( EXPR_BRACE_BEGIN, ++index );
+            continue;
+          }
+        }
+        else if( c == '<' && !isInCode() )
         {
           index++;
           if( charIs( index, '%' ) )
           {
+            pushStuff();
             index++;
-            if( charIs( index, '>' ) )
+            if( _text.charAt( index ) == '=' )
             {
-              pushStuff();
-              pushToken( COMMENT_END, ++index );
+              pushToken( EXPR_ANGLE_BEGIN, ++index );
               continue;
             }
+            else if( charIs( index, '@' ) )
+            {
+              pushToken( DIR_ANGLE_BEGIN, ++index );
+              continue;
+            }
+            else if( charIs( index, '-' ) )
+            {
+              if( charIs( index + 1, '-' ) )
+              {
+                pushToken( COMMENT_BEGIN, index += 2 );
+                continue;
+              }
+            }
+
+            pushToken( STMT_ANGLE_BEGIN, index );
+            continue;
+          }
+        }
+        else if( c == '}' && isTop( EXPR_BRACE_BEGIN ) )
+        {
+          pushStuff();
+          pushToken( EXPR_BRACE_END, ++index );
+          continue;
+        }
+        else if( c == '%' && isInCode() )
+        {
+          index++;
+          if( charIs( index, '>' ) )
+          {
+            pushStuff();
+            pushToken( ANGLE_END, ++index );
+            continue;
           }
         }
       }
-      else if( c == '%' && isInCode() )
-      {
-        index++;
-        if( charIs( index, '>' ) )
-        {
-          pushStuff();
-          pushToken( ANGLE_END, ++index );
-          continue;
-        }
-      }
-
       _stuff.append( c );
       index = before + 1;
     }

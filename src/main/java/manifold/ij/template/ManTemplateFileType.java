@@ -30,7 +30,7 @@ public class ManTemplateFileType extends LanguageFileType implements TemplateLan
   @Override
   public String getName()
   {
-    return "ManTL file";
+    return "ManTL";
   }
 
   @NotNull
