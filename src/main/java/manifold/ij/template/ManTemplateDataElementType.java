@@ -38,6 +38,12 @@ public class ManTemplateDataElementType extends TemplateDataElementType
     throw new IllegalStateException( "Should be calling private createTemplateText overload instead" );
   }
 
+  @Override
+  protected Language getTemplateFileLanguage( TemplateLanguageFileViewProvider viewProvider )
+  {
+    return ManTemplateJavaLanguage.INSTANCE;
+  }
+
   private CharSequence createTemplateText( @NotNull CharSequence sourceCode,
                                            @NotNull Lexer baseLexer,
                                            @NotNull RangesCollector outerRangesCollector,
