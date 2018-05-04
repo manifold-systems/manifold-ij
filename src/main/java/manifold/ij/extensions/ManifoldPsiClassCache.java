@@ -124,7 +124,32 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
   {
     // IJ tries to resolve some pretty strange looking names...
 
-    return !fqn.contains( ".<" ) && !fqn.startsWith( "<" );
+    if( fqn.isEmpty() )
+    {
+      return false;
+    }
+
+    if( !Character.isJavaIdentifierStart( fqn.charAt( 0 ) ) )
+    {
+      return false;
+    }
+
+    for( int i = 1; i < fqn.length(); i++ )
+    {
+      char c = fqn.charAt( i );
+      if( !Character.isJavaIdentifierPart( c ) &&
+          c != '<' && c != '>' && c != '.' )
+      {
+        return false;
+      }
+    }
+
+    if( fqn.contains( ".<" ) )
+    {
+      return false;
+    }
+
+    return true;
   }
 
   private void addShortCircuit( String fqn )
