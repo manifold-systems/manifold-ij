@@ -113,12 +113,14 @@ public class DirectiveParser
     if( tokenType != JavaTokenType.IDENTIFIER )
     {
       builder.error( JavaErrorMessages.message( "expected.identifier" ) );
+      return;
     }
-    else if( directiveName == null || !directiveName.equals( SECTION ) )
+
+    if( directiveName == null || !directiveName.equals( SECTION ) )
     {
       builder.error( "Expecting 'section' keyword" );
-      builder.advanceLexer();
     }
+    builder.advanceLexer();
   }
 
   private void parseIncludeDirective( PsiBuilder builder )
