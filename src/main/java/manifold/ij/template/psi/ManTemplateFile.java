@@ -5,13 +5,15 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.psi.FileViewProvider;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiImportHolder;
+import com.intellij.psi.ServerPageFile;
 import manifold.ij.template.ManTemplateFileType;
 import manifold.ij.template.ManTemplateLanguage;
 import org.jetbrains.annotations.NotNull;
 
 public class ManTemplateFile extends PsiFileBase
-  implements PsiImportHolder //!! must implement PsiImportHolder for full pass analysis and error highlighting to work
-{                            //!! see HighlightVisitorImpl#suitableForFile
+  implements PsiImportHolder, //!! must implement PsiImportHolder for full pass analysis and error highlighting to work, see HighlightVisitorImpl#suitableForFile
+             ServerPageFile   //!! musts implement ServerPageFile to avoid psi checking at the file level e.g., no package stmt etc.
+{
   ManTemplateFile( @NotNull FileViewProvider viewProvider )
   {
     super( viewProvider, ManTemplateLanguage.INSTANCE );

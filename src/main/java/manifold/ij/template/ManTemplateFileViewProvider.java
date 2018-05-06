@@ -112,7 +112,6 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
   public Language getTemplateDataLanguage()
   {
     return _contentLang;
-    //return ManTemplateJavaLanguage.INSTANCE;
   }
 
   @NotNull

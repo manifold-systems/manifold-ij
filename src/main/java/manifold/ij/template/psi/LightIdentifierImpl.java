@@ -4,7 +4,7 @@ import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiJavaToken;
+import com.intellij.psi.PsiIdentifier;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.impl.source.codeStyle.CodeEditUtil;
@@ -14,7 +14,7 @@ import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
-public class LightIdentifierImpl extends CompositePsiElement implements PsiJavaToken, PsiNamedElement
+public class LightIdentifierImpl extends CompositePsiElement implements PsiIdentifier, PsiNamedElement
 {
   private CharSequence _text;
 

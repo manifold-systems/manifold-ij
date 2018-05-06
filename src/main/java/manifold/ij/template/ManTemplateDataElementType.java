@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 import static manifold.ij.template.psi.ManTemplateTokenType.EXPR;
 import static manifold.ij.template.psi.ManTemplateTokenType.STMT;
+import static manifold.ij.template.psi.ManTemplateTokenType.DIRECTIVE;
 
 /**
  * Extends {@link TemplateDataElementType} to support _multiple_ token types, STMT and EXPR, as template data tokens.
@@ -26,6 +27,7 @@ import static manifold.ij.template.psi.ManTemplateTokenType.STMT;
 public class ManTemplateDataElementType extends TemplateDataElementType
 {
   public static final Key<List<Integer>> EXPR_OFFSETS = Key.create( "EXPR_OFFSETS" );
+  public static final Key<List<Integer>> DIRECTIVE_OFFSETS = Key.create( "DIRECTIVE_OFFSETS" );
 
   ManTemplateDataElementType( String name, Language lang, IElementType contentElementType )
   {
@@ -47,7 +49,8 @@ public class ManTemplateDataElementType extends TemplateDataElementType
   private CharSequence createTemplateText( @NotNull CharSequence sourceCode,
                                            @NotNull Lexer baseLexer,
                                            @NotNull RangesCollector outerRangesCollector,
-                                           List<Integer> expressionOffsets )
+                                           List<Integer> expressionOffsets,
+                                           List<Integer> directiveOffsets )
   {
     StringBuilder result = new StringBuilder( sourceCode.length() );
     baseLexer.start( sourceCode );
@@ -61,13 +64,17 @@ public class ManTemplateDataElementType extends TemplateDataElementType
         ": " + getRangeDump( currentRange, sourceCode ) + " followed by " + getRangeDump( newRange, sourceCode );
       currentRange = newRange;
       IElementType tokenType = baseLexer.getTokenType();
-      if( tokenType == STMT || tokenType == EXPR )
+      if( tokenType == STMT || tokenType == EXPR || tokenType == DIRECTIVE )
       {
         int offset = result.length();
         appendCurrentTemplateToken( result, sourceCode, baseLexer );
         if( tokenType == EXPR )
         {
           expressionOffsets.add( offsetNoWhitespace( result, offset ) );
+        }
+        else if( tokenType == DIRECTIVE )
+        {
+          directiveOffsets.add( offsetNoWhitespace( result, offset ) );
         }
       }
       else
@@ -82,7 +89,7 @@ public class ManTemplateDataElementType extends TemplateDataElementType
 
   private Integer offsetNoWhitespace( StringBuilder result, int offset )
   {
-    while( Character.isWhitespace( result.charAt( offset ) ) )
+    while( result.length() > offset && Character.isWhitespace( result.charAt( offset ) ) )
     {
       offset++;
     }
@@ -96,9 +103,11 @@ public class ManTemplateDataElementType extends TemplateDataElementType
                                         @NotNull RangesCollector outerRangesCollector )
   {
     List<Integer> expressionOffsets = new ArrayList<>();
-    CharSequence templateSourceCode = createTemplateText( sourceCode, createBaseLexer( viewProvider ), outerRangesCollector, expressionOffsets );
+    List<Integer> directiveOffsets = new ArrayList<>();
+    CharSequence templateSourceCode = createTemplateText( sourceCode, createBaseLexer( viewProvider ), outerRangesCollector, expressionOffsets, directiveOffsets );
     PsiFile file = createPsiFileFromSource( templateLanguage, templateSourceCode, psiFile.getManager() );
     file.putUserData( EXPR_OFFSETS, expressionOffsets );
+    file.putUserData( DIRECTIVE_OFFSETS, directiveOffsets );
     return file;
   }
 

@@ -18,6 +18,7 @@ import com.intellij.psi.impl.source.tree.ElementType;
 import com.intellij.psi.impl.source.tree.JavaElementType;
 import com.intellij.psi.impl.source.tree.LazyParseableElement;
 import com.intellij.psi.impl.source.tree.TreeElement;
+import com.intellij.psi.impl.source.tree.java.MethodElement;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.IFileElementType;
 import com.intellij.psi.tree.TokenSet;
@@ -143,7 +144,7 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
 
     private CompositeElement makeMethodStmt( CompositeElement classStmtNode )
     {
-      CompositeElement methodStmt = new CompositeElement( JavaElementType.METHOD );
+      CompositeElement methodStmt = new MethodElement();
       classStmtNode.rawAddChildrenWithoutNotifications( methodStmt );
 
       CompositeElement synthModifierList = new CompositeElement( JavaElementType.MODIFIER_LIST );
@@ -152,7 +153,7 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
       CompositeElement typeParamList = new CompositeElement( JavaElementType.TYPE_PARAMETER_LIST );
       methodStmt.rawAddChildrenWithoutNotifications( typeParamList );
 
-      CompositeElement methodId = new LightIdentifierImpl( "bar" );
+      CompositeElement methodId = new LightIdentifierImpl( "rwds" );
       methodStmt.rawAddChildrenWithoutNotifications( methodId );
 
       CompositeElement params = new CompositeElement( JavaElementType.PARAMETER_LIST );

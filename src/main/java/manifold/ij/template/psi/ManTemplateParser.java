@@ -13,7 +13,7 @@ import static manifold.ij.template.psi.ManTemplateTokenType.*;
 
 public class ManTemplateParser implements PsiParser
 {
-  public static final IElementType Directive = new ManTemplateElementType( "Directive" );
+  public static final IElementType Directive = new ManDirectiveTemplateElementType( "Directive" );
   public static final IElementType Statement = new ManTemplateElementType( "Statement" );
   public static final IElementType Expression = new ManTemplateElementType( "Expression" );
   public static final IElementType Comment = new ManTemplateElementType( "Comment" );
@@ -117,15 +117,15 @@ public class ManTemplateParser implements PsiParser
     return _tokenType == test;
   }
 
-  private void match( IElementType tokenType )
+  private boolean match( IElementType tokenType )
   {
-    match( tokenType, null );
+    return match( tokenType, null );
   }
-  private void match( IElementType tokenType, String msg )
+  private boolean match( IElementType tokenType, String msg )
   {
-    match( tokenType, msg, false );
+    return match( tokenType, msg, false );
   }
-  private void match( IElementType tokenType, String msg, boolean advance )
+  private boolean match( IElementType tokenType, String msg, boolean advance )
   {
     boolean match = _builder.getTokenType() == tokenType;
     if( !match )
@@ -144,6 +144,7 @@ public class ManTemplateParser implements PsiParser
     {
       advance();
     }
+    return match;
   }
 
   private void advance()
