@@ -14,7 +14,6 @@ public class ManTemplateColorSettingsPage implements ColorSettingsPage
   private static final AttributesDescriptor[] DESCRIPTORS = new AttributesDescriptor[]{
     new AttributesDescriptor( "Comment", ManTemplateHighlighter.COMMENT ),
     new AttributesDescriptor( "Delimiter", ManTemplateHighlighter.DELIMITER ),
-    new AttributesDescriptor( "Directive", ManTemplateHighlighter.DIRECTIVE ),
   };
 
   @Nullable

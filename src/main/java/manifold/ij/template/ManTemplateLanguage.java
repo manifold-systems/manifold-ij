@@ -16,13 +16,8 @@ public class ManTemplateLanguage extends Language
     super( "ManTL" );
   }
 
-  public static FileType getDefaultTemplateLang()
-  {
-    return PlainTextFileType.INSTANCE;
-  }
-
   /**
-   * The convention for a ManTL files encodes the file extension of the content before the .mtl extension:
+   * The convention for a ManTL file encodes the file extension of the content before the .mtl extension:
    * {@code MyFile.html.mtl}
    */
   public static FileType getContentLanguage( VirtualFile vfile )

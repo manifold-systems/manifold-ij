@@ -73,6 +73,7 @@
     <lang.syntaxHighlighterFactory language="ManTL" implementationClass="manifold.ij.template.ManTemplateHighlighterFactory"/>
     <lang.fileViewProviderFactory language="ManTL" implementationClass="manifold.ij.template.ManTemplateFileViewProviderFactory" order="first"/>
     <annotator language="ManTL" implementationClass="manifold.ij.template.ManTemplateAnnotator"/>
+    <annotator language="JAVA" implementationClass="manifold.ij.template.ManTemplateJavaAnnotator"/>
     <colorSettingsPage implementation="manifold.ij.template.ManTemplateColorSettingsPage"/>
   </extensions>
 
