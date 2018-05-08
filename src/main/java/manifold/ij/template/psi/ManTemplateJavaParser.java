@@ -100,6 +100,12 @@ public class ManTemplateJavaParser implements PsiParser
     return psiFile == null ? Collections.emptyList() : psiFile.getUserData( ManTemplateDataElementType.DIRECTIVE_OFFSETS );
   }
 
+  private List<Integer> getStatementOffsets( @NotNull PsiBuilder builder )
+  {
+    PsiFile psiFile = builder.getUserDataUnprotected( FileContextUtil.CONTAINING_FILE_KEY );
+    return psiFile == null ? Collections.emptyList() : psiFile.getUserData( ManTemplateDataElementType.STMT_OFFSETS );
+  }
+
   private boolean couldNotParse( @NotNull PsiBuilder builder, int offset )
   {
     if( builder.getCurrentOffset() == offset )

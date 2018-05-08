@@ -27,6 +27,7 @@ import static manifold.ij.template.psi.ManTemplateTokenType.DIRECTIVE;
 public class ManTemplateDataElementType extends TemplateDataElementType
 {
   public static final Key<List<Integer>> EXPR_OFFSETS = Key.create( "EXPR_OFFSETS" );
+  public static final Key<List<Integer>> STMT_OFFSETS = Key.create( "STMT_OFFSETS" );
   public static final Key<List<Integer>> DIRECTIVE_OFFSETS = Key.create( "DIRECTIVE_OFFSETS" );
 
   ManTemplateDataElementType( String name, Language lang, IElementType contentElementType )
@@ -50,6 +51,7 @@ public class ManTemplateDataElementType extends TemplateDataElementType
                                            @NotNull Lexer baseLexer,
                                            @NotNull RangesCollector outerRangesCollector,
                                            List<Integer> expressionOffsets,
+                                           List<Integer> statementOffsets,
                                            List<Integer> directiveOffsets )
   {
     StringBuilder result = new StringBuilder( sourceCode.length() );
@@ -72,7 +74,11 @@ public class ManTemplateDataElementType extends TemplateDataElementType
         {
           expressionOffsets.add( offsetNoWhitespace( result, offset ) );
         }
-        else if( tokenType == DIRECTIVE )
+        else if( tokenType == STMT )
+        {
+          statementOffsets.add( offsetNoWhitespace( result, offset ) );
+        }
+        else // DIRECTIVE
         {
           directiveOffsets.add( offsetNoWhitespace( result, offset ) );
         }
@@ -103,10 +109,12 @@ public class ManTemplateDataElementType extends TemplateDataElementType
                                         @NotNull RangesCollector outerRangesCollector )
   {
     List<Integer> expressionOffsets = new ArrayList<>();
+    List<Integer> statementOffsets = new ArrayList<>();
     List<Integer> directiveOffsets = new ArrayList<>();
-    CharSequence templateSourceCode = createTemplateText( sourceCode, createBaseLexer( viewProvider ), outerRangesCollector, expressionOffsets, directiveOffsets );
+    CharSequence templateSourceCode = createTemplateText( sourceCode, createBaseLexer( viewProvider ), outerRangesCollector, expressionOffsets, statementOffsets, directiveOffsets );
     PsiFile file = createPsiFileFromSource( templateLanguage, templateSourceCode, psiFile.getManager() );
     file.putUserData( EXPR_OFFSETS, expressionOffsets );
+    file.putUserData( STMT_OFFSETS, statementOffsets );
     file.putUserData( DIRECTIVE_OFFSETS, directiveOffsets );
     return file;
   }

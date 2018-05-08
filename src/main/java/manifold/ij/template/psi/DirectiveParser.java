@@ -29,6 +29,8 @@ public class DirectiveParser
   public static final String INCLUDE = "include";
   public static final String SECTION = "section";
   public static final String END = "end";
+  public static final String LAYOUT = "layout";
+  public static final String CONTENT = "content";
 
   private static final TokenSet TYPE_START = TokenSet.orSet(
     ElementType.PRIMITIVE_TYPE_BIT_SET, TokenSet.create( JavaTokenType.IDENTIFIER ) );
@@ -85,8 +87,32 @@ public class DirectiveParser
         parseEndDirective( builder );
         break;
 
+      case LAYOUT:
+        parseLayoutDirective( builder );
+        break;
+
+      case CONTENT:
+        parseContentDirective( builder );
+        break;
+
       default:
         builder.error( "Unknown directive: '" + directiveName + "'" );
+    }
+  }
+
+  private void parseContentDirective( PsiBuilder builder )
+  {
+    builder.advanceLexer();
+  }
+
+  private void parseLayoutDirective( PsiBuilder builder )
+  {
+    builder.advanceLexer();
+    ReferenceParser.TypeInfo type = parseType( builder );
+    if( type == null )
+    {
+      PsiBuilder.Marker error = builder.mark();
+      error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
     }
   }
 
@@ -96,7 +122,7 @@ public class DirectiveParser
 
     expectOrError( builder, JavaTokenType.IDENTIFIER, "expected.identifier" );
     expectOrError( builder, JavaTokenType.LPARENTH, "expected.lparen" );
-    parseExpressionList( builder );
+    parseParameterList( builder );
     expectOrError( builder, JavaTokenType.RPARENTH, "expected.rparen" );
   }
   private void parseEndDirective( PsiBuilder builder )
@@ -165,11 +191,11 @@ public class DirectiveParser
   {
     builder.advanceLexer();
     expectOrError( builder, JavaTokenType.LPARENTH, "expected.lparen" );
-    parseExpressionList( builder );
+    parseParameterList( builder );
     expectOrError( builder, JavaTokenType.RPARENTH, "expected.rparen" );
   }
 
-  private void parseExpressionList( PsiBuilder builder )
+  private void parseParameterList( PsiBuilder builder )
   {
     parseParam( builder );
     while( builder.getTokenType() == JavaTokenType.COMMA )

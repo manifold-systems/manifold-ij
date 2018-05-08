@@ -18,6 +18,8 @@ public class ManTemplateLexer extends LexerBase
   private StringBuilder _stuff;
 
   private int _tokenIndex;
+  private boolean _isParsingString;
+  private boolean _isParsingCharLiteral;
 
   @Override
   public void start( @NotNull CharSequence buffer, int startOffset, int endOffset, int initialState )
@@ -98,6 +100,7 @@ public class ManTemplateLexer extends LexerBase
   {
     _stuff = new StringBuilder();
     int index = _index;
+    boolean escaped = false;
     while( true )
     {
       if( index >= _text.length() )
@@ -107,6 +110,14 @@ public class ManTemplateLexer extends LexerBase
 
       int before = index;
       char c = _text.charAt( index );
+
+      if( !escaped && c == '\\' && !isInCode() && _text.length() > index+1 &&
+          (_text.charAt( index+1 ) == '<' || _text.charAt( index+1 ) == '$') )
+      {
+        escaped = true;
+        index++;
+        continue;
+      }
 
       if( isTop( COMMENT_BEGIN ) )
       {
@@ -131,7 +142,7 @@ public class ManTemplateLexer extends LexerBase
       }
       else
       {
-        if( c == '$' && !isInCode() )
+        if( c == '$' && !isInCode() && !escaped )
         {
           index++;
           if( charIs( index, '{' ) )
@@ -141,7 +152,7 @@ public class ManTemplateLexer extends LexerBase
             continue;
           }
         }
-        else if( c == '<' && !isInCode() )
+        else if( c == '<' && !isInCode() && !escaped )
         {
           index++;
           if( charIs( index, '%' ) )
@@ -171,13 +182,13 @@ public class ManTemplateLexer extends LexerBase
             continue;
           }
         }
-        else if( c == '}' && isTop( EXPR_BRACE_BEGIN ) )
+        else if( c == '}' && isTop( EXPR_BRACE_BEGIN ) && isInCode() && !isParsingString() && !isParsingCharLiteral() )
         {
           pushStuff();
           pushToken( EXPR_BRACE_END, ++index );
           continue;
         }
-        else if( c == '%' && isInCode() )
+        else if( c == '%' && isInCode() && !isParsingString() )
         {
           index++;
           if( charIs( index, '>' ) )
@@ -190,9 +201,56 @@ public class ManTemplateLexer extends LexerBase
       }
       _stuff.append( c );
       index = before + 1;
+      setParsingString( c, before );
+      setParsingCharLiteral( c, before );
+      escaped = false;
     }
     
     pushStuff();
+  }
+
+  private void setParsingString( char c, int index )
+  {
+    if( !isInCode() || c != '"' || isParsingCharLiteral() )
+    {
+      return;
+    }
+
+    if( !isParsingString() )
+    {
+      _isParsingString = true;
+    }
+    else if( _text.charAt( index -1 ) != '\\' )
+    {
+      _isParsingString = false;
+    }
+  }
+
+  private boolean isParsingString()
+  {
+    return _isParsingString;
+  }
+
+  private void setParsingCharLiteral( char c, int index )
+  {
+    if( !isInCode() || c != '\'' || isParsingString() )
+    {
+      return;
+    }
+
+    if( !isParsingCharLiteral() )
+    {
+      _isParsingCharLiteral = true;
+    }
+    else if( _text.charAt( index -1 ) != '\\' )
+    {
+      _isParsingCharLiteral = false;
+    }
+  }
+
+  private boolean isParsingCharLiteral()
+  {
+    return _isParsingCharLiteral;
   }
 
   private boolean charIs( int index, char c )

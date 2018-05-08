@@ -37,6 +37,8 @@ public class ManTemplateJavaAnnotator implements Annotator
       case DirectiveParser.INCLUDE:
       case DirectiveParser.SECTION:
       case DirectiveParser.END:
+      case DirectiveParser.LAYOUT:
+      case DirectiveParser.CONTENT:
         return true;
     }
     return false;

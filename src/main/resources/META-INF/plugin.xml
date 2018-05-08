@@ -46,6 +46,9 @@
       <artifactId>manifold-all</artifactId>
     </repositoryLibrary>
 
+
+    <!-- Manifold Core extensions -->
+
     <!--<library.type implementation="manifold.ij.extensions.ManLibraryType"/>-->
     <frameworkSupport implementation="manifold.ij.extensions.ManSupportProvider"/>
     <framework.type implementation="manifold.ij.extensions.ManFrameworkType"/>
@@ -66,6 +69,10 @@
     <resolveScopeProvider implementation="manifold.ij.extensions.ManResolveScopeProvider" order="first"/>
     <elementDescriptionProvider implementation="manifold.ij.extensions.ManElementDescriptionProvider"/>
     <languageInjector implementation="manifold.ij.extensions.ManStringLiteralTemplateInjector" order="first"/>
+
+
+    <!-- Manifold Template extensions -->
+
     <fileTypeFactory implementation="manifold.ij.template.ManTemplateFileTypeFactory"/>
     <lang.parserDefinition language="ManTemplateJava" implementationClass="manifold.ij.template.psi.ManTemplateJavaParserDefinition"/>
     <lang.treePatcher language="ManTemplateJava" implementationClass="manifold.ij.template.ManTreePatcher"/>
@@ -74,6 +81,7 @@
     <lang.fileViewProviderFactory language="ManTL" implementationClass="manifold.ij.template.ManTemplateFileViewProviderFactory" order="first"/>
     <annotator language="ManTL" implementationClass="manifold.ij.template.ManTemplateAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.template.ManTemplateJavaAnnotator"/>
+    <daemon.highlightInfoFilter implementation="manifold.ij.template.ManTemplateHighlightInfoFilter"/>
     <colorSettingsPage implementation="manifold.ij.template.ManTemplateColorSettingsPage"/>
   </extensions>
 
