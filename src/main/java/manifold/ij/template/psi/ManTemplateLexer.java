@@ -99,6 +99,8 @@ public class ManTemplateLexer extends LexerBase
   private void tokenize()
   {
     _stuff = new StringBuilder();
+    _isParsingString = false;
+    _isParsingCharLiteral = false;
     int index = _index;
     boolean escaped = false;
     while( true )
@@ -112,7 +114,7 @@ public class ManTemplateLexer extends LexerBase
       char c = _text.charAt( index );
 
       if( !escaped && c == '\\' && !isInCode() && _text.length() > index+1 &&
-          (_text.charAt( index+1 ) == '<' || _text.charAt( index+1 ) == '$') )
+          (charIs( index+1, '<' ) || charIs( index+1, '$' )) )
       {
         escaped = true;
         index++;
@@ -159,7 +161,7 @@ public class ManTemplateLexer extends LexerBase
           {
             pushStuff();
             index++;
-            if( _text.charAt( index ) == '=' )
+            if( charIs( index, '=' ) )
             {
               pushToken( EXPR_ANGLE_BEGIN, ++index );
               continue;
@@ -220,7 +222,7 @@ public class ManTemplateLexer extends LexerBase
     {
       _isParsingString = true;
     }
-    else if( _text.charAt( index -1 ) != '\\' )
+    else if( !charIs( index-1, '\\' ) )
     {
       _isParsingString = false;
     }
@@ -242,7 +244,7 @@ public class ManTemplateLexer extends LexerBase
     {
       _isParsingCharLiteral = true;
     }
-    else if( _text.charAt( index -1 ) != '\\' )
+    else if( !charIs( index-1, '\\' ) )
     {
       _isParsingCharLiteral = false;
     }
