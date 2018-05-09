@@ -119,7 +119,7 @@ class ManTemplateJavaLexer extends DelegateLexer
     }
     if( list.size() <= low )
     {
-      return -1;
+      return getDelegate().getBufferEnd();
     }
     return list.get( low );
   }

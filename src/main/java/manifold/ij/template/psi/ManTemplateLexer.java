@@ -116,6 +116,7 @@ public class ManTemplateLexer extends LexerBase
       if( !escaped && c == '\\' && !isInCode() && _text.length() > index+1 &&
           (charIs( index+1, '<' ) || charIs( index+1, '$' )) )
       {
+        _stuff.append( c );
         escaped = true;
         index++;
         continue;
