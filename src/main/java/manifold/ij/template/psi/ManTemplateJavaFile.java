@@ -6,6 +6,7 @@ import com.intellij.psi.FileViewProvider;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.impl.source.PsiJavaFileBaseImpl;
 import manifold.ij.template.ManTemplateJavaLanguage;
+import manifold.ij.util.MessageUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class ManTemplateJavaFile extends PsiJavaFileBaseImpl
@@ -37,8 +38,9 @@ public class ManTemplateJavaFile extends PsiJavaFileBaseImpl
   }
 
   @Override
-  public boolean importClass( PsiClass aClass )
+  public boolean importClass( PsiClass psiClass )
   {
-    throw new UnsupportedOperationException( "Need to add import to template directives" );
+    MessageUtil.showInfo( psiClass.getProject(), "Pardon our dust...<br>Import class not supported yet." );
+    return false;
   }
 }
