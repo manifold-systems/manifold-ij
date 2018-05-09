@@ -2,13 +2,14 @@ package manifold.ij.template.psi;
 
 import com.intellij.lang.ASTFactory;
 import com.intellij.lang.ASTNode;
+import com.intellij.lang.Language;
+import com.intellij.lang.LanguageParserDefinitions;
+import com.intellij.lang.PsiBuilder;
+import com.intellij.lang.PsiBuilderFactory;
 import com.intellij.lang.PsiParser;
 import com.intellij.lang.java.JavaParserDefinition;
-import com.intellij.lang.java.lexer.JavaLexer;
 import com.intellij.lexer.Lexer;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.LanguageLevelProjectExtension;
-import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.FileViewProvider;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -35,8 +36,7 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
   @NotNull
   public Lexer createLexer( @Nullable Project project )
   {
-    LanguageLevel level = project != null ? LanguageLevelProjectExtension.getInstance( project ).getLanguageLevel() : LanguageLevel.HIGHEST;
-    return new JavaLexer( level );
+    return new ManTemplateJavaLexer( project, null );
   }
 
   @Override
@@ -102,6 +102,16 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
     private ManTemplateJavaFileElementType()
     {
       super( ManTemplateJavaLanguage.INSTANCE );
+    }
+
+    protected ASTNode doParseContents( @NotNull ASTNode chameleon, @NotNull PsiElement psi )
+    {
+      Project project = psi.getProject();
+      Language languageForParser = getLanguageForParser( psi );
+      PsiBuilder builder = PsiBuilderFactory.getInstance().createBuilder( project, chameleon, new ManTemplateJavaLexer( project, chameleon ), languageForParser, chameleon.getChars() );
+      PsiParser parser = LanguageParserDefinitions.INSTANCE.forLanguage( languageForParser ).createParser( project );
+      ASTNode node = parser.parse( this, builder );
+      return node.getFirstChildNode();
     }
 
     @Nullable

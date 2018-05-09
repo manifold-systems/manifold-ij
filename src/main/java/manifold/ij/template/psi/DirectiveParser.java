@@ -231,20 +231,10 @@ public class DirectiveParser
 
     if( !expect( builder, JavaTokenType.IDENTIFIER ) )
     {
-      if( Boolean.FALSE.equals( modListInfo.second ) ||
-          (type.isPrimitive && builder.getTokenType() != JavaTokenType.DOT) )
-      {
-        builder.error( JavaErrorMessages.message( "expected.identifier" ) );
-        localVariableDecl.drop();
-        declStatement.drop();
-        return;
-      }
-      else
-      {
-        localVariableDecl.drop();
-        declStatement.drop();
-        return;
-      }
+      builder.error( JavaErrorMessages.message( "expected.identifier" ) );
+      localVariableDecl.drop();
+      declStatement.drop();
+      return;
     }
 
     eatBrackets( builder, null );
