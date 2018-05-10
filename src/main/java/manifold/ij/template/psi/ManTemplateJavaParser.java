@@ -25,12 +25,13 @@ public class ManTemplateJavaParser implements PsiParser
   public ASTNode parse( @NotNull IElementType root, @NotNull PsiBuilder builder )
   {
     builder.setDebugMode( ApplicationManager.getApplication().isUnitTestMode() );
+    JavaParserUtil.setParseStatementCodeBlocksDeep( builder, true );
     setLanguageLevel( builder );
     PsiBuilder.Marker rootMarker = builder.mark();
-    StatementParser stmtParser = new JavaParser().getStatementParser();
     ExpressionParser exprParser = new JavaParser().getExpressionParser();
     List<Integer> exprOffsets = getExpressionOffsets( builder );
     List<Integer> directiveOffsets = getDirectiveOffsets( builder );
+    MyStatementParser stmtParser = new MyStatementParser( new JavaParser(), this, exprOffsets, directiveOffsets );
     while( !builder.eof() )
     {
       int offset = builder.getCurrentOffset();
@@ -38,8 +39,7 @@ public class ManTemplateJavaParser implements PsiParser
       {
         // Parse directive
 
-        DirectiveParser.instance().parse( builder );
-        if( handleFailure( builder, stmtParser, offset, "Template directive expected" ) )
+        if( !parseDirective( builder, stmtParser, offset ) )
         {
           break;
         }
@@ -48,8 +48,7 @@ public class ManTemplateJavaParser implements PsiParser
       {
         // Parse single expression
 
-        exprParser.parse( builder );
-        if( handleFailure( builder, stmtParser, offset, "Java expression expected" ) )
+        if( !parseExpression( builder, stmtParser, exprParser, offset ) )
         {
           break;
         }
@@ -58,8 +57,7 @@ public class ManTemplateJavaParser implements PsiParser
       {
         // Parse single statement
 
-        stmtParser.parseStatement( builder );
-        if( handleFailure( builder, stmtParser, offset, "Java statement expected" ) )
+        if( !parseStatement( builder, stmtParser, offset ) )
         {
           break;
         }
@@ -67,6 +65,24 @@ public class ManTemplateJavaParser implements PsiParser
     }
     rootMarker.done( root );
     return builder.getTreeBuilt();
+  }
+
+  private boolean parseStatement( @NotNull PsiBuilder builder, MyStatementParser stmtParser, int offset )
+  {
+    stmtParser.parseStatement( builder );
+    return !handleFailure( builder, stmtParser, offset, "Java statement expected" );
+  }
+
+  public boolean parseExpression( @NotNull PsiBuilder builder, MyStatementParser stmtParser, ExpressionParser exprParser, int offset )
+  {
+    exprParser.parse( builder );
+    return !handleFailure( builder, stmtParser, offset, "Java expression expected" );
+  }
+
+  public boolean parseDirective( @NotNull PsiBuilder builder, StatementParser stmtParser, int offset )
+  {
+    DirectiveParser.instance().parse( builder );
+    return !handleFailure( builder, stmtParser, offset, "Template directive expected" );
   }
 
   private void setLanguageLevel( @NotNull PsiBuilder builder )
