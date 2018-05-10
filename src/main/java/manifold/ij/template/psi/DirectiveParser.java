@@ -96,6 +96,7 @@ public class DirectiveParser
         break;
 
       default:
+        builder.advanceLexer();
         builder.error( "Unknown directive: '" + directiveName + "'" );
     }
   }
