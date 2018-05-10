@@ -1,6 +1,7 @@
 package manifold.ij.template;
 
 import com.intellij.lang.ASTFactory;
+import com.intellij.psi.PsiExpression;
 import com.intellij.psi.impl.java.stubs.JavaLiteralExpressionElementType;
 import com.intellij.psi.impl.source.tree.CompositeElement;
 import com.intellij.psi.impl.source.tree.LeafElement;
@@ -34,14 +35,22 @@ public class ManTreePatcher implements TreePatcher
 
   private TreeElement getElemToInsertBefore( TreeElement csr )
   {
+    // intellij internal highlighter has a bug where is does not expect outer content to be the first child of
+    // a literal expression
+
     CompositeElement parent = csr.getTreeParent();
-    if( parent != null && parent.getElementType() instanceof JavaLiteralExpressionElementType )
+    
+    TreeElement ret = csr;
+    while( parent != null &&
+           parent.rawFirstChild() == ret &&
+           (parent.getElementType() instanceof JavaLiteralExpressionElementType ||
+            parent instanceof PsiExpression) )
     {
-      // intellij internal highlighter has a bug where is does not expect outer content to be the first child of
-      // a literal expression
-      return parent;
+      ret = parent;
+      parent = parent.getTreeParent();
     }
-    return csr;
+
+    return ret;
   }
 
   @Override
