@@ -49,8 +49,7 @@ public class ManTemplateHighlightInfoFilter implements HighlightInfoFilter
 
     try
     {
-      PsiElement params = param.getParent().getPrevSibling().getPrevSibling();
-      if( params instanceof PsiIdentifier && params.getText().equals( DirectiveParser.PARAMS ) )
+      if( isParamsParent( param ) )
       {
         if( hi.getDescription().contains( "never assigned" ) )
         {
@@ -61,6 +60,29 @@ public class ManTemplateHighlightInfoFilter implements HighlightInfoFilter
     catch( Exception ignore ) {}
 
     return false;
+  }
+
+  private boolean isParamsParent( PsiElement param )
+  {
+    PsiElement parent = param.getParent();
+    if( parent == null )
+    {
+      return false;
+    }
+
+    PsiElement csr = parent;
+    while( true )
+    {
+      csr = csr.getPrevSibling();
+      if( csr instanceof PsiIdentifier )
+      {
+        return csr.getText().equals( DirectiveParser.PARAMS );
+      }
+      if( csr == null )
+      {
+        return false;
+      }
+    }
   }
 
   private boolean isNotInititializedErrorOnParamRef( @NotNull HighlightInfo hi, @Nullable PsiFile file )
@@ -97,8 +119,7 @@ public class ManTemplateHighlightInfoFilter implements HighlightInfoFilter
 
     try
     {
-      PsiElement params = param.getParent().getPrevSibling().getPrevSibling();
-      if( params instanceof PsiIdentifier && params.getText().equals( DirectiveParser.PARAMS ) )
+      if( isParamsParent( param ) )
       {
         if( hi.getDescription().contains( "might not have been initialized" ) )
         {

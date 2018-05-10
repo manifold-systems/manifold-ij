@@ -164,16 +164,8 @@ public class DirectiveParser
   {
     PsiBuilder.Marker importStatement = builder.mark();
     builder.advanceLexer();
-    if( !_javaParser.getReferenceParser().parseImportCodeReference( builder, false ) )
-    {
-      PsiBuilder.Marker error = builder.mark();
-      error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
-      importStatement.drop();
-    }
-    else
-    {
-      done( importStatement, JavaElementType.IMPORT_STATEMENT );
-    }
+    _javaParser.getReferenceParser().parseImportCodeReference( builder, false );
+    done( importStatement, JavaElementType.IMPORT_STATEMENT );
   }
 
   private void parseExtendsDirective( PsiBuilder builder )
