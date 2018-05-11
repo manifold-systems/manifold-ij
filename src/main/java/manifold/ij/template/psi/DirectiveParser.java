@@ -171,6 +171,7 @@ public class DirectiveParser
 
   private void parseExtendsDirective( PsiBuilder builder )
   {
+    PsiBuilder.Marker extendsClause = builder.mark();
     builder.advanceLexer();
     ReferenceParser.TypeInfo type = parseType( builder );
     if( type == null )
@@ -178,6 +179,7 @@ public class DirectiveParser
       PsiBuilder.Marker error = builder.mark();
       error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
     }
+    done( extendsClause, JavaElementType.EXTENDS_LIST );
   }
 
   private void parseParamsDirective( PsiBuilder builder )
