@@ -58,6 +58,7 @@ public class DirectiveParser
         || directiveName == null )
     {
       builder.error( JavaErrorMessages.message( "expected.identifier" ) );
+      builder.advanceLexer();
       return;
     }
 

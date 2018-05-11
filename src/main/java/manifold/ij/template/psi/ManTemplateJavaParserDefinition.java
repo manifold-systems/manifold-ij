@@ -139,7 +139,10 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
         // Add the method, the code block of the method is the parent of the template's parsed Java AST
         CompositeElement block = makeMethodStmt( classStmtNode );
 
-        block.rawAddChildrenWithoutNotifications( (TreeElement)remainingInnards );
+        if( remainingInnards != null )
+        {
+          block.rawAddChildrenWithoutNotifications( (TreeElement)remainingInnards );
+        }
         return rootFileNode.rawFirstChild();
       }
 
@@ -157,16 +160,20 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
       // of the file until the first non-import element type.  The rest will be
       // a child of the code block.
       ASTNode csr = innards;
-      while( csr.getElementType() == JavaElementType.IMPORT_STATEMENT ||
-            csr.getElementType() == JavaTokenType.WHITE_SPACE ||
-            csr.getElementType() == JavaTokenType.C_STYLE_COMMENT ||
-            csr.getElementType() == JavaTokenType.END_OF_LINE_COMMENT )
+      while( csr != null &&
+             (csr.getElementType() == JavaElementType.IMPORT_STATEMENT ||
+              csr.getElementType() == JavaTokenType.WHITE_SPACE ||
+              csr.getElementType() == JavaTokenType.C_STYLE_COMMENT ||
+              csr.getElementType() == JavaTokenType.END_OF_LINE_COMMENT) )
       {
         csr = csr.getTreeNext();
       }
       if( csr != innards )
       {
-        ReflectUtil.method( innards, "rawRemoveUpToWithoutNotifications", TreeElement.class, boolean.class ).invoke( csr, false );
+        if( csr != null )
+        {
+          ReflectUtil.method( innards, "rawRemoveUpToWithoutNotifications", TreeElement.class, boolean.class ).invoke( csr, false );
+        }
         importList.rawAddChildrenWithoutNotifications( (TreeElement)innards );
       }
       return csr;
@@ -214,16 +221,20 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
       // of the file until the first non-import element type.  The rest will be
       // a child of the code block.
       ASTNode csr = innards;
-      while( csr.getElementType() == JavaElementType.EXTENDS_LIST ||
-             csr.getElementType() == JavaTokenType.WHITE_SPACE ||
-             csr.getElementType() == JavaTokenType.C_STYLE_COMMENT ||
-             csr.getElementType() == JavaTokenType.END_OF_LINE_COMMENT )
+      while( csr != null &&
+             (csr.getElementType() == JavaElementType.EXTENDS_LIST ||
+              csr.getElementType() == JavaTokenType.WHITE_SPACE ||
+              csr.getElementType() == JavaTokenType.C_STYLE_COMMENT ||
+              csr.getElementType() == JavaTokenType.END_OF_LINE_COMMENT) )
       {
         csr = csr.getTreeNext();
       }
       if( csr != innards )
       {
-        ReflectUtil.method( innards, "rawRemoveUpToWithoutNotifications", TreeElement.class, boolean.class ).invoke( csr, false );
+        if( csr != null )
+        {
+          ReflectUtil.method( innards, "rawRemoveUpToWithoutNotifications", TreeElement.class, boolean.class ).invoke( csr, false );
+        }
         classStmt.rawAddChildrenWithoutNotifications( (TreeElement)innards );
       }
       else

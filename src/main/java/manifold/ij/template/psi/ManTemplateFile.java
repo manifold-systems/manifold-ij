@@ -1,14 +1,20 @@
 package manifold.ij.template.psi;
 
 import com.intellij.extapi.psi.PsiFileBase;
+import com.intellij.lang.ASTNode;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.psi.FileViewProvider;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.PsiImportHolder;
 import com.intellij.psi.ServerPageFile;
 import manifold.ij.template.ManTemplateFileType;
 import manifold.ij.template.ManTemplateLanguage;
 import org.jetbrains.annotations.NotNull;
+
+import static manifold.ij.template.psi.ManTemplateParser.Directive;
+import static manifold.ij.template.psi.ManTemplateParser.Comment;
 
 public class ManTemplateFile extends PsiFileBase
   implements PsiImportHolder, //!! must implement PsiImportHolder for full pass analysis and error highlighting to work, see HighlightVisitorImpl#suitableForFile
@@ -33,8 +39,87 @@ public class ManTemplateFile extends PsiFileBase
   }
 
   @Override
-  public boolean importClass( PsiClass aClass )
+  public boolean importClass( PsiClass importClass )
   {
+    ManTemplateElementImpl parent = (ManTemplateElementImpl)getFirstChild();
+    PsiElement lastImport = findLastImport( parent );
+    if( lastImport != null )
+    {
+      ManTemplateFile dummyFile = (ManTemplateFile)PsiFileFactory.getInstance( getProject() )
+        .createFileFromText( "dummy.mtl", ManTemplateFileType.INSTANCE,
+          "\n<%@ import ${importClass.getQualifiedName()} %>" );
+      PsiElement newLine = dummyFile.getFirstChild().getFirstChild();
+      PsiElement importDirective = newLine.getNextSibling();
+
+      parent.addRangeAfter( newLine, importDirective, lastImport );
+    }
+    else
+    {
+      ManTemplateFile dummyFile = (ManTemplateFile)PsiFileFactory.getInstance( getProject() )
+        .createFileFromText( "dummy.mtl", ManTemplateFileType.INSTANCE,
+          "<%@ import ${importClass.getQualifiedName()} %>\n" );
+      PsiElement importDirective = dummyFile.getFirstChild().getFirstChild();
+      PsiElement newLine = importDirective.getNextSibling();
+
+      parent.addRangeBefore( importDirective, newLine, parent.getFirstChild() );
+    }
+    return true;
+  }
+
+  private PsiElement findLastImport( ManTemplateElementImpl parent )
+  {
+    ManTemplateElementImpl lastImport = null;
+    PsiElement csr = parent.getFirstChild();
+    while( csr != null )
+    {
+      if( csr instanceof ManTemplateElementImpl )
+      {
+        ManTemplateElementImpl elem = (ManTemplateElementImpl)csr;
+        if( isImportDirective( elem ) )
+        {
+          lastImport = elem;
+          csr = csr.getNextSibling();
+          continue;
+        }
+        else if( isCommentDirective( elem ) )
+        {
+          csr = csr.getNextSibling();
+          continue;
+        }
+      }
+      else if( csr instanceof ManTemplateTokenImpl )
+      {
+        ManTemplateTokenImpl token = (ManTemplateTokenImpl)csr;
+        if( token.getTokenType() == ManTemplateTokenType.CONTENT )
+        {
+          csr = csr.getNextSibling();
+          continue;
+        }
+      }
+      break;
+    }
+    return lastImport;
+  }
+
+  private boolean isImportDirective( ManTemplateElementImpl elem )
+  {
+    final ASTNode directive = elem.getNode();
+    if( directive.getElementType() == Directive )
+    {
+      final ASTNode child = directive.getFirstChildNode();
+      if( child.getElementType() == ManTemplateTokenType.DIR_ANGLE_BEGIN &&
+          child.getTreeNext() != null && child.getTreeNext().getElementType() == ManTemplateTokenType.DIRECTIVE )
+      {
+        String text = child.getTreeNext().getText().trim();
+        return text.startsWith( DirectiveParser.IMPORT );
+      }
+    }
     return false;
+  }
+
+  private boolean isCommentDirective( ManTemplateElementImpl elem )
+  {
+    final ASTNode directive = elem.getNode();
+    return directive.getElementType() == Comment;
   }
 }
