@@ -1,67 +1,48 @@
 package manifold.ij.template;
 
-import com.intellij.lang.ASTFactory;
 import com.intellij.psi.PsiExpression;
 import com.intellij.psi.impl.java.stubs.JavaLiteralExpressionElementType;
 import com.intellij.psi.impl.source.tree.CompositeElement;
-import com.intellij.psi.impl.source.tree.LeafElement;
 import com.intellij.psi.impl.source.tree.TreeElement;
 import com.intellij.psi.templateLanguages.OuterLanguageElement;
-import com.intellij.psi.templateLanguages.TreePatcher;
-import com.intellij.util.CharTable;
+import com.intellij.psi.templateLanguages.SimpleTreePatcher;
 
 /**
- * //## todo: this class exists to work around a bug with IntelliJ's HighlightUtil.  Remove this class once this bug is fixed
+ * todo: this class exists to work around a bug with IntelliJ's internal code where it does not expect
+ * a template content element as a child of Java language elements, maybe delete this class if this bug
+ * is ever fixed.
+ *
  * @See https://intellij-support.jetbrains.com/hc/en-us/community/posts/360000444624-Template-language-PSI-tree-sometimes-incorrect-wrt-outer-tokens
  */
-public class ManTreePatcher implements TreePatcher
+public class ManTreePatcher extends SimpleTreePatcher
 {
   @Override
   public void insert( CompositeElement parent, TreeElement anchorBefore, OuterLanguageElement toInsert )
   {
     if( anchorBefore != null )
     {
-      // Ensure content element is not inserted as a child of a language element where
-      // IJ java highlighter does not expect it (like a PsiLiteralExpression).
       anchorBefore = getElemToInsertBefore( anchorBefore );
-
-      anchorBefore.rawInsertBeforeMe( (TreeElement)toInsert );
     }
-    else
-    {
-      parent.rawAddChildren( (TreeElement)toInsert );
-    }
+    super.insert( parent, anchorBefore, toInsert );
   }
 
-  private TreeElement getElemToInsertBefore( TreeElement csr )
+  /**
+   * Ensure content element is not inserted as the first child of an expression language
+   * element where internal IJ code does not expect it.
+   */
+  private TreeElement getElemToInsertBefore( TreeElement anchorBefore )
   {
-    // intellij internal highlighter has a bug where is does not expect outer content to be the first child of
-    // a literal expression
-
-    CompositeElement parent = csr.getTreeParent();
+    CompositeElement parent = anchorBefore.getTreeParent();
     
-    TreeElement ret = csr;
     while( parent != null &&
-           parent.rawFirstChild() == ret &&
+           parent.rawFirstChild() == anchorBefore &&
            (parent.getElementType() instanceof JavaLiteralExpressionElementType ||
             parent instanceof PsiExpression) )
     {
-      ret = parent;
+      anchorBefore = parent;
       parent = parent.getTreeParent();
     }
 
-    return ret;
-  }
-
-  @Override
-  public LeafElement split( LeafElement leaf, int offset, final CharTable table )
-  {
-    final CharSequence chars = leaf.getChars();
-    final LeafElement leftPart = ASTFactory.leaf( leaf.getElementType(), table.intern( chars, 0, offset ) );
-    final LeafElement rightPart = ASTFactory.leaf( leaf.getElementType(), table.intern( chars, offset, chars.length() ) );
-    leaf.rawInsertAfterMe( leftPart );
-    leftPart.rawInsertAfterMe( rightPart );
-    leaf.rawRemove();
-    return leftPart;
+    return anchorBefore;
   }
 }
