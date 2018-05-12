@@ -6,7 +6,6 @@ import com.intellij.lang.PsiParser;
 import com.intellij.lang.java.parser.ExpressionParser;
 import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.lang.java.parser.JavaParserUtil;
-import com.intellij.lang.java.parser.StatementParser;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.roots.LanguageLevelProjectExtension;
 import com.intellij.pom.java.LanguageLevel;
@@ -38,51 +37,39 @@ public class ManTemplateJavaParser implements PsiParser
       if( directiveOffsets.contains( offset ) )
       {
         // Parse directive
-
-        if( !parseDirective( builder, stmtParser, offset ) )
-        {
-          break;
-        }
+        parseDirective( builder, offset );
       }
       else if( exprOffsets.contains( offset ) )
       {
         // Parse single expression
-
-        if( !parseExpression( builder, stmtParser, exprParser, offset ) )
-        {
-          break;
-        }
+        parseExpression( builder, exprParser, offset );
       }
       else
       {
         // Parse single statement
-
-        if( !parseStatement( builder, stmtParser, offset ) )
-        {
-          break;
-        }
+        parseStatement( builder, stmtParser, offset );
       }
     }
     rootMarker.done( root );
     return builder.getTreeBuilt();
   }
 
-  private boolean parseStatement( @NotNull PsiBuilder builder, MyStatementParser stmtParser, int offset )
+  private void parseStatement( @NotNull PsiBuilder builder, MyStatementParser stmtParser, int offset )
   {
     stmtParser.parseStatement( builder );
-    return !handleFailure( builder, stmtParser, offset, "Java statement expected" );
+    handleFailure( builder, offset, "Java statement expected" );
   }
 
-  public boolean parseExpression( @NotNull PsiBuilder builder, MyStatementParser stmtParser, ExpressionParser exprParser, int offset )
+  public void parseExpression( @NotNull PsiBuilder builder, ExpressionParser exprParser, int offset )
   {
     exprParser.parse( builder );
-    return !handleFailure( builder, stmtParser, offset, "Java expression expected" );
+    handleFailure( builder, offset, "Java expression expected" );
   }
 
-  public boolean parseDirective( @NotNull PsiBuilder builder, StatementParser stmtParser, int offset )
+  public void parseDirective( @NotNull PsiBuilder builder, int offset )
   {
     DirectiveParser.instance().parse( builder );
-    return !handleFailure( builder, stmtParser, offset, "Template directive expected" );
+    handleFailure( builder, offset, "Template directive expected" );
   }
 
   private void setLanguageLevel( @NotNull PsiBuilder builder )
@@ -91,17 +78,26 @@ public class ManTemplateJavaParser implements PsiParser
     JavaParserUtil.setLanguageLevel( builder, languageLevel );
   }
 
-  private boolean handleFailure( @NotNull PsiBuilder builder, StatementParser stmtParser, int offset, String errorMsg )
+  private void handleFailure( @NotNull PsiBuilder builder, int offset, String errorMsg )
   {
-    if( couldNotParse( builder, offset ) )
+    if( builder.getCurrentOffset() == offset )
     {
-      // Force parsing by calling parseStatements(), it will blow past whatever
-      // is not a start symbol for both expressions and statements.
-      stmtParser.parseStatements( builder );
       builder.error( errorMsg );
-      return couldNotParse( builder, offset );
+      // blow past whatever remaining tokens until first token of next expr/stmt/directive
+      eatRemainingTokensInCodeSegment( builder );
     }
-    return false;
+
+  }
+
+  private void eatRemainingTokensInCodeSegment( @NotNull PsiBuilder builder )
+  {
+    int currentOffset = builder.getCurrentOffset();
+    int next = ManTemplateJavaLexer.findNextOffset( currentOffset, builder.getOriginalText().length(), getExpressionOffsets( builder ), getStatementOffsets( builder ), getDirectiveOffsets( builder ) );
+    while( currentOffset < next )
+    {
+      builder.advanceLexer();
+      currentOffset = builder.getCurrentOffset();
+    }
   }
 
   private List<Integer> getExpressionOffsets( @NotNull PsiBuilder builder )
@@ -120,16 +116,5 @@ public class ManTemplateJavaParser implements PsiParser
   {
     PsiFile psiFile = builder.getUserDataUnprotected( FileContextUtil.CONTAINING_FILE_KEY );
     return psiFile == null ? Collections.emptyList() : psiFile.getUserData( ManTemplateDataElementType.STMT_OFFSETS );
-  }
-
-  private boolean couldNotParse( @NotNull PsiBuilder builder, int offset )
-  {
-    if( builder.getCurrentOffset() == offset )
-    {
-      // Whelp, the parser did not advance the lexer, therefore it did nothing.
-      builder.error( "unexpected token" );
-      return true;
-    }
-    return false;
   }
 }

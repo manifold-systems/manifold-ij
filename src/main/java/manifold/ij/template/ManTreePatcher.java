@@ -35,7 +35,7 @@ public class ManTreePatcher extends SimpleTreePatcher
     CompositeElement parent = anchorBefore.getTreeParent();
     
     while( parent != null &&
-           parent.rawFirstChild() == anchorBefore &&
+           isFirstNonEmptyChild( anchorBefore, parent ) &&
            (parent.getElementType() instanceof JavaLiteralExpressionElementType ||
             parent instanceof PsiExpression) )
     {
@@ -44,5 +44,21 @@ public class ManTreePatcher extends SimpleTreePatcher
     }
 
     return anchorBefore;
+  }
+
+  private boolean isFirstNonEmptyChild( TreeElement anchorBefore, CompositeElement parent )
+  {
+    TreeElement child = parent.rawFirstChild();
+    if( child == anchorBefore )
+    {
+      return true;
+    }
+
+    while( child != null && child.getTextLength() == 0 )
+    {
+      child = child.getTreeNext();
+    }
+
+    return child == anchorBefore;
   }
 }

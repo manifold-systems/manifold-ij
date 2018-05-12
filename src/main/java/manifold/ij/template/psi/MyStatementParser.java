@@ -31,11 +31,11 @@ class MyStatementParser extends StatementParser
       int offset = builder.getCurrentOffset();
       if( isTemplateExpression( offset ) )
       {
-        _manParser.parseExpression( builder, this, _javaParser.getExpressionParser(), offset );
+        _manParser.parseExpression( builder, _javaParser.getExpressionParser(), offset );
       }
       else if( isTemplateDirective( offset ) )
       {
-        _manParser.parseDirective( builder, this, offset );
+        _manParser.parseDirective( builder, offset );
       }
       else
       {

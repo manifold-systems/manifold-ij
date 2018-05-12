@@ -74,18 +74,26 @@ class ManTemplateJavaLexer extends DelegateLexer
   {
     JavaLexer delegate = getJavaLexerDelegate();
     int pos = delegate.getTokenEnd();
-    int next = findNextOffset( _exprOffsets, pos );
-    int temp = findNextOffset( _stmtOffsets, pos );
-    next = better( next, temp );
-    temp = findNextOffset( _directiveOffsets, pos );
-    next = better( next, temp );
+    int next = findNextOffset( pos, getDelegate().getBufferEnd(), _exprOffsets, _stmtOffsets, _directiveOffsets );
     if( next > 0 )
     {
       ReflectUtil.field( ReflectUtil.field( getJavaLexerDelegate(), "myFlexLexer" ).get(), "zzEndRead" ).set( next );
     }
   }
 
-  private int better( int next, int temp )
+  @SafeVarargs
+  public static int findNextOffset( int pos, int end, List<Integer>... lists )
+  {
+    int next = findNextOffset( lists[0], pos, end );
+    for( int i = 1; i < lists.length; i++ )
+    {
+      int temp = findNextOffset( lists[i], pos, end );
+      next = better( next, temp );
+    }
+    return next;
+  }
+
+  private static int better( int next, int temp )
   {
     if( next < 0 || temp > 0 && temp < next )
     {
@@ -94,7 +102,7 @@ class ManTemplateJavaLexer extends DelegateLexer
     return next;
   }
 
-  private int findNextOffset( List<Integer> list, int pos )
+  private static int findNextOffset( List<Integer> list, int pos, int end )
   {
     if( list.isEmpty() )
     {
@@ -119,7 +127,7 @@ class ManTemplateJavaLexer extends DelegateLexer
     }
     if( list.size() <= low )
     {
-      return getDelegate().getBufferEnd();
+      return end;
     }
     return list.get( low );
   }
