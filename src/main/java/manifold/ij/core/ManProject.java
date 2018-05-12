@@ -218,7 +218,7 @@ public class ManProject
     options = options == null ? "" : options;
     if( !options.contains( XPLUGIN_MANIFOLD ) && !options.contains( XPLUGIN_MANIFOLD_WITH_QUOTES )  )
     {
-      options = XPLUGIN_MANIFOLD + maybeGetProcessorPath() + (options.isEmpty() ? "" : " ") + options;
+      options = XPLUGIN_MANIFOLD_WITH_QUOTES+ " strings\" " + maybeGetProcessorPath() + (options.isEmpty() ? "" : " ") + options;
     }
     else if( findJdkVersion() >= 9 && !options.contains( "-processorpath" ) )
     {
