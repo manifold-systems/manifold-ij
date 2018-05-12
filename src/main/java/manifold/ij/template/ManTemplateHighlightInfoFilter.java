@@ -51,7 +51,8 @@ public class ManTemplateHighlightInfoFilter implements HighlightInfoFilter
     {
       if( isParamsParent( param ) )
       {
-        if( hi.getDescription().contains( "never assigned" ) )
+        if( hi.getDescription().contains( "never assigned" ) ||
+            hi.getDescription().contains( "but never updated" ) )
         {
           return true;
         }
