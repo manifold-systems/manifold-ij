@@ -83,6 +83,7 @@
     <annotator language="JAVA" implementationClass="manifold.ij.template.ManTemplateJavaAnnotator"/>
     <daemon.highlightInfoFilter implementation="manifold.ij.template.ManTemplateHighlightInfoFilter"/>
     <colorSettingsPage implementation="manifold.ij.template.ManTemplateColorSettingsPage"/>
+    <lang.commenter language="ManTL" implementationClass="manifold.ij.template.ManTemplateCommenter"/>
   </extensions>
 
 </idea-plugin>
