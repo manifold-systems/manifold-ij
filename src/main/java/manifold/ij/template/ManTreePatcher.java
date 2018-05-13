@@ -1,6 +1,8 @@
 package manifold.ij.template;
 
 import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
+import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.impl.java.stubs.JavaLiteralExpressionElementType;
 import com.intellij.psi.impl.source.tree.CompositeElement;
 import com.intellij.psi.impl.source.tree.TreeElement;
@@ -37,6 +39,8 @@ public class ManTreePatcher extends SimpleTreePatcher
     while( parent != null &&
            isFirstNonEmptyChild( anchorBefore, parent ) &&
            (parent.getElementType() instanceof JavaLiteralExpressionElementType ||
+            parent instanceof PsiJavaCodeReferenceElement ||
+            parent instanceof PsiTypeElement ||
             parent instanceof PsiExpression) )
     {
       anchorBefore = parent;
