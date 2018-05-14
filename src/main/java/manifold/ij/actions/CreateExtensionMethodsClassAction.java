@@ -42,7 +42,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
   {
     super( ManBundle.message( "new.ext.method.class.menu.action.text" ),
            ManBundle.message( "new.ext.method.class.menu.action.description" ),
-           new ImageIcon( ManBundle.class.getResource( "/manifold/ij/icons/manifold_20.png" ) ) );
+           new ImageIcon( ManBundle.class.getResource( "/manifold/ij/icons/manifold.png" ) ) );
   }
 
   @Override

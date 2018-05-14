@@ -5,5 +5,5 @@ import javax.swing.Icon;
 
 public class ManTemplateIcons
 {
-  public static final Icon FILE = IconLoader.getIcon( "/manifold/ij/icons/manifold_20.png" );
+  public static final Icon FILE = IconLoader.getIcon( "/manifold/ij/icons/manifold.png" );
 }
