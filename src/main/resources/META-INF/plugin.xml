@@ -84,6 +84,8 @@
     <daemon.highlightInfoFilter implementation="manifold.ij.template.ManTemplateHighlightInfoFilter"/>
     <colorSettingsPage implementation="manifold.ij.template.ManTemplateColorSettingsPage"/>
     <lang.commenter language="ManTL" implementationClass="manifold.ij.template.ManTemplateCommenter"/>
+    <typedHandler implementation="manifold.ij.template.ManTemplateTypedHandler"/>
+    <enterHandlerDelegate implementation="manifold.ij.template.psi.ManTemplateEnterHandler"/>
   </extensions>
 
 </idea-plugin>
