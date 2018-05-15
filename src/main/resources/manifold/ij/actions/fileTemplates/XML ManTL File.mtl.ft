@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<%@ params(String param1) %>
+<stuff attr="\${param1}">
+
+</stuff>
