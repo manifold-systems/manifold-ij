@@ -1,0 +1,4 @@
+<%@ params(String param1) %>
+<html>
+  <% param1.<caret> %>
+</html>

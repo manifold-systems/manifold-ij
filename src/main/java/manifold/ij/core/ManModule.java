@@ -8,6 +8,7 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import manifold.api.fs.IDirectory;
@@ -15,9 +16,11 @@ import manifold.api.fs.IFile;
 import manifold.api.fs.IFileSystem;
 import manifold.api.host.Dependency;
 import manifold.api.type.ITypeManifold;
+import manifold.api.type.ResourceFileTypeManifold;
 import manifold.api.type.TypeName;
 import manifold.ext.IExtensionClassProducer;
 import manifold.internal.host.SimpleModule;
+import manifold.util.JsonUtil;
 
 /**
  */
@@ -243,18 +246,8 @@ public class ManModule extends SimpleModule
 
   public String[] getTypesForFile( IFile file )
   {
-    Set<String> result = new HashSet<>();
-    List<IDirectory> sourcePath = getSourcePath();
-    for( IDirectory src : sourcePath )
-    {
-      if( file.isDescendantOf( src ) )
-      {
-        String fqn = src.relativePath( file );
-        int iDot = fqn.lastIndexOf( '.' );
-        fqn = fqn.substring( 0, iDot > 0 ? iDot : fqn.length() ).replace( '/', '.' );
-        result.add( fqn );
-      }
-    }
+    Set<String> result = new LinkedHashSet<>();
+    addFromPath( file, result );
     for( ITypeManifold sp : getTypeManifolds() )
     {
       result.addAll( Arrays.asList( sp.getTypesForFile( file ) ) );
@@ -265,6 +258,31 @@ public class ManModule extends SimpleModule
       }
     }
     return result.toArray( new String[result.size()] );
+  }
+
+  // Add names from path and current file name.  This is essential for cases
+  // like rename file/type where the cached name associated with the file is
+  // mapped to the old name, hence the raw processing here.
+  private void addFromPath( IFile file, Set<String> result )
+  {
+    List<IDirectory> sourcePath = getSourcePath();
+    for( IDirectory src : sourcePath )
+    {
+      if( file.isDescendantOf( src ) )
+      {
+        String fqn = src.relativePath( file.getParent() );
+        String baseName = JsonUtil.makeIdentifier( file.getBaseName() );
+        fqn = fqn.length() == 0 ? baseName : fqn.replace( '/', '.' ) + '.' + baseName;
+        for( ITypeManifold sp : getTypeManifolds() )
+        {
+          if( sp.handlesFile( file ) && sp instanceof ResourceFileTypeManifold )
+          {
+            fqn = ((ResourceFileTypeManifold)sp).getTypeNameForFile( fqn, file );
+          }
+        }
+        result.add( fqn );
+      }
+    }
   }
 
   /** reduce redundancy, remove paths that exist in dependencies */

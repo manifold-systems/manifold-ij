@@ -1,0 +1,4 @@
+<%@ params(String param1) %>
+<html>
+  <% char c = param1.charAt(0); %>
+</html>

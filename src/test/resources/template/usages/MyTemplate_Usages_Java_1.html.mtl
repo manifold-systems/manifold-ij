@@ -1,0 +1,6 @@
+<%@ params(String <caret>param1) %>
+<html>
+  <% char c = param1.charAt(0); %>
+  <%=param1%><%=param1%>
+  ${param1}${param1}
+</html>

@@ -29,10 +29,12 @@ import com.intellij.refactoring.ui.NameSuggestionsField;
 import com.intellij.refactoring.util.MoveRenameUsageInfo;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.Query;
+import java.awt.EventQueue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
@@ -100,10 +102,44 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
   @Override
   public RenameDialog createRenameDialog( Project project, PsiElement element, PsiElement nameSuggestionContext, Editor editor )
   {
-    return new PsiFileRenameDialog( project, element, nameSuggestionContext, editor ) {
-      protected void createNewNameComponent() {
+    return new PsiFileRenameDialog( project, element, nameSuggestionContext, editor )
+    {
+      protected void createNewNameComponent()
+      {
         super.createNewNameComponent();
-        getNameSuggestionsField().selectNameWithoutExtension();
+        selectNameWithoutExtension();
+      }
+
+      private void selectNameWithoutExtension()
+      {
+        EventQueue.invokeLater( () -> {
+          Editor editor = getNameSuggestionsField().getEditor();
+          if( editor == null )
+          {
+            return;
+          }
+
+          PsiClass psiClass = findPsiClass( (PsiFileSystemItem)element, ManProject.getModule( Objects.requireNonNull( ModuleUtilCore.findModuleForPsiElement( element ) ) ) );
+          if( psiClass != null )
+          {
+            String className = psiClass.getName();
+            int indexName = editor.getDocument().getText().indexOf( className );
+            if( indexName >= 0 )
+            {
+              editor.getSelectionModel().setSelection( indexName, indexName + className.length() );
+              editor.getCaretModel().moveToOffset( indexName );
+              return;
+            }
+          }
+
+          int pos = editor.getDocument().getText().lastIndexOf( '.' );
+          if( pos > 0 )
+          {
+            editor.getSelectionModel().setSelection( 0, pos );
+            editor.getCaretModel().moveToOffset( pos );
+          }
+        } );
+
       }
 
       @Override
@@ -240,7 +276,7 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
         RenameUtil.doRename( psiClass, psiClass.getName(), _usages.toArray( new UsageInfo[_usages.size()] ), element.getProject(), elementListener );
 
         // for plain text files, also rename a class name declaration if such a thing exists e.g., javascript class declaration
-        if( _classDeclElement.getElement() != null )
+        if( _classDeclElement != null && _classDeclElement.getElement() != null )
         {
           _classDeclElement.getElement().setName( psiClass.getName() == null ? "" : psiClass.getName() );
         }
