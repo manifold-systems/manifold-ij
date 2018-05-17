@@ -24,6 +24,11 @@ public class ManTemplateJavaAnnotator implements Annotator
   @Override
   public void annotate( @NotNull final PsiElement element, @NotNull AnnotationHolder holder )
   {
+    if( element.getContainingFile().getLanguage() != ManTemplateJavaLanguage.INSTANCE )
+    {
+      return;
+    }
+
     highlightDirectiveKeywords( element, holder );
     checkImportPosition( element, holder );
     checkExtendsPosition( element, holder );
