@@ -2,7 +2,6 @@ package manifold.ij.template.psi;
 
 import com.intellij.extapi.psi.PsiFileBase;
 import com.intellij.lang.ASTNode;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.psi.FileViewProvider;
 import com.intellij.psi.PsiClass;
@@ -11,7 +10,6 @@ import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.PsiImportHolder;
 import com.intellij.psi.ServerPageFile;
 import java.awt.EventQueue;
-import java.util.Objects;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.template.ManTemplateFileType;

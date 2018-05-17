@@ -13,8 +13,10 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiIdentifier;
 import com.intellij.psi.PsiImportList;
 import com.intellij.psi.PsiImportStatement;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiReferenceList;
 import com.intellij.psi.PsiWhiteSpace;
+import com.intellij.psi.impl.JavaPsiFacadeEx;
 import com.intellij.psi.templateLanguages.OuterLanguageElement;
 import manifold.ij.template.psi.DirectiveParser;
 import org.jetbrains.annotations.NotNull;
@@ -82,6 +84,23 @@ public class ManTemplateJavaAnnotator implements Annotator
         holder.createAnnotation( HighlightSeverity.ERROR, range,
           "Illegal placement of 'extends' directive, must follow 'import' directives and precede others",
           "Illegal placement of <code>extends</code> directive, must follow <code>import</code> directives and precede others." );
+      }
+      else
+      {
+        PsiJavaCodeReferenceElement[] refs = ((PsiReferenceList)element).getReferenceElements();
+        if( refs.length > 0 )
+        {
+          PsiClass baseClass = JavaPsiFacadeEx.getInstanceEx( element.getProject() ).findClass( "manifold.templates.runtime.BaseTemplate" );
+          PsiClass extendedClass = (PsiClass)refs[0].resolve();
+          if( baseClass != null && extendedClass != null && !extendedClass.equals( baseClass ) && !extendedClass.isInheritor( baseClass, true ) )
+          {
+            int startOffset = refs[0].getTextOffset();
+            TextRange range = new TextRange( startOffset, startOffset + refs[0].getTextLength() );
+            holder.createAnnotation( HighlightSeverity.ERROR, range,
+              "Extended class '${extendedClass.getName()}' does not inherit from 'manifold.templates.runtime.BaseTemplate'",
+              "Extended class <code>${extendedClass.getName()}</code> does not inherit from <code>manifold.templates.runtime.BaseTemplate</code>" );
+          }
+        }
       }
     }
   }

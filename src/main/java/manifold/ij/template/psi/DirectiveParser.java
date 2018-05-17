@@ -174,8 +174,7 @@ public class DirectiveParser
   {
     PsiBuilder.Marker extendsClause = builder.mark();
     builder.advanceLexer();
-    ReferenceParser.TypeInfo type = parseType( builder );
-    if( type == null )
+    if( _javaParser.getReferenceParser().parseJavaCodeReference( builder, true, true, false, false ) == null )
     {
       PsiBuilder.Marker error = builder.mark();
       error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
