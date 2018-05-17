@@ -2,6 +2,7 @@ package manifold.ij.template.psi;
 
 import com.intellij.extapi.psi.PsiFileBase;
 import com.intellij.lang.ASTNode;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.psi.FileViewProvider;
 import com.intellij.psi.PsiClass;
@@ -9,20 +10,41 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.PsiImportHolder;
 import com.intellij.psi.ServerPageFile;
+import java.awt.EventQueue;
+import java.util.Objects;
+import manifold.ij.core.ManModule;
+import manifold.ij.core.ManProject;
 import manifold.ij.template.ManTemplateFileType;
 import manifold.ij.template.ManTemplateLanguage;
+import manifold.ij.util.MessageUtil;
 import org.jetbrains.annotations.NotNull;
 
-import static manifold.ij.template.psi.ManTemplateParser.Directive;
+
 import static manifold.ij.template.psi.ManTemplateParser.Comment;
+import static manifold.ij.template.psi.ManTemplateParser.Directive;
 
 public class ManTemplateFile extends PsiFileBase
   implements PsiImportHolder, //!! must implement PsiImportHolder for full pass analysis and error highlighting to work, see HighlightVisitorImpl#suitableForFile
-             ServerPageFile   //!! musts implement ServerPageFile to avoid psi checking at the file level e.g., no package stmt etc.
+  ServerPageFile   //!! musts implement ServerPageFile to avoid psi checking at the file level e.g., no package stmt etc.
 {
   ManTemplateFile( @NotNull FileViewProvider viewProvider )
   {
     super( viewProvider, ManTemplateLanguage.INSTANCE );
+    warnIfManifoldTemplatesNotConfiguredForProject();
+  }
+
+  private void warnIfManifoldTemplatesNotConfiguredForProject()
+  {
+    EventQueue.invokeLater(
+      () -> {
+        ManModule module = ManProject.getModule( ManTemplateFile.this );
+        if( module != null &&
+          module.getTypeManifolds().stream()
+          .noneMatch( tm -> tm.getClass().getSimpleName().equals( "TemplateManifold" ) ) )
+        {
+          MessageUtil.showWarning( getProject(), "The use of templates in Module '${module.getName()}' requires a dependency on <b>manifold-templates</b> or <b>manifold-all</b>" );
+        }
+      } );
   }
 
   @NotNull

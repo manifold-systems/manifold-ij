@@ -5,8 +5,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
+import com.intellij.openapi.wm.ex.WindowManagerEx;
 import com.intellij.ui.awt.RelativePoint;
 
 public final class MessageUtil
@@ -16,6 +16,11 @@ public final class MessageUtil
   public static void showInfo( final Project project, final String format, final Object... args )
   {
     showMessage( project, MessageType.INFO, format, args );
+  }
+
+  public static void showWarning( final Project project, final String format, final Object... args )
+  {
+    showMessage( project, MessageType.WARNING, format, args );
   }
 
   public static void showError( final Project project, final String format, final Object... args )
@@ -42,16 +47,12 @@ public final class MessageUtil
 
   private static void showMessage( final Project project, final MessageType messageType, final String format, final Object[] args )
   {
-    StatusBar statusBar = WindowManager.getInstance().getStatusBar( project );
-    if( statusBar == null || statusBar.getComponent() == null )
-    {
-      return;
-    }
     String message = String.format( format, args );
-    JBPopupFactory.getInstance().createHtmlTextBalloonBuilder( message, messageType, null )
-      .setFadeoutTime( 7500 )
+    JBPopupFactory popupFactory = JBPopupFactory.getInstance();
+    popupFactory.createHtmlTextBalloonBuilder( message, messageType, null )
+      .setCloseButtonEnabled( true )
       .createBalloon()
-      .show( RelativePoint.getNorthEastOf( statusBar.getComponent() ), Balloon.Position.atRight );
+      .show( RelativePoint.getNorthEastOf( ((WindowManagerEx)WindowManager.getInstance()).getFrame( project ).getLayeredPane() ), Balloon.Position.atRight );
 
     if( messageType == MessageType.INFO )
     {
