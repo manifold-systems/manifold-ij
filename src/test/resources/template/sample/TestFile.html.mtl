@@ -1,0 +1,25 @@
+<%@ import java.util.ArrayList %>
+<%@ params( String param1 ) %>
+<html>
+  hello <% String text; %> bye
+  hello ${ true } asfds
+  hello
+  <%
+    text = "high";
+    char ff = text.charAt(2);
+  %>
+  hello <% System.out.println(ff); %>  bye
+
+  hello  ${'}'} bye
+  <% for( int i = 0; i < 4; i++ ) {%>
+    hello
+  <%}%>
+  hello <%=param1%>${param1} bye
+  hello
+
+  <% String a = "<%= expression syntax %>"; %><% String b = "$text"; %>${a}${b}
+
+  <%--
+    comment <% %>
+  --%> bye
+</html>

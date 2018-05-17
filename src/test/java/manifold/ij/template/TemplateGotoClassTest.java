@@ -6,7 +6,7 @@ import manifold.ij.extensions.ManifoldPsiClass;
 
 public class TemplateGotoClassTest extends AbstractManifoldCodeInsightTest
 {
-  public void testCompletion_Type()
+  public void testGotoType()
   {
     myFixture.copyFileToProject( "template/sample/MyTemplate.html.mtl" );
     List<Object> results = myFixture.getGotoClassResults( "MyTempla", false, null );

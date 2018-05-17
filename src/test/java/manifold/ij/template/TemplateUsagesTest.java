@@ -6,11 +6,10 @@ import manifold.ij.AbstractManifoldCodeInsightTest;
 
 public class TemplateUsagesTest extends AbstractManifoldCodeInsightTest
 {
-  public void testFindUsages_Property_FromDeclaration()
+  public void testUsages()
   {
     Collection<UsageInfo> usageInfos = myFixture.testFindUsages( "template/usages/MyTemplate_Usages_Java_1.html.mtl" );
     assertEquals( 5, usageInfos.size() );
-    //noinspection ConstantConditions
   }
 
 }
