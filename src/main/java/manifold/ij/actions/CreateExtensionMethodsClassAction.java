@@ -12,6 +12,7 @@ import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaDirectoryService;
@@ -29,7 +30,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import javax.swing.ImageIcon;
 import manifold.ij.extensions.StubBuilder;
 import manifold.ij.util.ManBundle;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
@@ -42,7 +42,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
   {
     super( ManBundle.message( "new.ext.method.class.menu.action.text" ),
            ManBundle.message( "new.ext.method.class.menu.action.description" ),
-           new ImageIcon( ManBundle.class.getResource( "/manifold/ij/icons/manifold.png" ) ) );
+           IconLoader.getIcon( "/manifold/ij/icons/manifold.png" ) );
   }
 
   @Override

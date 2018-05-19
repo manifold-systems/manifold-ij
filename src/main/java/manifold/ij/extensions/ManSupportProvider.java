@@ -14,10 +14,10 @@ import com.intellij.openapi.projectRoots.SdkModificator;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.libraries.Library;
+import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.File;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
 import org.jetbrains.annotations.NotNull;
@@ -38,7 +38,7 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
   @Override
   public Icon getIcon()
   {
-    return new ImageIcon( getClass().getResource( "/manifold/ij/icons/manifold.png" ) );
+    return IconLoader.getIcon( "/manifold/ij/icons/manifold.png" );
   }
 
   @Override

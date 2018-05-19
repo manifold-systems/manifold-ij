@@ -7,6 +7,7 @@ import com.intellij.ide.fileTemplates.FileTemplateManager;
 import com.intellij.json.JsonFileType;
 import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFile;
@@ -39,7 +40,7 @@ public class CreateManifoldTemplateAction extends CreateFileFromTemplateAction
   {
     super( ManBundle.message( "new.template.menu.action.text" ),
       ManBundle.message( "new.template.menu.action.description" ),
-      new ImageIcon( ManBundle.class.getResource( "/manifold/ij/icons/manifold.png" ) ) );
+      IconLoader.getIcon( "/manifold/ij/icons/manifold.png" ) );
   }
 
   @Override

@@ -2,8 +2,8 @@ package manifold.ij.extensions;
 
 import com.intellij.framework.FrameworkTypeEx;
 import com.intellij.framework.addSupport.FrameworkSupportInModuleProvider;
+import com.intellij.openapi.util.IconLoader;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -35,6 +35,6 @@ public class ManFrameworkType extends FrameworkTypeEx
   @Override
   public Icon getIcon()
   {
-    return new ImageIcon( getClass().getResource( "/manifold/ij/icons/manifold.png" ) );
+    return IconLoader.getIcon( "/manifold/ij/icons/manifold.png" );
   }
 }
