@@ -3,12 +3,14 @@ package manifold.ij.extensions;
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiIdentifier;
+import com.intellij.psi.PsiJavaToken;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiParameter;
@@ -55,6 +57,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return true;
     }
 
+    if( filterIllegalEscapedCharDollars( hi, firstElem, elem ) )
+    {
+      return false;
+    }
+
     if( isInvalidStaticMethodOnInterface( hi ) )
     {
       PsiElement lhsType = ((PsiReferenceExpressionImpl)((PsiMethodCallExpressionImpl)elem.getParent()).getMethodExpression().getQualifierExpression()).resolve();
@@ -77,6 +84,14 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     if( x != null ) return x;
 
     return true;
+  }
+
+  private boolean filterIllegalEscapedCharDollars( @NotNull HighlightInfo hi, PsiElement firstElem, PsiElement elem )
+  {
+    return firstElem instanceof PsiJavaToken &&
+           ((PsiJavaToken)firstElem).getTokenType() == JavaTokenType.STRING_LITERAL &&
+           hi.getDescription().contains( "Illegal escape character" ) &&
+           elem.getText().contains( "\\$" );
   }
 
   @Nullable

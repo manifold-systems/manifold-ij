@@ -42,7 +42,8 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
     }
 
     String hostText = host.getText();
-    List<StringLiteralTemplateParser.Expr> exprs = StringLiteralTemplateParser.parse( hostText );
+    List<StringLiteralTemplateParser.Expr> exprs =
+      StringLiteralTemplateParser.parse( index -> isEscaped( hostText, index ), hostText );
     if( exprs.isEmpty() )
     {
       // Not a template
@@ -59,6 +60,21 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
           PREFIX, SUFFIX );
       }
     }
+  }
+
+  private boolean isEscaped( String hostText, int index )
+  {
+    if( index > 0 )
+    {
+      if( hostText.charAt( index-1 ) == '\\' )
+      {
+        if( index > 1 )
+        {
+          return hostText.charAt( index-2 ) != '\\';
+        }
+      }
+    }
+    return false;
   }
 
   private boolean isStringLiteralTemplatesDisabled( PsiElement elem )
