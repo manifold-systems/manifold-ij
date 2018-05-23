@@ -70,7 +70,8 @@
     <resolveScopeProvider implementation="manifold.ij.extensions.ManResolveScopeProvider" order="first"/>
     <elementDescriptionProvider implementation="manifold.ij.extensions.ManElementDescriptionProvider"/>
     <languageInjector implementation="manifold.ij.extensions.ManStringLiteralTemplateInjector" order="first"/>
-    
+    <targetElementEvaluator language="TEXT" implementationClass="manifold.ij.extensions.ManTextElementEvaluator"/>
+
     <!-- ManJavaSyntaxHighlighterFactory exists solely so we can include '$' as an escapable for String literal templates
          see ManJavaFileHighlighter -->
     <lang.syntaxHighlighterFactory language="JAVA" implementationClass="manifold.ij.extensions.ManJavaSyntaxHighlighterFactory" order="first"/>
