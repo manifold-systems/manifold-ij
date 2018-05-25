@@ -10,6 +10,9 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.projectRoots.JavaSdk;
+import com.intellij.openapi.projectRoots.JavaSdkVersion;
+import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.projectRoots.SdkModificator;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.OrderRootType;
@@ -49,6 +52,19 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
 
   static void addToolsJar( @NotNull ModifiableRootModel rootModel )
   {
+    Sdk sdk = rootModel.getSdk();
+    if( sdk == null )
+    {
+      return;
+    }
+
+    JavaSdkVersion version = JavaSdk.getInstance().getVersion( sdk );
+    if( version == null || version.isAtLeast( JavaSdkVersion.JDK_1_9 ) )
+    {
+      // Tools.jar is only for Java 8-
+      return;
+    }
+
     if( hasToolsJar( rootModel ) )
     {
       return;
@@ -61,14 +77,20 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
       return;
     }
 
-    SdkModificator sdkModificator = rootModel.getSdk().getSdkModificator();
+    SdkModificator sdkModificator = sdk.getSdkModificator();
     sdkModificator.addRoot( toolsJarFile, OrderRootType.CLASSES );
     sdkModificator.commitChanges();
   }
 
   private static boolean hasToolsJar( ModifiableRootModel rootModel )
   {
-    for( VirtualFile file : rootModel.getSdk().getRootProvider().getFiles( OrderRootType.CLASSES ) )
+    Sdk sdk = rootModel.getSdk();
+    if( sdk == null )
+    {
+      return false;
+    }
+
+    for( VirtualFile file : sdk.getRootProvider().getFiles( OrderRootType.CLASSES ) )
     {
       if( file.getName().equalsIgnoreCase( "tools.jar" ) )
       {
@@ -78,7 +100,7 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
     return false;
   }
 
-  static VirtualFile findToolsJarFile( Project project )
+  private static VirtualFile findToolsJarFile( Project project )
   {
     File file = new File( System.getProperty( "java.home" ) );
     if( file.getName().equalsIgnoreCase( "jre" ) )
