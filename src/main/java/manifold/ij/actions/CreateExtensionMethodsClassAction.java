@@ -10,12 +10,18 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.FileIndexUtil;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.ui.MessageType;
+import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.WindowManager;
+import com.intellij.openapi.wm.ex.WindowManagerEx;
 import com.intellij.psi.JavaDirectoryService;
+import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFile;
@@ -23,6 +29,7 @@ import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiPackage;
 import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.impl.JavaPsiFacadeEx;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.ClassUtil;
 import com.intellij.util.Function;
 import com.intellij.util.IncorrectOperationException;
@@ -30,6 +37,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import javax.swing.RootPaneContainer;
+import manifold.ExtIssueMsg;
 import manifold.ij.extensions.StubBuilder;
 import manifold.ij.util.ManBundle;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
@@ -41,8 +50,8 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
   public CreateExtensionMethodsClassAction()
   {
     super( ManBundle.message( "new.ext.method.class.menu.action.text" ),
-           ManBundle.message( "new.ext.method.class.menu.action.description" ),
-           IconLoader.getIcon( "/manifold/ij/icons/manifold.png" ) );
+      ManBundle.message( "new.ext.method.class.menu.action.description" ),
+      IconLoader.getIcon( "/manifold/ij/icons/manifold.png" ) );
   }
 
   @Override
@@ -70,7 +79,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
       else
       {
         PsiPackage pkg = JavaDirectoryService.getInstance().getPackage( dir );
-        ProjectFileIndex projectFileIndex = ProjectRootManager.getInstance( project).getFileIndex();
+        ProjectFileIndex projectFileIndex = ProjectRootManager.getInstance( project ).getFileIndex();
         enabled = pkg != null && projectFileIndex.isUnderSourceRootOfType( dir.getVirtualFile(), JavaModuleSourceRootTypes.SOURCES );
       }
     }
@@ -124,7 +133,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
   private String getActionName( PsiDirectory directory, String newName )
   {
     PsiPackage pkg = JavaDirectoryService.getInstance().getPackage( directory );
-    return ManBundle.message( "new.ext.method.class.progress.text", pkg.getQualifiedName(), newName );
+    return ManBundle.message( "new.ext.method.class.progress.text", pkg == null ? "" : pkg.getQualifiedName(), newName );
   }
 
   private PsiFile doCreate( PsiDirectory dir, String className, String fqnExtended ) throws IncorrectOperationException
@@ -133,7 +142,19 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
 
     String fileName = className + ".java";
     VirtualFile srcRoot = ProjectRootManager.getInstance( project ).getFileIndex().getSourceRootForFile( dir.getVirtualFile() );
+    if( srcRoot == null )
+    {
+      throw new IncorrectOperationException( "Directory '" + dir.getName() + "' is not in a source root" );
+    }
+
     dir = getPsiDirectoryForExtensionClass( dir, fqnExtended, srcRoot );
+
+    PsiClass psiExtended = JavaPsiFacade.getInstance( project ).findClass( fqnExtended, GlobalSearchScope.projectScope( project ) );
+    if( psiExtended != null && FileIndexUtil.isJavaSourceFile( project, psiExtended.getContainingFile().getVirtualFile() ) )
+    {
+      errorCannotExtendSourceFile( fqnExtended );
+      return null;
+    }
 
     final PsiPackage pkg = JavaDirectoryService.getInstance().getPackage( dir );
     if( pkg == null )
@@ -177,7 +198,17 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
     return file;
   }
 
-  private String processTypeVars( PsiDirectory dir, String fqnExtended, Function<PsiTypeParameter,String> processor )
+  private void errorCannotExtendSourceFile( String fqnExtended )
+  {
+    String message = ExtIssueMsg.MSG_CANNOT_EXTEND_SOURCE_FILE.get( fqnExtended );
+    JBPopupFactory popupFactory = JBPopupFactory.getInstance();
+    popupFactory.createHtmlTextBalloonBuilder( message, MessageType.ERROR, null )
+      .setCloseButtonEnabled( true )
+      .createBalloon()
+      .show( ((RootPaneContainer)((WindowManagerEx)WindowManager.getInstance()).getMostRecentFocusedWindow()).getLayeredPane() );
+  }
+
+  private String processTypeVars( PsiDirectory dir, String fqnExtended, Function<PsiTypeParameter, String> processor )
   {
     boolean alt = false;
     DumbService dumbService = DumbService.getInstance( dir.getProject() );
@@ -224,10 +255,16 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
   private PsiDirectory getPsiDirectoryForExtensionClass( PsiDirectory dir, String fqnExtended, VirtualFile srcRoot )
   {
     String srcDir = srcRoot.getPath().replace( '/', File.separatorChar );
-    File pkg = new File( srcDir, IdentifierTextField.makeValidIdentifier( dir.getProject().getName(), true, true ).replace( '.', File.separatorChar ) + File.separatorChar  + "extensions" + File.separatorChar + fqnExtended.replace( '.', File.separatorChar ) );
+    File pkg = new File( srcDir,
+      IdentifierTextField.makeValidIdentifier( dir.getProject().getName(), true, true )
+        .replace( '.', File.separatorChar ) + File.separatorChar + "extensions" + File.separatorChar + fqnExtended.replace( '.', File.separatorChar ) );
     //noinspection ResultOfMethodCallIgnored
     pkg.mkdirs();
     VirtualFile pkgFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile( pkg );
+    if( pkgFile == null )
+    {
+      throw new IncorrectOperationException( "Could not find file for '" + pkg.getAbsolutePath() + "'" );
+    }
     dir = dir.getManager().findDirectory( pkgFile );
     return dir;
   }

@@ -4,6 +4,8 @@ import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbService;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.FileIndexUtil;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
@@ -61,9 +63,10 @@ public class ExtensionClassAnnotator implements Annotator
 
     if( psiExtensionClass != null )
     {
-      // The enclosing class a @Extension class, verify usage of @This etc.
+      // The enclosing class is a @Extension class, verify usage of @This etc.
 
       verifyPackage( element, holder );
+      verifyCanExtend( element, holder );
       verifyExtensionInterfaces( element, holder );
       verifyExtensionMethods( element, holder );
     }
@@ -199,13 +202,43 @@ public class ExtensionClassAnnotator implements Annotator
     else
     {
       String extendedClassName = getExtendedClassName( packageName );
-      if( extendedClassName.isEmpty() &&
+      if( !extendedClassName.isEmpty() &&
           JavaPsiFacade.getInstance( element.getProject() )
             .findClass( extendedClassName, GlobalSearchScope.allScope( element.getProject() ) ) == null )
       {
         TextRange range = new TextRange( element.getTextRange().getStartOffset(),
                                          element.getTextRange().getEndOffset() );
         holder.createErrorAnnotation( range, ExtIssueMsg.MSG_EXPECTING_EXTENDED_CLASS_NAME.get( getPackageRoot( extendedClassName ) ) );
+      }
+    }
+  }
+
+  private void verifyCanExtend( PsiElement element, AnnotationHolder holder )
+  {
+    if( !(element instanceof PsiAnnotation) )
+    {
+      return;
+    }
+
+    String fqnAnnotation = ((PsiAnnotation)element).getQualifiedName();
+    if( fqnAnnotation == null || !fqnAnnotation.equals( Extension.class.getTypeName() ) )
+    {
+      return;
+    }
+
+    PsiJavaFile psiFile = (PsiJavaFile)element.getContainingFile();
+    String packageName = psiFile.getPackageName();
+    int iExt = packageName.indexOf( ExtensionManifold.EXTENSIONS_PACKAGE + '.' );
+    if( iExt >= 0 )
+    {
+      String extendedClassName = getExtendedClassName( packageName );
+      Project project = element.getProject();
+      PsiClass psiExtended = JavaPsiFacade.getInstance( project ).findClass( extendedClassName, GlobalSearchScope.projectScope( project ) );
+      if( psiExtended != null && FileIndexUtil.isJavaSourceFile( project, psiExtended.getContainingFile().getVirtualFile() ) )
+      {
+        TextRange range = new TextRange( element.getTextRange().getStartOffset(),
+                                         element.getTextRange().getEndOffset() );
+        holder.createErrorAnnotation( range, ExtIssueMsg.MSG_CANNOT_EXTEND_SOURCE_FILE.get( extendedClassName ) );
       }
     }
   }
