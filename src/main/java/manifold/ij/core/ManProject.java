@@ -199,7 +199,7 @@ public class ManProject
     addTypeRefreshListener();
     addModuleRefreshListener();
     addModuleClasspathListener();
-    addStaleClassCleaner();
+    //addStaleClassCleaner(); // no longer requires see ManChangedResourcesBuilder
     addCompilerArgs();
   }
 

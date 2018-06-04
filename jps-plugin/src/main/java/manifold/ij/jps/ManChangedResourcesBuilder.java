@@ -73,11 +73,13 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
   public void build( @NotNull ResourcesTarget target, @NotNull DirtyFilesHolder<ResourceRootDescriptor, ResourcesTarget> holder,
                      @NotNull BuildOutputConsumer outputConsumer, @NotNull CompileContext context ) throws ProjectBuildException
   {
-    if( JavaBuilderUtil.isForcedRecompilationAllJavaModules( context ) )
-    {
-      // only care about incremental builds
-      return;
-    }
+//## We need to handle rebuild as well to maintain mappings from resource files to class files (for hot swap).
+//## Also, because we are rebuilding resources here and maintaining a complete mapping, we no longer need ManStaleClassCleaner.
+//    if( JavaBuilderUtil.isForcedRecompilationAllJavaModules( context ) )
+//    {
+//      // only care about incremental builds
+//      return;
+//    }
 
     try
     {
