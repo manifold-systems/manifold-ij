@@ -46,7 +46,6 @@ import manifold.api.fs.jar.JarFileDirectoryImpl;
 import manifold.api.host.Dependency;
 import manifold.api.host.IModule;
 import manifold.ij.extensions.FileModificationManager;
-import manifold.ij.extensions.HotSwapComponent;
 import manifold.ij.extensions.ManifoldPsiClass;
 import manifold.ij.extensions.ModuleClasspathListener;
 import manifold.ij.extensions.ModuleRefreshListener;
@@ -200,7 +199,6 @@ public class ManProject
     addTypeRefreshListener();
     addModuleRefreshListener();
     addModuleClasspathListener();
-    addHotSwapComponent();
     addStaleClassCleaner();
     addCompilerArgs();
   }
@@ -288,11 +286,6 @@ public class ManProject
     {
       return Integer.parseInt( verNum );
     }
-  }
-
-  private void addHotSwapComponent()
-  {
-    HotSwapComponent.attach( this );
   }
 
   public ModuleClasspathListener getModuleClasspathListener()

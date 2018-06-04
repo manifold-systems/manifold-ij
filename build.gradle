@@ -18,17 +18,30 @@ tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
 }
 
-repositories {
-  if(!System.getenv('CI')) {
-    mavenLocal()
-  }
-  jcenter()
-  maven { url 'https://oss.jfrog.org/artifactory/libs-snapshot' }
-}
-
 configurations {
   manifoldAll
   manifoldEp
+}
+
+allprojects {
+  repositories {
+    if(!System.getenv('CI')) {
+      mavenLocal()
+    }
+    jcenter()
+    maven { url 'https://oss.jfrog.org/artifactory/libs-snapshot' }
+  }
+
+  apply plugin: 'java'
+  apply plugin: 'org.jetbrains.intellij'
+}
+
+File destDir = jar.destinationDir
+subprojects {
+  tasks.withType( Jar ) {
+    // make the manifold-jps-plugin.jar file go in this plugin's dir
+    destinationDir = file(destDir)
+  }
 }
 
 dependencies {
@@ -40,6 +53,8 @@ dependencies {
 
   manifoldAll group: 'systems.manifold', name: 'manifold-all', version: manifoldVersion
   manifoldEp group: 'systems.manifold', name: 'manifold-ext-producer-sample', version: manifoldVersion
+
+  compile project('jps-plugin')
 }
 
 configurations.all {

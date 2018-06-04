@@ -1,0 +1,20 @@
+jar.archiveName = "manifold-jps-plugin.jar"
+
+configurations {
+  manifoldAll
+}
+
+intellij {
+  //## todo: use defaultVersion from manifold-ij
+  version '2018.1.2' // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
+}
+
+dependencies {
+  compile group: 'systems.manifold', name: 'manifold', version: manifoldVersion
+  compile group: 'systems.manifold', name: 'manifold-util', version: manifoldVersion
+  compile group: 'systems.manifold', name: 'manifold-ext', version: manifoldVersion
+
+  testCompile group: 'junit', name: 'junit', version: '4.12'
+
+  manifoldAll group: 'systems.manifold', name: 'manifold-all', version: manifoldVersion
+}
