@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import manifold.api.fs.IDirectory;
 import manifold.api.fs.IFile;
 import manifold.api.fs.IFileSystem;
@@ -70,7 +71,7 @@ public class ManModule extends SimpleModule
   @Override
   public IDirectory[] getExcludedPath()
   {
-    return _excludedDirs.toArray( new IDirectory[_excludedDirs.size()] );
+    return _excludedDirs.toArray( new IDirectory[0] );
   }
 
   public Module getIjModule()
@@ -89,15 +90,16 @@ public class ManModule extends SimpleModule
     return getProject().getFileSystem();
   }
 
+  @SafeVarargs
   @SuppressWarnings("Duplicates")
   @Override
-  public Set<ITypeManifold> findTypeManifoldsFor( String fqn )
+  public final Set<ITypeManifold> findTypeManifoldsFor( String fqn, Predicate<ITypeManifold>... predicates )
   {
-    return findTypeManifoldsFor( fqn, this );
+    return findTypeManifoldsFor( fqn, predicates, this );
   }
-  private Set<ITypeManifold> findTypeManifoldsFor( String fqn, ManModule root )
+  private Set<ITypeManifold> findTypeManifoldsFor( String fqn, Predicate<ITypeManifold>[] predicates, ManModule root )
   {
-    Set<ITypeManifold> sps = super.findTypeManifoldsFor( fqn );
+    Set<ITypeManifold> sps = super.findTypeManifoldsFor( fqn, predicates );
     if( !sps.isEmpty() )
     {
       return sps;
@@ -107,7 +109,7 @@ public class ManModule extends SimpleModule
     {
       if( this == root || d.isExported() )
       {
-        sps.addAll( ((ManModule)d.getModule()).findTypeManifoldsFor( fqn, root ) );
+        sps.addAll( ((ManModule)d.getModule()).findTypeManifoldsFor( fqn, predicates, root ) );
       }
     }
     return sps;
@@ -211,8 +213,7 @@ public class ManModule extends SimpleModule
   @Override
   public List<IDirectory> getCollectiveSourcePath()
   {
-    List<IDirectory> all = new ArrayList<>();
-    all.addAll( getSourcePath() );
+    List<IDirectory> all = new ArrayList<>( getSourcePath() );
 
     for( Dependency d : getDependencies() )
     {
@@ -231,8 +232,7 @@ public class ManModule extends SimpleModule
   }
   private List<IDirectory> getCollectiveJavaClassPath( ManModule root )
   {
-    List<IDirectory> all = new ArrayList<>();
-    all.addAll( getJavaClassPath() );
+    List<IDirectory> all = new ArrayList<>( getJavaClassPath() );
 
     for( Dependency d : getDependencies() )
     {
@@ -257,7 +257,7 @@ public class ManModule extends SimpleModule
         result.addAll( ((IExtensionClassProducer)sp).getExtendedTypesForFile( file ) );
       }
     }
-    return result.toArray( new String[result.size()] );
+    return result.toArray( new String[0] );
   }
 
   // Add names from path and current file name.  This is essential for cases
