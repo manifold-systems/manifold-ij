@@ -59,12 +59,15 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
       try
       {
         FSOperations.markDeleted( context, tempMainClass );
+        FSOperations.markDeleted( context, tempMainClass.getParentFile() );
       }
       catch( IOException ignore )
       {
       }
       //noinspection ResultOfMethodCallIgnored
       tempMainClass.delete();
+      //noinspection ResultOfMethodCallIgnored
+      tempMainClass.getParentFile().delete();
     }
   }
 
@@ -105,7 +108,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
       if( !changedFiles.isEmpty() )
       {
         IjIncrementalCompileDriver.FILES.addAll( changedFiles );
-        _tempMainClasses = makeTempMainClass( context, target );
+        _tempMainClasses = makeTempMainClasses( context, target );
         _oc = (BuildOutputConsumerImpl)outputConsumer;
         _target = target;
       }
@@ -164,11 +167,11 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
     return classFile.isFile() ? classFile : null;
   }
 
-  private List<File> makeTempMainClass( CompileContext context, ResourcesTarget target )
+  private List<File> makeTempMainClasses( CompileContext context, ResourcesTarget target )
   {
     String manifold_temp_main_ = "_Manifold_Temp_Main_";
 
-    List<File> tempMain = new ArrayList<>();
+    List<File> tempMainClasses = new ArrayList<>();
     int index = 0;
     for( JpsModuleSourceRoot jpsSourceRoot : target.getModule().getSourceRoots() )
     {
@@ -177,7 +180,9 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
         continue;
       }
 
-      File sourceRoot = jpsSourceRoot.getFile();
+      // generate file in '_temp_' package, Java 9 modular projects do not support the default/empty package
+      File sourceRoot = new File( jpsSourceRoot.getFile(), "_temp_" );
+      sourceRoot.mkdir();
 
       index++;
       File tempMainClass = new File( sourceRoot, manifold_temp_main_ + index + ".java" );
@@ -188,6 +193,8 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
         FileWriter writer = new FileWriter( tempMainClass );
         writer.write(
           "//!! Temporary generated file to facilitate incremental compilation of Manifold resources\n" +
+          "package _temp_;\n" +
+          "\n" +
           "import manifold.api.type.IncrementalCompile;\n" +
           "\n" +
           "@IncrementalCompile( driverClass = \"manifold.ij.jps.IjIncrementalCompileDriver\" )\n" +
@@ -198,13 +205,13 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
         writer.flush();
         writer.close();
         FSOperations.markDirty( context, CompilationRound.CURRENT, tempMainClass );
-        tempMain.add( tempMainClass );
+        tempMainClasses.add( tempMainClass );
       }
       catch( IOException e )
       {
         throw new RuntimeException( "Failed to create Manifold 'main' class: " + tempMainClass.getAbsolutePath(), e );
       }
     }
-    return tempMain;
+    return tempMainClasses;
   }
 }

@@ -199,7 +199,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
             throw new ConflictingTypeManifoldsException( fqn, found, sp );
           }
           found = sp;
-          result = sp.contribute( fqn, result, issues );
+          result = sp.contribute( null, fqn, result, issues );
         }
       }
 
