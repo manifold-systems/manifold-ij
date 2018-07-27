@@ -11,9 +11,9 @@ public class ExtErrorAnnotationsTest extends AbstractManifoldCodeInsightTest
   {
     myFixture.copyFileToProject( "ext/sample/Foo.java" );
     myFixture.configureByFile( "extensions/ext/sample/Foo/MyFooExt.java" );
-    List<HighlightInfo> highlightInfos = myFixture.doHighlighting( HighlightSeverity.ERROR );
+    List<HighlightInfo> highlightInfos = myFixture.doHighlighting( HighlightSeverity.WARNING );
     assertEquals( 1, highlightInfos.size() );
-    assertEquals( "Cannot extend source file 'ext.sample.Foo' in the same module, consider modifying the file directly.",
+    assertEquals( "Extending source file 'ext.sample.Foo' in the same module, consider modifying the file directly.",
       highlightInfos.get( 0 ).getDescription() );
   }
 
