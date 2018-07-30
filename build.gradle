@@ -25,9 +25,9 @@ configurations {
 
 allprojects {
   repositories {
-//    if(!System.getenv('CI')) {
-//      mavenLocal()
-//    }
+    if(!System.getenv('CI')) {
+      mavenLocal()
+    }
     jcenter()
     maven { url 'https://oss.jfrog.org/artifactory/libs-snapshot' }
   }
