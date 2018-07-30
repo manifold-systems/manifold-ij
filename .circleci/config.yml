@@ -12,6 +12,7 @@ jobs:
     branches:
       ignore:
         - /rel\/.*/
+        - /manifold_poc/
     
     steps:
       - checkout
