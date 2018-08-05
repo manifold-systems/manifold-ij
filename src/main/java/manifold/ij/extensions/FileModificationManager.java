@@ -136,7 +136,7 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
     for( VFileEvent event : events )
     {
       final VirtualFile file = event.getFile();
-      if( file != null )
+      if( !ignoreFile( file ) )
       {
         if( isMoveOrRename( event ) )
         {
@@ -174,7 +174,7 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
     for( VFileEvent event : events )
     {
       final VirtualFile file = event.getFile();
-      if( file != null )
+      if( !ignoreFile( file ) )
       {
         if( event instanceof VFileCreateEvent )
         {
@@ -198,6 +198,13 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
         }
       }
     }
+  }
+
+  private boolean ignoreFile( VirtualFile file )
+  {
+    return file == null ||
+           file.getPath().contains( "/.idea/" ) ||
+           file.getPath().contains( "/idea-sandbox/" );
   }
 
   private boolean isMoveOrRename( VFileEvent event )
@@ -239,7 +246,10 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
 
   private void fireModifiedEvent( VirtualFile file )
   {
-    fireModifiedEvent( FileUtil.toIResource( _project, file ) );
+    if( !ignoreFile( file ) )
+    {
+      fireModifiedEvent( FileUtil.toIResource( _project, file ) );
+    }
   }
 
   private void fireDeletedEvent( VirtualFile file )

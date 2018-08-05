@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import manifold.api.type.ITypeManifold;
@@ -54,7 +55,7 @@ public class ManTypeFinder extends PsiElementFinder
       return PsiClass.EMPTY_ARRAY;
     }
 
-    List<PsiClass> psiClasses = new ArrayList<>();
+    Set<PsiClass> psiClasses = new LinkedHashSet<>();
     List<ManModule> modules = findModules( globalSearchScope );
     for( ManModule m : modules )
     {
@@ -64,7 +65,7 @@ public class ManTypeFinder extends PsiElementFinder
         psiClasses.add( psiClass );
       }
     }
-    return psiClasses.toArray( new PsiClass[psiClasses.size()] );
+    return psiClasses.toArray( new PsiClass[0] );
   }
 
   @Override

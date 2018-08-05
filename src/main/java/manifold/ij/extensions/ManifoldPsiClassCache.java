@@ -20,6 +20,8 @@ import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.PsiModificationTrackerImpl;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.containers.ContainerUtil;
+
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -61,13 +63,17 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
   private final ConcurrentHashMap<String, PsiClass> _psi2Class = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<ManModule, FqnCache<PsiClass>> _type2Class = new ConcurrentHashMap<>();
 
-  public PsiClass getPsiClass( GlobalSearchScope scope, ManModule module, String fqn )
+  //## todo: use thread local short-circuit instead of synchronized
+  public synchronized PsiClass getPsiClass( GlobalSearchScope scope, ManModule module, String fqn )
   {
     if( isShortCircuit( fqn ) )
     {
       return null;
     }
-
+    return getPsiClass_NoShortCircuit( scope, module, fqn );
+  }
+  private PsiClass getPsiClass_NoShortCircuit( GlobalSearchScope scope, ManModule module, String fqn )
+  {
     if( !isValidFqn( fqn ) )
     {
       return null;
@@ -94,6 +100,12 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
       // Create new module-specific type...
 
+      PsiClass psiClass = findInDependencies( scope, module, fqn );
+      if( psiClass != null )
+      {
+        return psiClass;
+      }
+
       if( node == null )
       {
         try
@@ -109,7 +121,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
       // Add extensions (and create module-specific type if necessary) ...
 
-      PsiClass psiClass = node == null ? null : node.getUserData();
+      psiClass = node == null ? null : node.getUserData();
       psiClass = addExtensions( scope, module, fqn, psiClass );
 
       return psiClass;
@@ -118,6 +130,32 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     {
       removeShortCircuit( fqn );
     }
+  }
+
+  private PsiClass findInDependencies( GlobalSearchScope scope, ManModule module, String fqn )
+  {
+    Set<ITypeManifold> tms = module.findTypeManifoldsFor( fqn );
+    if( tms.stream().noneMatch( tm -> tm.getTypeLoader().getModule() == module ) )
+    {
+      ManModule topMostModule = null;
+      for( ITypeManifold tm: tms )
+      {
+        if( tm.getContributorKind() == Primary ||
+            tm.getContributorKind() == Partial )
+        {
+          ManModule m = (ManModule)tm.getTypeLoader().getModule();
+          if( topMostModule == null || m.hasDependency( topMostModule ) )
+          {
+            topMostModule = m;
+          }
+        }
+      }
+      if( topMostModule != null )
+      {
+        return getPsiClass_NoShortCircuit( scope, topMostModule, fqn );
+      }
+    }
+    return null;
   }
 
   private boolean isValidFqn( String fqn )
@@ -248,63 +286,52 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
   private PsiClass addExtensions( GlobalSearchScope scope, ManModule module, String fqn, PsiClass psiClass )
   {
-    if( isSupplemented( module, fqn ) )
+    ITypeManifold supplemented = isSupplemented( module, fqn );
+    if( supplemented != null )
     {
       // Find the class excluding our ManTypeFinder to avoid circularity
-      psiClass = psiClass != null ? psiClass : JavaPsiFacade.getInstance( module.getIjProject() ).findClass( fqn, GlobalSearchScope.allScope( module.getIjProject() ) );
-      if( psiClass != null )
+      ManModule moduleSupplementing = (ManModule)supplemented.getTypeLoader().getModule();
+      if( moduleSupplementing == module )
       {
-        psiClass = new ManifoldExtendedPsiClass( module.getIjModule(), psiClass );
-        psiClass.putUserData( ModuleUtil.KEY_MODULE, module.getIjModule() );
-        FqnCache<PsiClass> map = _type2Class.computeIfAbsent( module, k -> new FqnCache<>() );
-        map.add( fqn, psiClass );
+        psiClass = psiClass != null
+                   ? psiClass
+                   : JavaPsiFacade.getInstance( module.getIjProject() )
+                     .findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ) );
+        if( psiClass != null )
+        {
+          psiClass = new ManifoldExtendedPsiClass( module.getIjModule(), psiClass );
+          psiClass.putUserData( ModuleUtil.KEY_MODULE, module.getIjModule() );
+          FqnCache<PsiClass> map = _type2Class.computeIfAbsent( module, k -> new FqnCache<>() );
+          map.add( fqn, psiClass );
+        }
+      }
+      else
+      {
+        // Get the class from the correct module (may be cached)
+        return getPsiClass_NoShortCircuit( scope, moduleSupplementing, fqn );
       }
     }
     return psiClass;
   }
 
-//  private List<IFile> findFilesForType( ManModule module, String fqn )
-//  {
-//    Set<ITypeManifold> sps = module.findTypeManifoldsFor( fqn );
-//    Set<IFile> files = new LinkedHashSet<>();
-//    for( ITypeManifold sp : sps )
-//    {
-//      files.addAll( sp.findFilesForType( fqn ) );
-//    }
-//    return new ArrayList<>( files );
-//  }
-//
-//  private PsiClass makeCopy( PsiClass psiClass )
-//  {
-//    final PsiJavaFile copy = (PsiJavaFile)psiClass.getContainingFile().copy();
-//    for( PsiClass cls : copy.getClasses() )
-//    {
-//      if( cls.getQualifiedName().equals( psiClass.getQualifiedName() ) )
-//      {
-//        return cls;
-//      }
-//    }
-//    throw new IllegalStateException( "Copy class failed for: " + psiClass.getQualifiedName() );
-//  }
-
-  private boolean isSupplemented( ManModule module, String fqn )
+  private ITypeManifold isSupplemented( ManModule module, String fqn )
   {
     Set<ITypeManifold> sps = module.findTypeManifoldsFor( fqn );
     for( ITypeManifold tm : sps )
     {
       if( tm.getContributorKind() == Supplemental )
       {
-        return true;
+        return tm;
       }
       else if( tm instanceof IExtensionClassProducer )
       {
         if( ((IExtensionClassProducer)tm).isExtendedType( fqn ) )
         {
-          return true;
+          return tm;
         }
       }
     }
-    return false;
+    return null;
   }
 
   private void listenToChanges( ManProject project )
@@ -388,7 +415,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     Set<String> types = new HashSet<>();
     if( tm.getContributorKind() == Supplemental )
     {
-      types.addAll( tm.getAllTypeNames() );
+      types.addAll( Arrays.asList( tm.getTypesForFile( file ) ) );
     }
     else if( tm instanceof IExtensionClassProducer )
     {
@@ -396,30 +423,6 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     }
     return types;
   }
-
-//  private void removeDependentTypes( String type, FqnCache<PsiClass> map, ManModule module )
-//  {
-//    GlobalSearchScope scope = GlobalSearchScope.moduleScope( module.getIjModule() );
-//    PsiClass psiClass = JavaPsiFacade.getInstance( module.getProject().getNativeProject() ).findClass( type, scope );
-//    if( psiClass == null )
-//    {
-//      return;
-//    }
-//
-//    Query<PsiReference> search = ReferencesSearch.search( psiClass, scope );
-//    for( PsiReference ref : search.findAll() )
-//    {
-//      PsiElement element = ref.getElement();
-//      if( element != null )
-//      {
-//        PsiClass referringClass = ManifoldPsiClassAnnotator.getContainingClass( element );
-//        if( referringClass != null )
-//        {
-//          map.remove( referringClass.getQualifiedName() );
-//        }
-//      }
-//    }
-//  }
 
   @Override
   public void refreshed()
