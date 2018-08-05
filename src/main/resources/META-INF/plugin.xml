@@ -50,6 +50,9 @@
 
     <!-- Manifold Core extensions -->
 
+    <projectService serviceInterface="com.intellij.psi.impl.ResolveScopeManager"
+                    serviceImplementation="manifold.ij.extensions.ManResolveScopeManagerImpl" overrides="true"/>
+
     <!--<library.type implementation="manifold.ij.extensions.ManLibraryType"/>-->
     <frameworkSupport implementation="manifold.ij.extensions.ManSupportProvider"/>
     <framework.type implementation="manifold.ij.extensions.ManFrameworkType"/>

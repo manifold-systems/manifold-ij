@@ -20,7 +20,9 @@ import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiElementFinder;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
 import com.intellij.util.PathsList;
 import com.intellij.util.messages.MessageBusConnection;
@@ -46,12 +48,14 @@ import manifold.api.fs.jar.JarFileDirectoryImpl;
 import manifold.api.host.Dependency;
 import manifold.api.host.IModule;
 import manifold.ij.extensions.FileModificationManager;
+import manifold.ij.extensions.ManTypeFinder;
 import manifold.ij.extensions.ManifoldPsiClass;
 import manifold.ij.extensions.ModuleClasspathListener;
 import manifold.ij.extensions.ModuleRefreshListener;
 import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
 import manifold.internal.host.ManifoldHost;
+import manifold.util.ReflectUtil;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LockingLazyVar;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -201,6 +205,36 @@ public class ManProject
     addModuleClasspathListener();
     //addStaleClassCleaner(); // no longer requires see ManChangedResourcesBuilder
     addCompilerArgs();
+    overrideGosuPluginHack();
+  }
+
+  /**
+   * If running with the Gosu IJ plugin we have to contend with the plugin's peculiar JavaPsiFacadeWrapper, which
+   * overrides IJ's standard JavaPsiFacadeImpl.  We have to make sure Manifold's ManTypeFinder appears first (as
+   * it is configured to be in plugin.xml), but the Gosu Wrapper ignores our config so that our finder is no longer
+   * first, hence this hack.
+   */
+  private void overrideGosuPluginHack()
+  {
+    ApplicationManager.getApplication().invokeLater( () -> {
+      JavaPsiFacade facade = JavaPsiFacade.getInstance( _ijProject );
+      if( facade.getClass().getTypeName().contains( "gosu" ) )
+      {
+        List<PsiElementFinder> finders = (List<PsiElementFinder>)ReflectUtil.field( facade, "myElementFindersOrdered" ).get();
+        PsiElementFinder element = finders.stream().filter( e -> e.getClass() == ManTypeFinder.class ).findFirst().orElse( null );
+        if( element == null )
+        {
+          throw new IllegalStateException( "Expecting to find ManTypeFinder" );
+        }
+        finders.remove( element );
+        finders.add( 0, element );
+
+//        MutablePicoContainer picoContainer = ((ComponentManagerImpl)_ijProject).getPicoContainer();
+//        picoContainer.unregisterComponent( JavaPsiFacade.class.getName() );
+//        picoContainer.registerComponentInstance( JavaPsiFacade.class.getName(), new ManJavaPsiFacade( facade ) );
+//        ReflectUtil.field( JavaPsiFacade.class, "INSTANCE_KEY" ).setStatic( ServiceManager.createLazyKey( JavaPsiFacade.class ) );
+      }
+    } );
   }
 
   private void addStaleClassCleaner()

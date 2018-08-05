@@ -45,7 +45,11 @@ public abstract class IjResource implements IResource
   {
     if( _virtualFile != null )
     {
-      return new IjDirectory( getFileSystem(), _virtualFile.getParent() );
+      if( _virtualFile.getParent() != null )
+      {
+        return new IjDirectory( getFileSystem(), _virtualFile.getParent() );
+      }
+      return null;
     }
     else
     {

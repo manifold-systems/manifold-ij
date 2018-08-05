@@ -305,6 +305,18 @@ public class ManModule extends SimpleModule
     setJavaClassPath( classpath );
   }
 
+  public boolean hasDependency( ManModule m )
+  {
+    for( Dependency d: getDependencies() )
+    {
+      if( d.getModule() == m || ((ManModule)d.getModule()).hasDependency( m ) )
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private boolean hasPath( IDirectory directory )
   {
     List<IDirectory> classpath = getJavaClassPath();

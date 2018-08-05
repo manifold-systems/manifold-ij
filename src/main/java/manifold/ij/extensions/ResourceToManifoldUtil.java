@@ -70,9 +70,9 @@ public class ResourceToManifoldUtil
     }
 
     Set<PsiClass> result = new HashSet<>();
+    IjFile file = FileUtil.toIFile( manProject, virtualFile );
     for( ManModule module : manProject.getModules() )
     {
-      IjFile file = FileUtil.toIFile( manProject, virtualFile );
       Set<ITypeManifold> set = module.findTypeManifoldsFor( file );
       if( set != null )
       {

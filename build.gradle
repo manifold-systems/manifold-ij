@@ -73,11 +73,13 @@ intellij {
   pluginName project.name
   version getIjVersion() // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
   plugins = ['ASM Bytecode Outline:0.3.5', 'Psi Viewer:3.28.93'] //include ASM & PsiViewer in sandbox
+  plugins += [ project.files('/home/kmoore/dev/pl/aggregate/ij-gosu/build/distributions/ij-gosu-g-latest-private-manifold-poc-SNAPSHOT-plugin.zip').singleFile,
+               project.files('/home/kmoore/dev/pl/aggregate/ij-studio/build/distributions/ij-studio-g-latest-manifold-poc-private-manifold-poc-SNAPSHOT-plugin.zip').singleFile ]
 }
 
 runIde {
   minHeapSize '1g'
-  maxHeapSize '2g'
+  maxHeapSize '12g'
 }
 
 patchPluginXml {

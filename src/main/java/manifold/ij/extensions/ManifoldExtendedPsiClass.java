@@ -71,6 +71,10 @@ public class ManifoldExtendedPsiClass extends LightClass implements PsiExtensibl
     _module = ManProject.getModule( module );
   }
 
+  public ManModule getModule()
+  {
+    return _module;
+  }
 
   @Override
   public boolean isPhysical()
