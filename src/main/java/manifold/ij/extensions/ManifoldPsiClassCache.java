@@ -296,7 +296,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
         psiClass = psiClass != null
                    ? psiClass
                    : JavaPsiFacade.getInstance( module.getIjProject() )
-                     .findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ) );
+                     .findClass( fqn, GlobalSearchScope.allScope( module.getIjProject() ) );
         if( psiClass != null )
         {
           psiClass = new ManifoldExtendedPsiClass( module.getIjModule(), psiClass );
