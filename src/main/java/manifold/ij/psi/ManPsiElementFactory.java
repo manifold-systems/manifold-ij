@@ -4,6 +4,7 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiType;
+import manifold.ij.core.ManModule;
 
 /**
  */
@@ -25,9 +26,9 @@ public class ManPsiElementFactory
     return new ManLightFieldBuilderImpl( manager, fieldName, fieldType );
   }
 
-  public ManLightMethodBuilder createLightMethod( PsiManager manager, String methodName )
+  public ManLightMethodBuilder createLightMethod( ManModule manModule, PsiManager manager, String methodName )
   {
-    return new ManLightMethodBuilderImpl( manager, methodName );
+    return new ManLightMethodBuilderImpl( manModule, manager, methodName );
   }
 
   public ManLightMethod createLightMethod( PsiManager manager, PsiMethod valuesMethod, PsiClass psiClass )

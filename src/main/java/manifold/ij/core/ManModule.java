@@ -266,6 +266,7 @@ public class ManModule extends SimpleModule
   private void addFromPath( IFile file, Set<String> result )
   {
     List<IDirectory> sourcePath = getSourcePath();
+    outer:
     for( IDirectory src : sourcePath )
     {
       if( file.isDescendantOf( src ) )
@@ -275,9 +276,14 @@ public class ManModule extends SimpleModule
         fqn = fqn.length() == 0 ? baseName : fqn.replace( '/', '.' ) + '.' + baseName;
         for( ITypeManifold sp : getTypeManifolds() )
         {
-          if( sp.handlesFile( file ) && sp instanceof ResourceFileTypeManifold )
+          if( sp instanceof ResourceFileTypeManifold && sp.handlesFile( file ) )
           {
             fqn = ((ResourceFileTypeManifold)sp).getTypeNameForFile( fqn, file );
+            if( fqn != null )
+            {
+              result.add( fqn );
+            }
+            break outer;
           }
         }
         result.add( fqn );

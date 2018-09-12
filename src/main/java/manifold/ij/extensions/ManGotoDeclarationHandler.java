@@ -8,12 +8,17 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationMemberValue;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiLiteralExpression;
 import com.intellij.psi.PsiMember;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiReference;
+import com.intellij.psi.PsiReferenceExpression;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.Objects;
 import manifold.api.darkj.DarkJavaTypeManifold;
@@ -128,23 +133,52 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     PsiLiteralExpression kindExpr = (PsiLiteralExpression)psiAnnotation.findAttributeValue( SourcePosition.KIND );
     String kind = kindExpr == null ? SourcePosition.DEFAULT_KIND : (String)kindExpr.getValue();
 
-    if( facade == null )
+    String path = getUrlConstantValue( psiAnnotation );
+    if( path != null )
     {
-      String path = (String)((PsiLiteralExpression)psiAnnotation.findAttributeValue( SourcePosition.URL )).getValue();
       VirtualFile vfile = LocalFileSystem.getInstance().findFileByPath( path );
       PsiFile psiFile = psiAnnotation.getManager().findFile( vfile );
       return new FakeTargetElement( psiFile, iOffset, iLength >= 0 ? iLength : 1, featureName, kind );
     }
-    else
+    else if( facade != null && iOffset >= 0 )
     {
       List<PsiFile> sourceFiles = facade.getRawFiles();
-      if( iOffset >= 0 )
-      {
-        //PsiElement target = sourceFile.findElementAt( iOffset );
-        //## todo: handle multiple files
-        return new FakeTargetElement( sourceFiles.get( 0 ), iOffset, iLength >= 0 ? iLength : 1, featureName, kind );
-      }
+      //PsiElement target = sourceFile.findElementAt( iOffset );
+      //## todo: handle multiple files
+      return new FakeTargetElement( sourceFiles.get( 0 ), iOffset, iLength >= 0 ? iLength : 1, featureName, kind );
     }
     return facade;
+  }
+
+  private static String getUrlConstantValue( PsiAnnotation psiAnnotation )
+  {
+    PsiAnnotationMemberValue urlAttr = psiAnnotation.findAttributeValue( SourcePosition.URL );
+    String url;
+    if( urlAttr instanceof PsiReferenceExpression )
+    {
+      url = ((PsiField)((PsiReferenceExpression)urlAttr).resolve()).computeConstantValue().toString();
+    }
+    else if( urlAttr instanceof PsiLiteralExpression )
+    {
+      url = (String)((PsiLiteralExpression)urlAttr).getValue();
+    }
+    else
+    {
+      return null;
+    }
+
+    try
+    {
+      return new File( new URL( url ).toURI() ).getAbsolutePath();
+    }
+    catch( MalformedURLException mue )
+    {
+      // assume url is just a file path
+      return url;
+    }
+    catch( Exception e )
+    {
+      return null;
+    }
   }
 }

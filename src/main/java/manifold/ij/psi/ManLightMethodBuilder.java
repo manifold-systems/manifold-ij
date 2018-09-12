@@ -6,6 +6,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeParameter;
+import manifold.ij.core.ManModule;
 
 /**
  */
@@ -26,4 +27,6 @@ public interface ManLightMethodBuilder extends PsiMethod
   ManLightMethodBuilder withException( String fqName );
 
   ManLightMethodBuilder withTypeParameter( PsiTypeParameter typeParameter );
+
+  ManModule getModule();
 }

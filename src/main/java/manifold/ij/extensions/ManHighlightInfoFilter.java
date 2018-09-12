@@ -65,7 +65,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     if( isInvalidStaticMethodOnInterface( hi ) )
     {
       PsiElement lhsType = ((PsiReferenceExpressionImpl)((PsiMethodCallExpressionImpl)elem.getParent()).getMethodExpression().getQualifierExpression()).resolve();
-      if( lhsType instanceof ManifoldPsiClass || lhsType instanceof ManifoldExtendedPsiClass )
+      if( lhsType instanceof ManifoldPsiClass )
       {
         PsiMethod psiMethod = ((PsiMethodCallExpressionImpl)elem.getParent()).resolveMethod();
         if( psiMethod.getContainingClass().isInterface() )

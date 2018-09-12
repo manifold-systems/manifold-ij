@@ -2,7 +2,6 @@ package manifold.ij.extensions;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -23,7 +22,6 @@ import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.augment.PsiAugmentProvider;
-import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.util.IncorrectOperationException;
 import java.lang.reflect.Modifier;
@@ -40,7 +38,6 @@ import manifold.api.gen.SrcParameter;
 import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
-import manifold.api.host.Dependency;
 import manifold.api.type.ITypeManifold;
 import manifold.api.type.SourcePosition;
 import manifold.ext.IExtensionClassProducer;
@@ -56,6 +53,11 @@ import manifold.ij.psi.ManPsiElementFactory;
 import static manifold.api.type.ContributorKind.Supplemental;
 
 /**
+ * Augment a PsiClass extended by one or more extension classes.  All
+ * extension methods from all modules are added.  We filter the methods
+ * in code completion to those accessible from the call-site.  We also
+ * add a compile error via {@link ExtensionMethodCallSiteAnnotator} where
+ * an extension method is not accessible to a call-site.
  */
 public class ManAugmentProvider extends PsiAugmentProvider
 {
@@ -67,12 +69,6 @@ public class ManAugmentProvider extends PsiAugmentProvider
   public <E extends PsiElement> List<E> getAugments( Module module, PsiElement element, Class<E> cls )
   {
     // Module is assigned to user-data via ManTypeFinder, which loads the psiClass (element)
-    Module context = module != null ? module : element.getUserData( ModuleUtil.KEY_MODULE );
-    if( context == null )
-    {
-      return Collections.emptyList();
-    }
-
     if( DumbService.getInstance( element.getProject() ).isDumb() )
     {
       // skip processing during index rebuild
@@ -92,7 +88,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return Collections.emptyList();
     }
 
-    addMethods( className, psiClass, context, augFeatures );
+    addMethods( className, psiClass, augFeatures );
 
     //noinspection unchecked
     return (List<E>)augFeatures;
@@ -107,19 +103,12 @@ public class ManAugmentProvider extends PsiAugmentProvider
     return VarHandler.instance().inferType( typeElement );
   }
 
-  private void addMethods( String fqn, PsiClass psiClass, Module context, List<PsiElement> augFeatures )
+  private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures )
   {
-    if( context != null )
+    ManProject manProject = ManProject.manProjectFrom( psiClass.getProject() );
+    for( ManModule manModule : manProject.getModules() )
     {
-      addMethods( fqn, psiClass, augFeatures, context );
-    }
-    else
-    {
-      ManProject manProject = ManProject.manProjectFrom( psiClass.getProject() );
-      for( ManModule manModule : manProject.getModules() )
-      {
-        addMethods( fqn, psiClass, augFeatures, manModule.getIjModule() );
-      }
+      addMethods( fqn, psiClass, augFeatures, manModule.getIjModule() );
     }
   }
 
@@ -161,18 +150,10 @@ public class ManAugmentProvider extends PsiAugmentProvider
           Set<String> extensionClassNames = ecp.getExtensionClasses( fqn );
           for( String extension : extensionClassNames )
           {
-            PsiClass extPsiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesScope( manModule.getIjModule() ), manModule, extension );
+            PsiClass extPsiClass = ManifoldPsiClassCache.instance().getPsiClass( manModule, extension );
             addMethods( psiClass, augFeatures, manModule, new PsiClass[]{extPsiClass} );
           }
         }
-      }
-    }
-
-    for( Dependency d : manModule.getDependencies() )
-    {
-      if( module == start || d.isExported() )
-      {
-        addMethods( fqn, psiClass, augFeatures, start, ((ManModule)d.getModule()).getIjModule() );
       }
     }
   }
@@ -195,7 +176,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
           PsiMethod extMethod = makePsiMethod( srcMethod, psiClass );
           if( extMethod != null )
           {
-            PsiMethod plantedMethod = plantMethodInPsiClass( extMethod, psiClass, classes[0] );
+            PsiMethod plantedMethod = plantMethodInPsiClass( manModule, extMethod, psiClass, classes[0] );
             augFeatures.add( plantedMethod );
           }
         }
@@ -220,13 +201,13 @@ public class ManAugmentProvider extends PsiAugmentProvider
     }
   }
 
-  private PsiMethod plantMethodInPsiClass( PsiMethod refMethod, PsiClass psiClass, PsiClass extClass )
+  private PsiMethod plantMethodInPsiClass( ManModule manModule, PsiMethod refMethod, PsiClass psiClass, PsiClass extClass )
   {
     if( null != refMethod )
     {
       ManPsiElementFactory manPsiElemFactory = ManPsiElementFactory.instance();
       String methodName = refMethod.getName();
-      ManLightMethodBuilder method = manPsiElemFactory.createLightMethod( psiClass.getManager(), methodName )
+      ManLightMethodBuilder method = manPsiElemFactory.createLightMethod( manModule, psiClass.getManager(), methodName )
         .withMethodReturnType( refMethod.getReturnType() )
         .withContainingClass( psiClass );
       PsiElement navElem = findExtensionMethodNavigationElement( extClass, refMethod );

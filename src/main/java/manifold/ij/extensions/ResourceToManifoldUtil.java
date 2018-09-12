@@ -13,6 +13,7 @@ import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
@@ -83,7 +84,8 @@ public class ResourceToManifoldUtil
             String[] fqns = tf.getTypesForFile( file );
             for( String fqn : fqns )
             {
-              PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ), module, fqn );
+              PsiClass psiClass = JavaPsiFacade.getInstance( fileElem.getProject() )
+                .findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ) );
               if( psiClass != null )
               {
                 result.add( psiClass );
@@ -163,7 +165,8 @@ public class ResourceToManifoldUtil
             Collection<String> fqns = findTypesForFile( tf, file );
             for( String fqn : fqns )
             {
-              PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ), module, fqn );
+              PsiClass psiClass = JavaPsiFacade.getInstance( module.getIjProject() )
+                .findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ) );
               if( psiClass != null )
               {
                 if( PsiErrorClassUtil.isErrorClass( psiClass ) )

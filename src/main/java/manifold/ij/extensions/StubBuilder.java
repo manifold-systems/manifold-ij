@@ -37,7 +37,7 @@ public class StubBuilder
   public SrcClass make( String fqn, ManModule module )
   {
     JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance( module.getIjProject() );
-    PsiClass psiClass = javaPsiFacade.findClass( fqn, GlobalSearchScope.moduleScope( module.getIjModule() ) );
+    PsiClass psiClass = javaPsiFacade.findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ) );
     if( psiClass == null )
     {
       psiClass = javaPsiFacade.findClass( fqn, GlobalSearchScope.allScope( module.getIjProject() ) );

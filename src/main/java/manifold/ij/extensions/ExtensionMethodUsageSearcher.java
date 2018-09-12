@@ -1,6 +1,9 @@
 package manifold.ij.extensions;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtil;
+import com.intellij.openapi.module.impl.scopes.ModuleWithDependenciesScope;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
@@ -28,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
 {
   @Override
-  public void processQuery( MethodReferencesSearch.SearchParameters p, Processor<PsiReference> consumer )
+  public void processQuery( @NotNull MethodReferencesSearch.SearchParameters p, @NotNull Processor<PsiReference> consumer )
   {
     SearchScope searchScope = p.getScopeDeterminedByUser();
     if( !(searchScope instanceof GlobalSearchScope) )
@@ -72,7 +75,7 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
         if( psiParam.getModifierList().findAnnotation( This.class.getName() ) != null )
         {
           String fqn = getExtendedFqn( extensionClass );
-          PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, (GlobalSearchScope)searchScope );
+          PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, getTargetScope( (GlobalSearchScope)searchScope, method ) );
           if( extendedClass == null )
           {
             continue;
@@ -96,6 +99,19 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
       MethodReferencesSearch.SearchParameters searchParams = new MethodReferencesSearch.SearchParameters( augmentedMethod, searchScope, p.isStrictSignatureSearch(), p.getOptimizer() );
       super.processQuery( searchParams, consumer );
     }
+  }
+
+  private GlobalSearchScope getTargetScope( GlobalSearchScope searchScope, PsiMethod method )
+  {
+    if( searchScope instanceof ModuleWithDependenciesScope && searchScope.isSearchInLibraries() )
+    {
+      return searchScope;
+    }
+
+    Module localModule = ModuleUtil.findModuleForPsiElement( method );
+    return localModule != null
+           ? GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( localModule )
+           : GlobalSearchScope.allScope( method.getProject() );
   }
 
   @NotNull

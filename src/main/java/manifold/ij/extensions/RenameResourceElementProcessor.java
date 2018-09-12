@@ -308,7 +308,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
       return null;
     }
 
-    PsiClass psiClass = JavaPsiFacade.getInstance( root.getProject() ).findClass( fqn, GlobalSearchScope.moduleScope( module ) );
+    PsiClass psiClass = JavaPsiFacade.getInstance( root.getProject() ).findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module ) );
     if( psiClass == null )
     {
       return null;

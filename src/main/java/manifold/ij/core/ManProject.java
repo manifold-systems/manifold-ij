@@ -48,14 +48,12 @@ import manifold.api.fs.jar.JarFileDirectoryImpl;
 import manifold.api.host.Dependency;
 import manifold.api.host.IModule;
 import manifold.ij.extensions.FileModificationManager;
-import manifold.ij.extensions.ManTypeFinder;
 import manifold.ij.extensions.ManifoldPsiClass;
 import manifold.ij.extensions.ModuleClasspathListener;
 import manifold.ij.extensions.ModuleRefreshListener;
 import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
 import manifold.internal.host.ManifoldHost;
-import manifold.util.ReflectUtil;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LockingLazyVar;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -205,7 +203,7 @@ public class ManProject
     addModuleClasspathListener();
     //addStaleClassCleaner(); // no longer requires see ManChangedResourcesBuilder
     addCompilerArgs();
-    overrideGosuPluginHack();
+    //overrideGosuPluginHack();
   }
 
   /**
@@ -214,28 +212,28 @@ public class ManProject
    * it is configured to be in plugin.xml), but the Gosu Wrapper ignores our config so that our finder is no longer
    * first, hence this hack.
    */
-  private void overrideGosuPluginHack()
-  {
-    ApplicationManager.getApplication().invokeLater( () -> {
-      JavaPsiFacade facade = JavaPsiFacade.getInstance( _ijProject );
-      if( facade.getClass().getTypeName().contains( "gosu" ) )
-      {
-        List<PsiElementFinder> finders = (List<PsiElementFinder>)ReflectUtil.field( facade, "myElementFindersOrdered" ).get();
-        PsiElementFinder element = finders.stream().filter( e -> e.getClass() == ManTypeFinder.class ).findFirst().orElse( null );
-        if( element == null )
-        {
-          throw new IllegalStateException( "Expecting to find ManTypeFinder" );
-        }
-        finders.remove( element );
-        finders.add( 0, element );
-
-//        MutablePicoContainer picoContainer = ((ComponentManagerImpl)_ijProject).getPicoContainer();
-//        picoContainer.unregisterComponent( JavaPsiFacade.class.getName() );
-//        picoContainer.registerComponentInstance( JavaPsiFacade.class.getName(), new ManJavaPsiFacade( facade ) );
-//        ReflectUtil.field( JavaPsiFacade.class, "INSTANCE_KEY" ).setStatic( ServiceManager.createLazyKey( JavaPsiFacade.class ) );
-      }
-    } );
-  }
+//  private void overrideGosuPluginHack()
+//  {
+//    ApplicationManager.getApplication().invokeLater( () -> {
+//      JavaPsiFacade facade = JavaPsiFacade.getInstance( _ijProject );
+//      if( facade.getClass().getTypeName().contains( "gosu" ) )
+//      {
+//        List<PsiElementFinder> finders = (List<PsiElementFinder>)ReflectUtil.field( facade, "myElementFindersOrdered" ).get();
+//        PsiElementFinder element = finders.stream().filter( e -> e.getClass() == ManTypeFinder.class ).findFirst().orElse( null );
+//        if( element == null )
+//        {
+//          throw new IllegalStateException( "Expecting to find ManTypeFinder" );
+//        }
+//        finders.remove( element );
+//        finders.add( 0, element );
+//
+////        MutablePicoContainer picoContainer = ((ComponentManagerImpl)_ijProject).getPicoContainer();
+////        picoContainer.unregisterComponent( JavaPsiFacade.class.getName() );
+////        picoContainer.registerComponentInstance( JavaPsiFacade.class.getName(), new ManJavaPsiFacade( facade ) );
+////        ReflectUtil.field( JavaPsiFacade.class, "INSTANCE_KEY" ).setStatic( ServiceManager.createLazyKey( JavaPsiFacade.class ) );
+//      }
+//    } );
+//  }
 
   private void addStaleClassCleaner()
   {

@@ -22,20 +22,28 @@ import com.intellij.psi.impl.light.LightModifierList;
 import com.intellij.psi.impl.light.LightParameterListBuilder;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.StringBuilderSpinAllocator;
+import manifold.ij.core.ManModule;
 import org.jetbrains.annotations.NotNull;
 
 /**
  */
 public class ManLightMethodBuilderImpl extends LightMethodBuilder implements ManLightMethodBuilder
 {
+  private ManModule _module;
   private LightIdentifier _nameIdentifier;
   private ASTNode _astNode;
 
-  public ManLightMethodBuilderImpl( PsiManager manager, String name )
+  public ManLightMethodBuilderImpl( ManModule manModule, PsiManager manager, String name )
   {
     super( manager, JavaLanguage.INSTANCE, name,
            new LightParameterListBuilder( manager, JavaLanguage.INSTANCE ), new ManLightModifierListImpl( manager, JavaLanguage.INSTANCE ) );
+    _module = manModule;
     _nameIdentifier = new LightIdentifier( manager, name );
+  }
+
+  public ManModule getModule()
+  {
+    return _module;
   }
 
   @Override
