@@ -29,7 +29,7 @@ allprojects {
       mavenLocal()
     }
     jcenter()
-    maven { url 'https://oss.jfrog.org/artifactory/libs-snapshot' }
+    mavenCentral()
   }
 
   apply plugin: 'java'
