@@ -201,40 +201,11 @@ public class ManProject
     addTypeRefreshListener();
     addModuleRefreshListener();
     addModuleClasspathListener();
-    //addStaleClassCleaner(); // no longer requires see ManChangedResourcesBuilder
+    //addStaleClassCleaner(); // no longer required see ManChangedResourcesBuilder
     addCompilerArgs();
-    //overrideGosuPluginHack();
   }
 
-  /**
-   * If running with the Gosu IJ plugin we have to contend with the plugin's peculiar JavaPsiFacadeWrapper, which
-   * overrides IJ's standard JavaPsiFacadeImpl.  We have to make sure Manifold's ManTypeFinder appears first (as
-   * it is configured to be in plugin.xml), but the Gosu Wrapper ignores our config so that our finder is no longer
-   * first, hence this hack.
-   */
-//  private void overrideGosuPluginHack()
-//  {
-//    ApplicationManager.getApplication().invokeLater( () -> {
-//      JavaPsiFacade facade = JavaPsiFacade.getInstance( _ijProject );
-//      if( facade.getClass().getTypeName().contains( "gosu" ) )
-//      {
-//        List<PsiElementFinder> finders = (List<PsiElementFinder>)ReflectUtil.field( facade, "myElementFindersOrdered" ).get();
-//        PsiElementFinder element = finders.stream().filter( e -> e.getClass() == ManTypeFinder.class ).findFirst().orElse( null );
-//        if( element == null )
-//        {
-//          throw new IllegalStateException( "Expecting to find ManTypeFinder" );
-//        }
-//        finders.remove( element );
-//        finders.add( 0, element );
-//
-////        MutablePicoContainer picoContainer = ((ComponentManagerImpl)_ijProject).getPicoContainer();
-////        picoContainer.unregisterComponent( JavaPsiFacade.class.getName() );
-////        picoContainer.registerComponentInstance( JavaPsiFacade.class.getName(), new ManJavaPsiFacade( facade ) );
-////        ReflectUtil.field( JavaPsiFacade.class, "INSTANCE_KEY" ).setStatic( ServiceManager.createLazyKey( JavaPsiFacade.class ) );
-//      }
-//    } );
-//  }
-
+  // no longer required see ManChangedResourcesBuilder
   private void addStaleClassCleaner()
   {
     MessageBusConnection connection = _ijProject.getMessageBus().connect( _ijProject );
@@ -246,40 +217,73 @@ public class ManProject
     JpsJavaCompilerOptions javacOptions = JavacConfiguration.getOptions( _ijProject, JavacConfiguration.class );
     String options = javacOptions.ADDITIONAL_OPTIONS_STRING;
     options = options == null ? "" : options;
-    if( !options.contains( XPLUGIN_MANIFOLD ) && !options.contains( XPLUGIN_MANIFOLD_WITH_QUOTES )  )
+    if( !options.contains( XPLUGIN_MANIFOLD ) && !options.contains( XPLUGIN_MANIFOLD_WITH_QUOTES ) || options.contains( "Manifold static" ) )
     {
-      options = XPLUGIN_MANIFOLD_WITH_QUOTES+ " strings\" " + maybeGetProcessorPath() + (options.isEmpty() ? "" : " ") + options;
+      options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings\" " + maybeGetProcessorPath();
     }
-    else if( findJdkVersion() >= 9 && !options.contains( "-processorpath" ) )
+    else if( findJdkVersion() >= 9 && (!options.contains( "-processorpath" ) || !hasCorrectManifoldJars( options )) )
     {
-      options = maybeGetProcessorPath() + ((options.isEmpty() || options.startsWith( " " )) ? "" : " ") + options;
+      options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings\" " + maybeGetProcessorPath();
     }
     javacOptions.ADDITIONAL_OPTIONS_STRING = options;
+  }
+
+  private boolean hasCorrectManifoldJars( String options )
+  {
+    for( String manJarPath: getManifoldJarsInProject() )
+    {
+      if( !options.contains( manJarPath ) )
+      {
+        return false;
+      }
+    }
+    return true;
   }
 
   private String maybeGetProcessorPath()
   {
     int jdkVersion = findJdkVersion();
+    StringBuilder processorPath = new StringBuilder();
     if( jdkVersion >= 9 )
     {
-      PathsList pathsList = ProjectRootManager.getInstance( _ijProject ).orderEntries().withoutSdk().librariesOnly().getPathsList();
-      for( VirtualFile path: pathsList.getVirtualFiles() )
+      List<String> manifoldJarsInProject = getManifoldJarsInProject();
+      for( String path: manifoldJarsInProject )
       {
-        String extension = path.getExtension();
-        if( extension != null && extension.equals( "jar" ) && path.getNameWithoutExtension().contains( "manifold-" ) )
+        if( processorPath.length() == 0 )
         {
-          try
-          {
-            return " -processorpath " + new File( new URL( path.getUrl() ).getFile() ).getAbsolutePath() ;
-          }
-          catch( MalformedURLException e )
-          {
-            return "";
-          }
+          processorPath.append( " -processorpath " );
+        }
+        else
+        {
+          processorPath.append( File.pathSeparatorChar );
+        }
+        processorPath.append( path );
+      }
+    }
+    return processorPath.toString();
+  }
+
+  private List<String> getManifoldJarsInProject()
+  {
+    List<String> result = new ArrayList<>();
+    PathsList pathsList = ProjectRootManager.getInstance( _ijProject ).orderEntries().withoutSdk().librariesOnly().getPathsList();
+    for( VirtualFile path: pathsList.getVirtualFiles() )
+    {
+      String extension = path.getExtension();
+      if( extension != null && extension.equals( "jar" ) && path.getNameWithoutExtension().contains( "manifold-" ) )
+      {
+        try
+        {
+          result.add( new File( new URL( path.getUrl() ).getFile() ).getAbsolutePath() );
+        }
+        catch( MalformedURLException e )
+        {
+          //## todo: log
+          e.printStackTrace();
         }
       }
     }
-    return "";
+    return result;
   }
 
   private int findJdkVersion()
@@ -292,8 +296,10 @@ public class ManProject
 
     // expected format:
     // 'java version "1.8.1"'
+    // 'java version "8"'
     // 'java version "9.0.1"'
     // 'java version "10.0.1"'
+    // 'java version "11"'
     // etc.
     String version = projectSdk.getVersionString();
     int iQuote = version.indexOf( '"' );
@@ -302,21 +308,21 @@ public class ManProject
       return -1;
     }
 
-    String verNum = version.substring( iQuote+1 );
-    int iDot = verNum.indexOf( '.' );
-    if( iDot < 0 )
+    String majorVer = version.substring( iQuote+1 );
+    int iStop = majorVer.indexOf( '.' );
+    if( iStop < 0 )
     {
-      return -1;
+      iStop = majorVer.indexOf( '"' );
     }
 
-    verNum = verNum.substring( 0, iDot );
-    if( verNum.equals( "1" ) )
+    majorVer = majorVer.substring( 0, iStop );
+    if( majorVer.equals( "1" ) )
     {
       return 8;
     }
     else
     {
-      return Integer.parseInt( verNum );
+      return Integer.parseInt( majorVer );
     }
   }
 
