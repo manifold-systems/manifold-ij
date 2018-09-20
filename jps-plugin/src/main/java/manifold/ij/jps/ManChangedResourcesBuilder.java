@@ -61,9 +61,10 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
         FSOperations.markDeleted( context, tempMainClass );
         FSOperations.markDeleted( context, tempMainClass.getParentFile() );
       }
-      catch( IOException ignore )
+      catch( Throwable ignore )
       {
       }
+
       //noinspection ResultOfMethodCallIgnored
       tempMainClass.delete();
       //noinspection ResultOfMethodCallIgnored
@@ -123,6 +124,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
     }
     catch( Exception e )
     {
+      deleteTempMainSourceClasses( context );
       throw new ProjectBuildException( e.getMessage(), e );
     }
   }
@@ -182,10 +184,12 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
 
       // generate file in '_temp_' package, Java 9 modular projects do not support the default/empty package
       File sourceRoot = new File( jpsSourceRoot.getFile(), "_temp_" );
+      //noinspection ResultOfMethodCallIgnored
       sourceRoot.mkdir();
 
       index++;
       File tempMainClass = new File( sourceRoot, manifold_temp_main_ + index + ".java" );
+      tempMainClass.deleteOnExit(); // in case the compiler exits abnormally
       try
       {
         //noinspection ResultOfMethodCallIgnored
