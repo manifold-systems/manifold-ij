@@ -73,7 +73,7 @@ public class ManTypeFinder extends PsiElementFinder
   {
     //System.out.println( "findClass() : " + fqn + " : " + globalSearchScope );
 
-    if( DumbService.getInstance( globalSearchScope.getProject() ).isDumb() )
+    if( globalSearchScope.getProject() == null || DumbService.getInstance( globalSearchScope.getProject() ).isDumb() )
     {
       // skip processing during index rebuild
       return null;
