@@ -433,6 +433,7 @@ public class ResourceToManifoldUtil
   {
     return featureName.equals( elemName ) ||
            (declaringClass != null &&
+            elemName != null &&
             (featureName.equals( declaringClass.getQualifiedName() + '.' + elemName ) ||
              elemName.endsWith( '.' + featureName ) ||
              isSame( declaringClass.getContainingClass(), elemName, featureName )));

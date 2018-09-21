@@ -57,7 +57,7 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
   @NotNull
   public TokenSet getWhitespaceTokens()
   {
-    return ElementType.JAVA_WHITESPACE_BIT_SET;
+    return ElementType.JAVA_COMMENT_OR_WHITESPACE_BIT_SET;
   }
 
   @Override
@@ -91,12 +91,6 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
   public PsiFile createFile( FileViewProvider viewProvider )
   {
     return new ManTemplateJavaFile( viewProvider );
-  }
-
-  @Override
-  public SpaceRequirements spaceExistanceTypeBetweenTokens( ASTNode left, ASTNode right )
-  {
-    return SpaceRequirements.MAY;
   }
 
   public static class ManTemplateJavaFileElementType extends IFileElementType

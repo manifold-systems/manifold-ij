@@ -2,7 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.util.concurrent.TimeUnit
 
 plugins {
-  id 'org.jetbrains.intellij' version '0.2.17'
+  id 'org.jetbrains.intellij' version '0.3.11'
 }
 
 description = 'Manifold :: IJ'
@@ -72,7 +72,7 @@ String getIjVersion() {
 intellij {
   pluginName project.name
   version getIjVersion() // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
-  plugins = ['ASM Bytecode Outline:0.3.5', 'Psi Viewer:3.28.93'] //include ASM & PsiViewer in sandbox
+  //plugins = ['Psi Viewer:3.28.93'] //include ASM & PsiViewer in sandbox
 }
 
 runIde {
@@ -81,7 +81,7 @@ runIde {
 }
 
 patchPluginXml {
-  sinceBuild '141.1010'
+  sinceBuild '182.0000.0'
   untilBuild '999.*'
 }
 

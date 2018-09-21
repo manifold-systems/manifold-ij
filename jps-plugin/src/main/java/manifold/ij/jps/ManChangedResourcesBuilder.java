@@ -186,6 +186,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
       File sourceRoot = new File( jpsSourceRoot.getFile(), "_temp_" );
       //noinspection ResultOfMethodCallIgnored
       sourceRoot.mkdir();
+      sourceRoot.deleteOnExit(); // in case the compiler exits abnormally
 
       index++;
       File tempMainClass = new File( sourceRoot, manifold_temp_main_ + index + ".java" );

@@ -39,7 +39,12 @@ public class ManJavaCompletionContributor extends CompletionContributor
     private Module findModule( CompletionParameters parameters )
     {
       PsiElement position = parameters.getPosition();
-      return ModuleUtil.findModuleForPsiElement( position.getParent() );
+      Module module = ModuleUtil.findModuleForPsiElement( position.getParent() );
+      if( module == null )
+      {
+        module = ModuleUtil.findModuleForPsiElement( position );
+      }
+      return module;
     }
 
     @Override
@@ -54,6 +59,11 @@ public class ManJavaCompletionContributor extends CompletionContributor
 
     private boolean exclude( LookupElement lookupElement )
     {
+      if( _module == null )
+      {
+        return false;
+      }
+
       PsiElement psiElem = lookupElement.getPsiElement();
       if( psiElem instanceof ManLightMethodBuilder )
       {

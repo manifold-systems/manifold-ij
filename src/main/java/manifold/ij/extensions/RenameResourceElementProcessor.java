@@ -265,7 +265,9 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
 
     //## find a way to add this as part of the overall rename Undo?
 
-    ApplicationManager.getApplication().saveAll();
+    ApplicationManager.getApplication().invokeLater( () ->
+      ApplicationManager.getApplication().saveAll()
+    );
 
     ApplicationManager.getApplication().invokeLater( () ->
                                                        WriteCommandAction.runWriteCommandAction( element.getProject(), () ->

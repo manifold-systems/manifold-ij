@@ -21,7 +21,6 @@ import com.intellij.psi.impl.light.LightMethodBuilder;
 import com.intellij.psi.impl.light.LightModifierList;
 import com.intellij.psi.impl.light.LightParameterListBuilder;
 import com.intellij.util.IncorrectOperationException;
-import com.intellij.util.StringBuilderSpinAllocator;
 import manifold.ij.core.ManModule;
 import org.jetbrains.annotations.NotNull;
 
@@ -146,55 +145,41 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
 
   private PsiMethod rebuildMethodFromString()
   {
-    final StringBuilder builder = StringBuilderSpinAllocator.alloc();
-    try
+    final StringBuilder builder = new StringBuilder();
+    builder.append( getAllModifierProperties( (LightModifierList)getModifierList() ) );
+    PsiType returnType = getReturnType();
+    if( null != returnType )
     {
-      builder.append( getAllModifierProperties( (LightModifierList)getModifierList() ) );
-      PsiType returnType = getReturnType();
-      if( null != returnType )
+      builder.append( returnType.getCanonicalText() ).append( ' ' );
+    }
+    builder.append( getName() );
+    builder.append( '(' );
+    if( getParameterList().getParametersCount() > 0 )
+    {
+      for( PsiParameter parameter : getParameterList().getParameters() )
       {
-        builder.append( returnType.getCanonicalText() ).append( ' ' );
+        builder.append( parameter.getType().getCanonicalText() ).append( ' ' ).append( parameter.getName() ).append( ',' );
       }
-      builder.append( getName() );
-      builder.append( '(' );
-      if( getParameterList().getParametersCount() > 0 )
-      {
-        for( PsiParameter parameter : getParameterList().getParameters() )
-        {
-          builder.append( parameter.getType().getCanonicalText() ).append( ' ' ).append( parameter.getName() ).append( ',' );
-        }
-        builder.deleteCharAt( builder.length() - 1 );
-      }
-      builder.append( ')' );
-      builder.append( '{' ).append( "  " ).append( '}' );
+      builder.deleteCharAt( builder.length() - 1 );
+    }
+    builder.append( ')' );
+    builder.append( '{' ).append( "  " ).append( '}' );
 
-      PsiElementFactory elementFactory = JavaPsiFacade.getInstance( getManager().getProject() ).getElementFactory();
-      return elementFactory.createMethodFromText( builder.toString(), getContainingClass() );
-    }
-    finally
-    {
-      StringBuilderSpinAllocator.dispose( builder );
-    }
+    PsiElementFactory elementFactory = JavaPsiFacade.getInstance( getManager().getProject() ).getElementFactory();
+    return elementFactory.createMethodFromText( builder.toString(), getContainingClass() );
   }
 
   public String getAllModifierProperties( LightModifierList modifierList )
   {
-    final StringBuilder builder = StringBuilderSpinAllocator.alloc();
-    try
+    final StringBuilder builder = new StringBuilder();
+    for( String modifier : modifierList.getModifiers() )
     {
-      for( String modifier : modifierList.getModifiers() )
+      if( !PsiModifier.PACKAGE_LOCAL.equals( modifier ) )
       {
-        if( !PsiModifier.PACKAGE_LOCAL.equals( modifier ) )
-        {
-          builder.append( modifier ).append( ' ' );
-        }
+        builder.append( modifier ).append( ' ' );
       }
-      return builder.toString();
     }
-    finally
-    {
-      StringBuilderSpinAllocator.dispose( builder );
-    }
+    return builder.toString();
   }
 
   public PsiElement copy()

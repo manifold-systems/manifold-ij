@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "additionalProperties": false,
   "properties": {
-    "<caret>nc:Vehicle": {
+    <caret>"nc:Vehicle": {
       "description": "A conveyance designed to carry an operator, passengers and/or cargo, over land.",
       "oneOf": [
         {

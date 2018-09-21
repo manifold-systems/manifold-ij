@@ -35,6 +35,7 @@ import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.util.cache.FqnCache;
 import manifold.util.cache.FqnCacheNode;
+import manifold.util.cache.IllegalTypeNameException;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -102,6 +103,11 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
         try
         {
           node = createPrimaryType( module, fqn, map );
+        }
+        catch( IllegalTypeNameException itne )
+        {
+          // Handle the case where IntelliJ tries to resolve something untype-like
+          node = null;
         }
         catch( ConflictingTypeManifoldsException e )
         {

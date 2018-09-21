@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
 {
   @Override
-  public void processQuery( @NotNull MethodReferencesSearch.SearchParameters p, @NotNull Processor<PsiReference> consumer )
+  public void processQuery( @NotNull final MethodReferencesSearch.SearchParameters p, @NotNull final Processor<? super PsiReference> consumer )
   {
     SearchScope searchScope = p.getScopeDeterminedByUser();
     if( !(searchScope instanceof GlobalSearchScope) )

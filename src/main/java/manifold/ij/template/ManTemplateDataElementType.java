@@ -36,7 +36,7 @@ public class ManTemplateDataElementType extends TemplateDataElementType
   }
 
   @Override
-  protected CharSequence createTemplateText( @NotNull CharSequence sourceCode, @NotNull Lexer baseLexer, @NotNull RangesCollector outerRangesCollector )
+  protected CharSequence createTemplateText( @NotNull CharSequence sourceCode, @NotNull Lexer baseLexer, @NotNull RangeCollector outerRangesCollector )
   {
     throw new IllegalStateException( "Should be calling private createTemplateText overload instead" );
   }
@@ -49,7 +49,7 @@ public class ManTemplateDataElementType extends TemplateDataElementType
 
   private CharSequence createTemplateText( @NotNull CharSequence sourceCode,
                                            @NotNull Lexer baseLexer,
-                                           @NotNull RangesCollector outerRangesCollector,
+                                           @NotNull RangeCollector outerRangesCollector,
                                            List<Integer> expressionOffsets,
                                            List<Integer> statementOffsets,
                                            List<Integer> directiveOffsets )
@@ -69,7 +69,7 @@ public class ManTemplateDataElementType extends TemplateDataElementType
       if( tokenType == STMT || tokenType == EXPR || tokenType == DIRECTIVE )
       {
         int offset = result.length();
-        appendCurrentTemplateToken( result, sourceCode, baseLexer );
+        appendCurrentTemplateToken( result, sourceCode, baseLexer, outerRangesCollector );
         if( tokenType == EXPR )
         {
           expressionOffsets.add( offsetNoWhitespace( result, offset ) );
@@ -85,7 +85,7 @@ public class ManTemplateDataElementType extends TemplateDataElementType
       }
       else
       {
-        outerRangesCollector.addRange( currentRange );
+        outerRangesCollector.addOuterRange( currentRange );
       }
       baseLexer.advance();
     }
@@ -106,7 +106,7 @@ public class ManTemplateDataElementType extends TemplateDataElementType
                                         final Language templateLanguage,
                                         final CharSequence sourceCode,
                                         final TemplateLanguageFileViewProvider viewProvider,
-                                        @NotNull RangesCollector outerRangesCollector )
+                                        @NotNull RangeCollector outerRangesCollector )
   {
     List<Integer> expressionOffsets = new ArrayList<>();
     List<Integer> statementOffsets = new ArrayList<>();

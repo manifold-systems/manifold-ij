@@ -7,6 +7,8 @@ package manifold.ij.fs;
 import com.google.common.collect.Maps;
 import com.intellij.openapi.vfs.JarFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.impl.http.HttpVirtualFile;
+import com.intellij.openapi.vfs.impl.http.RemoteFileInfo;
 import com.intellij.openapi.vfs.impl.jar.JarFileSystemImpl;
 import com.intellij.openapi.vfs.impl.local.LocalFileSystemImpl;
 import java.io.File;
@@ -92,6 +94,15 @@ public class IjFileSystem extends BaseService implements IFileSystem
 
   public IjFile getIFile( VirtualFile file )
   {
+    if( file instanceof HttpVirtualFile )
+    {
+      RemoteFileInfo fileInfo = ((HttpVirtualFile)file).getFileInfo();
+      if( fileInfo != null && fileInfo.getLocalFile() != null )
+      {
+        return getIFile( fileInfo.getLocalFile() );
+      }
+    }
+
     return new IjFile( this, file );
   }
 

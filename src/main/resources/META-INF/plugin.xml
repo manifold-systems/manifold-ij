@@ -51,6 +51,8 @@
 
     <!--<projectService serviceInterface="com.intellij.psi.impl.ResolveScopeManager"-->
                     <!--serviceImplementation="manifold.ij.extensions.ManResolveScopeManagerImpl" overrides="true"/>-->
+    <projectService serviceInterface="com.intellij.psi.search.PsiSearchHelper"
+                    serviceImplementation="manifold.ij.extensions.ManPsiSearchHelperImpl" overrides="true"/>
 
     <!--<library.type implementation="manifold.ij.extensions.ManLibraryType"/>-->
     <frameworkSupport implementation="manifold.ij.extensions.ManSupportProvider"/>
