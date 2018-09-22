@@ -23,6 +23,7 @@ import com.intellij.psi.impl.light.LightClass;
 import com.intellij.psi.util.ClassUtil;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import javax.swing.Icon;
 import javax.tools.DiagnosticCollector;
 import manifold.api.fs.IFile;
@@ -184,5 +185,28 @@ public class ManifoldPsiClass extends LightClass
   public DiagnosticCollector getIssues()
   {
     return _issues;
+  }
+
+  @Override
+  public boolean isEquivalentTo( PsiElement another )
+  {
+    if( this == another )
+    {
+      return true;
+    }
+    
+    if( !(another instanceof ManifoldPsiClass) )
+    {
+      return false;
+    }
+
+    if( getModule() != ((ManifoldPsiClass)another).getModule() )
+    {
+      return false;
+    }
+
+    String thisFqn = getQualifiedName();
+    String thatFqn = ((ManifoldPsiClass)another).getQualifiedName();
+    return Objects.equals( thisFqn, thatFqn );
   }
 }
