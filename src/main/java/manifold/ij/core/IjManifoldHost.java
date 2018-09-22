@@ -10,10 +10,6 @@ import manifold.internal.host.DefaultManifoldHost;
  */
 public class IjManifoldHost extends DefaultManifoldHost
 {
-  /** this is exclusively for hotspot compilation where we compile (in process)
-   * modified resource files and therefore need a current module :( */
-  private final ThreadLocal<ManModule> _currentModule = new ThreadLocal<>();
-
   @Override
   public boolean isBootstrapped()
   {
@@ -36,7 +32,7 @@ public class IjManifoldHost extends DefaultManifoldHost
 
   private void addToAllProjectsWithWarning( ITypeLoaderListener listener )
   {
-    System.out.println( "Information: Null ctx, adding listener to ALL projects." );
+    // System.out.println( "Information: Null ctx, adding listener to ALL projects." );
     for( ManProject p : ManProject.getAllProjects() )
     {
       p.getFileModificationManager().getManRefresher().addTypeLoaderListenerAsWeakRef( listener );
@@ -67,17 +63,5 @@ public class IjManifoldHost extends DefaultManifoldHost
       throw new IllegalArgumentException( "Context is invalid: " + ctx );
     }
     return manProject;
-  }
-
-  @Override
-  public ManModule getCurrentModule()
-  {
-    return _currentModule.get();
-  }
-  public ManModule setCurrentModule( ManModule module )
-  {
-    ManModule old = getCurrentModule();
-    _currentModule.set( module );
-    return old;
   }
 }

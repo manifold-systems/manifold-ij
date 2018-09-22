@@ -265,6 +265,9 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
   private PsiClass createPsiClass( ManModule module, String fqn, String source )
   {
+    //System.out.println( "NEW: " + fqn + "  MODULE: " + module.getName() );
+    ////new Exception().fillInStackTrace().printStackTrace();
+
     PsiManager manager = PsiManagerImpl.getInstance( module.getIjProject() );
     final PsiJavaFile aFile = createDummyJavaFile( fqn, manager, source );
     final PsiClass[] classes = aFile.getClasses();
