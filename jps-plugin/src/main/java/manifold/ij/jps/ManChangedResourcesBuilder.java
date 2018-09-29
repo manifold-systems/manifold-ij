@@ -7,10 +7,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.builders.BuildOutputConsumer;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
 import org.jetbrains.jps.builders.impl.BuildOutputConsumerImpl;
@@ -24,31 +27,41 @@ import org.jetbrains.jps.incremental.fs.CompilationRound;
 import org.jetbrains.jps.incremental.messages.ProgressMessage;
 import org.jetbrains.jps.incremental.resources.ResourcesBuilder;
 import org.jetbrains.jps.model.JpsTypedElement;
+import org.jetbrains.jps.model.java.JavaResourceRootType;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.module.JpsModuleSourceRoot;
 
+/**
+ * The sequence of events for a build:
+ *
+ * - buildStarted()
+ * --- foreach module (test) call build()
+ * --- foreach module (production) call build()
+ * --- foreach module call javac
+ * - buildFinished()
+ */
 public class ManChangedResourcesBuilder extends ResourcesBuilder
 {
-  private BuildOutputConsumerImpl _oc;
-  private ResourcesTarget _target;
   private List<File> _tempMainClasses;
+  private Map<File, Data> _fileToData;
 
   @Override
   public void buildStarted( CompileContext context )
   {
     super.buildStarted( context );
-    IjIncrementalCompileDriver.FILES = new ArrayList<>();
+    _tempMainClasses = new ArrayList<>();
+     _fileToData = new ConcurrentHashMap<>();
   }
 
   public void buildFinished( CompileContext context )
   {
-    if( _tempMainClasses != null )
+    if( !_tempMainClasses.isEmpty() )
     {
       deleteTempMainSourceClasses( context );
 
       registerClasses();
 
-      _tempMainClasses = null;
+      IjIncrementalCompileDriver.INSTANCES.set( null );
     }
   }
 
@@ -90,9 +103,9 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
       Map<ResourceRootDescriptor, Boolean> skippedRoots = new HashMap<>();
       holder.processDirtyFiles( ( target_, file, sourceRoot ) -> {
         Boolean isSkipped = skippedRoots.get( sourceRoot );
+        File outputDir = target_.getOutputDir();
         if( isSkipped == null )
         {
-          File outputDir = target_.getOutputDir();
           isSkipped = outputDir == null || FileUtil.filesEqual( outputDir, sourceRoot.getRootFile() );
           skippedRoots.put( sourceRoot, isSkipped );
         }
@@ -102,16 +115,19 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
         }
 
         changedFiles.add( file );
+        _fileToData.put( file, new Data( (BuildOutputConsumerImpl)outputConsumer, target ) );
         return !context.getCancelStatus().isCanceled();
       } );
 
 
       if( !changedFiles.isEmpty() )
       {
-        IjIncrementalCompileDriver.FILES.addAll( changedFiles );
         _tempMainClasses = makeTempMainClasses( context, target );
-        _oc = (BuildOutputConsumerImpl)outputConsumer;
-        _target = target;
+        if( !_tempMainClasses.isEmpty() )
+        {
+          IjIncrementalCompileDriver driver = IjIncrementalCompileDriver.INSTANCES.get().get( _tempMainClasses.iterator().next().getAbsolutePath() );
+          driver.getResourceFiles().addAll( changedFiles );
+        }
       }
 
       context.checkCanceled();
@@ -129,37 +145,71 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
     }
   }
 
+  static class Data
+  {
+    BuildOutputConsumerImpl _oc;
+    ResourcesTarget _target;
+
+    public Data( BuildOutputConsumerImpl oc, ResourcesTarget target )
+    {
+      _oc = oc;
+      _target = target;
+    }
+  }
+
+  @Nullable
+  private File useOutputFile( File file, ResourceRootDescriptor sourceRoot, File outputDir )
+  {
+    String relativePath = FileUtil.getRelativePath( sourceRoot.getRootFile(), file );
+    if( relativePath != null && outputDir != null )
+    {
+      File copiedFile = new File( outputDir, relativePath );
+      if( copiedFile.isFile() )
+      {
+        file = copiedFile;
+      }
+    }
+    return file;
+  }
+
   private void registerClasses()
   {
-    if( IjIncrementalCompileDriver.INSTANCE == null )
+    if( IjIncrementalCompileDriver.INSTANCES.get().isEmpty() )
     {
       return;
     }
 
-    Map<File, Set<String>> typesToFile = IjIncrementalCompileDriver.INSTANCE.getTypesToFile();
-    for( Map.Entry<File, Set<String>> entry : typesToFile.entrySet() )
+    Set<BuildOutputConsumerImpl> ocs = new LinkedHashSet<>();
+    for( IjIncrementalCompileDriver instance: IjIncrementalCompileDriver.INSTANCES.get().values() )
     {
-      Set<String> types = entry.getValue();
-      for( String fqn : types )
+      Map<File, Set<String>> typesToFile = instance.getTypesToFile();
+      for( Map.Entry<File, Set<String>> entry : typesToFile.entrySet() )
       {
-        try
+        Set<String> types = entry.getValue();
+        for( String fqn : types )
         {
-          File classFile = findClassFile( fqn, _target.getOutputDir() );
-          if( classFile != null )
+          try
           {
             File resourceFile = entry.getKey();
-            _oc.registerOutputFile( classFile, Collections.singleton( resourceFile.getPath() ) );
+            Data data = _fileToData.get( resourceFile );
+
+            File classFile = findClassFile( fqn, data._target.getOutputDir() );
+            if( classFile != null )
+            {
+              data._oc.registerOutputFile( classFile, Collections.singleton( resourceFile.getPath() ) );
+              ocs.add( data._oc );
+            }
           }
-        }
-        catch( IOException e )
-        {
-          throw new RuntimeException( e );
+          catch( IOException e )
+          {
+            throw new RuntimeException( e );
+          }
         }
       }
     }
 
     // Send FileGeneratedEvent for the changed class files (for hot swap debugging)
-    _oc.fireFileGeneratedEvent();
+    ocs.forEach( BuildOutputConsumerImpl::fireFileGeneratedEvent );
   }
 
   private File findClassFile( String fqn, File outputPath )
@@ -173,6 +223,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
   {
     String manifold_temp_main_ = "_Manifold_Temp_Main_";
 
+    List<File> resourceRoots = getResourceRoots( context, target );
     List<File> tempMainClasses = new ArrayList<>();
     int index = 0;
     for( JpsModuleSourceRoot jpsSourceRoot : target.getModule().getSourceRoots() )
@@ -193,6 +244,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
       tempMainClass.deleteOnExit(); // in case the compiler exits abnormally
       try
       {
+        IjIncrementalCompileDriver driver = new IjIncrementalCompileDriver();
         //noinspection ResultOfMethodCallIgnored
         tempMainClass.createNewFile();
         FileWriter writer = new FileWriter( tempMainClass );
@@ -202,7 +254,9 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
           "\n" +
           "import manifold.api.type.IncrementalCompile;\n" +
           "\n" +
-          "@IncrementalCompile( driverClass = \"manifold.ij.jps.IjIncrementalCompileDriver\" )\n" +
+          addResourceRoots( resourceRoots ) +
+          "@IncrementalCompile( driverClass = \"manifold.ij.jps.IjIncrementalCompileDriver\",\n" +
+          "                     driverInstance = " + System.identityHashCode( driver ) + " )\n" +
           "public class " + manifold_temp_main_ + index + "\n" +
           "{\n" +
           "}\n"
@@ -210,6 +264,15 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
         writer.flush();
         writer.close();
         FSOperations.markDirty( context, CompilationRound.CURRENT, tempMainClass );
+        if( tempMainClasses.isEmpty() )
+        {
+          Map<String, IjIncrementalCompileDriver> drivers = IjIncrementalCompileDriver.INSTANCES.get();
+          if( drivers == null )
+          {
+            IjIncrementalCompileDriver.INSTANCES.set( drivers = new HashMap<>() );
+          }
+          drivers.put( tempMainClass.getAbsolutePath(), driver );
+        }
         tempMainClasses.add( tempMainClass );
       }
       catch( IOException e )
@@ -218,5 +281,45 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
       }
     }
     return tempMainClasses;
+  }
+
+  private String addResourceRoots( List<File> resourceRoots )
+  {
+    if( resourceRoots.isEmpty() )
+    {
+      return "";
+    }
+
+    StringBuilder sb = new StringBuilder();
+    for( File file: resourceRoots )
+    {
+      if( sb.length() > 0 )
+      {
+        sb.append( File.pathSeparator );
+      }
+      sb.append( file.getAbsolutePath() );
+    }
+    sb.insert( 0, "//## ResourceRoots: " );
+    sb.append( "\n" );
+    return sb.toString();
+  }
+
+  private List<File> getResourceRoots( CompileContext context, ResourcesTarget target )
+  {
+    List<File> resourceRoots = new ArrayList<>();
+    for( JpsModuleSourceRoot jpsSourceRoot : target.getModule().getSourceRoots() )
+    {
+      if( !(jpsSourceRoot instanceof JpsTypedElement) || !(((JpsTypedElement)jpsSourceRoot).getType() instanceof JavaResourceRootType) )
+      {
+        continue;
+      }
+
+      File resourceRoot = jpsSourceRoot.getFile();
+      if( resourceRoot.isDirectory() )
+      {
+        resourceRoots.add( resourceRoot );
+      }
+    }
+    return resourceRoots;
   }
 }

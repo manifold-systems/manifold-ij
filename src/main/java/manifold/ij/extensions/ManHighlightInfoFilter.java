@@ -3,6 +3,7 @@ package manifold.ij.extensions;
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.psi.JavaResolveResult;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
@@ -14,13 +15,16 @@ import com.intellij.psi.PsiJavaToken;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiParameter;
+import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeCastExpression;
 import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.impl.source.tree.java.PsiLocalVariableImpl;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiReferenceExpressionImpl;
+import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.util.PsiUtil;
+import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,6 +55,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return true;
     }
 
+    if( filterAmbiguousMethods( hi, firstElem ) )
+    {
+      return false;
+    }
+
     PsiElement elem = firstElem.getParent();
     if( elem == null )
     {
@@ -64,14 +73,22 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
     if( isInvalidStaticMethodOnInterface( hi ) )
     {
-      PsiElement lhsType = ((PsiReferenceExpressionImpl)((PsiMethodCallExpressionImpl)elem.getParent()).getMethodExpression().getQualifierExpression()).resolve();
+      PsiElement parent = elem.getParent();
+      if( !(parent instanceof PsiMethodCallExpressionImpl) )
+      {
+        return true;
+      }
+      PsiMethodCallExpressionImpl methodCall = (PsiMethodCallExpressionImpl)parent;
+      PsiReferenceExpressionImpl qualifierExpression = (PsiReferenceExpressionImpl)methodCall.getMethodExpression().getQualifierExpression();
+      PsiElement lhsType = qualifierExpression == null ? null : qualifierExpression.resolve();
       if( lhsType instanceof ManifoldPsiClass )
       {
-        PsiMethod psiMethod = ((PsiMethodCallExpressionImpl)elem.getParent()).resolveMethod();
-        if( psiMethod.getContainingClass().isInterface() )
+        PsiMethod psiMethod = methodCall.resolveMethod();
+        if( psiMethod != null )
         {
-          // ignore "Static method may be invoked on containing interface class only" errors where the method really is directly on a the interface, albeit the delegate
-          return false;
+          // ignore "Static method may be invoked on containing interface class only" errors
+          // where the method really is directly on the interface, albeit the delegate
+          return !psiMethod.getContainingClass().isInterface();
         }
       }
       return true;
@@ -84,6 +101,38 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     if( x != null ) return x;
 
     return true;
+  }
+
+  private boolean filterAmbiguousMethods( HighlightInfo hi, PsiElement elem )
+  {
+    if( !hi.getDescription().startsWith( "Ambiguous method call" ) )
+    {
+      return false;
+    }
+
+    while( !(elem instanceof PsiMethodCallExpression) )
+    {
+      elem = elem.getParent();
+      if( elem == null )
+      {
+        return false;
+      }
+    }
+
+    PsiReferenceExpression methodExpression = ((PsiMethodCallExpression)elem).getMethodExpression();
+    JavaResolveResult[] javaResolveResults = methodExpression.multiResolve( false );
+    for( JavaResolveResult result: javaResolveResults )
+    {
+      if( result instanceof MethodCandidateInfo )
+      {
+        PsiElement psiMethod = result.getElement();
+        if( psiMethod instanceof ManLightMethodBuilder )
+        {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private boolean filterIllegalEscapedCharDollars( @NotNull HighlightInfo hi, PsiElement firstElem, PsiElement elem )

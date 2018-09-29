@@ -55,7 +55,7 @@ public class ManShortNamesCache extends PsiShortNamesCache
         String simpleName = ClassUtil.extractClassName( fqn );
         if( simpleName.equals( name ) )
         {
-          PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( scope, module, fqn );
+          PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( module, fqn );
           if( psiClass == null )
           {
             return;

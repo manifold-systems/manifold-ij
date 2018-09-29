@@ -2,6 +2,7 @@ package manifold.ij.extensions;
 
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
+import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassOwner;
@@ -15,13 +16,14 @@ import java.util.Locale;
 import java.util.Set;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
+import org.jetbrains.annotations.NotNull;
 
 /**
  */
 public class ManifoldPsiClassAnnotator implements Annotator
 {
   @Override
-  public void annotate( PsiElement element, AnnotationHolder holder )
+  public void annotate( @NotNull PsiElement element, @NotNull AnnotationHolder holder )
   {
     if( element instanceof PsiFile )
     {
@@ -39,7 +41,9 @@ public class ManifoldPsiClassAnnotator implements Annotator
   {
     if( PsiErrorClassUtil.isErrorClass( psiClass ) && element instanceof PsiFileSystemItem )
     {
-      holder.createErrorAnnotation( new TextRange( 0, element.getContainingFile().getTextLength() ), PsiErrorClassUtil.getErrorFrom( psiClass ).getMessage() );
+      String message = PsiErrorClassUtil.getErrorFrom( psiClass ).getMessage();
+      String tooltip = makeTooltip( message );
+      holder.createAnnotation( HighlightSeverity.ERROR, new TextRange( 0, element.getContainingFile().getTextLength() ), message, tooltip );
       return;
     }
 
@@ -79,18 +83,20 @@ public class ManifoldPsiClassAnnotator implements Annotator
   private boolean createIssueOnTextRange( AnnotationHolder holder, Diagnostic issue )
   {
     TextRange range = new TextRange( (int)issue.getStartPosition(), (int)issue.getEndPosition() );
+    String message = makeMessage( issue );
+    String tooltip = makeTooltip( message );
     switch( issue.getKind() )
     {
       case ERROR:
-        holder.createErrorAnnotation( range, issue.getMessage( Locale.getDefault() ) );
+        holder.createAnnotation( HighlightSeverity.ERROR, range, message, tooltip );
         break;
       case WARNING:
       case MANDATORY_WARNING:
-        holder.createWarningAnnotation( range, issue.getMessage( Locale.getDefault() ) );
+        holder.createAnnotation( HighlightSeverity.WARNING, range, message, tooltip );
         break;
       case NOTE:
       case OTHER:
-        holder.createInfoAnnotation( range, issue.getMessage( Locale.getDefault() ) );
+        holder.createAnnotation( HighlightSeverity.INFORMATION, range, message, tooltip );
         break;
     }
     return true;
@@ -110,21 +116,35 @@ public class ManifoldPsiClassAnnotator implements Annotator
       return false;
     }
 
+    String message = makeMessage( issue );
+    String tooltip = makeTooltip( message );
     switch( issue.getKind() )
     {
       case ERROR:
-        holder.createErrorAnnotation( deepestElement, issue.getMessage( Locale.getDefault() ) );
+        holder.createAnnotation( HighlightSeverity.ERROR, deepestElement.getTextRange(), message, tooltip );
         break;
       case WARNING:
       case MANDATORY_WARNING:
-        holder.createWarningAnnotation( deepestElement, issue.getMessage( Locale.getDefault() ) );
+        holder.createAnnotation( HighlightSeverity.WARNING, deepestElement.getTextRange(), message, tooltip );
         break;
       case NOTE:
       case OTHER:
-        holder.createInfoAnnotation( deepestElement, issue.getMessage( Locale.getDefault() ) );
+        holder.createAnnotation( HighlightSeverity.INFORMATION, deepestElement.getTextRange(), message, tooltip );
         break;
     }
     return true;
+  }
+
+  @NotNull
+  private String makeMessage( Diagnostic issue )
+  {
+    return issue.getMessage( Locale.getDefault() );
+  }
+  @NotNull
+  private String makeTooltip( String message )
+  {
+    String manIcon = "<img src=\"" + getClass().getResource( "/manifold/ij/icons/manifold.png" ) + "\">";
+    return manIcon + "&nbsp;" + message;
   }
 
   public static PsiClass getContainingClass( PsiElement element )

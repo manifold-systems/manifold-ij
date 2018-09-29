@@ -9,8 +9,6 @@ import com.intellij.navigation.ItemPresentation;
 import com.intellij.navigation.ItemPresentationProviders;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
-import com.intellij.openapi.module.ModuleUtilCore;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.Navigatable;
@@ -23,10 +21,10 @@ import com.intellij.psi.impl.light.LightClass;
 import com.intellij.psi.util.ClassUtil;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import javax.swing.Icon;
 import javax.tools.DiagnosticCollector;
 import manifold.api.fs.IFile;
+import manifold.ij.core.ManModule;
 import manifold.ij.fs.IjFile;
 
 public class ManifoldPsiClass extends LightClass
@@ -36,19 +34,21 @@ public class ManifoldPsiClass extends LightClass
   private List<PsiFile> _files;
   private List<IFile> _ifiles;
   private String _fqn;
+  private ManModule _manModule;
   private DiagnosticCollector _issues;
 
-  public ManifoldPsiClass( PsiClass delegate, List<IFile> files, String fqn, DiagnosticCollector issues )
+  public ManifoldPsiClass( PsiClass delegate, ManModule module, List<IFile> files, String fqn, DiagnosticCollector issues )
   {
     super( delegate );
 
-    initialize( delegate, files, fqn, issues );
+    initialize( delegate, module, files, fqn, issues );
   }
 
-  public void initialize( PsiClass delegate, List<IFile> files, String fqn, DiagnosticCollector issues )
+  public void initialize( PsiClass delegate, ManModule manModule, List<IFile> files, String fqn, DiagnosticCollector issues )
   {
     _ifiles = files;
     _fqn = fqn;
+    _manModule = manModule;
     _issues = issues;
     PsiManager manager = PsiManagerImpl.getInstance( delegate.getProject() );
     _files = new ArrayList<>( _ifiles.size() );
@@ -59,12 +59,7 @@ public class ManifoldPsiClass extends LightClass
       {
         PsiFile file = manager.findFile( vfile );
         _files.add( file );
-
-        Module module = ModuleUtilCore.findModuleForFile( vfile, delegate.getProject() );
-        if( module != null )
-        {
-          file.putUserData( ModuleUtil.KEY_MODULE, module );
-        }
+        file.putUserData( ModuleUtil.KEY_MODULE, manModule.getIjModule() );
       }
     }
     delegate.getContainingFile().putUserData( KEY_MANIFOLD_PSI_CLASS, this );
@@ -173,40 +168,16 @@ public class ManifoldPsiClass extends LightClass
   @Override
   public PsiElement copy()
   {
-    return new ManifoldPsiClass( (PsiClass)getDelegate().copy(), _ifiles, _fqn, _issues );
+    return new ManifoldPsiClass( (PsiClass)getDelegate().copy(), _manModule, _ifiles, _fqn, _issues );
   }
 
   public Module getModule()
   {
-    return ProjectRootManager.getInstance( getProject() ).getFileIndex()
-      .getModuleForFile( getRawFiles().get( 0 ).getVirtualFile() );
+    return _manModule.getIjModule();
   }
 
   public DiagnosticCollector getIssues()
   {
     return _issues;
-  }
-
-  @Override
-  public boolean isEquivalentTo( PsiElement another )
-  {
-    if( this == another )
-    {
-      return true;
-    }
-    
-    if( !(another instanceof ManifoldPsiClass) )
-    {
-      return false;
-    }
-
-    if( getModule() != ((ManifoldPsiClass)another).getModule() )
-    {
-      return false;
-    }
-
-    String thisFqn = getQualifiedName();
-    String thatFqn = ((ManifoldPsiClass)another).getQualifiedName();
-    return Objects.equals( thisFqn, thatFqn );
   }
 }

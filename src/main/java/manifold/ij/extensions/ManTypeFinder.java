@@ -49,7 +49,8 @@ public class ManTypeFinder extends PsiElementFinder
   {
     //System.out.println( "PsiClass[] findClasses() : " + fqn + " : " + globalSearchScope );
 
-    if( DumbService.getInstance( globalSearchScope.getProject() ).isDumb() )
+    Project project = globalSearchScope.getProject();
+    if( project == null || DumbService.getInstance( project ).isDumb() )
     {
       // skip processing during index rebuild
       return PsiClass.EMPTY_ARRAY;
@@ -59,7 +60,7 @@ public class ManTypeFinder extends PsiElementFinder
     List<ManModule> modules = findModules( globalSearchScope );
     for( ManModule m : modules )
     {
-      PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( globalSearchScope, m, fqn );
+      PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( m, fqn );
       if( psiClass != null )
       {
         psiClasses.add( psiClass );
@@ -73,7 +74,8 @@ public class ManTypeFinder extends PsiElementFinder
   {
     //System.out.println( "findClass() : " + fqn + " : " + globalSearchScope );
 
-    if( globalSearchScope.getProject() == null || DumbService.getInstance( globalSearchScope.getProject() ).isDumb() )
+    Project project = globalSearchScope.getProject();
+    if( project == null || DumbService.getInstance( project ).isDumb() )
     {
       // skip processing during index rebuild
       return null;
@@ -83,7 +85,7 @@ public class ManTypeFinder extends PsiElementFinder
 
     for( ManModule m : modules )
     {
-      PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( globalSearchScope, m, fqn );
+      PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( m, fqn );
       if( psiClass != null )
       {
         return psiClass;
@@ -135,7 +137,7 @@ public class ManTypeFinder extends PsiElementFinder
         {
           if( child.kind == TypeName.Kind.TYPE )
           {
-            PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( scope, mm, child.name );
+            PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( mm, child.name );
             if( psiClass != null )
             {
               children.add( psiClass );
