@@ -49,11 +49,11 @@ import manifold.api.host.Dependency;
 import manifold.api.host.IModule;
 import manifold.ij.extensions.FileModificationManager;
 import manifold.ij.extensions.ManifoldPsiClass;
+import manifold.ij.extensions.ManifoldPsiClassCache;
 import manifold.ij.extensions.ModuleClasspathListener;
 import manifold.ij.extensions.ModuleRefreshListener;
 import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
-import manifold.internal.host.ManifoldHost;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LockingLazyVar;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -67,6 +67,7 @@ public class ManProject
   private static final String XPLUGIN_MANIFOLD = "-Xplugin:Manifold";
   private static final String XPLUGIN_MANIFOLD_WITH_QUOTES = "-Xplugin:\"Manifold";
 
+  private IjManifoldHost _host;
   private final Project _ijProject;
   private IjFileSystem _fs;
   private LockingLazyVar<List<ManModule>> _modules;
@@ -75,6 +76,7 @@ public class ManProject
   private MessageBusConnection _permanentProjectConnection;
   private ModuleClasspathListener _moduleClasspathListener;
   private FileModificationManager _fileModificationManager;
+  private ManifoldPsiClassCache _psiClassCache;
 
   public static Collection<ManProject> getAllProjects()
   {
@@ -163,7 +165,9 @@ public class ManProject
 
   private void init()
   {
+    _host = new IjManifoldHost( this );
     _fs = new IjFileSystem( this );
+    _psiClassCache = new ManifoldPsiClassCache( this );
     _modules = LockingLazyVar.make( () -> ApplicationManager.getApplication().<List<ManModule>>runReadAction( this::defineModules ) );
     addCompilerArgs(); // in case manifold jar was added we might need to update compiler args
   }
@@ -175,6 +179,11 @@ public class ManProject
         init();
         _fileModificationManager.getManRefresher().nukeFromOrbit();
       } );
+  }
+
+  public IjManifoldHost getHost()
+  {
+    return _host;
   }
 
   public IjFileSystem getFileSystem()
@@ -611,7 +620,7 @@ public class ManProject
       url = url.substring( 0, url.length() - 2 );
       try
       {
-        IjFile ijFile = (IjFile)ManifoldHost.getFileSystem().getIFile( new URL( url ) );
+        IjFile ijFile = (IjFile)getHost().getFileSystem().getIFile( new URL( url ) );
         file = ijFile.getVirtualFile();
       }
       catch( MalformedURLException e )
@@ -664,5 +673,10 @@ public class ManProject
       fileName = fileName.substring( 0, fileName.length() - 2 );
     }
     return fileName;
+  }
+
+  public ManifoldPsiClassCache getPsiClassCache()
+  {
+    return _psiClassCache;
   }
 }

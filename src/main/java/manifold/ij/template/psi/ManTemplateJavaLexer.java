@@ -9,7 +9,7 @@ import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.impl.source.tree.SharedImplUtil;
 import java.util.Collections;
 import java.util.List;
-import manifold.ij.template.ManTemplateDataElementType;
+import manifold.ij.template.IManTemplateOffsets;
 import manifold.util.ReflectUtil;
 
 /**
@@ -58,9 +58,9 @@ class ManTemplateJavaLexer extends DelegateLexer
     }
 
     ManTemplateJavaFile psiFile = (ManTemplateJavaFile)SharedImplUtil.getContainingFile( chameleon );
-    _exprOffsets = psiFile.getUserData( ManTemplateDataElementType.EXPR_OFFSETS );
-    _stmtOffsets = psiFile.getUserData( ManTemplateDataElementType.STMT_OFFSETS );
-    _directiveOffsets = psiFile.getUserData( ManTemplateDataElementType.DIRECTIVE_OFFSETS );
+    _exprOffsets = psiFile.getUserData( IManTemplateOffsets.EXPR_OFFSETS );
+    _stmtOffsets = psiFile.getUserData( IManTemplateOffsets.STMT_OFFSETS );
+    _directiveOffsets = psiFile.getUserData( IManTemplateOffsets.DIRECTIVE_OFFSETS );
   }
 
   @Override

@@ -60,7 +60,7 @@ public class NonDirectoryPackage extends PsiPackageImpl
         {
           if( typeName.kind != TypeName.Kind.NAMESPACE )
           {
-            PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( module, typeName.name );
+            PsiClass psiClass = ManifoldPsiClassCache.getPsiClass( module, typeName.name );
             if( psiClass != null )
             {
               all.put( typeName.name, psiClass );

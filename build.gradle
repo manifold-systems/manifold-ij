@@ -44,6 +44,14 @@ subprojects {
   }
 }
 
+jar {
+  manifest {
+    attributes(
+      'Contains-Sources': 'darkj'
+    )
+  }
+}
+
 dependencies {
   compile group: 'systems.manifold', name: 'manifold', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-util', version: manifoldVersion
@@ -70,6 +78,7 @@ String getIjVersion() {
 }
 
 intellij {
+  // alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2017.3.4'
   pluginName project.name
   version getIjVersion() // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
   //plugins = ['Psi Viewer:3.28.93'] //include ASM & PsiViewer in sandbox
@@ -81,7 +90,7 @@ runIde {
 }
 
 patchPluginXml {
-  sinceBuild '182.0000.0'
+  sinceBuild '163'
   untilBuild '999.*'
 }
 

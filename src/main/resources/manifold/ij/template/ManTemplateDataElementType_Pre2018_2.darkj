@@ -2,6 +2,7 @@ package manifold.ij.template;
 
 import com.intellij.lang.Language;
 import com.intellij.lexer.Lexer;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiFile;
@@ -21,20 +22,26 @@ import static manifold.ij.template.psi.ManTemplateTokenType.STMT;
 import static manifold.ij.template.psi.ManTemplateTokenType.DIRECTIVE;
 
 /**
+ * Pre-2018.2 support.
+ *
  * Extends {@link TemplateDataElementType} to support _multiple_ token types, STMT and EXPR, as template data tokens.
  * This is to support keeping track of expression offsets to help the parser differentiate between stmt and expr parsing.
  *
  * @see manifold.ij.template.psi.ManTemplateJavaParser
  */
-public class ManTemplateDataElementType extends TemplateDataElementType
+public class ManTemplateDataElementType_Pre2018_2 extends TemplateDataElementType
 {
+  public static final Key<List<Integer>> EXPR_OFFSETS = Key.create( "EXPR_OFFSETS" );
+  public static final Key<List<Integer>> STMT_OFFSETS = Key.create( "STMT_OFFSETS" );
+  public static final Key<List<Integer>> DIRECTIVE_OFFSETS = Key.create( "DIRECTIVE_OFFSETS" );
+
   ManTemplateDataElementType( String name, Language lang, IElementType contentElementType )
   {
     super( name, lang, STMT, contentElementType );
   }
 
   @Override
-  protected CharSequence createTemplateText( @NotNull CharSequence sourceCode, @NotNull Lexer baseLexer, @NotNull RangeCollector outerRangesCollector )
+  protected CharSequence createTemplateText( @NotNull CharSequence sourceCode, @NotNull Lexer baseLexer, @NotNull RangesCollector outerRangesCollector )
   {
     throw new IllegalStateException( "Should be calling private createTemplateText overload instead" );
   }
@@ -47,7 +54,7 @@ public class ManTemplateDataElementType extends TemplateDataElementType
 
   private CharSequence createTemplateText( @NotNull CharSequence sourceCode,
                                            @NotNull Lexer baseLexer,
-                                           @NotNull RangeCollector outerRangesCollector,
+                                           @NotNull RangesCollector outerRangesCollector,
                                            List<Integer> expressionOffsets,
                                            List<Integer> statementOffsets,
                                            List<Integer> directiveOffsets )
@@ -67,7 +74,7 @@ public class ManTemplateDataElementType extends TemplateDataElementType
       if( tokenType == STMT || tokenType == EXPR || tokenType == DIRECTIVE )
       {
         int offset = result.length();
-        appendCurrentTemplateToken( result, sourceCode, baseLexer, outerRangesCollector );
+        appendCurrentTemplateToken( result, sourceCode, baseLexer );
         if( tokenType == EXPR )
         {
           expressionOffsets.add( offsetNoWhitespace( result, offset ) );
@@ -83,7 +90,7 @@ public class ManTemplateDataElementType extends TemplateDataElementType
       }
       else
       {
-        outerRangesCollector.addOuterRange( currentRange );
+        outerRangesCollector.addRange( currentRange );
       }
       baseLexer.advance();
     }
@@ -104,7 +111,7 @@ public class ManTemplateDataElementType extends TemplateDataElementType
                                         final Language templateLanguage,
                                         final CharSequence sourceCode,
                                         final TemplateLanguageFileViewProvider viewProvider,
-                                        @NotNull RangeCollector outerRangesCollector )
+                                        @NotNull RangesCollector outerRangesCollector )
   {
     List<Integer> expressionOffsets = new ArrayList<>();
     List<Integer> statementOffsets = new ArrayList<>();

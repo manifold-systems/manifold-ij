@@ -16,7 +16,7 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ui.configuration.FacetsProvider;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
-import manifold.internal.host.ManifoldHost;
+import manifold.api.host.IManifoldHost;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.idea.maven.utils.library.RepositoryLibraryDescription;
 
@@ -40,7 +40,7 @@ public class ManFrameworkSupportProvider extends FrameworkSupportInModuleProvide
   @Override
   public boolean isSupportAlreadyAdded( @NotNull Module module, @NotNull FacetsProvider facetsProvider )
   {
-    PsiClass psiClass = JavaPsiFacade.getInstance( module.getProject() ).findClass( ManifoldHost.class.getName(), module.getModuleWithDependenciesAndLibrariesScope( false ) );
+    PsiClass psiClass = JavaPsiFacade.getInstance( module.getProject() ).findClass( IManifoldHost.class.getName(), module.getModuleWithDependenciesAndLibrariesScope( false ) );
     return psiClass != null;
   }
 

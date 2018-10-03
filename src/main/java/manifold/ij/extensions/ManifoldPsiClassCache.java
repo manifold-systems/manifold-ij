@@ -57,28 +57,38 @@ import static manifold.api.type.ContributorKind.*;
  */
 public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 {
-  private static final ManifoldPsiClassCache INSTANCE = new ManifoldPsiClassCache();
-  public static ManifoldPsiClassCache instance()
-  {
-    return INSTANCE;
-  }
-
+  private final ManProject _project;
   private Set<Project> _addedListeners = ContainerUtil.newConcurrentSet();
   private ThreadLocal<Set<String>> _shortCircuit = new ThreadLocal<>();
   private ConcurrentHashMap<String, PsiClass> _filePathToPsi = new ConcurrentHashMap<>();
-  private final FqnCache<ManifoldPsiClass> _fqnPsiCache = new FqnCache<>();
+  private final FqnCache<ManifoldPsiClass> _fqnPsiCache;
 
+  public ManifoldPsiClassCache( ManProject project )
+  {
+    _project = project;
+    _fqnPsiCache = new FqnCache<>();
+  }
+
+  public ManProject getProject()
+  {
+    return _project;
+  }
+
+  public static PsiClass getPsiClass( ManModule module, String fqn )
+  {
+    return module.getProject().getPsiClassCache()._getPsiClass( module, fqn );
+  }
   /**
    * This method is for internal use, call {@link com.intellij.psi.JavaPsiFacade#findClass(String, GlobalSearchScope)}
    * instead, which will delegate to this method if appropriate.
    */
-  synchronized PsiClass getPsiClass( ManModule module, String fqn )
+  synchronized PsiClass _getPsiClass( ManModule module, String fqn )
   {
     if( isShortCircuit( fqn ) )
     {
       return null;
     }
-    return getPsiClass_NoShortCircuit(  module, fqn );
+    return getPsiClass_NoShortCircuit( module, fqn );
   }
   private PsiClass getPsiClass_NoShortCircuit( ManModule module, String fqn )
   {

@@ -14,15 +14,29 @@ public class ManBuildClasspathProvider extends BuildProcessParametersProvider
   @Override
   public List<String> getClassPath()
   {
-    return ((PluginClassLoader)getClass().getClassLoader()).getUrls().stream().map( e -> {
-      try
-      {
-        return new File( e.toURI() ).getAbsolutePath();
-      }
-      catch( URISyntaxException ex )
-      {
-        throw new RuntimeException( ex );
-      }
-    } ).collect( Collectors.toList() );
+    return ((PluginClassLoader)getClass().getClassLoader()).getUrls().stream()
+      .filter( e -> {
+        try
+        {
+          new File( e.toURI() );
+        }
+        catch( Exception ue )
+        {
+          // if the URI is bad or cannot be interpreted as a File, we don't use it
+          return false;
+        }
+        return true;
+      } )
+      .map( e -> {
+        try
+        {
+          return new File( e.toURI() ).getAbsolutePath();
+        }
+        catch( URISyntaxException ex )
+        {
+          // should have been filtered in prior .filter() call
+          throw new RuntimeException( ex );
+        }
+      } ).collect( Collectors.toList() );
   }
 }

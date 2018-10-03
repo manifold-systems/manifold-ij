@@ -8,7 +8,7 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.psi.util.ClassUtil;
 import com.intellij.util.Processor;
-import com.intellij.util.containers.HashSet;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import manifold.api.host.Dependency;
@@ -55,7 +55,7 @@ public class ManShortNamesCache extends PsiShortNamesCache
         String simpleName = ClassUtil.extractClassName( fqn );
         if( simpleName.equals( name ) )
         {
-          PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( module, fqn );
+          PsiClass psiClass = ManifoldPsiClassCache.getPsiClass( module, fqn );
           if( psiClass == null )
           {
             return;
@@ -77,13 +77,13 @@ public class ManShortNamesCache extends PsiShortNamesCache
   @Override
   public String[] getAllClassNames()
   {
-    HashSet<String> names = new HashSet<>();
+    com.intellij.util.containers.HashSet<String> names = new com.intellij.util.containers.HashSet<>();
     getAllClassNames( names );
     return names.toArray( new String[names.size()] );
   }
 
   @Override
-  public void getAllClassNames( @NotNull HashSet<String> dest )
+  public void getAllClassNames( @NotNull com.intellij.util.containers.HashSet<String> dest )
   {
     final ManProject manProject = ManProject.manProjectFrom( _psiManager.getProject() );
     for( ManModule module: manProject.findRootModules() )
@@ -92,11 +92,11 @@ public class ManShortNamesCache extends PsiShortNamesCache
     }
   }
 
-  private void findClassFqns( @NotNull HashSet<String> dest, ManModule module )
+  private void findClassFqns( @NotNull com.intellij.util.containers.HashSet<String> dest, ManModule module )
   {
     findClassFqns( dest, module, module );
   }
-  private void findClassFqns( @NotNull HashSet<String> dest, ManModule start, ManModule module )
+  private void findClassFqns( @NotNull com.intellij.util.containers.HashSet<String> dest, ManModule start, ManModule module )
   {
     for( ITypeManifold tm: module.getTypeManifolds() )
     {
@@ -150,7 +150,7 @@ public class ManShortNamesCache extends PsiShortNamesCache
   }
 
   @Override
-  public void getAllMethodNames( @NotNull HashSet<String> set )
+  public void getAllMethodNames( @NotNull com.intellij.util.containers.HashSet<String> set )
   {
 
   }
@@ -170,7 +170,7 @@ public class ManShortNamesCache extends PsiShortNamesCache
   }
 
   @Override
-  public void getAllFieldNames( @NotNull HashSet<String> set )
+  public void getAllFieldNames( @NotNull com.intellij.util.containers.HashSet<String> set )
   {
 
   }

@@ -14,7 +14,7 @@ import com.intellij.psi.impl.source.resolve.FileContextUtil;
 import com.intellij.psi.tree.IElementType;
 import java.util.Collections;
 import java.util.List;
-import manifold.ij.template.ManTemplateDataElementType;
+import manifold.ij.template.IManTemplateOffsets;
 import org.jetbrains.annotations.NotNull;
 
 public class ManTemplateJavaParser implements PsiParser
@@ -103,18 +103,18 @@ public class ManTemplateJavaParser implements PsiParser
   private List<Integer> getExpressionOffsets( @NotNull PsiBuilder builder )
   {
     PsiFile psiFile = builder.getUserDataUnprotected( FileContextUtil.CONTAINING_FILE_KEY );
-    return psiFile == null ? Collections.emptyList() : psiFile.getUserData( ManTemplateDataElementType.EXPR_OFFSETS );
+    return psiFile == null ? Collections.emptyList() : psiFile.getUserData( IManTemplateOffsets.EXPR_OFFSETS );
   }
 
   private List<Integer> getDirectiveOffsets( @NotNull PsiBuilder builder )
   {
     PsiFile psiFile = builder.getUserDataUnprotected( FileContextUtil.CONTAINING_FILE_KEY );
-    return psiFile == null ? Collections.emptyList() : psiFile.getUserData( ManTemplateDataElementType.DIRECTIVE_OFFSETS );
+    return psiFile == null ? Collections.emptyList() : psiFile.getUserData( IManTemplateOffsets.DIRECTIVE_OFFSETS );
   }
 
   private List<Integer> getStatementOffsets( @NotNull PsiBuilder builder )
   {
     PsiFile psiFile = builder.getUserDataUnprotected( FileContextUtil.CONTAINING_FILE_KEY );
-    return psiFile == null ? Collections.emptyList() : psiFile.getUserData( ManTemplateDataElementType.STMT_OFFSETS );
+    return psiFile == null ? Collections.emptyList() : psiFile.getUserData( IManTemplateOffsets.STMT_OFFSETS );
   }
 }

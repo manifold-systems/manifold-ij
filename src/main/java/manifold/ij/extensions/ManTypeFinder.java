@@ -60,7 +60,7 @@ public class ManTypeFinder extends PsiElementFinder
     List<ManModule> modules = findModules( globalSearchScope );
     for( ManModule m : modules )
     {
-      PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( m, fqn );
+      PsiClass psiClass = ManifoldPsiClassCache.getPsiClass( m, fqn );
       if( psiClass != null )
       {
         psiClasses.add( psiClass );
@@ -85,7 +85,7 @@ public class ManTypeFinder extends PsiElementFinder
 
     for( ManModule m : modules )
     {
-      PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( m, fqn );
+      PsiClass psiClass = ManifoldPsiClassCache.getPsiClass( m, fqn );
       if( psiClass != null )
       {
         return psiClass;
@@ -137,7 +137,7 @@ public class ManTypeFinder extends PsiElementFinder
         {
           if( child.kind == TypeName.Kind.TYPE )
           {
-            PsiClass psiClass = ManifoldPsiClassCache.instance().getPsiClass( mm, child.name );
+            PsiClass psiClass = ManifoldPsiClassCache.getPsiClass( mm, child.name );
             if( psiClass != null )
             {
               children.add( psiClass );

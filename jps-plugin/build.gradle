@@ -5,6 +5,7 @@ configurations {
 }
 
 intellij {
+  //type = 'JPS'
   //## todo: use defaultVersion from manifold-ij
   version '2018.2.4' // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
 }

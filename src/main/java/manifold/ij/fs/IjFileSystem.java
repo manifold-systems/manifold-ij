@@ -19,12 +19,14 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
 import java.util.jar.JarFile;
+import manifold.api.fs.FileFactory;
 import manifold.api.fs.IDirectory;
 import manifold.api.fs.IFile;
 import manifold.api.fs.IFileSystem;
 import manifold.api.fs.IResource;
 import manifold.api.fs.jar.JarFileDirectoryImpl;
 import manifold.api.fs.url.URLFileImpl;
+import manifold.api.host.IManifoldHost;
 import manifold.api.service.BaseService;
 import manifold.ij.core.ManProject;
 
@@ -36,6 +38,7 @@ public class IjFileSystem extends BaseService implements IFileSystem
   private final Map<File, IDirectory> _cachedDirInfo;
   private final IDirectoryResourceExtractor _dirExtractor;
   private final IFileResourceExtractor _fileExtractor;
+  private final FileFactory _fileFactory;
 
 
   public IjFileSystem( ManProject project )
@@ -44,11 +47,24 @@ public class IjFileSystem extends BaseService implements IFileSystem
     _cachedDirInfo = Maps.newHashMap();
     _dirExtractor = new IDirectoryResourceExtractor();
     _fileExtractor = new IFileResourceExtractor();
+    _fileFactory = new FileFactory( this );
   }
 
   public ManProject getProject()
   {
     return _project;
+  }
+
+  @Override
+  public IManifoldHost getHost()
+  {
+    return _project.getHost();
+  }
+
+  @Override
+  public FileFactory getFileFactory()
+  {
+    return _fileFactory;
   }
 
   @Override
@@ -131,7 +147,7 @@ public class IjFileSystem extends BaseService implements IFileSystem
   {
     if( dir.getName().endsWith( ".jar" ) && dir.isFile() )
     {
-      return new JarFileDirectoryImpl( dir );
+      return new JarFileDirectoryImpl( this, dir );
     }
     else
     {
@@ -243,7 +259,7 @@ public class IjFileSystem extends BaseService implements IFileSystem
     @Override
     IFile getRemoteFile( URL location )
     {
-      return new URLFileImpl( location );
+      return new URLFileImpl( IjFileSystem.this, location );
     }
   }
 

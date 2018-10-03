@@ -8,6 +8,8 @@ import com.intellij.openapi.components.ApplicationComponent;
 import manifold.ij.extensions.ManifoldPsiClassAnnotator;
 import manifold.ij.template.ManTemplateBraceMatcher;
 import manifold.ij.template.ManTemplateLanguage;
+import manifold.ij.util.ManVersionUtil;
+import manifold.util.ReflectUtil;
 
 /**
  */
@@ -27,9 +29,23 @@ public class ManApplicationComponent implements ApplicationComponent
   {
     for( Language lang: Language.getRegisteredLanguages() )
     {
-      LanguageAnnotators.INSTANCE.addExplicitExtension( lang, new ManifoldPsiClassAnnotator() );
+      if( ManVersionUtil.is2018_2_orGreater.get() )
+      {
+        LanguageAnnotators.INSTANCE.addExplicitExtension( lang, new ManifoldPsiClassAnnotator() );
+      }
+      else
+      {
+        ReflectUtil.method( LanguageAnnotators.INSTANCE, "addExplicitExtension", Object.class, Object.class ).invoke( lang, new ManifoldPsiClassAnnotator() );
+      }
     }
-    LanguageBraceMatching.INSTANCE.addExplicitExtension( ManTemplateLanguage.INSTANCE, new PairedBraceMatcherAdapter( new ManTemplateBraceMatcher(), ManTemplateLanguage.INSTANCE ) );
+    if( ManVersionUtil.is2018_2_orGreater.get() )
+    {
+      LanguageBraceMatching.INSTANCE.addExplicitExtension( ManTemplateLanguage.INSTANCE, new PairedBraceMatcherAdapter( new ManTemplateBraceMatcher(), ManTemplateLanguage.INSTANCE ) );
+    }
+    else
+    {
+      ReflectUtil.method( LanguageAnnotators.INSTANCE, "addExplicitExtension", Object.class, Object.class ).invoke( ManTemplateLanguage.INSTANCE, new PairedBraceMatcherAdapter( new ManTemplateBraceMatcher(), ManTemplateLanguage.INSTANCE ) );
+    }
   }
 
 }

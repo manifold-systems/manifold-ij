@@ -150,7 +150,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
           Set<String> extensionClassNames = ecp.getExtensionClasses( fqn );
           for( String extension : extensionClassNames )
           {
-            PsiClass extPsiClass = ManifoldPsiClassCache.instance().getPsiClass( manModule, extension );
+            PsiClass extPsiClass = ManifoldPsiClassCache.getPsiClass( manModule, extension );
             addMethods( psiClass, augFeatures, manModule, new PsiClass[]{extPsiClass} );
           }
         }

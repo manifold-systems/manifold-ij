@@ -35,7 +35,7 @@ public class ManModule extends SimpleModule
 
   ManModule( ManProject manProject, Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePath, List<IDirectory> outputPath, List<IDirectory> excludedDirs )
   {
-    super( classpath, sourcePath, outputPath );
+    super( manProject.getHost(), classpath, sourcePath, outputPath );
     _ijModule = ijModule;
     _manProject = manProject;
     _excludedDirs = excludedDirs;

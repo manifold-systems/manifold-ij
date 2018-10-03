@@ -3,6 +3,7 @@ package manifold.ij.template;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageParserDefinitions;
 import com.intellij.lang.ParserDefinition;
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.LanguageFileType;
 import com.intellij.openapi.fileTypes.PlainTextLanguage;
@@ -15,11 +16,14 @@ import com.intellij.psi.impl.source.PsiFileImpl;
 import com.intellij.psi.templateLanguages.TemplateDataElementType;
 import com.intellij.psi.templateLanguages.TemplateDataLanguageMappings;
 import com.intellij.psi.templateLanguages.TemplateLanguageFileViewProvider;
+import com.intellij.psi.tree.IElementType;
 import com.intellij.util.containers.ContainerUtil;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import manifold.ij.util.ManVersionUtil;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import static manifold.ij.template.psi.ManTemplateTokenType.CONTENT;
 import static manifold.ij.template.psi.ManTemplateTokenType.STMT;
@@ -54,10 +58,22 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
     {
       return result;
     }
-    TemplateDataElementType created = new ManTemplateDataElementType( "ManTL_Java", lang, CONTENT );
+    TemplateDataElementType created = createTemplateDataElementType( lang );
     TemplateDataElementType prevValue = TEMPLATE_JAVA_TO_LANG.putIfAbsent( lang.getID(), created );
 
     return prevValue == null ? created : prevValue;
+  }
+
+  @NotNull
+  private static ManTemplateDataElementType createTemplateDataElementType( Language lang )
+  {
+    if( ManVersionUtil.is2018_2_orGreater.get() )
+    {
+      return new ManTemplateDataElementType( "ManTL_Java", lang, CONTENT );
+    }
+    return (ManTemplateDataElementType)
+      ReflectUtil.constructor( "manifold.ij.template.ManTemplateDataElementType_Pre2018_2",
+        String.class, Language.class, IElementType.class ).newInstance( "ManTL_Java", lang, CONTENT );
   }
 
 
