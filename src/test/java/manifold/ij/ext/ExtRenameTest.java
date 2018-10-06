@@ -23,7 +23,7 @@ public class ExtRenameTest extends AbstractManifoldCodeInsightTest
 
     myFixture.renameElementAtCaret( "hiWorld" );
 
-    myFixture.checkResultByFile( "ext/rename/MyStringExt_After.java", true );
+    myFixture.checkResultByFile( "ext/rename/MyStringExt_Caret_After.java", true );
     myFixture.checkResultByFile( "ext/rename/TestExtRename_NoCaret.java",
       "ext/rename/TestExtRename_After.java", true );
   }

@@ -58,7 +58,7 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
   @NotNull
   public TokenSet getWhitespaceTokens()
   {
-    if( ManVersionUtil.is2018_2_orGreater.get() )
+    if( ManVersionUtil.is2018_2_orGreater() )
     {
       return ElementType.JAVA_COMMENT_OR_WHITESPACE_BIT_SET;
     }

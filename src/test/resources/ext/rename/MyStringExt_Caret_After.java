@@ -6,7 +6,7 @@ import java.lang.String;
 
 @Extension
 public class MyStringExt_Caret {
-  public static void <caret>helloWorld2(@This String thiz) {
+  public static void hiWorld(@This String thiz) {
     System.out.println("hello world!");
   }
 }

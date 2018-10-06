@@ -3,7 +3,6 @@ package manifold.ij.template;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageParserDefinitions;
 import com.intellij.lang.ParserDefinition;
-import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.LanguageFileType;
 import com.intellij.openapi.fileTypes.PlainTextLanguage;
@@ -65,13 +64,13 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
   }
 
   @NotNull
-  private static ManTemplateDataElementType createTemplateDataElementType( Language lang )
+  private static TemplateDataElementType createTemplateDataElementType( Language lang )
   {
-    if( ManVersionUtil.is2018_2_orGreater.get() )
+    if( ManVersionUtil.is2018_2_orGreater() )
     {
       return new ManTemplateDataElementType( "ManTL_Java", lang, CONTENT );
     }
-    return (ManTemplateDataElementType)
+    return (TemplateDataElementType)
       ReflectUtil.constructor( "manifold.ij.template.ManTemplateDataElementType_Pre2018_2",
         String.class, Language.class, IElementType.class ).newInstance( "ManTL_Java", lang, CONTENT );
   }

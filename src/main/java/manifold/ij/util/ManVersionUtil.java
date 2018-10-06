@@ -5,7 +5,7 @@ import manifold.util.concurrent.LocklessLazyVar;
 
 public class ManVersionUtil
 {
-  public static LocklessLazyVar<Boolean> is2018_2_orGreater =
+  private static LocklessLazyVar<Boolean> is2018_2_orGreater =
     LocklessLazyVar.make( () -> {
       String major = ApplicationInfo.getInstance().getMajorVersion();
       try
@@ -24,4 +24,9 @@ public class ManVersionUtil
       }
       return false;
     } );
+
+  public static boolean is2018_2_orGreater()
+  {
+    return is2018_2_orGreater.get();
+  }
 }
