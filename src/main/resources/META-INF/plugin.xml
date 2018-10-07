@@ -48,7 +48,7 @@
         </div>
         <div>
           <h3><a href="http://manifold.systems/docs.html#templating">Templates</a></h3>
-          <p>Make type-safe, templatized data files using pure Java. Use the same template expressions in Java strings:</p>
+          <p>Make type-safe, templatized data files using pure Java. Use the same template expressions in Java strings.</p>
           <code>
             &nbsp;&nbsp;<b>int</b>&nbsp;hour&nbsp;=&nbsp;<i>8</i>;<br>
             &nbsp;&nbsp;<i>//&nbsp;"It&nbsp;is&nbsp;8&nbsp;o'clock"</i><br>
