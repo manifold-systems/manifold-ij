@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import manifold.api.fs.IResource;
-import manifold.api.host.ITypeLoaderListener;
+import manifold.api.host.ITypeSystemListener;
 import manifold.api.host.RefreshKind;
 import manifold.api.host.RefreshRequest;
 import manifold.ij.core.ManModule;
@@ -19,7 +19,7 @@ import manifold.ij.fs.IjFile;
 
 public class ManRefreshListener
 {
-  private final CopyOnWriteArrayList<WeakReference<ITypeLoaderListener>> _listeners;
+  private final CopyOnWriteArrayList<WeakReference<ITypeSystemListener>> _listeners;
   private final ManProject _manProject;
 
   public ManRefreshListener( Project project )
@@ -38,7 +38,7 @@ public class ManRefreshListener
    *
    * @param l Your type loader listener
    */
-  public void addTypeLoaderListenerAsWeakRef( ITypeLoaderListener l )
+  public void addTypeSystemListenerAsWeakRef( ITypeSystemListener l )
   {
     if( !hasListener( l ) )
     {
@@ -47,9 +47,9 @@ public class ManRefreshListener
   }
 
   @SuppressWarnings("unused")
-  public void removeTypeLoaderListener( ITypeLoaderListener l )
+  public void removeTypeSystemListener( ITypeSystemListener l )
   {
-    for( WeakReference<ITypeLoaderListener> ref : _listeners )
+    for( WeakReference<ITypeSystemListener> ref : _listeners )
     {
       if( ref.get() == l )
       {
@@ -59,16 +59,16 @@ public class ManRefreshListener
     }
   }
 
-  private List<ITypeLoaderListener> getListeners()
+  private List<ITypeSystemListener> getListeners()
   {
-    List<ITypeLoaderListener> listeners = new ArrayList<>( _listeners.size() );
-    List<WeakReference<ITypeLoaderListener>> obsoleteListeners = null;
-    for( WeakReference<ITypeLoaderListener> ref : _listeners )
+    List<ITypeSystemListener> listeners = new ArrayList<>( _listeners.size() );
+    List<WeakReference<ITypeSystemListener>> obsoleteListeners = null;
+    for( WeakReference<ITypeSystemListener> ref : _listeners )
     {
-      ITypeLoaderListener typeLoaderListener = ref.get();
-      if( typeLoaderListener != null )
+      ITypeSystemListener typeSystemListener = ref.get();
+      if( typeSystemListener != null )
       {
-        listeners.add( typeLoaderListener );
+        listeners.add( typeSystemListener );
       }
       else
       {
@@ -87,9 +87,9 @@ public class ManRefreshListener
     return listeners;
   }
 
-  private boolean hasListener( ITypeLoaderListener l )
+  private boolean hasListener( ITypeSystemListener l )
   {
-    for( WeakReference<ITypeLoaderListener> ref : _listeners )
+    for( WeakReference<ITypeSystemListener> ref : _listeners )
     {
       if( ref.get() == l )
       {
@@ -113,7 +113,7 @@ public class ManRefreshListener
   }
   public void nukeFromOrbit()
   {
-    for( ITypeLoaderListener listener : getListeners() )
+    for( ITypeSystemListener listener : getListeners() )
     {
       listener.refreshed();
     }
@@ -130,8 +130,8 @@ public class ManRefreshListener
     for( ManModule module: _manProject.getModules() )
     {
       String[] fqns = module.getTypesForFile( file );
-      RefreshRequest request = new RefreshRequest( file, fqns, module, module, kind );
-      List<ITypeLoaderListener> listeners = getListeners();
+      RefreshRequest request = new RefreshRequest( file, fqns, module, kind );
+      List<ITypeSystemListener> listeners = getListeners();
       switch( kind )
       {
         case CREATION:
@@ -150,9 +150,9 @@ public class ManRefreshListener
     }
   }
 
-  private void notifyNonearlyListeners( RefreshRequest request, List<ITypeLoaderListener> listeners )
+  private void notifyNonearlyListeners( RefreshRequest request, List<ITypeSystemListener> listeners )
   {
-    for( ITypeLoaderListener listener : listeners )
+    for( ITypeSystemListener listener : listeners )
     {
       if( !listener.notifyEarly() )
       {
@@ -161,9 +161,9 @@ public class ManRefreshListener
     }
   }
 
-  private void notifyEarlyListeners( RefreshRequest request, List<ITypeLoaderListener> listeners )
+  private void notifyEarlyListeners( RefreshRequest request, List<ITypeSystemListener> listeners )
   {
-    for( ITypeLoaderListener listener : listeners )
+    for( ITypeSystemListener listener : listeners )
     {
       if( listener.notifyEarly() )
       {

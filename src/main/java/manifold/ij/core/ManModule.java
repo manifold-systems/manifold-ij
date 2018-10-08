@@ -53,12 +53,6 @@ public class ManModule extends SimpleModule
     return _manProject;
   }
 
-  @Override
-  public ManModule getModule()
-  {
-    return this;
-  }
-
   public List<Dependency> getDependencies()
   {
     return _dependencies;

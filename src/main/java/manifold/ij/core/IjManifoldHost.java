@@ -4,7 +4,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import manifold.api.fs.IFileSystem;
 import manifold.api.host.IModule;
-import manifold.api.host.ITypeLoaderListener;
+import manifold.api.host.ITypeSystemListener;
 import manifold.internal.host.AbstractManifoldHost;
 import manifold.internal.javac.JavaParser;
 
@@ -46,7 +46,7 @@ public class IjManifoldHost extends AbstractManifoldHost
   }
 
   @Override
-  public void addTypeLoaderListenerAsWeakRef( Object ctx, ITypeLoaderListener listener )
+  public void addTypeSystemListenerAsWeakRef( Object ctx, ITypeSystemListener listener )
   {
     ManProject manProject = ctx == null ? _project : getManProject( ctx );
     if( !manProject.equals( _project ) )
@@ -54,7 +54,7 @@ public class IjManifoldHost extends AbstractManifoldHost
       throw new IllegalStateException( "Unrelated context: " + ctx + " belongs to project '" + manProject.getNativeProject().getName() + "', execting project '" + _project.getNativeProject().getName() + "'" );
     }
 
-    manProject.getFileModificationManager().getManRefresher().addTypeLoaderListenerAsWeakRef( listener );
+    manProject.getFileModificationManager().getManRefresher().addTypeSystemListenerAsWeakRef( listener );
   }
 
   private ManProject getManProject( Object ctx )

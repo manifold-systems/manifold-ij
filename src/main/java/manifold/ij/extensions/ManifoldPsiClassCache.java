@@ -244,7 +244,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
       if( found != null )
       {
-        ManModule actualModule = (ManModule)found.getTypeLoader().getModule();
+        ManModule actualModule = (ManModule)found.getModule();
         PsiClass delegate = createPsiClass( actualModule, fqn, result );
         delegate = maybeGetInnerClass( fqn, delegate );
         List<IFile> files = found.findFilesForType( fqn );
@@ -294,7 +294,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     }
 
     _addedListeners.add( ijProject );
-    project.getFileModificationManager().getManRefresher().addTypeLoaderListenerAsWeakRef( this );
+    project.getFileModificationManager().getManRefresher().addTypeSystemListenerAsWeakRef( this );
     PsiManager.getInstance( ijProject ).addPsiTreeChangeListener( new PsiTreeChangeHandler() );
   }
 
