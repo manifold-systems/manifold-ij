@@ -1,6 +1,8 @@
 package manifold.ij.util;
 
 import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.util.ObjectUtils;
 import manifold.util.concurrent.LocklessLazyVar;
 
 public class ManVersionUtil
@@ -13,7 +15,7 @@ public class ManVersionUtil
         int iMajor = Integer.parseInt( major );
         if( iMajor == 2018 )
         {
-          String minor = ApplicationInfo.getInstance().getMinorVersionMainPart();
+          String minor = getMinorVersionMainPart();
           int iMinor = Integer.parseInt( minor );
           return iMinor >= 2;
         }
@@ -28,5 +30,11 @@ public class ManVersionUtil
   public static boolean is2018_2_orGreater()
   {
     return is2018_2_orGreater.get();
+  }
+
+  private static String getMinorVersionMainPart()
+  {
+    String minorVersion = ApplicationInfo.getInstance().getMinorVersion();
+    return ObjectUtils.notNull( StringUtil.substringBefore( minorVersion, "." ), minorVersion );
   }
 }
