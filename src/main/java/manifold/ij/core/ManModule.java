@@ -7,6 +7,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -222,17 +223,24 @@ public class ManModule extends SimpleModule
   @Override
   public List<IDirectory> getCollectiveJavaClassPath()
   {
-    return getCollectiveJavaClassPath( this );
+    return getCollectiveJavaClassPath( this, new HashSet<>() );
   }
-  private List<IDirectory> getCollectiveJavaClassPath( ManModule root )
+  private List<IDirectory> getCollectiveJavaClassPath( ManModule root, Set<ManModule> visited )
   {
+    if( visited.contains( this ) )
+    {
+      return Collections.emptyList();
+    }
+
+    visited.add( this );
+
     List<IDirectory> all = new ArrayList<>( getJavaClassPath() );
 
     for( Dependency d : getDependencies() )
     {
-      if( this == root || d.isExported() )
+      if( (this == root || d.isExported()) && d.getModule() != this )
       {
-        all.addAll( ((ManModule)d.getModule()).getCollectiveJavaClassPath( root ) );
+        all.addAll( ((ManModule)d.getModule()).getCollectiveJavaClassPath( root, visited ) );
       }
     }
     return all;

@@ -11,18 +11,18 @@ public class ManVersionUtil
       try
       {
         int iMajor = Integer.parseInt( major );
-        if( iMajor >= 2018 )
+        if( iMajor == 2018 )
         {
           String minor = ApplicationInfo.getInstance().getMinorVersionMainPart();
           int iMinor = Integer.parseInt( minor );
           return iMinor >= 2;
         }
+        return iMajor > 2018;
       }
       catch( Exception e )
       {
         return true;
       }
-      return false;
     } );
 
   public static boolean is2018_2_orGreater()

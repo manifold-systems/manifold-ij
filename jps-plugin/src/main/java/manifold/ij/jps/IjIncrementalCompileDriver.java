@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import manifold.api.type.IIncrementalCompileDriver;
+import org.jetbrains.jps.builders.java.JavaBuilderUtil;
+import org.jetbrains.jps.incremental.CompileContext;
 
 public class IjIncrementalCompileDriver implements IIncrementalCompileDriver
 {
@@ -23,19 +25,26 @@ public class IjIncrementalCompileDriver implements IIncrementalCompileDriver
     }
     throw new IllegalStateException();
   }
-  
+
+  private final CompileContext _context;
   private Collection<File> _files;
   private Map<File, Set<String>> _typesToFile;
 
 
-  public IjIncrementalCompileDriver()
+  public IjIncrementalCompileDriver( CompileContext context )
   {
+    _context = context;
     _files = new ArrayList<>();
     _typesToFile = new ConcurrentHashMap<>();
   }
 
+  public boolean isIncremental()
+  {
+    return JavaBuilderUtil.isCompileJavaIncrementally( _context );
+  }
+
   @Override
-  public Collection<File> getResourceFiles()
+  public Collection<File> getChangedFiles()
   {
     return _files;
   }
@@ -45,7 +54,9 @@ public class IjIncrementalCompileDriver implements IIncrementalCompileDriver
   {
     _typesToFile.put( file, set );
   }
-  Map<File, Set<String>> getTypesToFile()
+
+  @Override
+  public Map<File, Set<String>> getTypesToFile()
   {
     return _typesToFile;
   }

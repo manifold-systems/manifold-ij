@@ -1,5 +1,7 @@
 package manifold.ij.extensions;
 
+import com.intellij.codeInsight.daemon.impl.AnnotationHolderImpl;
+import com.intellij.lang.annotation.Annotation;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
@@ -118,6 +120,11 @@ public class ManifoldPsiClassAnnotator implements Annotator
 
     String message = makeMessage( issue );
     String tooltip = makeTooltip( message );
+    if( hasAnnotation( (AnnotationHolderImpl)holder, deepestElement ) )
+    {
+      //## todo: this is a "temporary" fix since IJ 2018.3, for some reason it calls this annotator twice with the same holder
+      return false;
+    }
     switch( issue.getKind() )
     {
       case ERROR:
@@ -133,6 +140,20 @@ public class ManifoldPsiClassAnnotator implements Annotator
         break;
     }
     return true;
+  }
+
+  private boolean hasAnnotation( AnnotationHolderImpl holder, PsiElement deepestElement )
+  {
+    TextRange textRange = deepestElement.getTextRange();
+    for( Annotation annotation: holder )
+    {
+      if( annotation.getStartOffset() == textRange.getStartOffset() &&
+          annotation.getEndOffset() == textRange.getEndOffset() )
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   @NotNull

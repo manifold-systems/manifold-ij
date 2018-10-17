@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.builders.BuildOutputConsumer;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
 import org.jetbrains.jps.builders.impl.BuildOutputConsumerImpl;
+import org.jetbrains.jps.builders.java.JavaBuilderUtil;
 import org.jetbrains.jps.builders.java.ResourceRootDescriptor;
 import org.jetbrains.jps.builders.storage.BuildDataCorruptedException;
 import org.jetbrains.jps.incremental.CompileContext;
@@ -89,13 +90,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
   public void build( @NotNull ResourcesTarget target, @NotNull DirtyFilesHolder<ResourceRootDescriptor, ResourcesTarget> holder,
                      @NotNull BuildOutputConsumer outputConsumer, @NotNull CompileContext context ) throws ProjectBuildException
   {
-//## We need to handle rebuild as well to maintain mappings from resource files to class files (for hot swap).
-//## Also, because we are rebuilding resources here and maintaining a complete mapping, we no longer need ManStaleClassCleaner.
-//    if( JavaBuilderUtil.isForcedRecompilationAllJavaModules( context ) )
-//    {
-//      // only care about incremental builds
-//      return;
-//    }
+    boolean incremental = JavaBuilderUtil.isCompileJavaIncrementally( context );
 
     try
     {
@@ -114,19 +109,33 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
           return true;
         }
 
-        changedFiles.add( file );
+        if( incremental )
+        {
+          // Incremental compilation -- add the resource file for Manifold to compile, otherwise
+          // if it is not referenced by a Java file included in the build, it will not be be recompiled.
+          changedFiles.add( file );
+        }
+
+        // Both incremental build and rebuild need this mapping, see registerClasses()
         _fileToData.put( file, new Data( (BuildOutputConsumerImpl)outputConsumer, target ) );
+        
         return !context.getCancelStatus().isCanceled();
       } );
 
-
-      if( !changedFiles.isEmpty() )
+      //
+      // With an incremental build this JPS plugin tells Manifold about changed resource files.
+      // With a rebuild Manifold tells this JPS plugin about resource files it compiles indirectly via reference.
+      //
+      // Both types of builds, incremental and rebuild, are still responsible for registering
+      // resource files as source files for the class files they correspond to, see registerClasses().
+      //
+      if( !incremental || !changedFiles.isEmpty() )
       {
         _tempMainClasses = makeTempMainClasses( context, target );
         if( !_tempMainClasses.isEmpty() )
         {
           IjIncrementalCompileDriver driver = IjIncrementalCompileDriver.INSTANCES.get().get( _tempMainClasses.iterator().next().getAbsolutePath() );
-          driver.getResourceFiles().addAll( changedFiles );
+          driver.getChangedFiles().addAll( changedFiles );
         }
       }
 
@@ -180,9 +189,9 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
     }
 
     Set<BuildOutputConsumerImpl> ocs = new LinkedHashSet<>();
-    for( IjIncrementalCompileDriver instance: IjIncrementalCompileDriver.INSTANCES.get().values() )
+    for( IjIncrementalCompileDriver driver: IjIncrementalCompileDriver.INSTANCES.get().values() )
     {
-      Map<File, Set<String>> typesToFile = instance.getTypesToFile();
+      Map<File, Set<String>> typesToFile = driver.getTypesToFile();
       for( Map.Entry<File, Set<String>> entry : typesToFile.entrySet() )
       {
         Set<String> types = entry.getValue();
@@ -192,12 +201,14 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
           {
             File resourceFile = entry.getKey();
             Data data = _fileToData.get( resourceFile );
-
-            File classFile = findClassFile( fqn, data._target.getOutputDir() );
-            if( classFile != null )
+            if( data != null )
             {
-              data._oc.registerOutputFile( classFile, Collections.singleton( resourceFile.getPath() ) );
-              ocs.add( data._oc );
+              File classFile = findClassFile( fqn, data._target.getOutputDir() );
+              if( classFile != null )
+              {
+                data._oc.registerOutputFile( classFile, Collections.singleton( resourceFile.getPath() ) );
+                ocs.add( data._oc );
+              }
             }
           }
           catch( IOException e )
@@ -244,7 +255,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
       tempMainClass.deleteOnExit(); // in case the compiler exits abnormally
       try
       {
-        IjIncrementalCompileDriver driver = new IjIncrementalCompileDriver();
+        IjIncrementalCompileDriver driver = new IjIncrementalCompileDriver( context );
         //noinspection ResultOfMethodCallIgnored
         tempMainClass.createNewFile();
         FileWriter writer = new FileWriter( tempMainClass );
@@ -266,11 +277,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
         FSOperations.markDirty( context, CompilationRound.CURRENT, tempMainClass );
         if( tempMainClasses.isEmpty() )
         {
-          Map<String, IjIncrementalCompileDriver> drivers = IjIncrementalCompileDriver.INSTANCES.get();
-          if( drivers == null )
-          {
-            IjIncrementalCompileDriver.INSTANCES.set( drivers = new HashMap<>() );
-          }
+          Map<String, IjIncrementalCompileDriver> drivers = getDrivers();
           drivers.put( tempMainClass.getAbsolutePath(), driver );
         }
         tempMainClasses.add( tempMainClass );
@@ -281,6 +288,17 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
       }
     }
     return tempMainClasses;
+  }
+
+  @NotNull
+  private Map<String, IjIncrementalCompileDriver> getDrivers()
+  {
+    Map<String, IjIncrementalCompileDriver> drivers = IjIncrementalCompileDriver.INSTANCES.get();
+    if( drivers == null )
+    {
+      IjIncrementalCompileDriver.INSTANCES.set( drivers = new ConcurrentHashMap<>() );
+    }
+    return drivers;
   }
 
   private String addResourceRoots( List<File> resourceRoots )
