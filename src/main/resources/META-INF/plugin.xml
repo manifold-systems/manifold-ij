@@ -7,7 +7,7 @@
         <div>
           <h2>What is Manifold?</h2>
         </div>
-        <p></p>
+
         <div>
           <p>
             <a href="http://manifold.systems">Manifold</a> is a revolutionary new breed of Java tooling. It provides powerful
@@ -15,11 +15,11 @@
             begin taking advantage of it.
           </p>
         </div>
-        <p></p>
+
         <div>
           <h2>What can you do with Manifold?</h2>
         </div>
-        <p></p>
+
         <div>
           <h3><a href="http://manifold.systems/docs.html#manifold-in-a-nutshell">Meta-programming</a></h3>
           <p>
@@ -31,7 +31,7 @@
             &nbsp;&nbsp;person.setFirstName("Scott");
           </code>
         </div>
-        <p></p>
+
         <div>
           <h3><a href="http://manifold.systems/docs.html#the-extension-manifold">Extensions</a></h3>
           <p>Add extension methods and interfaces to existing Java classes, even String, List, and File. Eliminate boilerplate
@@ -41,7 +41,7 @@
             &nbsp;&nbsp;greeting.myMethod();&nbsp;<i>//&nbsp;augment&nbsp;any&nbsp;type</i>
           </code>
         </div>
-        <p></p>
+
         <div>
           <h3><a href="http://manifold.systems/docs.html#structural-interfaces">Structural Typing</a></h3>
           <p>Unify disparate APIs. Bridge software components you do not control. Access maps through type-safe
@@ -51,7 +51,7 @@
             &nbsp;&nbsp;thing.myMethod();&nbsp;<i>//&nbsp;treat&nbsp;as&nbsp;your&nbsp;interface</i>
           </code>
         </div>
-        <p></p>
+
         <div>
           <h3><a href="http://manifold.systems/docs.html#templating">Templates</a></h3>
           <p>Make type-safe, templatized data files using pure Java. Use the same template expressions in Java strings.</p>
@@ -61,7 +61,7 @@
             &nbsp;&nbsp;<b>String</b>&nbsp;time&nbsp;=&nbsp;"It&nbsp;is&nbsp;<b>$</b><i>hour</i>&nbsp;o'clock";&nbsp;
           </code>
         </div>
-        <p></p>
+
         <div>
           <h3><a href="http://manifold.systems/docs.html#extension-libraries">Libraries</a></h3>
           <p>Leverage stock Manifold extension libraries for standard Java classes. Save time and reduce boilerplate code.</p>
@@ -71,14 +71,14 @@
             &nbsp;&nbsp;<b>String</b>&nbsp;content&nbsp;=&nbsp;file.readText();&nbsp;
           </code>
         </div>
-        <p></p>
+
         <div>
           <h3><a href="http://manifold.systems/docs.html#working-with-intellij">IntelliJ</a></h3>
           <p>Use the Manifold IntelliJ IDEA plugin to fully leverage Manifold in your development cycle. The plugin provides
             comprehensive support for IntelliJ features including code completion, navigation, usage searching, refactoring,
             incremental compilation, hotswap debugging, full-featured template editing, and more.</p>
         </div>
-        <p></p>
+
         <div>
           <h3><a href="http://manifold.systems/docs.html">Learn More</a></h3>
         </div>
