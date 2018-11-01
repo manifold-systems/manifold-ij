@@ -9,12 +9,9 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.PsiImportHolder;
 import com.intellij.psi.ServerPageFile;
-import java.awt.EventQueue;
-import manifold.ij.core.ManModule;
-import manifold.ij.core.ManProject;
+import manifold.ij.core.ManLibraryChecker;
 import manifold.ij.template.ManTemplateFileType;
 import manifold.ij.template.ManTemplateLanguage;
-import manifold.ij.util.MessageUtil;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -28,21 +25,7 @@ public class ManTemplateFile extends PsiFileBase
   ManTemplateFile( @NotNull FileViewProvider viewProvider )
   {
     super( viewProvider, ManTemplateLanguage.INSTANCE );
-    warnIfManifoldTemplatesNotConfiguredForProject();
-  }
-
-  private void warnIfManifoldTemplatesNotConfiguredForProject()
-  {
-    EventQueue.invokeLater(
-      () -> {
-        ManModule module = ManProject.getModule( ManTemplateFile.this );
-        if( module != null &&
-          module.getTypeManifolds().stream()
-          .noneMatch( tm -> tm.getClass().getSimpleName().equals( "TemplateManifold" ) ) )
-        {
-          MessageUtil.showWarning( getProject(), "The use of templates in Module '${module.getName()}' requires a dependency on <b>manifold-templates</b> or <b>manifold-all</b>" );
-        }
-      } );
+    ManLibraryChecker.instance().warnIfManifoldTemplatesNotConfiguredForProject( this );
   }
 
   @NotNull

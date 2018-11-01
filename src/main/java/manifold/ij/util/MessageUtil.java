@@ -1,5 +1,6 @@
 package manifold.ij.util;
 
+import com.intellij.ide.plugins.PluginManagerMain;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
@@ -49,7 +50,7 @@ public final class MessageUtil
   {
     String message = String.format( format, args );
     JBPopupFactory popupFactory = JBPopupFactory.getInstance();
-    popupFactory.createHtmlTextBalloonBuilder( message, messageType, null )
+    popupFactory.createHtmlTextBalloonBuilder( message, messageType, new PluginManagerMain.MyHyperlinkListener() )
       .setCloseButtonEnabled( true )
       .createBalloon()
       .show( RelativePoint.getNorthEastOf( ((WindowManagerEx)WindowManager.getInstance()).getFrame( project ).getLayeredPane() ), Balloon.Position.atRight );

@@ -20,11 +20,8 @@ import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiElementFinder;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
-import com.intellij.util.PathsList;
 import com.intellij.util.messages.MessageBusConnection;
 import java.io.File;
 import java.net.MalformedURLException;
@@ -170,6 +167,7 @@ public class ManProject
     _psiClassCache = new ManifoldPsiClassCache( this );
     _modules = LockingLazyVar.make( () -> ApplicationManager.getApplication().<List<ManModule>>runReadAction( this::defineModules ) );
     addCompilerArgs(); // in case manifold jar was added we might need to update compiler args
+    ManLibraryChecker.instance().warnIfManifoldJarsAreOld( getNativeProject() );
   }
 
   public void reset()
@@ -239,7 +237,7 @@ public class ManProject
 
   private boolean hasCorrectManifoldJars( String options )
   {
-    for( String manJarPath: getManifoldJarsInProject() )
+    for( String manJarPath: ManLibraryChecker.instance().getManifoldJarsInProject( getNativeProject() ) )
     {
       if( !options.contains( manJarPath ) )
       {
@@ -255,7 +253,7 @@ public class ManProject
     StringBuilder processorPath = new StringBuilder();
     if( jdkVersion >= 9 )
     {
-      List<String> manifoldJarsInProject = getManifoldJarsInProject();
+      List<String> manifoldJarsInProject = ManLibraryChecker.instance().getManifoldJarsInProject( getNativeProject() );
       for( String path: manifoldJarsInProject )
       {
         if( processorPath.length() == 0 )
@@ -270,29 +268,6 @@ public class ManProject
       }
     }
     return processorPath.toString();
-  }
-
-  private List<String> getManifoldJarsInProject()
-  {
-    List<String> result = new ArrayList<>();
-    PathsList pathsList = ProjectRootManager.getInstance( _ijProject ).orderEntries().withoutSdk().librariesOnly().getPathsList();
-    for( VirtualFile path: pathsList.getVirtualFiles() )
-    {
-      String extension = path.getExtension();
-      if( extension != null && extension.equals( "jar" ) && path.getNameWithoutExtension().contains( "manifold-" ) )
-      {
-        try
-        {
-          result.add( new File( new URL( path.getUrl() ).getFile() ).getAbsolutePath() );
-        }
-        catch( MalformedURLException e )
-        {
-          //## todo: log
-          e.printStackTrace();
-        }
-      }
-    }
-    return result;
   }
 
   private int findJdkVersion()
