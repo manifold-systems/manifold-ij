@@ -275,11 +275,10 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
         writer.flush();
         writer.close();
         FSOperations.markDirty( context, CompilationRound.CURRENT, tempMainClass );
-        if( tempMainClasses.isEmpty() )
-        {
-          Map<String, IjIncrementalCompileDriver> drivers = getDrivers();
-          drivers.put( tempMainClass.getAbsolutePath(), driver );
-        }
+
+        Map<String, IjIncrementalCompileDriver> drivers = getDrivers();
+        drivers.put( tempMainClass.getAbsolutePath(), driver );
+
         tempMainClasses.add( tempMainClass );
       }
       catch( IOException e )
