@@ -23,6 +23,7 @@ import manifold.ext.ExtensionManifold;
 import manifold.ext.api.Extension;
 import manifold.ext.api.This;
 import manifold.ij.psi.ManLightMethodBuilder;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -38,6 +39,15 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
     {
       return;
     }
+
+    if( searchScope.getClass().getSimpleName().equals( "ModuleWithDependentsScope" ) )
+    {
+      // include libraries to handle extended classes
+      searchScope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(
+        (Module)ReflectUtil.field( searchScope, "myModule" ).get(),
+        ApplicationManager.getApplication().isUnitTestMode() );
+    }
+    GlobalSearchScope theSearchScope = (GlobalSearchScope)searchScope;
 
     PsiMethod method = p.getMethod();
     PsiClass extensionClass = resolveInReadAction( p.getProject(), method::getContainingClass );
@@ -56,7 +66,7 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
       if( method.getModifierList().findAnnotation( Extension.class.getName() ) != null )
       {
         String fqn = getExtendedFqn( extensionClass );
-        PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, (GlobalSearchScope)searchScope );
+        PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, theSearchScope );
 
         for( PsiMethod m : extendedClass.findMethodsByName( method.getName(), false ) )
         {
@@ -75,7 +85,7 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
         if( psiParam.getModifierList().findAnnotation( This.class.getName() ) != null )
         {
           String fqn = getExtendedFqn( extensionClass );
-          PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, getTargetScope( (GlobalSearchScope)searchScope, method ) );
+          PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, getTargetScope( theSearchScope, method ) );
           if( extendedClass == null )
           {
             continue;
