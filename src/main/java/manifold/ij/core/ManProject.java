@@ -175,7 +175,7 @@ public class ManProject
     ApplicationManager.getApplication().runReadAction(
       () -> {
         init();
-        _fileModificationManager.getManRefresher().nukeFromOrbit();
+        getFileModificationManager().getManRefresher().nukeFromOrbit();
       } );
   }
 
@@ -330,9 +330,8 @@ public class ManProject
   }
 
   private void addTypeRefreshListener() {
-    _fileModificationManager = new FileModificationManager( this );
-    _projectConnection.subscribe( PsiDocumentTransactionListener.TOPIC, _fileModificationManager );
-    _applicationConnection.subscribe( VirtualFileManager.VFS_CHANGES, _fileModificationManager );
+    _projectConnection.subscribe( PsiDocumentTransactionListener.TOPIC, getFileModificationManager() );
+    _applicationConnection.subscribe( VirtualFileManager.VFS_CHANGES, getFileModificationManager() );
   }
 
   private void addModuleRefreshListener()
@@ -343,7 +342,9 @@ public class ManProject
 
   public FileModificationManager getFileModificationManager()
   {
-    return _fileModificationManager;
+    return _fileModificationManager = _fileModificationManager == null
+                                      ? new FileModificationManager( this )
+                                      : _fileModificationManager;
   }
 
   public List<ManModule> findRootModules()
