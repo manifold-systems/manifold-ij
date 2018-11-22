@@ -97,6 +97,7 @@ public class StubBuilder
     {
       srcType = new SrcType( type.getCanonicalText() );
     }
+    addAnnotations( srcType, type.getAnnotations() );
     return srcType;
   }
 
@@ -235,7 +236,11 @@ public class StubBuilder
 
   private void addAnnotations( SrcAnnotated<?> srcAnnotated, PsiModifierListOwner annotated )
   {
-    for( PsiAnnotation psiAnno : annotated.getModifierList().getAnnotations() )
+    addAnnotations( srcAnnotated, annotated.getModifierList().getAnnotations() );
+  }
+  private void addAnnotations( SrcAnnotated<?> srcAnnotated, PsiAnnotation[] annotations )
+  {
+    for( PsiAnnotation psiAnno : annotations )
     {
       SrcAnnotationExpression annoExpr = new SrcAnnotationExpression( psiAnno.getQualifiedName() );
       for( PsiNameValuePair value : psiAnno.getParameterList().getAttributes() )

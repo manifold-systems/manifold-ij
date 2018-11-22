@@ -253,7 +253,7 @@ public class ExtensionClassAnnotator implements Annotator
     return packageName.substring( 0, iDot );
   }
 
-  private String getExtendedClassName( String packageName )
+  public static String getExtendedClassName( String packageName )
   {
     int iExt = packageName.indexOf( ExtensionManifold.EXTENSIONS_PACKAGE + '.' );
     return packageName.substring( iExt + ExtensionManifold.EXTENSIONS_PACKAGE.length() + 1 );
@@ -320,7 +320,7 @@ public class ExtensionClassAnnotator implements Annotator
     return false;
   }
 
-  private PsiClass findExtensionClass( PsiElement element )
+  public static PsiClass findExtensionClass( PsiElement element )
   {
     PsiFile containingFile = element.getContainingFile();
     if( !(containingFile instanceof PsiJavaFileImpl) )
