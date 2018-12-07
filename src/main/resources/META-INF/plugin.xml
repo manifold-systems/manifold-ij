@@ -10,7 +10,7 @@
 
         <div>
           <p>
-            <a href="http://manifold.systems">Manifold</a> is a revolutionary new breed of Java tooling. It provides powerful
+            <a href="http://manifold.systems">Manifold</a> is a new breed of Java tooling. It provides powerful
             features to make Java development more appealing and productive. Simply add the Manifold jar to your project and
             begin taking advantage of it.
           </p>
@@ -123,6 +123,11 @@
                     <!--serviceImplementation="manifold.ij.extensions.ManResolveScopeManagerImpl" overrides="true"/>-->
     <projectService serviceInterface="com.intellij.psi.search.PsiSearchHelper"
                     serviceImplementation="manifold.ij.extensions.ManPsiSearchHelperImpl" overrides="true"/>
+
+    <projectService serviceInterface="com.intellij.psi.PsiResolveHelper"
+                    serviceImplementation="manifold.ij.extensions.ManPsiResolveHelperImpl" overrides="true"/>
+    <projectService serviceInterface="com.intellij.psi.impl.source.resolve.ResolveCache"
+                    serviceImplementation="manifold.ij.extensions.ManResolveCache" overrides="true"/>
 
     <!--<library.type implementation="manifold.ij.extensions.ManLibraryType"/>-->
     <frameworkSupport implementation="manifold.ij.extensions.ManSupportProvider"/>
