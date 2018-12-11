@@ -48,32 +48,36 @@ public class ManResolveCache extends ResolveCache
       if( result instanceof CandidateInfo )
       {
         @Jailbreak CandidateInfo info = (CandidateInfo)result;
-        if( ref instanceof PsiReferenceExpression && (info.myAccessible == null || !info.myAccessible) )
+        if( ref instanceof PsiReferenceExpression )
         {
-          PsiReferenceExpression refExpr = (PsiReferenceExpression)ref;
-          if( refExpr.getQualifier() instanceof PsiReferenceExpression )
+          Boolean accessible = info.myAccessible;
+          if( accessible == null || !accessible )
           {
-            PsiType type = ((PsiReferenceExpression)refExpr.getQualifier()).getType();
-            if( isJailbreakType( type ) )
+            PsiReferenceExpression refExpr = (PsiReferenceExpression)ref;
+            if( refExpr.getQualifier() instanceof PsiReferenceExpression )
             {
-              info.myAccessible = true;
-            }
-          }
-          else if( refExpr.getQualifier() instanceof PsiMethodCallExpressionImpl )
-          {
-            PsiMethodCallExpressionImpl qualifier = (PsiMethodCallExpressionImpl)refExpr.getQualifier();
-            String referenceName = qualifier.getMethodExpression().getReferenceName();
-            if( referenceName != null && referenceName.equals( "jailbreak" ) )
-            {
-              // special case for jailbreak() extension
-              info.myAccessible = true;
-            }
-            else
-            {
-              PsiType type = refExpr.getType();
-              if( type != null && type.findAnnotation( Jailbreak.class.getTypeName() ) != null )
+              PsiType type = ((PsiReferenceExpression)refExpr.getQualifier()).getType();
+              if( isJailbreakType( type ) )
               {
                 info.myAccessible = true;
+              }
+            }
+            else if( refExpr.getQualifier() instanceof PsiMethodCallExpressionImpl )
+            {
+              PsiMethodCallExpressionImpl qualifier = (PsiMethodCallExpressionImpl)refExpr.getQualifier();
+              String referenceName = qualifier.getMethodExpression().getReferenceName();
+              if( referenceName != null && referenceName.equals( "jailbreak" ) )
+              {
+                // special case for jailbreak() extension
+                info.myAccessible = true;
+              }
+              else
+              {
+                PsiType type = refExpr.getType();
+                if( type != null && type.findAnnotation( Jailbreak.class.getTypeName() ) != null )
+                {
+                  info.myAccessible = true;
+                }
               }
             }
           }
