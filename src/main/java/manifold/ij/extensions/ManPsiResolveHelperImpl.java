@@ -17,7 +17,7 @@ import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.impl.source.resolve.PsiResolveHelperImpl;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
-import manifold.ext.api.JailBreak;
+import manifold.ext.api.Jailbreak;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,7 +56,7 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
       type = ((PsiNewExpression)place.getContext()).getType();
     }
 
-    accessible = isJailBreakType( type );
+    accessible = isJailbreakType( type );
 
     if( !accessible )
     {
@@ -68,15 +68,15 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
           PsiReferenceExpression context = (PsiReferenceExpression)place.getContext();
           if( context.getQualifier() instanceof PsiReferenceExpression )
           {
-            // for completion on type annotated with @JailBreak
+            // for completion on type annotated with @Jailbreak
             type = ((PsiReferenceExpression)context.getQualifier()).getType();
-            accessible = isJailBreakType( type );
+            accessible = isJailbreakType( type );
           }
           else if( context.getQualifierExpression() instanceof PsiMethodCallExpressionImpl )
           {
             // for completion from jailbreak() method
             type = ((PsiMethodCallExpressionImpl)context.getQualifierExpression()).getMethodExpression().getType();
-            accessible = isJailBreakType( type );
+            accessible = isJailbreakType( type );
           }
         }
       }
@@ -96,18 +96,18 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
         if( place instanceof PsiNewExpression )
         {
           PsiType t = ((PsiNewExpression)place).getType();
-          if( isJailBreakType( t ) )
+          if( isJailbreakType( t ) )
           {
-            @JailBreak CandidateInfo info = (CandidateInfo)result;
+            @Jailbreak CandidateInfo info = (CandidateInfo)result;
             info.myAccessible = true;
           }
         }
         else if( place.getContext() instanceof PsiNewExpression )
         {
           PsiType t = ((PsiNewExpression)place.getContext()).getType();
-          if( isJailBreakType( t ) )
+          if( isJailbreakType( t ) )
           {
-            @JailBreak CandidateInfo info = (CandidateInfo)result;
+            @Jailbreak CandidateInfo info = (CandidateInfo)result;
             info.myAccessible = true;
           }
         }
@@ -116,8 +116,8 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
     return results;
   }
 
-  private boolean isJailBreakType( PsiType type )
+  private boolean isJailbreakType( PsiType type )
   {
-    return type != null && type.findAnnotation( JailBreak.class.getTypeName() ) != null;
+    return type != null && type.findAnnotation( Jailbreak.class.getTypeName() ) != null;
   }
 }

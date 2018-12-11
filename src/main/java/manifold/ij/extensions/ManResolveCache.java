@@ -12,7 +12,7 @@ import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.util.messages.MessageBus;
 import java.util.Map;
-import manifold.ext.api.JailBreak;
+import manifold.ext.api.Jailbreak;
 import org.jetbrains.annotations.NotNull;
 
 public class ManResolveCache extends ResolveCache
@@ -33,7 +33,7 @@ public class ManResolveCache extends ResolveCache
     ApplicationManager.getApplication().assertReadAccessAllowed();
 
     boolean physical = containingFile.isPhysical();
-    @JailBreak ResolveCache me = this;
+    @Jailbreak ResolveCache me = this;
     int index = me.getIndex( incompleteCode, true );
     Map<T, ResolveResult[]> map = me.getMap( physical, index );
     ResolveResult[] results = map.get( ref );
@@ -47,14 +47,14 @@ public class ManResolveCache extends ResolveCache
     {
       if( result instanceof CandidateInfo )
       {
-        @JailBreak CandidateInfo info = (CandidateInfo)result;
+        @Jailbreak CandidateInfo info = (CandidateInfo)result;
         if( ref instanceof PsiReferenceExpression && (info.myAccessible == null || !info.myAccessible) )
         {
           PsiReferenceExpression refExpr = (PsiReferenceExpression)ref;
           if( refExpr.getQualifier() instanceof PsiReferenceExpression )
           {
             PsiType type = ((PsiReferenceExpression)refExpr.getQualifier()).getType();
-            if( isJailBreakType( type ) )
+            if( isJailbreakType( type ) )
             {
               info.myAccessible = true;
             }
@@ -71,7 +71,7 @@ public class ManResolveCache extends ResolveCache
             else
             {
               PsiType type = refExpr.getType();
-              if( type != null && type.findAnnotation( JailBreak.class.getTypeName() ) != null )
+              if( type != null && type.findAnnotation( Jailbreak.class.getTypeName() ) != null )
               {
                 info.myAccessible = true;
               }
@@ -83,8 +83,8 @@ public class ManResolveCache extends ResolveCache
     return results;
   }
 
-  private boolean isJailBreakType( PsiType type )
+  private boolean isJailbreakType( PsiType type )
   {
-    return type != null && type.findAnnotation( JailBreak.class.getTypeName() ) != null;
+    return type != null && type.findAnnotation( Jailbreak.class.getTypeName() ) != null;
   }
 }

@@ -79,9 +79,9 @@
 
         <tr>
           <td><h3><a href="http://manifold.systems/docs.html#jailbreak">Type-safe Reflection</a></h3>
-          <p>Access private features with <b>@JailBreak</b> to avoid the drudgery and vulnerability of Java reflection.</p>
+          <p>Access private features with <b>@Jailbreak</b> to avoid the drudgery and vulnerability of Java reflection.</p>
           <code>
-            &nbsp;&nbsp;<b>@JailBreak</b>&nbsp;Foo&nbsp;foo&nbsp;=&nbsp;<b>new</b>&nbsp;Foo();<br>
+            &nbsp;&nbsp;<b>@Jailbreak</b>&nbsp;Foo&nbsp;foo&nbsp;=&nbsp;<b>new</b>&nbsp;Foo();<br>
             &nbsp;&nbsp;<i>//&nbsp;Direct,&nbsp;type-safe&nbsp;access&nbsp;to&nbsp;*all*&nbsp;foo's&nbsp;members</i><br>
             &nbsp;&nbsp;foo.privateMethod(x, y, z);&nbsp;<br>
             &nbsp;&nbsp;foo.privateField = value;&nbsp;
@@ -175,6 +175,7 @@
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionClassAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionMethodCallSiteAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.SelfUsageAnnotator"/>
+    <annotator language="JAVA" implementationClass="manifold.ij.extensions.JailbreakUsageAnnotator"/>
     <daemon.highlightInfoFilter implementation="manifold.ij.extensions.ManHighlightInfoFilter"/>
     <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameTypeManifoldFileProcessor" order="first"/>
     <moveFileHandler implementation="manifold.ij.extensions.MoveTypeManifoldFileProcessor" order="first"/>

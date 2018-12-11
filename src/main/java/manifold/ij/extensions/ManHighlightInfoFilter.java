@@ -24,7 +24,7 @@ import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiReferenceExpressionImpl;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.util.PsiUtil;
-import manifold.ext.api.JailBreak;
+import manifold.ext.api.Jailbreak;
 import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -72,7 +72,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    if( filterCannotAssignToFinalIfJailBreak( hi, firstElem ) )
+    if( filterCannotAssignToFinalIfJailbreak( hi, firstElem ) )
     {
       return false;
     }
@@ -109,7 +109,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return true;
   }
 
-  private boolean filterCannotAssignToFinalIfJailBreak( HighlightInfo hi, PsiElement firstElem )
+  private boolean filterCannotAssignToFinalIfJailbreak( HighlightInfo hi, PsiElement firstElem )
   {
     if( !hi.getDescription().startsWith( "Cannot assign a value to final variable" ) )
     {
@@ -117,7 +117,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     PsiType type = ((PsiReferenceExpressionImpl)firstElem.getParent()).getType();
-    return type != null && type.findAnnotation( JailBreak.class.getTypeName() ) != null;
+    return type != null && type.findAnnotation( Jailbreak.class.getTypeName() ) != null;
   }
 
   private boolean filterAmbiguousMethods( HighlightInfo hi, PsiElement elem )
