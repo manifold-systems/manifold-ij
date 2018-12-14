@@ -35,7 +35,7 @@ public class ManFrameworkSupportConfigurable extends FrameworkSupportConfigurabl
   {
     LibraryInfo manifoldAll = new LibraryInfo( "manifold-all",
                                                new LibraryDownloadInfo(
-                                                 "https://repository.sonatype.org/service/local/artifact/maven/redirect?r=central-proxy&g=systems.manifold&a=manifold-all&v=RELEASE",
+                                                 "https://repository.sonatype.org/service/local/artifact/maven/content?r=public&g=systems.manifold&a=manifold-all&v=RELEASE",
                                                  "manifold-all" ) );
     return new LibraryInfo[] {manifoldAll};
   }
