@@ -65,19 +65,6 @@
         <tr><td><p></p></td></tr>
 
         <tr>
-          <td><h3><a href="http://manifold.systems/docs.html#templating">Templates</a></h3>
-          <p>Make type-safe, templatized data files using pure Java. Use the same template expressions in Java strings.</p>
-          <code>
-            &nbsp;&nbsp;<b>int</b>&nbsp;hour&nbsp;=&nbsp;<i>8</i>;<br>
-            &nbsp;&nbsp;<i>//&nbsp;"It&nbsp;is&nbsp;8&nbsp;o'clock"</i><br>
-            &nbsp;&nbsp;<b>String</b>&nbsp;time&nbsp;=&nbsp;"It&nbsp;is&nbsp;<b>$</b><i>hour</i>&nbsp;o'clock";&nbsp;
-          </code>
-          </td>
-        </tr>
-
-        <tr><td><p></p></td></tr>
-
-        <tr>
           <td><h3><a href="http://manifold.systems/docs.html#jailbreak">Type-safe Reflection</a></h3>
           <p>Access private features with <b>@Jailbreak</b> to avoid the drudgery and vulnerability of Java reflection.</p>
           <code>
@@ -85,6 +72,19 @@
             &nbsp;&nbsp;<i>//&nbsp;Direct,&nbsp;type-safe&nbsp;access&nbsp;to&nbsp;*all*&nbsp;foo's&nbsp;members</i><br>
             &nbsp;&nbsp;foo.privateMethod(x, y, z);&nbsp;<br>
             &nbsp;&nbsp;foo.privateField = value;&nbsp;
+          </code>
+          </td>
+        </tr>
+
+        <tr><td><p></p></td></tr>
+
+        <tr>
+          <td><h3><a href="http://manifold.systems/docs.html#templating">Templates</a></h3>
+          <p>Make type-safe, templatized data files using pure Java. Use the same template expressions in Java strings.</p>
+          <code>
+            &nbsp;&nbsp;<b>int</b>&nbsp;hour&nbsp;=&nbsp;<i>8</i>;<br>
+            &nbsp;&nbsp;<i>//&nbsp;"It&nbsp;is&nbsp;8&nbsp;o'clock"</i><br>
+            &nbsp;&nbsp;<b>String</b>&nbsp;time&nbsp;=&nbsp;"It&nbsp;is&nbsp;<b>$</b><i>hour</i>&nbsp;o'clock";&nbsp;
           </code>
           </td>
         </tr>
