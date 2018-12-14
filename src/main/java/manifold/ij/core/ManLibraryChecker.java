@@ -63,6 +63,12 @@ public class ManLibraryChecker
 
   private boolean projectJarOlderThanPluginJar( Project project )
   {
+    if( project.isDisposed() )
+    {
+      // project is closed/disposed
+      return false;
+    }
+
     String pluginVer = getVersionFromPlugin();
     if( pluginVer == null )
     {
