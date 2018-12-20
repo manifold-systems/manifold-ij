@@ -3,6 +3,7 @@ package manifold.ij.template.psi;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.lang.java.parser.StatementParser;
+import com.intellij.psi.JavaTokenType;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,6 +44,24 @@ class MyStatementParser extends StatementParser
       }
     }
     return super.parseStatement( builder );
+  }
+
+  @Nullable
+  @Override
+  public PsiBuilder.Marker parseCodeBlock( PsiBuilder builder, boolean isStatement )
+  {
+    if( builder.getTokenType() != JavaTokenType.LBRACE )
+    {
+      return null;
+    }
+
+    // Always parse the block directly, otherwise for lambdas the block is lazily parsed which screws this up
+    // if the block is split with content and expressions:
+    // <% list.forEach( e -> { %>
+    //   blah blah ${state} blah
+    // <% } ) %>
+    // because this class's parseStatement() method must handle the expression.
+    return parseCodeBlockDeep( builder, false );
   }
 
   private boolean isTemplateExpression( int tokenStart )

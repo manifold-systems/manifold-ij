@@ -4,7 +4,7 @@ import com.intellij.codeInsight.daemon.JavaErrorMessages;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.lang.java.parser.ReferenceParser;
-import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.impl.source.tree.ElementType;
 import com.intellij.psi.impl.source.tree.JavaElementType;
@@ -15,9 +15,7 @@ import org.jetbrains.annotations.PropertyKey;
 
 
 import static com.intellij.lang.PsiBuilderUtil.expect;
-import static com.intellij.lang.java.parser.JavaParserUtil.done;
-import static com.intellij.lang.java.parser.JavaParserUtil.error;
-import static com.intellij.lang.java.parser.JavaParserUtil.expectOrError;
+import static com.intellij.lang.java.parser.JavaParserUtil.*;
 
 public class DirectiveParser
 {
@@ -49,8 +47,8 @@ public class DirectiveParser
 
   public void parse( PsiBuilder builder )
   {
-    builder.setDebugMode(true);
-    
+    builder.setDebugMode( ApplicationManager.getApplication().isUnitTestMode() );
+
     String directiveName = builder.getTokenText();
     if( (builder.getTokenType() != JavaTokenType.IDENTIFIER &&
          builder.getTokenType() != JavaTokenType.IMPORT_KEYWORD &&
@@ -123,10 +121,14 @@ public class DirectiveParser
     builder.advanceLexer();
 
     expectOrError( builder, JavaTokenType.IDENTIFIER, "expected.identifier" );
-    expectOrError( builder, JavaTokenType.LPARENTH, "expected.lparen" );
-    parseParameterList( builder );
-    expectOrError( builder, JavaTokenType.RPARENTH, "expected.rparen" );
+    if( builder.getTokenType() == JavaTokenType.LPARENTH )
+    {
+      builder.advanceLexer();
+      parseParameterList( builder, true );
+      expectOrError( builder, JavaTokenType.RPARENTH, "expected.rparen" );
+    }
   }
+
   private void parseEndDirective( PsiBuilder builder )
   {
     builder.advanceLexer();
@@ -192,7 +194,11 @@ public class DirectiveParser
 
   private void parseParameterList( PsiBuilder builder )
   {
-    parseParam( builder );
+    parseParameterList( builder, false );
+  }
+  private void parseParameterList( PsiBuilder builder, boolean allowEmpty )
+  {
+    parseParam( builder, allowEmpty );
     while( builder.getTokenType() == JavaTokenType.COMMA )
     {
       builder.advanceLexer();
@@ -201,6 +207,10 @@ public class DirectiveParser
   }
 
   private void parseParam( PsiBuilder builder )
+  {
+    parseParam( builder, false );
+  }
+  private void parseParam( PsiBuilder builder, boolean allowEmpty )
   {
     final IElementType tokenType = builder.getTokenType();
     if( tokenType == null )
@@ -211,14 +221,17 @@ public class DirectiveParser
     PsiBuilder.Marker declStatement = builder.mark();
     PsiBuilder.Marker localVariableDecl = builder.mark();
 
-    Pair<PsiBuilder.Marker, Boolean> modListInfo = _javaParser.getDeclarationParser().parseModifierList( builder );
-    PsiBuilder.Marker modList = modListInfo.first;
+//    Pair<PsiBuilder.Marker, Boolean> modListInfo = _javaParser.getDeclarationParser().parseModifierList( builder );
+//    PsiBuilder.Marker modList = modListInfo.first;
 
     ReferenceParser.TypeInfo type = parseType( builder );
     if( type == null )
     {
-      PsiBuilder.Marker error = builder.mark();
-      error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
+      if( !allowEmpty )
+      {
+        PsiBuilder.Marker error = builder.mark();
+        error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
+      }
       localVariableDecl.drop();
       declStatement.drop();
       return;

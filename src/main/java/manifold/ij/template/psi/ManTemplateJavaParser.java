@@ -14,6 +14,7 @@ import com.intellij.psi.impl.source.resolve.FileContextUtil;
 import com.intellij.psi.tree.IElementType;
 import java.util.Collections;
 import java.util.List;
+import manifold.ext.api.Jailbreak;
 import manifold.ij.template.IManTemplateOffsets;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,10 +28,12 @@ public class ManTemplateJavaParser implements PsiParser
     JavaParserUtil.setParseStatementCodeBlocksDeep( builder, true );
     setLanguageLevel( builder );
     PsiBuilder.Marker rootMarker = builder.mark();
-    ExpressionParser exprParser = new JavaParser().getExpressionParser();
+    @Jailbreak JavaParser javaParser = new JavaParser();
+    ExpressionParser exprParser = javaParser.getExpressionParser();
     List<Integer> exprOffsets = getExpressionOffsets( builder );
     List<Integer> directiveOffsets = getDirectiveOffsets( builder );
-    MyStatementParser stmtParser = new MyStatementParser( new JavaParser(), this, exprOffsets, directiveOffsets );
+    MyStatementParser stmtParser = new MyStatementParser( javaParser, this, exprOffsets, directiveOffsets );
+    javaParser.myStatementParser = stmtParser;
     while( !builder.eof() )
     {
       int offset = builder.getCurrentOffset();
