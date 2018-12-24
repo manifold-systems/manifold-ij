@@ -4,9 +4,13 @@ import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.lang.java.parser.StatementParser;
 import com.intellij.psi.JavaTokenType;
+import com.intellij.psi.impl.source.tree.JavaElementType;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+
+import static com.intellij.lang.java.parser.JavaParserUtil.done;
 
 class MyStatementParser extends StatementParser
 {
@@ -32,7 +36,15 @@ class MyStatementParser extends StatementParser
       int offset = builder.getCurrentOffset();
       if( isTemplateExpression( offset ) )
       {
+        final PsiBuilder.Marker empty = builder.mark();
         _manParser.parseExpression( builder, _javaParser.getExpressionParser(), offset );
+        if( offset < builder.getCurrentOffset() )
+        {
+          // Wrap the expression in an empty statement to fix issues where
+          // some IJ quick fixes expect there to be at least one statement in
+          // a statement block when the expression is errant (see CreateLocalFromUsageFix#getAnchor)
+          done( empty, JavaElementType.EMPTY_STATEMENT );
+        }
       }
       else if( isTemplateDirective( offset ) )
       {
