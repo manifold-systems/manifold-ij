@@ -161,6 +161,7 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
       ASTNode csr = innards;
       while( csr != null &&
              (csr.getElementType() == JavaElementType.IMPORT_STATEMENT ||
+              csr.getElementType() == JavaElementType.IMPORT_STATIC_STATEMENT ||
               csr.getElementType() == JavaTokenType.WHITE_SPACE ||
               csr.getElementType() == JavaTokenType.C_STYLE_COMMENT ||
               csr.getElementType() == JavaTokenType.END_OF_LINE_COMMENT) )
@@ -216,9 +217,7 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
 
     private ASTNode makeExtendsList( CompositeElement classStmt, ASTNode innards )
     {
-      // The imports must appear before other directives, we grab the beginning
-      // of the file until the first non-import element type.  The rest will be
-      // a child of the code block.
+      // The extends list must appear before other directives.  The rest will be a child of the code block.
       ASTNode csr = innards;
       while( csr != null &&
              (csr.getElementType() == JavaElementType.EXTENDS_LIST ||

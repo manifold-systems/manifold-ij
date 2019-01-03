@@ -168,8 +168,9 @@ public class DirectiveParser
   {
     PsiBuilder.Marker importStatement = builder.mark();
     builder.advanceLexer();
-    _javaParser.getReferenceParser().parseImportCodeReference( builder, false );
-    done( importStatement, JavaElementType.IMPORT_STATEMENT );
+    boolean isStatic = expect( builder, JavaTokenType.STATIC_KEYWORD );
+    _javaParser.getReferenceParser().parseImportCodeReference( builder, isStatic );
+    done( importStatement, isStatic ? JavaElementType.IMPORT_STATIC_STATEMENT : JavaElementType.IMPORT_STATEMENT );
   }
 
   private void parseExtendsDirective( PsiBuilder builder )

@@ -39,7 +39,7 @@ public class ManShortNamesCache extends PsiShortNamesCache
     {
       findPsiClasses( name, scope, psiClasses, module );
     }
-    return psiClasses.toArray( new PsiClass[psiClasses.size()] );
+    return psiClasses.toArray( new PsiClass[0] );
   }
 
   private void findPsiClasses( @NotNull @NonNls String name, @NotNull GlobalSearchScope scope, Set<PsiClass> psiClasses, ManModule module )
@@ -77,14 +77,14 @@ public class ManShortNamesCache extends PsiShortNamesCache
   @Override
   public String[] getAllClassNames()
   {
-    com.intellij.util.containers.HashSet<String> names = new com.intellij.util.containers.HashSet<>();
+    HashSet<String> names = new HashSet<>();
     getAllClassNames( names );
-    return names.toArray( new String[names.size()] );
+    return names.toArray( new String[0] );
   }
 
-  @Override
-  public void getAllClassNames( @NotNull com.intellij.util.containers.HashSet<String> dest )
+  private void getAllClassNames( HashSet<String> dest )
   {
+
     final ManProject manProject = ManProject.manProjectFrom( _psiManager.getProject() );
     for( ManModule module: manProject.findRootModules() )
     {
@@ -92,11 +92,11 @@ public class ManShortNamesCache extends PsiShortNamesCache
     }
   }
 
-  private void findClassFqns( @NotNull com.intellij.util.containers.HashSet<String> dest, ManModule module )
+  private void findClassFqns( @NotNull HashSet<String> dest, ManModule module )
   {
     findClassFqns( dest, module, module );
   }
-  private void findClassFqns( @NotNull com.intellij.util.containers.HashSet<String> dest, ManModule start, ManModule module )
+  private void findClassFqns( @NotNull HashSet<String> dest, ManModule start, ManModule module )
   {
     for( ITypeManifold tm: module.getTypeManifolds() )
     {
@@ -149,12 +149,6 @@ public class ManShortNamesCache extends PsiShortNamesCache
     return new String[0];
   }
 
-  @Override
-  public void getAllMethodNames( @NotNull com.intellij.util.containers.HashSet<String> set )
-  {
-
-  }
-
   @NotNull
   @Override
   public PsiField[] getFieldsByName( @NotNull @NonNls String name, @NotNull GlobalSearchScope scope )
@@ -167,11 +161,5 @@ public class ManShortNamesCache extends PsiShortNamesCache
   public String[] getAllFieldNames()
   {
     return new String[0];
-  }
-
-  @Override
-  public void getAllFieldNames( @NotNull com.intellij.util.containers.HashSet<String> set )
-  {
-
   }
 }
