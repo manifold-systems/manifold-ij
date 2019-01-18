@@ -3,10 +3,14 @@ package manifold.ij.extensions;
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.project.Project;
+import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.JavaResolveResult;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiCapturedWildcardType;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiFile;
@@ -19,11 +23,14 @@ import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeCastExpression;
 import com.intellij.psi.PsiTypeElement;
+import com.intellij.psi.PsiWildcardType;
 import com.intellij.psi.impl.source.tree.java.PsiLocalVariableImpl;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiReferenceExpressionImpl;
 import com.intellij.psi.infos.MethodCandidateInfo;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiUtil;
+import java.util.List;
 import manifold.ext.api.Jailbreak;
 import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -94,7 +101,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
         {
           // ignore "Static method may be invoked on containing interface class only" errors
           // where the method really is directly on the interface, albeit the delegate
-          return !psiMethod.getContainingClass().isInterface();
+          PsiClass containingClass = psiMethod.getContainingClass();
+          return containingClass != null && !containingClass.isInterface();
         }
       }
       return true;
@@ -104,7 +112,10 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     //## structural interface extensions cannot be added to the psiClass, so for now we suppress "incompatible type errors" or similar involving a structural interface extension.
     //##
     Boolean x = acceptInterfaceError( hi, firstElem, elem );
-    if( x != null ) return x;
+    if( x != null )
+    {
+      return x;
+    }
 
     return true;
   }
@@ -170,10 +181,14 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       {
 //        if( TypeUtil.isStructurallyAssignable( castType.getType(), ((PsiTypeCastExpression)elem).getType(), false ) )
 //        {
-          // ignore incompatible cast type involving structure
-          return false;
+        // ignore incompatible cast type involving structure
+        return false;
 //        }
       }
+    }
+    else if( isTypeParameterStructural( hi, firstElem ) )
+    {
+      return false;
     }
     else if( firstElem instanceof PsiIdentifier )
     {
@@ -231,6 +246,128 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return null;
   }
 
+  private boolean isTypeParameterStructural( @NotNull HighlightInfo hi, PsiElement firstElem )
+  {
+    if( firstElem == null )
+    {
+      return false;
+    }
+
+    String prefix = "is not within its bound; should ";
+    int iPrefix = hi.getDescription().indexOf( prefix );
+    if( iPrefix < 0 )
+    {
+      return false;
+    }
+
+    String fqn = hi.getDescription().substring( iPrefix + prefix.length() );
+    fqn = fqn.substring( fqn.indexOf( '\'' ) + 1, fqn.lastIndexOf( '\'' ) );
+    int iAngle = fqn.indexOf( '<' );
+    if( iAngle > 0 )
+    {
+      fqn = fqn.substring( 0, iAngle );
+    }
+    // punting on generics for now, using just raw types (waiting patiently for jetbrains to add interfaces as augments...)
+    PsiClass iface = JavaPsiFacade.getInstance( firstElem.getProject() ).findClass( fqn, GlobalSearchScope.allScope( firstElem.getProject() ) );
+    //PsiReferenceExpression expr = (PsiReferenceExpression)PsiElementFactory.SERVICE.getInstance( firstElem.getProject() ).createExpressionFromText( fqn, firstElem );
+    return isExtendedWithInterface( firstElem, iface );
+  }
+
+  private boolean isExtendedWithInterface( PsiElement firstElem, PsiClass iface )
+  {
+    if( iface == null || !isStructuralInterface( iface ) )
+    {
+      return false;
+    }
+
+    PsiTypeElement typeElement = findTypeElement( firstElem );
+    if( typeElement == null )
+    {
+      return false;
+    }
+
+    PsiType elemType = typeElement.getType();
+    PsiClass psiClass = PsiUtil.resolveClassInType( elemType );
+    if( psiClass == null )
+    {
+      while( elemType instanceof PsiCapturedWildcardType )
+      {
+        elemType = ((PsiCapturedWildcardType)elemType).getWildcard();
+      }
+
+      if( elemType instanceof PsiWildcardType )
+      {
+        PsiType bound = ((PsiWildcardType)elemType).getBound();
+        if( bound == null )
+        {
+          bound = PsiType.getJavaLangObject( firstElem.getManager(), firstElem.getResolveScope() );
+        }
+        psiClass = PsiUtil.resolveClassInType( bound );
+      }
+
+      if( psiClass == null )
+      {
+        return false;
+      }
+    }
+
+    return isExtendedWithInterface( psiClass, iface );
+  }
+
+  /**
+   * This method checks if the given psiClass or anything in its hierarchy is extended with the structural iface
+   * via the KEY_MAN_INTERFACE_EXTENSIONS user data, which is added during augmentation as a hack to provide info
+   * about extension interfaces.
+   */
+  private boolean isExtendedWithInterface( PsiClass psiClass, PsiClass psiInterface )
+  {
+    if( psiClass == null )
+    {
+      return false;
+    }
+
+    psiClass.getMethods(); // force the ManAugmentProvider to add the KEY_MAN_INTERFACE_EXTENSIONS data, if it hasn't yet
+    List<String> ifaceExtenions = psiClass.getCopyableUserData( ManAugmentProvider.KEY_MAN_INTERFACE_EXTENSIONS );
+    if( ifaceExtenions == null || ifaceExtenions.isEmpty() )
+    {
+      return false;
+    }
+
+    Project project = psiClass.getProject();
+    PsiClassType typeIface = JavaPsiFacade.getInstance( project ).getElementFactory().createType( psiInterface );
+
+    for( String fqnExt: ifaceExtenions )
+    {
+      PsiClass psiExt = JavaPsiFacade.getInstance( project ).findClass( fqnExt, GlobalSearchScope.allScope( project ) );
+      if( psiExt != null )
+      {
+        PsiClassType typeExt = JavaPsiFacade.getInstance( project ).getElementFactory().createType( psiExt );
+        if( typeIface.isAssignableFrom( typeExt ) )
+        {
+          return true;
+        }
+      }
+    }
+
+    for( PsiClassType extendsType: psiClass.getExtendsListTypes() )
+    {
+      PsiClass extendsPsi = extendsType.resolve();
+      if( isExtendedWithInterface( extendsPsi, psiInterface ) )
+      {
+        return true;
+      }
+    }
+    for( PsiClassType implementsType: psiClass.getImplementsListTypes() )
+    {
+      PsiClass implementsPsi = implementsType.resolve();
+      if( isExtendedWithInterface( implementsPsi, psiInterface ) )
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private boolean isInvalidStaticMethodOnInterface( HighlightInfo hi )
   {
     return hi.getDescription().contains( "Static method may be invoked on containing interface class only" );
@@ -243,7 +380,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     {
       csr = csr.getParent();
     }
-    if( csr instanceof PsiLocalVariableImpl )
+    if( csr != null )
     {
       PsiExpression initializer = ((PsiLocalVariableImpl)csr).getInitializer();
       return initializer == null ? null : initializer.getType();
@@ -271,24 +408,24 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 //    }
 //  }
 
-  private int findArgPos( PsiMethodCallExpression methodCall, PsiElement firstElem )
-  {
-    PsiExpression[] args = methodCall.getArgumentList().getExpressions();
-    for( int i = 0; i < args.length; i++ )
-    {
-      PsiExpression arg = args[i];
-      PsiElement csr = firstElem;
-      while( csr != null && csr != firstElem )
-      {
-        csr = csr.getParent();
-      }
-      if( csr == firstElem )
-      {
-        return i;
-      }
-    }
-    throw new IllegalStateException();
-  }
+//  private int findArgPos( PsiMethodCallExpression methodCall, PsiElement firstElem )
+//  {
+//    PsiExpression[] args = methodCall.getArgumentList().getExpressions();
+//    for( int i = 0; i < args.length; i++ )
+//    {
+//      PsiExpression arg = args[i];
+//      PsiElement csr = firstElem;
+//      while( csr != null && csr != firstElem )
+//      {
+//        csr = csr.getParent();
+//      }
+//      if( csr == firstElem )
+//      {
+//        return i;
+//      }
+//    }
+//    throw new IllegalStateException();
+//  }
 
   private boolean isStructuralType( PsiTypeElement typeElem )
   {
@@ -299,15 +436,17 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       {
         return false;
       }
-      PsiAnnotation structuralAnno = psiClass.getModifierList() == null
-                                     ? null
-                                     : psiClass.getModifierList().findAnnotation( "manifold.ext.api.Structural" );
-      if( structuralAnno != null )
-      {
-        return true;
-      }
+      return isStructuralInterface( psiClass );
     }
     return false;
+  }
+
+  private boolean isStructuralInterface( PsiClass psiClass )
+  {
+    PsiAnnotation structuralAnno = psiClass.getModifierList() == null
+                                   ? null
+                                   : psiClass.getModifierList().findAnnotation( "manifold.ext.api.Structural" );
+    return structuralAnno != null;
   }
 
   private PsiTypeElement findTypeElement( PsiElement elem )

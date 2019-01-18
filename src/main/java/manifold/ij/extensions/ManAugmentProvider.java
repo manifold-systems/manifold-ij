@@ -4,6 +4,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.util.Computable;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
@@ -26,9 +27,12 @@ import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.util.IncorrectOperationException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import manifold.api.fs.IFile;
 import manifold.api.gen.AbstractSrcMethod;
 import manifold.api.gen.SrcAnnotationExpression;
@@ -61,6 +65,8 @@ import static manifold.api.type.ContributorKind.Supplemental;
  */
 public class ManAugmentProvider extends PsiAugmentProvider
 {
+  static final Key<List<String>> KEY_MAN_INTERFACE_EXTENSIONS = new Key<>( "MAN_INTERFACE_EXTENSIONS" );
+
   public <E extends PsiElement> List<E> getAugments( PsiElement element, Class<E> cls )
   {
     return ApplicationManager.getApplication().runReadAction( (Computable<List<E>>)() -> getAugments( null, element, cls ) );
@@ -162,6 +168,8 @@ public class ManAugmentProvider extends PsiAugmentProvider
   {
     if( classes.length > 0 )
     {
+      addInterfaceExtensions( psiClass, classes[0] );
+
       SrcClass srcExtClass = new StubBuilder().make( classes[0].getQualifiedName(), manModule );
       SrcClass scratchClass = new SrcClass( psiClass.getQualifiedName(), psiClass.isInterface() ? SrcClass.Kind.Interface : SrcClass.Kind.Class );
       for( PsiTypeParameter tv : psiClass.getTypeParameters() )
@@ -182,6 +190,18 @@ public class ManAugmentProvider extends PsiAugmentProvider
         }
       }
     }
+  }
+
+  /**
+   * A stopgap until jetbrains supports interfaces as augments
+   */
+  private void addInterfaceExtensions( PsiClass psiClass, PsiClass extClass )
+  {
+    List<String> ifaceExtensions = Arrays.stream( extClass.getImplementsListTypes() )
+      .map( PsiClassType::resolve )
+      .filter( Objects::nonNull )
+      .map( PsiClass::getQualifiedName ).collect( Collectors.toList() );
+    psiClass.putCopyableUserData( KEY_MAN_INTERFACE_EXTENSIONS, ifaceExtensions );
   }
 
   private PsiMethod makePsiMethod( AbstractSrcMethod method, PsiClass psiClass )
