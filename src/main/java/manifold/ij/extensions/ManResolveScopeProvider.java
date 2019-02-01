@@ -15,18 +15,19 @@ import manifold.api.type.ContributorKind;
 import manifold.api.type.ITypeManifold;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Provide resolve scope for extended files.
  * <p/>
- * {@link ManifoldExtendedPsiClass} augments a file that probably lives in a separate module.
+ * {@link ManifoldPsiClass} augments a file that probably lives in a separate module.
  * Basically we need to use the scope of the Extension class, not the extended class.
  * This is mostly so any generic classes referenced in the extension class can resolve properly.
  */
 public class ManResolveScopeProvider extends ResolveScopeEnlarger
 {
   @Override
-  public SearchScope getAdditionalResolveScope( VirtualFile file, Project project )
+  public SearchScope getAdditionalResolveScope( @NotNull VirtualFile file, Project project )
   {
     ManProject manProject = ManProject.manProjectFrom( project );
     PsiFile psiFile = PsiManager.getInstance( project ).findFile( file );
@@ -35,14 +36,14 @@ public class ManResolveScopeProvider extends ResolveScopeEnlarger
     {
       PsiClassOwner classFile = (PsiClassOwner)psiFile;
       String fqn = classFile.getPackageName() + '.' + FileUtil.getNameWithoutExtension( classFile.getName() );
-      for( ManModule module : manProject.getModules() )
+      for( ManModule module : manProject.getModules().values() )
       {
         unionScope = addScopeIfExtended( fqn, unionScope, module );
       }
     }
     else
     {
-      for( ManModule module : manProject.getModules() )
+      for( ManModule module : manProject.getModules().values() )
       {
         String[] fqns = module.getTypesForFile( manProject.getFileSystem().getIFile( file ) );
         for( String fqn: fqns )
@@ -76,7 +77,7 @@ public class ManResolveScopeProvider extends ResolveScopeEnlarger
 
   private boolean isTypeExtendedInModule( String fqn, ManModule module )
   {
-    Set<ITypeManifold> tms = module.findTypeManifoldsFor( fqn );
-    return tms.stream().anyMatch( tm -> tm.getContributorKind() == ContributorKind.Supplemental );
+    Set<ITypeManifold> tms = module.super_findTypeManifoldsFor( fqn, tm -> tm.getContributorKind() == ContributorKind.Supplemental );
+    return !tms.isEmpty();
   }
 }

@@ -2,7 +2,6 @@ package manifold.ij.core;
 
 import com.intellij.ProjectTopics;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
-import com.intellij.compiler.server.BuildManagerListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilerPaths;
 import com.intellij.openapi.module.Module;
@@ -33,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +55,8 @@ import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LockingLazyVar;
+import manifold.util.concurrent.LocklessLazyVar;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
 import org.picocontainer.MutablePicoContainer;
 
@@ -70,13 +72,14 @@ public class ManProject
   private IjManifoldHost _host;
   private final Project _ijProject;
   private IjFileSystem _fs;
-  private LockingLazyVar<List<ManModule>> _modules;
+  private LockingLazyVar<Map<Module, ManModule>> _modules;
   private MessageBusConnection _projectConnection;
   private MessageBusConnection _applicationConnection;
   private MessageBusConnection _permanentProjectConnection;
   private ModuleClasspathListener _moduleClasspathListener;
   private FileModificationManager _fileModificationManager;
   private ManifoldPsiClassCache _psiClassCache;
+  private LocklessLazyVar<Set<ManModule>> _rootModules;
 
   public static Collection<ManProject> getAllProjects()
   {
@@ -101,12 +104,10 @@ public class ManProject
   public static ManModule getModule( Module module )
   {
     ManProject manProject = getProject( module.getProject() );
-    for( ManModule mm : manProject.getModules() )
+    ManModule manModule = manProject.getModules().get( module );
+    if( manModule != null )
     {
-      if( mm.getIjModule().equals( module ) )
-      {
-        return mm;
-      }
+      return manModule;
     }
 
     // The module may not yet be committed to the project
@@ -168,9 +169,29 @@ public class ManProject
     _host = new IjManifoldHost( this );
     _fs = new IjFileSystem( this );
     _psiClassCache = new ManifoldPsiClassCache( this );
-    _modules = LockingLazyVar.make( () -> ApplicationManager.getApplication().<List<ManModule>>runReadAction( this::defineModules ) );
+    _modules = LockingLazyVar.make( () -> ApplicationManager.getApplication().<Map<Module, ManModule>>runReadAction( this::defineModules ) );
+    _rootModules = assignRootModuleLazy();
     addCompilerArgs(); // in case manifold jar was added we might need to update compiler args
     ManLibraryChecker.instance().warnIfManifoldJarsAreOld( getNativeProject() );
+  }
+
+  @NotNull
+  private LocklessLazyVar<Set<ManModule>> assignRootModuleLazy()
+  {
+    return LocklessLazyVar.make(
+      () -> {
+        HashSet<ManModule> roots = new HashSet<>( getModules().values() );
+        for( ManModule module : new ArrayList<>( roots ) )
+        {
+          for( Dependency d : module.getDependencies() )
+          {
+            //noinspection SuspiciousMethodCalls
+            roots.remove( d.getModule() );
+          }
+        }
+        return roots;
+      }
+    );
   }
 
   public void reset()
@@ -197,7 +218,7 @@ public class ManProject
     return _ijProject;
   }
 
-  public List<ManModule> getModules()
+  public Map<Module, ManModule> getModules()
   {
     return _modules.get();
   }
@@ -226,11 +247,11 @@ public class ManProject
   }
 
   // no longer required see ManChangedResourcesBuilder
-  private void addStaleClassCleaner()
-  {
-    MessageBusConnection connection = _ijProject.getMessageBus().connect( _ijProject );
-    connection.subscribe( BuildManagerListener.TOPIC, new ManStaleClassCleaner() );
-   }
+//  private void addStaleClassCleaner()
+//  {
+//    MessageBusConnection connection = _ijProject.getMessageBus().connect( _ijProject );
+//    connection.subscribe( BuildManagerListener.TOPIC, new ManStaleClassCleaner() );
+//   }
 
   private void addCompilerArgs()
   {
@@ -360,33 +381,24 @@ public class ManProject
                                       : _fileModificationManager;
   }
 
-  public List<ManModule> findRootModules()
+  public Set<ManModule> getRootModules()
   {
-    List<ManModule> roots = new ArrayList<>( getModules() );
-    for( ManModule module : new ArrayList<>( roots ) )
-    {
-      for( Dependency d : module.getDependencies() )
-      {
-        //noinspection SuspiciousMethodCalls
-        roots.remove( d.getModule() );
-      }
-    }
-    return roots;
+    return _rootModules.get();
   }
 
-  private List<ManModule> defineModules()
+  private Map<Module, ManModule> defineModules()
   {
     ModuleManager moduleManager = ModuleManager.getInstance( _ijProject );
     Module[] allIjModules = moduleManager.getModules();
 
     // create modules
     Map<Module, ManModule> modules = new HashMap<>();
-    List<ManModule> allModules = new ArrayList<>();
+    Map<Module, ManModule> allModules = new LinkedHashMap<>();
     for( Module ijModule : allIjModules )
     {
       final ManModule module = defineModule( ijModule );
       modules.put( ijModule, module );
-      allModules.add( module );
+      allModules.put( ijModule, module );
     }
 
     // add module dependencies
@@ -397,13 +409,13 @@ public class ManProject
 
     // reduce classpaths
     Set<ManModule> visited = new HashSet<>();
-    for( ManModule manModule: allModules )
+    for( ManModule manModule: allModules.values() )
     {
       manModule.reduceClasspath( visited );
     }
 
     // finally, initialize the type manifolds for each module
-    for( ManModule manModule: allModules )
+    for( ManModule manModule: allModules.values() )
     {
       manModule.initializeTypeManifolds();
     }

@@ -222,38 +222,32 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
    */
   private FqnCacheNode<ManifoldPsiClass> createPrimaryType( ManModule module, String fqn )
   {
-    Set<ITypeManifold> sps = module.findTypeManifoldsFor( fqn );
+    Set<ITypeManifold> tms = module.findTypeManifoldsFor( fqn, tm -> tm.getContributorKind() == Primary ||
+                                                                     tm.getContributorKind() == Partial );
     ITypeManifold found = null;
-    if( !sps.isEmpty() )
+    if( !tms.isEmpty() )
     {
       String result = "";
       DiagnosticCollector<JavaFileObject> issues = new DiagnosticCollector<>();
-      for( ITypeManifold sp : sps )
+      for( ITypeManifold tm : tms )
       {
-        if( sp.getContributorKind() == Primary ||
-            sp.getContributorKind() == Partial )
+        if( found != null && (found.getContributorKind() == Primary || tm.getContributorKind() == Primary) )
         {
-          if( found != null && (found.getContributorKind() == Primary || sp.getContributorKind() == Primary) )
-          {
-            throw new ConflictingTypeManifoldsException( fqn, found, sp );
-          }
-          found = sp;
-          result = sp.contribute( null, fqn, result, issues );
+          throw new ConflictingTypeManifoldsException( fqn, found, tm );
         }
+        found = tm;
+        result = tm.contribute( null, fqn, result, issues );
       }
 
-      if( found != null )
+      ManModule actualModule = (ManModule)found.getModule();
+      PsiClass delegate = createPsiClass( actualModule, fqn, result );
+      delegate = maybeGetInnerClass( fqn, delegate );
+      List<IFile> files = found.findFilesForType( fqn );
+      ManifoldPsiClass psiFacadeClass = new ManifoldPsiClass( delegate, actualModule, files, fqn, issues );
+      _fqnPsiCache.add( fqn, psiFacadeClass );
+      for( IFile file : files )
       {
-        ManModule actualModule = (ManModule)found.getModule();
-        PsiClass delegate = createPsiClass( actualModule, fqn, result );
-        delegate = maybeGetInnerClass( fqn, delegate );
-        List<IFile> files = found.findFilesForType( fqn );
-        ManifoldPsiClass psiFacadeClass = new ManifoldPsiClass( delegate, actualModule, files, fqn, issues );
-        _fqnPsiCache.add( fqn, psiFacadeClass );
-        for( IFile file : files )
-        {
-          _filePathToPsi.put( file.getPath().getPathString(), psiFacadeClass );
-        }
+        _filePathToPsi.put( file.getPath().getPathString(), psiFacadeClass );
       }
     }
 

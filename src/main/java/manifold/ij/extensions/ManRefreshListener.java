@@ -7,12 +7,20 @@ package manifold.ij.extensions;
 import com.intellij.openapi.project.Project;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import manifold.api.fs.IResource;
+import manifold.api.host.IModule;
 import manifold.api.host.ITypeSystemListener;
 import manifold.api.host.RefreshKind;
 import manifold.api.host.RefreshRequest;
+import manifold.api.type.ITypeManifold;
+import manifold.ext.IExtensionClassProducer;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
@@ -127,26 +135,44 @@ public class ManRefreshListener
     }
 
     IjFile file = (IjFile)res;
-    for( ManModule module: _manProject.getModules() )
+    Set<ITypeManifold> tms = ManModule.findTypeManifoldsForFile( _manProject.getNativeProject(), file, null, null );
+    if( tms.isEmpty() )
     {
-      String[] fqns = module.getTypesForFile( file );
-      RefreshRequest request = new RefreshRequest( file, fqns, module, kind );
-      List<ITypeSystemListener> listeners = getListeners();
-      switch( kind )
-      {
-        case CREATION:
-        case MODIFICATION:
-          // for creation the file system needs to be updated *before* other listeners
-          notifyEarlyListeners( request, listeners );
-          notifyNonearlyListeners( request, listeners );
-          break;
+      return;
+    }
 
-        case DELETION:
-          // for deletion the file system needs to be updated *after* other listeners
-          notifyNonearlyListeners( request, listeners );
-          notifyEarlyListeners( request, listeners );
-          break;
+    Map<IModule, Set<String>> moduleToFqns = new HashMap<>();
+    for( ITypeManifold tm: tms )
+    {
+      Set<String> fqnByModule = moduleToFqns.computeIfAbsent( tm.getModule(), e -> new LinkedHashSet<>() );
+      ((ManModule)tm.getModule()).addFromPath( file, fqnByModule );
+      fqnByModule.addAll( Arrays.asList( tm.getTypesForFile( file ) ) );
+      if( tm instanceof IExtensionClassProducer )
+      {
+        fqnByModule.addAll( ((IExtensionClassProducer)tm).getExtendedTypesForFile( file ) );
       }
+    }
+    moduleToFqns.forEach( (module, fqns) -> notify( module, file, fqns, kind ) );
+  }
+
+  private void notify( IModule module, IjFile file, Set<String> result, RefreshKind kind )
+  {
+    RefreshRequest request = new RefreshRequest( file, result.toArray( new String[0] ), module, kind );
+    List<ITypeSystemListener> listeners = getListeners();
+    switch( kind )
+    {
+      case CREATION:
+      case MODIFICATION:
+        // for creation the file system needs to be updated *before* other listeners
+        notifyEarlyListeners( request, listeners );
+        notifyNonearlyListeners( request, listeners );
+        break;
+
+      case DELETION:
+        // for deletion the file system needs to be updated *after* other listeners
+        notifyNonearlyListeners( request, listeners );
+        notifyEarlyListeners( request, listeners );
+        break;
     }
   }
 

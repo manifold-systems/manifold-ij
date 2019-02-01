@@ -112,7 +112,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
   private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures )
   {
     ManProject manProject = ManProject.manProjectFrom( psiClass.getProject() );
-    for( ManModule manModule : manProject.getModules() )
+    for( ManModule manModule : manProject.getModules().values() )
     {
       addMethods( fqn, psiClass, augFeatures, manModule.getIjModule() );
     }

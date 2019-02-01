@@ -103,7 +103,7 @@ public class ManTypeFinder extends PsiElementFinder
     }
 
     ManProject manProject = ManProject.manProjectFrom( scope.getProject() );
-    List<ManModule> modules = new ArrayList<>( manProject.getModules() );
+    List<ManModule> modules = new ArrayList<>( manProject.getModules().values() );
     modules.removeIf( module -> !scope.isSearchInModuleContent( module.getIjModule() ) );
     return modules;
   }
@@ -224,7 +224,7 @@ public class ManTypeFinder extends PsiElementFinder
   {
     //System.out.println( "findPackage() : " + fqn );
 
-    List<ManModule> modules = ManProject.manProjectFrom( _project ).getModules();
+    Collection<ManModule> modules = ManProject.manProjectFrom( _project ).getModules().values();
     PsiManager manager = PsiManagerImpl.getInstance( _project );
     for( ManModule mm : modules )
     {

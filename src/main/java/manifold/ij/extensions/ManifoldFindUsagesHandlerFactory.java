@@ -35,6 +35,12 @@ public class ManifoldFindUsagesHandlerFactory extends JavaFindUsagesHandlerFacto
     return !javaElem.isEmpty() && super.canFindUsages( javaElem.iterator().next() );
   }
 
+  @Override // since IJ EAP 2019.1.0
+  public FindUsagesHandler createFindUsagesHandler( @NotNull PsiElement element, @NotNull OperationMode operationMode )
+  {
+    return createFindUsagesHandler( element, operationMode == OperationMode.HIGHLIGHT_USAGES );
+  }
+
   @Nullable
   @Override
   public FindUsagesHandler createFindUsagesHandler( @NotNull PsiElement element, boolean forHighlightUsages )
@@ -65,7 +71,8 @@ public class ManifoldFindUsagesHandlerFactory extends JavaFindUsagesHandlerFacto
       return FindUsagesHandler.NULL_HANDLER;
     }
 
-    return new JavaFindUsagesHandler( element, this ) {
+    return new JavaFindUsagesHandler( element, this )
+    {
       @NotNull
       @Override
       public PsiElement[] getPrimaryElements()

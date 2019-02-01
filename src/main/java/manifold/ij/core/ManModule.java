@@ -1,18 +1,21 @@
 package manifold.ij.core;
 
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import manifold.api.fs.IDirectory;
 import manifold.api.fs.IFile;
 import manifold.api.fs.IFileSystem;
@@ -21,8 +24,11 @@ import manifold.api.type.ITypeManifold;
 import manifold.api.type.ResourceFileTypeManifold;
 import manifold.api.type.TypeName;
 import manifold.ext.IExtensionClassProducer;
+import manifold.ij.fs.IjFile;
 import manifold.internal.host.SimpleModule;
 import manifold.util.JsonUtil;
+import manifold.util.concurrent.LocklessLazyVar;
+import org.jetbrains.annotations.NotNull;
 
 /**
  */
@@ -33,6 +39,7 @@ public class ManModule extends SimpleModule
   private List<Dependency> _dependencies;
   private List<IDirectory> _excludedDirs;
   private URLClassLoader _typeManifoldClassLoader;
+  private LocklessLazyVar<List<ManModule>> _modulesDependingOnMe;
 
   ManModule( ManProject manProject, Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePath, List<IDirectory> outputPath, List<IDirectory> excludedDirs )
   {
@@ -41,6 +48,12 @@ public class ManModule extends SimpleModule
     _manProject = manProject;
     _excludedDirs = excludedDirs;
     _dependencies = new ArrayList<>();
+    _modulesDependingOnMe = LocklessLazyVar.make(
+      () -> {
+        LinkedHashSet<Module> result = new LinkedHashSet<>();
+        ModuleUtilCore.collectModulesDependsOn( getIjModule(), result );
+        return result.stream().map( ManProject::getModule ).collect( Collectors.toList() );
+      } );
   }
 
   @Override
@@ -85,53 +98,91 @@ public class ManModule extends SimpleModule
     return getProject().getFileSystem();
   }
 
-  @SafeVarargs
-  @SuppressWarnings("Duplicates")
-  @Override
-  public final Set<ITypeManifold> findTypeManifoldsFor( String fqn, Predicate<ITypeManifold>... predicates )
+  public final Set<ITypeManifold> super_findTypeManifoldsFor( String fqn, Predicate<ITypeManifold> predicate )
   {
-    return findTypeManifoldsFor( fqn, predicates, this );
+    return super.findTypeManifoldsFor( fqn, predicate );
   }
-  private Set<ITypeManifold> findTypeManifoldsFor( String fqn, Predicate<ITypeManifold>[] predicates, ManModule root )
+
+  /**
+   * Find type manifolds for an FQN starting with this module and then searching its dependencies (search *down*).
+   * Note searching for type manifolds for an FQN amounts to *resolving* the FQN from the context of THIS module.
+   * Say we are in an editor trying to resolve "abc.Foo".  If the resource[s] comprising "abc.Foo" live in this
+   * module, the type manifolds for this module resolve it.  Otherwise, we search dependencies because this module
+   * has access to resources in its dependencies.
+   *
+   * @param fqn The FQN to resolve in terms of the type manifolds that build the corresponding type
+   * @param predicate A predicate that filters the type manifolds returned
+   * @return The set of type manifolds responsible for producing the type corresponding with FQN
+   */
+  @Override
+  public final Set<ITypeManifold> findTypeManifoldsFor( String fqn, Predicate<ITypeManifold> predicate )
   {
-    Set<ITypeManifold> sps = super.findTypeManifoldsFor( fqn, predicates );
+    return findTypeManifoldsFor( fqn, predicate, this, new HashSet<>() );
+  }
+  private Set<ITypeManifold> findTypeManifoldsFor( String fqn, Predicate<ITypeManifold> predicate, ManModule root, HashSet<ManModule> visited )
+  {
+    if( visited.contains( this ) )
+    {
+      // prevent cycles (prohibited in IJ?)
+      return Collections.emptySet();
+    }
+    visited.add( this );
+
+    Set<ITypeManifold> sps = super.findTypeManifoldsFor( fqn, predicate );
     if( !sps.isEmpty() )
     {
       return sps;
     }
     sps = new HashSet<>();
-    for( Dependency d : getDependencies() )
+    for( Dependency d: getDependencies() )
     {
       if( this == root || d.isExported() )
       {
-        sps.addAll( ((ManModule)d.getModule()).findTypeManifoldsFor( fqn, predicates, root ) );
+        sps.addAll( ((ManModule)d.getModule()).findTypeManifoldsFor( fqn, predicate, root, visited ) );
       }
     }
     return sps;
   }
 
-  @SuppressWarnings("Duplicates")
-  @Override
-  public Set<ITypeManifold> findTypeManifoldsFor( IFile file )
+  /**
+   * Search for the type manifolds that use {@code file} as the basis for type[s].  Note searching for type manifolds
+   * for a file amounts to first finding the module that contains {@code file} and the transitive set of modules that
+   * depend *on* the containing module, in other words search *up*.  This is because only modules that have access to
+   * {@code file} can have type manifolds for it.  This is the inverse of searching for an FQN.
+   *
+   * @param project The project to which the search is limited
+   * @param file The file to find type manifolds for
+   * @param include An optional predicate controlling the type manifolds returned. Note a type manifold is included in
+   *                the search results only if it passes {@code include}'s test and then also passes {@link ITypeManifold#handlesFile(IFile)}
+   * @param terminate An optional predicate to determine whether or not the search should terminate
+   * @return The set of type manifolds responsible for resolving the type corresponding with {@code file}
+   */
+  public static @NotNull Set<ITypeManifold> findTypeManifoldsForFile( Project project, IFile file,
+                                                                      Predicate<ITypeManifold> include,
+                                                                      Predicate<ITypeManifold> terminate)
   {
-    return findTypeManifoldsFor( file, this );
-  }
-  private Set<ITypeManifold> findTypeManifoldsFor( IFile file, ManModule root )
-  {
-    Set<ITypeManifold> sps = super.findTypeManifoldsFor( file );
-    if( !sps.isEmpty() )
+    Set<ITypeManifold> result = Collections.emptySet();
+    Module moduleForFile = ModuleUtilCore.findModuleForFile( ((IjFile)file).getVirtualFile(), project );
+    Collection<ManModule> modules = moduleForFile == null
+                                    ? ManProject.manProjectFrom( project ).getModules().values()
+                                    : ManProject.getModule( moduleForFile )._modulesDependingOnMe.get();
+    for( ManModule m: modules )
     {
-      return sps;
-    }
-    sps = new HashSet<>();
-    for( Dependency d : getDependencies() )
-    {
-      if( this == root || d.isExported() )
+      Set<ITypeManifold> res = m.findTypeManifoldsFor( file, include );
+      if( !res.isEmpty() )
       {
-        sps.addAll( ((ManModule)d.getModule()).findTypeManifoldsFor( file, root ) );
+        if( result.isEmpty() )
+        {
+          result = new HashSet<>();
+        }
+        result.addAll( res );
+        if( res.stream().anyMatch( tm -> terminate != null && terminate.test( tm ) ) )
+        {
+          break;
+        }
       }
     }
-    return sps;
+    return result;
   }
 
   @Override
@@ -155,8 +206,8 @@ public class ManModule extends SimpleModule
   }
 
   /**
-   * Override to add the source providers that may be in the Module's classpath.
-   * Note we create a classloader per module exclusively to load source providers
+   * Override to add the type manifolds that may be in the Module's classpath.
+   * Note we create a classloader per module exclusively to load type manifolds
    * from the module's classpath.
    *
    * @see #initializeModuleClassLoader()
@@ -231,12 +282,11 @@ public class ManModule extends SimpleModule
     {
       return Collections.emptyList();
     }
-
     visited.add( this );
 
     List<IDirectory> all = new ArrayList<>( getJavaClassPath() );
 
-    for( Dependency d : getDependencies() )
+    for( Dependency d: getDependencies() )
     {
       if( (this == root || d.isExported()) && d.getModule() != this )
       {
@@ -265,7 +315,7 @@ public class ManModule extends SimpleModule
   // Add names from path and current file name.  This is essential for cases
   // like rename file/type where the cached name associated with the file is
   // mapped to the old name, hence the raw processing here.
-  private void addFromPath( IFile file, Set<String> result )
+  public void addFromPath( IFile file, Set<String> result )
   {
     List<IDirectory> sourcePath = getSourcePath();
     outer:
@@ -311,18 +361,6 @@ public class ManModule extends SimpleModule
     }
 
     setJavaClassPath( classpath );
-  }
-
-  public boolean hasDependency( ManModule m )
-  {
-    for( Dependency d: getDependencies() )
-    {
-      if( d.getModule() == m || ((ManModule)d.getModule()).hasDependency( m ) )
-      {
-        return true;
-      }
-    }
-    return false;
   }
 
   private boolean hasPath( IDirectory directory )

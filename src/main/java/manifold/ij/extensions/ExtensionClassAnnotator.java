@@ -272,7 +272,7 @@ public class ExtensionClassAnnotator implements Annotator
     else
     {
       ManProject manProject = ManProject.manProjectFrom( psiExtentionInterface.getProject() );
-      for( ManModule manModule : manProject.getModules() )
+      for( ManModule manModule : manProject.getModules().values() )
       {
         if( isInterfaceMadeStructuralByExtension( psiExtentionInterface, manModule ) )
         {

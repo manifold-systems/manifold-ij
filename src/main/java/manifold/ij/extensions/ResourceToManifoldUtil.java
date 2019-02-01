@@ -72,26 +72,19 @@ public class ResourceToManifoldUtil
 
     Set<PsiClass> result = new HashSet<>();
     IjFile file = FileUtil.toIFile( manProject, virtualFile );
-    for( ManModule module : manProject.getModules() )
+    Set<ITypeManifold> tms = ManModule.findTypeManifoldsForFile( manProject.getNativeProject(), file,
+      tm -> tm.getContributorKind() == ContributorKind.Primary,
+      tm -> tm.getContributorKind() == ContributorKind.Primary );
+    for( ITypeManifold tm : tms )
     {
-      Set<ITypeManifold> set = module.findTypeManifoldsFor( file );
-      if( set != null )
+      String[] fqns = tm.getTypesForFile( file );
+      for( String fqn : fqns )
       {
-        for( ITypeManifold tf : set )
+        PsiClass psiClass = JavaPsiFacade.getInstance( fileElem.getProject() )
+          .findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( ((ManModule)tm.getModule()).getIjModule() ) );
+        if( psiClass != null )
         {
-          if( tf.getContributorKind() == ContributorKind.Primary )
-          {
-            String[] fqns = tf.getTypesForFile( file );
-            for( String fqn : fqns )
-            {
-              PsiClass psiClass = JavaPsiFacade.getInstance( fileElem.getProject() )
-                .findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ) );
-              if( psiClass != null )
-              {
-                result.add( psiClass );
-              }
-            }
-          }
+          result.add( psiClass );
         }
       }
     }
@@ -152,33 +145,26 @@ public class ResourceToManifoldUtil
     {
       return Collections.emptySet();
     }
-    for( ManModule module : manProject.getModules() )
+    IjFile file = FileUtil.toIFile( manProject, virtualFile );
+    Set<ITypeManifold> set = ManModule.findTypeManifoldsForFile( manProject.getNativeProject(), file,
+      tm ->  tm.getContributorKind() == ContributorKind.Primary,
+      tm -> tm.getContributorKind() == ContributorKind.Primary );
+    for( ITypeManifold tm : set )
     {
-      IjFile file = FileUtil.toIFile( manProject, virtualFile );
-      Set<ITypeManifold> set = module.findTypeManifoldsFor( file );
-      if( set != null )
+      Collection<String> fqns = findTypesForFile( tm, file );
+      for( String fqn : fqns )
       {
-        for( ITypeManifold tf : set )
+        PsiClass psiClass = JavaPsiFacade.getInstance( manProject.getNativeProject() )
+          .findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( ((ManModule)tm.getModule()).getIjModule() ) );
+        if( psiClass != null )
         {
-          if( tf.getContributorKind() == ContributorKind.Primary )
+          if( PsiErrorClassUtil.isErrorClass( psiClass ) )
           {
-            Collection<String> fqns = findTypesForFile( tf, file );
-            for( String fqn : fqns )
-            {
-              PsiClass psiClass = JavaPsiFacade.getInstance( module.getIjProject() )
-                .findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ) );
-              if( psiClass != null )
-              {
-                if( PsiErrorClassUtil.isErrorClass( psiClass ) )
-                {
-                  result.add( psiClass );
-                }
-                else
-                {
-                  result.addAll( findJavaElementsFor( psiClass, element ) );
-                }
-              }
-            }
+            result.add( psiClass );
+          }
+          else
+          {
+            result.addAll( findJavaElementsFor( psiClass, element ) );
           }
         }
       }

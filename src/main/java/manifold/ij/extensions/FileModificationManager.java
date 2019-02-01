@@ -204,6 +204,7 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
   {
     return file == null ||
            file.getPath().contains( "/.idea/" ) ||
+           file.getPath().contains( "/.git/" ) ||
            file.getPath().contains( "/idea-sandbox/" );
   }
 

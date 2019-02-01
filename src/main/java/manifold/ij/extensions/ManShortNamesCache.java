@@ -44,10 +44,17 @@ public class ManShortNamesCache extends PsiShortNamesCache
 
   private void findPsiClasses( @NotNull @NonNls String name, @NotNull GlobalSearchScope scope, Set<PsiClass> psiClasses, ManModule module )
   {
-    findPsiClasses( name, scope, psiClasses, module, module );
+    findPsiClasses( name, scope, psiClasses, module, module, new HashSet<>() );
   }
-  private void findPsiClasses( @NotNull @NonNls String name, @NotNull GlobalSearchScope scope, Set<PsiClass> psiClasses, ManModule start, ManModule module )
+  private void findPsiClasses( @NotNull @NonNls String name, @NotNull GlobalSearchScope scope, Set<PsiClass> psiClasses,
+                               ManModule start, ManModule module, HashSet<ManModule> visited )
   {
+    if( visited.contains( module ) )
+    {
+      return;
+    }
+    visited.add( module );
+
     for( ITypeManifold tm: module.getTypeManifolds() )
     {
       for( String fqn: tm.getAllTypeNames() )
@@ -64,11 +71,11 @@ public class ManShortNamesCache extends PsiShortNamesCache
         }
       }
     }
-    for( Dependency d : module.getDependencies() )
+    for( Dependency d: module.getDependencies() )
     {
       if( module == start || d.isExported() )
       {
-        findPsiClasses( name, scope, psiClasses, start, (ManModule)d.getModule() );
+        findPsiClasses( name, scope, psiClasses, start, (ManModule)d.getModule(), visited );
       }
     }
   }
@@ -86,7 +93,7 @@ public class ManShortNamesCache extends PsiShortNamesCache
   {
 
     final ManProject manProject = ManProject.manProjectFrom( _psiManager.getProject() );
-    for( ManModule module: manProject.findRootModules() )
+    for( ManModule module: manProject.getRootModules() )
     {
       findClassFqns( dest, module );
     }
@@ -94,10 +101,16 @@ public class ManShortNamesCache extends PsiShortNamesCache
 
   private void findClassFqns( @NotNull HashSet<String> dest, ManModule module )
   {
-    findClassFqns( dest, module, module );
+    findClassFqns( dest, module, module, new HashSet<>() );
   }
-  private void findClassFqns( @NotNull HashSet<String> dest, ManModule start, ManModule module )
+  private void findClassFqns( @NotNull HashSet<String> dest, ManModule start, ManModule module, HashSet<ManModule> visited )
   {
+    if( visited.contains( module ) )
+    {
+      return;
+    }
+    visited.add( module );
+
     for( ITypeManifold tm: module.getTypeManifolds() )
     {
       if( tm.getContributorKind() == ContributorKind.Supplemental )
@@ -110,7 +123,7 @@ public class ManShortNamesCache extends PsiShortNamesCache
     {
       if( module == start || d.isExported() )
       {
-        findClassFqns( dest, start, (ManModule)d.getModule() );
+        findClassFqns( dest, start, (ManModule)d.getModule(), visited );
       }
     }
   }

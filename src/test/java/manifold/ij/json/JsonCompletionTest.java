@@ -15,7 +15,7 @@ public class JsonCompletionTest extends AbstractManifoldCodeInsightTest
 
     LookupElement[] complete = myFixture.complete( CompletionType.BASIC );
     List<String> strings = myFixture.getLookupElementStrings();
-    assertTrue( strings.containsAll( Arrays.asList( "getFirstName","setFirstName", "getLastName","setLastName", "getAge","setAge", "toJson", "toXml" ) ) );
+    assertTrue( strings.containsAll( Arrays.asList( "getFirstName","setFirstName", "getLastName","setLastName", "getAge","setAge", "write", "post" ) ) );
   }
 
   public void testParsing() throws Exception
