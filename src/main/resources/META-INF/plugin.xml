@@ -3,121 +3,85 @@
   <name>Manifold</name>
   <description>
     <![CDATA[
-      <table>
-        <tr>
-          <td><h2>What is Manifold?</h2></td>
-        </tr>
-
-        <tr>
-          <td>
-            <a href="http://manifold.systems">Manifold</a> is a new breed of Java tooling. It provides powerful
-            features to make Java development more appealing and productive. Simply add the Manifold jar to your project and
-            begin taking advantage of it.
-          </td>
-        </tr>
-
-        <tr><td><p></p></td></tr>
-
-        <tr>
-          <td><h2>What can you do with Manifold?</h2></td>
-        </tr>
-
-        <tr>
-          <td><h3><a href="http://manifold.systems/docs.html#manifold-in-a-nutshell">Meta-programming</a></h3>
-            <p>
-              Gain direct, type-safe access to structured data. Eliminate code generators. Minimize build time.
-            </p>
-            <code>
-              &nbsp;&nbsp;<i>//&nbsp;JSON files are types!</i><br>
-              &nbsp;&nbsp;<b>Person</b>&nbsp;person&nbsp;=&nbsp;<b>Person</b>.fromJsonUrl(url);<br>
-              &nbsp;&nbsp;person.setFirstName("Scott");
-            </code>
-          </td>
-        </tr>
-
-        <tr><td><p></p></td></tr>
-
-        <tr>
-          <td><h3><a href="http://manifold.systems/docs.html#the-extension-manifold">Extensions</a></h3>
-            <p>Add extension methods and interfaces to existing Java classes, even String, List, and File. Eliminate
-              boilerplate
-              code.</p>
-            <code>
-              &nbsp;&nbsp;<b>String</b>&nbsp;greeting&nbsp;=&nbsp;"hello";<br>
-              &nbsp;&nbsp;greeting.myMethod();&nbsp;<i>//&nbsp;augment&nbsp;any&nbsp;type</i>
-            </code>
-          </td>
-        </tr>
-
-        <tr><td><p></p></td></tr>
-
-        <tr>
-          <td><h3><a href="http://manifold.systems/docs.html#structural-interfaces">Structural Typing</a></h3>
-          <p>Unify disparate APIs. Bridge software components you do not control. Access maps through type-safe
-            interfaces.</p>
-          <code>
-            &nbsp;&nbsp;<b>MyInterface</b>&nbsp;thing&nbsp;=&nbsp;(<b>MyInterface</b>)notMyInterface;<br>
-            &nbsp;&nbsp;thing.myMethod();&nbsp;<i>//&nbsp;treat&nbsp;as&nbsp;your&nbsp;interface</i>
-          </code>
-          </td>
-        </tr>
-
-        <tr><td><p></p></td></tr>
-
-        <tr>
-          <td><h3><a href="http://manifold.systems/docs.html#jailbreak">Type-safe Reflection</a></h3>
-          <p>Access private features with <b>@Jailbreak</b> to avoid the drudgery and vulnerability of Java reflection.</p>
-          <code>
-            &nbsp;&nbsp;<b>@Jailbreak</b>&nbsp;Foo&nbsp;foo&nbsp;=&nbsp;<b>new</b>&nbsp;Foo();<br>
-            &nbsp;&nbsp;<i>//&nbsp;Direct,&nbsp;type-safe&nbsp;access&nbsp;to&nbsp;*all*&nbsp;foo's&nbsp;members</i><br>
-            &nbsp;&nbsp;foo.privateMethod(x, y, z);&nbsp;<br>
-            &nbsp;&nbsp;foo.privateField = value;&nbsp;
-          </code>
-          </td>
-        </tr>
-
-        <tr><td><p></p></td></tr>
-
-        <tr>
-          <td><h3><a href="http://manifold.systems/docs.html#templating">Templates</a></h3>
-          <p>Make type-safe, templatized data files using pure Java. Use the same template expressions in Java strings.</p>
-          <code>
-            &nbsp;&nbsp;<b>int</b>&nbsp;hour&nbsp;=&nbsp;<i>8</i>;<br>
-            &nbsp;&nbsp;<i>//&nbsp;"It&nbsp;is&nbsp;8&nbsp;o'clock"</i><br>
-            &nbsp;&nbsp;<b>String</b>&nbsp;time&nbsp;=&nbsp;"It&nbsp;is&nbsp;<b>$</b><i>hour</i>&nbsp;o'clock";&nbsp;
-          </code>
-          </td>
-        </tr>
-
-        <tr><td><p></p></td></tr>
-
-        <tr>
-          <td><h3><a href="http://manifold.systems/docs.html#extension-libraries">Libraries</a></h3>
-          <p>Leverage stock Manifold extension libraries for standard Java classes. Save time and reduce boilerplate code.</p>
-          <code>
-            &nbsp;&nbsp;<b>File</b>&nbsp;file&nbsp;=&nbsp;new <b>File</b>(path);<br>
-            &nbsp;&nbsp;<i>//&nbsp;Use refreshing extensions to File</i><br>
-            &nbsp;&nbsp;<b>String</b>&nbsp;content&nbsp;=&nbsp;file.readText();&nbsp;
-          </code>
-          </td>
-        </tr>
-
-        <tr><td><p></p></td></tr>
-
-        <tr>
-          <td><h3><a href="http://manifold.systems/docs.html#working-with-intellij">IntelliJ</a></h3>
-          <p>Use the Manifold IntelliJ IDEA plugin to fully leverage Manifold in your development cycle. The plugin provides
-            comprehensive support for IntelliJ features including code completion, navigation, usage searching, refactoring,
-            incremental compilation, hotswap debugging, full-featured template editing, and more.</p>
-          </td>
-        </tr>
-
-        <tr><td><p></p></td></tr>
-
-        <tr>
-          <td><h3><a href="http://manifold.systems/docs.html">Learn More</a></h3></td>
-        </tr>
-      </table>
+<h2><a href="#what-is-manifold" id="what-is-manifold">What is Manifold?</a></h2>
+<p><a href="http://manifold.systems">Manifold</a> is a new breed of Java tooling. It provides powerful features to make
+Java development more appealing and productive. Simply add the Manifold jar to your project and begin taking advantage
+of it.</p>
+<h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
+<h3><a href="#meta-programming" id="meta-programming"><a href="http://manifold.systems/docs.html#manifold-in-a-nutshell">Meta-programming</a></a></h3>
+<p>Gain direct, type-safe access to <i>any</i> data source, such as JSON and YAML. Remove the code gen step in your build
+process.</p>
+<pre><code class="java">
+// Access your User.json file directly as a type, no code gen!
+User user = User.load().fromJsonUrl(&quot;http://api.example.com/users/$userId&quot;);
+user.setName(&quot;Scott&quot;);
+user.post().toJsonUrl(&quot;http://api.example.com/post/user&quot;);
+</code></pre>
+<h3><a href="#extensions" id="extensions"><a href="http://manifold.systems/docs.html#the-extension-manifold">Extensions</a></a></h3>
+<p>Add extension methods to existing Java classes, even String, List, and File. Eliminate boilerplate code.</p>
+<pre><code class="java">
+String greeting = &quot;hello&quot;;
+greeting.myMethod(); // Add your own methods to String!
+</code></pre>
+<h3><a href="#structural-typing" id="structural-typing"><a href="http://manifold.systems/docs.html#structural-interfaces">Structural Typing</a></a></h3>
+<p>Unify disparate APIs. Bridge software components you do not control. Access maps through type-safe interfaces.</p>
+<pre><code class="java">
+Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();
+MyThingInterface thing = (MyThingInterface) map; // O_o
+thing.setFoo(new Foo());
+Foo foo = thing.getFoo();
+out.println(thing.getClass()); // prints &quot;java.util.HashMap&quot;
+</code></pre>
+<h3><a href="#type-safe-reflection" id="type-safe-reflection"><a href="http://manifold.systems/docs.html#type-safe-reflection">Type-safe Reflection</a></a></h3>
+<p>Access private features with <b>@Jailbreak</b> to avoid the drudgery and vulnerability of Java reflection.</p>
+<pre><code class="java">
+@Jailbreak Foo foo = new Foo();
+// Direct, *type-safe* access to *all* foo's members
+foo.privateMethod(x, y, z);
+foo.privateField = value;
+</code></pre>
+<h3><a href="#string-templates-aka-string-interpolation" id="string-templates-aka-string-interpolation"><a href="http://manifold.systems/docs.html#templating">String Templates</a> (aka String Interpolation)</a></h3>
+<p>Embed variables and expressions in String literals, no more clunky string concat!</p>
+<pre><code class="java">
+int hour = 15;
+// Simple variable access with '$'
+String result = &quot;The hour is $hour&quot;; // Yes!!!
+// Use expressions with '${}'
+result = &quot;It is ${hour &gt; 12 ? hour-12 : hour} o'clock&quot;;
+</code></pre>
+<h3><a href="#template-files-with-mantl" id="template-files-with-mantl"><a href="http://manifold.systems/manifold-templates.html">Template Files with <em>ManTL</em></a></a></h3>
+<p>Author template files with the full expressive power of Java, use your templates directly in your code as types.</p>
+<pre><code class="java">
+List&lt;User&gt; users = ...;
+String content = abc.example.UserSample.render(users);
+</code></pre><br>
+<p>A tempate file <code>abc/example/UserSample.html.mtl</code></p>
+<pre><code class="html">&lt;%@ import java.util.List %&gt;
+&lt;%@ import com.example.User %&gt;
+&lt;%@ params(List&lt;User&gt; users) %&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;body&gt;
+&lt;% users.stream()
+   .filter(user -&gt; user.getDateOfBirth() != null)
+   .forEach(user -&gt; { %&gt;
+    User: ${user.getName()} &lt;br&gt;
+    DOB: ${user.getDateOfBirth()} &lt;br&gt;
+&lt;% }); %&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<h3><a href="#libraries" id="libraries"><a href="http://manifold.systems/docs.html#extension-libraries">Libraries</a></a></h3>
+<p>Leverage stock Manifold extension libraries for standard Java classes. Save time and reduce boilerplate code.</p>
+<pre><code class="java">
+File file = new File(path);
+// Use refreshing extensions to File
+String content = file.readText();
+</code></pre>
+<h3><a href="#intellij" id="intellij"><a href="http://manifold.systems/docs.html#working-with-intellij">IntelliJ</a></a></h3>
+<p>Use the Manifold IntelliJ IDEA plugin to fully leverage Manifold in your development cycle. The plugin provides
+comprehensive support for IntelliJ features including code completion, navigation, usage searching, refactoring,
+incremental compilation, hotswap debugging, full-featured template editing, and more.</p>
+<h3><a href="#learn-more" id="learn-more"><a href="http://manifold.systems/docs.html">Learn More</a></a></h3>
     ]]>
   </description>
   <version>This value is patched by the build script</version>
@@ -125,6 +89,18 @@
   <!-- please see http://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
   <idea-version since-build="This value is patched by the build script"/>
 
+  <change-notes>
+    <![CDATA[
+      - YAML support with the new YAML Type Manifold.  Use JSON Schema and YAML interchangeably. <br>
+      - New JSON Schema fluent API <br>
+      - Performance optimizations relating to very large scale IntelliJ projects such as IJ CE EAP <br>
+      - Enhancements to @Precompile <br>
+      - Bug fixes: <br>
+      -- Manifold works with Lombok (edge release) <br>
+      -- Very large scale projects supported <br>
+     ]]>
+  </change-notes>
+  
   <actions>
     <group id="Manifold.New">
       <action id="Manifold.NewExtensionClass" class="manifold.ij.actions.CreateExtensionMethodsClassAction"/>
