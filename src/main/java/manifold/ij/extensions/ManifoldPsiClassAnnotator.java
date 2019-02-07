@@ -41,11 +41,12 @@ public class ManifoldPsiClassAnnotator implements Annotator
 
   private void annotate( PsiClass psiClass, PsiElement element, AnnotationHolder holder, Set<Diagnostic> reported )
   {
+    PsiFile containingFile = element.getContainingFile();
     if( PsiErrorClassUtil.isErrorClass( psiClass ) && element instanceof PsiFileSystemItem )
     {
       String message = PsiErrorClassUtil.getErrorFrom( psiClass ).getMessage();
       String tooltip = makeTooltip( message );
-      holder.createAnnotation( HighlightSeverity.ERROR, new TextRange( 0, element.getContainingFile().getTextLength() ), message, tooltip );
+      holder.createAnnotation( HighlightSeverity.ERROR, new TextRange( 0, containingFile.getTextLength() ), message, tooltip );
       return;
     }
 
@@ -66,7 +67,7 @@ public class ManifoldPsiClassAnnotator implements Annotator
       if( !reported.contains( issue ) )
       {
         boolean created;
-        if( element.getContainingFile() instanceof PsiPlainTextFile )
+        if( containingFile instanceof PsiPlainTextFile )
         {
           created = createIssueOnTextRange( holder, issue );
         }

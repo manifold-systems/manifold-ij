@@ -19,7 +19,7 @@ public class JsonAnnotatorTest extends AbstractManifoldCodeInsightTest
     myFixture.configureByFile( "json/highlight/MyError.json" );
     List<HighlightInfo> highlightInfos = myFixture.doHighlighting( HighlightSeverity.WARNING );
     assertEquals( 1, highlightInfos.size() );
-    assertEquals( "Invalid URI fragment: /definitions/crawlStepTyp", highlightInfos.get( 0 ).getDescription() );
+    assertEquals( "Cannot resolve reference: /definitions/crawlStepTyp", highlightInfos.get( 0 ).getDescription() );
     assertEquals( "\"#/definitions/crawlStepTyp\"", highlightInfos.get( 0 ).getText() );
   }
 }

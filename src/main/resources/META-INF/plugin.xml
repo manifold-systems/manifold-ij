@@ -91,13 +91,23 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-      - YAML support with the new YAML Type Manifold.  Use JSON Schema and YAML interchangeably. <br>
-      - New JSON Schema fluent API <br>
-      - Performance optimizations relating to very large scale IntelliJ projects such as IJ CE EAP <br>
-      - Enhancements to @Precompile <br>
-      - Bug fixes: <br>
-      -- Manifold works with Lombok (edge release) <br>
-      -- Very large scale projects supported <br>
+Manifold core changes <br>
+- Support dynamic compilation/loading of resources in other dependency modules in a multi-module Java 11 project <br>
+- Eliminate "built-in" type manifolds, move them all out into separate modules: <br>
+-- manifold-properties <br>
+-- manifold-image <br>
+-- manifold-darkj <br>
+-- All type manifolds must be registered and loaded as a services, these are still included in the manifold-all jar <br>
+ <br>
+Manifold JSON: <br>
+- Support $ref paths of any kind: <br>
+$ref: "#someId/foo" <br>
+$ref: "#/definitions/raw.name" <br>
+etc. <br>
+- Support "/properties" in a $ref path <br>
+- Support non-standard JSON Schema type names with proper-case, "String", "Object", "Array" and also support "double" as an alias for "number". <br>
+- Fix a bug where an errant Json list type has a null component type <br>
+- Fix a bug where a $ref to a oneOf type did not add union methods to the ref'ing type <br>
      ]]>
   </change-notes>
   
