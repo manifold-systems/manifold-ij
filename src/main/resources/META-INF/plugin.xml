@@ -9,24 +9,22 @@ Java development more appealing and productive. Simply add the Manifold jar to y
 of it.</p>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
 <h3><a href="#meta-programming" id="meta-programming"><a href="http://manifold.systems/docs.html#manifold-in-a-nutshell">Meta-programming</a></a></h3>
-<p>Gain direct, type-safe access to <i>any</i> data source, such as JSON and YAML. Remove the code gen step in your build
-process.</p>
-<pre><code class="java">
-// Access your User.json file directly as a type, no code gen!
-User user = User.load().fromJsonUrl(&quot;http://api.example.com/users/$userId&quot;);
-user.setName(&quot;Scott&quot;);
-user.post().toJsonUrl(&quot;http://api.example.com/post/user&quot;);
+<p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as JSON Schema and YAML. Remove the code gen step in your build process.</p>
+<pre><code class="java">// Use your User.json schema file directly as a type, no code gen!
+User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&quot;)
+  .withGender(male)
+  .withDob(LocalDate.of(1987, 6, 15))
+  .build();
+User.request(&quot;htt://api.example.com/users&quot;).postOne(user);
 </code></pre>
 <h3><a href="#extensions" id="extensions"><a href="http://manifold.systems/docs.html#the-extension-manifold">Extensions</a></a></h3>
-<p>Add extension methods to existing Java classes, even String, List, and File. Eliminate boilerplate code.</p>
-<pre><code class="java">
-String greeting = &quot;hello&quot;;
+<p>Add extension methods to existing Java classes, even String, List, and File. Eliminate boilerplate code. <a href="http://manifold.systems/images/ExtensionMethod.mp4">Check it out!</a></p>
+<pre><code class="java">String greeting = &quot;hello&quot;;
 greeting.myMethod(); // Add your own methods to String!
 </code></pre>
 <h3><a href="#structural-typing" id="structural-typing"><a href="http://manifold.systems/docs.html#structural-interfaces">Structural Typing</a></a></h3>
 <p>Unify disparate APIs. Bridge software components you do not control. Access maps through type-safe interfaces.</p>
-<pre><code class="java">
-Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();
+<pre><code class="java">Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();
 MyThingInterface thing = (MyThingInterface) map; // O_o
 thing.setFoo(new Foo());
 Foo foo = thing.getFoo();
@@ -34,16 +32,14 @@ out.println(thing.getClass()); // prints &quot;java.util.HashMap&quot;
 </code></pre>
 <h3><a href="#type-safe-reflection" id="type-safe-reflection"><a href="http://manifold.systems/docs.html#type-safe-reflection">Type-safe Reflection</a></a></h3>
 <p>Access private features with <b>@Jailbreak</b> to avoid the drudgery and vulnerability of Java reflection.</p>
-<pre><code class="java">
-@Jailbreak Foo foo = new Foo();
+<pre><code class="java">@Jailbreak Foo foo = new Foo();
 // Direct, *type-safe* access to *all* foo's members
 foo.privateMethod(x, y, z);
 foo.privateField = value;
 </code></pre>
 <h3><a href="#string-templates-aka-string-interpolation" id="string-templates-aka-string-interpolation"><a href="http://manifold.systems/docs.html#templating">String Templates</a> (aka String Interpolation)</a></h3>
 <p>Embed variables and expressions in String literals, no more clunky string concat!</p>
-<pre><code class="java">
-int hour = 15;
+<pre><code class="java">int hour = 15;
 // Simple variable access with '$'
 String result = &quot;The hour is $hour&quot;; // Yes!!!
 // Use expressions with '${}'
@@ -51,10 +47,9 @@ result = &quot;It is ${hour &gt; 12 ? hour-12 : hour} o'clock&quot;;
 </code></pre>
 <h3><a href="#template-files-with-mantl" id="template-files-with-mantl"><a href="http://manifold.systems/manifold-templates.html">Template Files with <em>ManTL</em></a></a></h3>
 <p>Author template files with the full expressive power of Java, use your templates directly in your code as types.</p>
-<pre><code class="java">
-List&lt;User&gt; users = ...;
+<pre><code class="java">List&lt;User&gt; users = ...;
 String content = abc.example.UserSample.render(users);
-</code></pre><br>
+</code></pre>
 <p>A tempate file <code>abc/example/UserSample.html.mtl</code></p>
 <pre><code class="html">&lt;%@ import java.util.List %&gt;
 &lt;%@ import com.example.User %&gt;
@@ -72,8 +67,7 @@ String content = abc.example.UserSample.render(users);
 </code></pre>
 <h3><a href="#libraries" id="libraries"><a href="http://manifold.systems/docs.html#extension-libraries">Libraries</a></a></h3>
 <p>Leverage stock Manifold extension libraries for standard Java classes. Save time and reduce boilerplate code.</p>
-<pre><code class="java">
-File file = new File(path);
+<pre><code class="java">File file = new File(path);
 // Use refreshing extensions to File
 String content = file.readText();
 </code></pre>
@@ -91,23 +85,24 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Manifold core changes <br>
-- Support dynamic compilation/loading of resources in other dependency modules in a multi-module Java 11 project <br>
-- Eliminate "built-in" type manifolds, move them all out into separate modules: <br>
--- manifold-properties <br>
--- manifold-image <br>
--- manifold-darkj <br>
--- All type manifolds must be registered and loaded as a services, these are still included in the manifold-all jar <br>
- <br>
-Manifold JSON: <br>
-- Support $ref paths of any kind: <br>
-$ref: "#someId/foo" <br>
-$ref: "#/definitions/raw.name" <br>
-etc. <br>
-- Support "/properties" in a $ref path <br>
-- Support non-standard JSON Schema type names with proper-case, "String", "Object", "Array" and also support "double" as an alias for "number". <br>
-- Fix a bug where an errant Json list type has a null component type <br>
-- Fix a bug where a $ref to a oneOf type did not add union methods to the ref'ing type <br>
+Manifold Ext changes: <br>
+- Structural interface improvements <br>
+-- Provide a solution to eliminate the first-time load/cast overhead for a structural interface. Enable a structural interface to provide its own proxy factory via new optional parameters to @Structural(factoryClass, baseClass) <br>
+<br>
+Manifold JSON changes: <br>
+- JSON array types are now concrete types and define a component type named <array-name>Item <br>
+-- Thus a JSON array declared as "Users" has type "Users" and, if not a $ref, its nested component type is named "UsersItem" <br>
+-- Before this change there was only type "Users", which was made the name of the component type <br>
+-- The "Users" type is an interface and extends IJsonList<UsersItem>, which in extends List<UsersItem> <br>
+-- An array property has the following representation: <br>
+--- Users getUsers(); <br>
+--- void setUsers(List<UsersItem>); <br>
+--- The parameter type is contravariant, which is useful when building up lists separate from the API <br>
+- Added `request(URL)` static method on all JSON API interfaces <br>
+-- Use to conveniently navigate an HTTP REST API with GET, POST, PUT, PATCH, & DELETE <br>
+- IJsonParser no longer wraps lists in bindings with single "value" property -- returns JSON List as-is now <br>
+- Fixed bug dealing with not preserving insertion order of oneOf/anyOf union types <br>
+- Several other bug fixes along the way <br>
      ]]>
   </change-notes>
   

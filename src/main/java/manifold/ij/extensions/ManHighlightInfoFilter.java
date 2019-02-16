@@ -36,6 +36,9 @@ import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+
+import static manifold.ij.util.ManVersionUtil.is2019_1_orGreater;
+
 /**
  * Unfortunately IJ doesn't provide a way to augment a type with interfaces, so we are stuck with suppressing errors
  */
@@ -84,28 +87,31 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    if( isInvalidStaticMethodOnInterface( hi ) )
+    if( !is2019_1_orGreater() )
     {
-      PsiElement parent = elem.getParent();
-      if( !(parent instanceof PsiMethodCallExpressionImpl) )
+      if( isInvalidStaticMethodOnInterface( hi ) )
       {
+        PsiElement parent = elem.getParent();
+        if( !(parent instanceof PsiMethodCallExpressionImpl) )
+        {
+          return true;
+        }
+        PsiMethodCallExpressionImpl methodCall = (PsiMethodCallExpressionImpl)parent;
+        PsiReferenceExpressionImpl qualifierExpression = (PsiReferenceExpressionImpl)methodCall.getMethodExpression().getQualifierExpression();
+        PsiElement lhsType = qualifierExpression == null ? null : qualifierExpression.resolve();
+        if( lhsType instanceof ManifoldPsiClass )
+        {
+          PsiMethod psiMethod = methodCall.resolveMethod();
+          if( psiMethod != null )
+          {
+            // ignore "Static method may be invoked on containing interface class only" errors
+            // where the method really is directly on the interface, albeit the delegate
+            PsiClass containingClass = psiMethod.getContainingClass();
+            return containingClass != null && !containingClass.isInterface();
+          }
+        }
         return true;
       }
-      PsiMethodCallExpressionImpl methodCall = (PsiMethodCallExpressionImpl)parent;
-      PsiReferenceExpressionImpl qualifierExpression = (PsiReferenceExpressionImpl)methodCall.getMethodExpression().getQualifierExpression();
-      PsiElement lhsType = qualifierExpression == null ? null : qualifierExpression.resolve();
-      if( lhsType instanceof ManifoldPsiClass )
-      {
-        PsiMethod psiMethod = methodCall.resolveMethod();
-        if( psiMethod != null )
-        {
-          // ignore "Static method may be invoked on containing interface class only" errors
-          // where the method really is directly on the interface, albeit the delegate
-          PsiClass containingClass = psiMethod.getContainingClass();
-          return containingClass != null && !containingClass.isInterface();
-        }
-      }
-      return true;
     }
 
     //##

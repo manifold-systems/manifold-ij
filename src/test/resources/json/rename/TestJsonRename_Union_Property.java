@@ -7,9 +7,9 @@ public class TestJsonRename_Union_Property {
     StrangeUriFormats json = StrangeUriFormats.create();
     json.getNc_Vehicle();
     json.getNc_VehicleAsnc_VehicleType();
-    json.<caret>getNc_VehicleAsListOfnc_VehicleType();
+    json.<caret>getNc_VehicleAsOption0();
     json.setNc_Vehicle( null );
     json.setNc_VehicleAsnc_VehicleType( null );
-    json.setNc_VehicleAsListOfnc_VehicleType( null );
+    json.setNc_VehicleAsOption0( java.util.Collections.emptyList() );
   }
 }
