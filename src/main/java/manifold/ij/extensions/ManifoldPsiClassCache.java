@@ -23,7 +23,6 @@ import com.intellij.util.containers.ContainerUtil;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
@@ -241,14 +240,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
       ManModule actualModule = (ManModule)found.getModule();
       PsiClass delegate = createPsiClass( actualModule, fqn, result );
-      delegate = maybeGetInnerClass( fqn, delegate );
-      List<IFile> files = found.findFilesForType( fqn );
-      ManifoldPsiClass psiFacadeClass = new ManifoldPsiClass( delegate, actualModule, files, fqn, issues );
-      _fqnPsiCache.add( fqn, psiFacadeClass );
-      for( IFile file : files )
-      {
-        _filePathToPsi.put( file.getPath().getPathString(), psiFacadeClass );
-      }
+      cacheAll( delegate, actualModule, found, issues );
     }
 
     if( found == null )
@@ -259,24 +251,20 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     return _fqnPsiCache.getNode( fqn );
   }
 
-  private PsiClass maybeGetInnerClass( String fqn, PsiClass delegate )
+  private void cacheAll( PsiClass delegate, ManModule actualModule, ITypeManifold tm, DiagnosticCollector<JavaFileObject> issues )
   {
-    String delegateFqn = delegate.getQualifiedName();
-    if( delegateFqn != null && delegateFqn.length() < fqn.length() )
+    String fqn = delegate.getQualifiedName();
+    List<IFile> files = tm.findFilesForType( fqn );
+    ManifoldPsiClass psiFacadeClass = new ManifoldPsiClass( delegate, actualModule, files, fqn, issues );
+    _fqnPsiCache.add( fqn, psiFacadeClass );
+    for( IFile file : files )
     {
-      String rest = fqn.substring( delegateFqn.length() + 1 );
-      for( StringTokenizer tokenizer = new StringTokenizer( rest, "." ); tokenizer.hasMoreTokens(); )
-      {
-        String innerName = tokenizer.nextToken();
-        PsiClass innerClass = delegate.findInnerClassByName( innerName, false );
-        if( innerClass == null )
-        {
-          break;
-        }
-        delegate = innerClass;
-      }
+      _filePathToPsi.put( file.getPath().getPathString(), psiFacadeClass );
     }
-    return delegate;
+    for( PsiClass inner: delegate.getInnerClasses() )
+    {
+      cacheAll( inner, actualModule, tm, issues );
+    }
   }
 
   private void listenToChanges( ManProject project )
