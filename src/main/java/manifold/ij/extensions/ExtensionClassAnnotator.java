@@ -29,6 +29,7 @@ import com.intellij.psi.impl.source.PsiMethodImpl;
 import com.intellij.psi.impl.source.tree.java.ReferenceListElement;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.ClassUtil;
+import com.intellij.psi.util.TypeConversionUtil;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import manifold.ExtIssueMsg;
@@ -110,7 +111,9 @@ public class ExtensionClassAnnotator implements Annotator
         {
           PsiClass extendClassSym = JavaPsiFacade.getInstance( element.getProject() )
             .findClass( extendedClassName, GlobalSearchScope.allScope( element.getProject() ) );
-          if( extendClassSym != null && !isStructuralInterface( extendClassSym ) ) // an extended class could be made a structural interface which results in Object as @This param, ignore this
+          if( extendClassSym != null &&
+              !isStructuralInterface( extendClassSym ) && // an extended class could be made a structural interface which results in Object as @This param, ignore this
+              !isAssignableFromRaw( element.getProject(), extendClassSym, param.getType() ) )
           {
             TextRange range = new TextRange( param.getTextRange().getStartOffset(),
                                              param.getTextRange().getEndOffset() );
@@ -145,6 +148,13 @@ public class ExtensionClassAnnotator implements Annotator
         holder.createWarningAnnotation( range, ExtIssueMsg.MSG_MUST_NOT_BE_PRIVATE.get( psiMethod.getName() ) );
       }
     }
+  }
+
+  private boolean isAssignableFromRaw( Project project, PsiClass extendClassSym, PsiType type )
+  {
+    PsiType extendedType = JavaPsiFacade.getInstance( project ).getElementFactory().createType( extendClassSym );
+    extendedType = TypeConversionUtil.erasure( extendedType );
+    return extendedType.isAssignableFrom( TypeConversionUtil.erasure( type ) );
   }
 
   @NotNull

@@ -4,18 +4,26 @@ import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.lang.jvm.JvmModifier;
+import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiArrayType;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiElementFactory;
+import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.PsiMember;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeElement;
+import com.intellij.psi.PsiTypeParameter;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.util.PsiTypesUtil;
+import java.util.ArrayList;
+import java.util.List;
 import manifold.ExtIssueMsg;
 import manifold.ext.api.Self;
 import manifold.ext.api.This;
@@ -41,36 +49,41 @@ public class SelfUsageAnnotator implements Annotator
     }
 
     verifySelfAnnotation( psiAnno, holder );
-    
   }
 
   private void verifySelfAnnotation( PsiAnnotation psiAnno, AnnotationHolder holder )
   {
     PsiElement parent = psiAnno.getParent();
-    if( parent instanceof PsiModifierList )
+    PsiModifierList modifierList = getInModifierList( parent );
+
+    if( modifierList != null )
     {
-      // @Self is directly on a Method (implies on the return type)
-
-      PsiElement m = parent.getParent();
-      if( m instanceof PsiMethod )
+      PsiElement modifierListOnwer = modifierList.getParent();
+      if( modifierListOnwer instanceof PsiMethod )
       {
-        PsiMethod method = (PsiMethod)m;
-        if( !method.hasModifier( JvmModifier.STATIC ) )
-        {
-          // @Self is on an Instance method
+        // @Self is directly on a Method (implies on the return type)
 
-          PsiType returnType = method.getReturnType();
-          PsiClass containingClass = ManifoldPsiClassAnnotator.getContainingClass( psiAnno );
-          verifyTypeSameAsEnclosingClass( psiAnno, returnType, containingClass.getQualifiedName(), holder );
+        PsiMethod method = (PsiMethod)modifierListOnwer;
+        if( verifySelfTypeSameAsEnclosing( psiAnno, holder, method.getReturnType(), method ) )
+        {
           return;
         }
-        else if( isExtensionMethod( method ) )
+      }
+      else if( modifierListOnwer instanceof PsiParameter )
+      {
+        // @Self is on a Parameter
+
+        if( verify( psiAnno, holder, modifierListOnwer, ((PsiParameter)modifierListOnwer).getType() ) )
         {
-          // @Self is on an Extension method
+          return;
+        }
+      }
+      else if( modifierListOnwer instanceof PsiField )
+      {
+        // @Self is on a Field
 
-          PsiType returnType = method.getReturnType();
-
-          verifyTypeSameAsEnclosingClass( psiAnno, returnType, findExtendedClass( method ), holder );
+        if( verifySelfTypeSameAsEnclosing( psiAnno, holder, ((PsiField)modifierListOnwer).getType(), (PsiField)modifierListOnwer ) )
+        {
           return;
         }
       }
@@ -79,46 +92,99 @@ public class SelfUsageAnnotator implements Annotator
     {
       // @Self is on a Type
 
-      PsiMethod method = getEnclosingMethod( parent );
-      if( method != null )
+      if( verify( psiAnno, holder, parent, ((PsiTypeElement)parent).getType() ) )
       {
-        PsiTypeElement returnTypeElement = method.getReturnTypeElement();
-        if( PsiTreeUtil.isAncestor( returnTypeElement, parent, false ) )
-        {
-          // @Self is on the Return type
-
-          if( !method.hasModifier( JvmModifier.STATIC ) )
-          {
-            // @Self is on an Instance method
-
-            PsiType type = ((PsiTypeElement)parent).getType();
-            PsiClass containingClass = ManifoldPsiClassAnnotator.getContainingClass( psiAnno );
-            verifyTypeSameAsEnclosingClass( psiAnno, type, containingClass.getQualifiedName(), holder );
-            return;
-          }
-          else if( isExtensionMethod( method ) )
-          {
-            // @Self is on an Extension method
-
-            PsiType type = ((PsiTypeElement)parent).getType();
-            verifyTypeSameAsEnclosingClass( psiAnno, type, findExtendedClass( method ), holder );
-            return;
-          }
-        }
+        return;
       }
     }
     holder.createAnnotation( HighlightSeverity.ERROR, psiAnno.getTextRange(),
       ExtIssueMsg.MSG_SELF_NOT_ALLOWED_HERE.get() );
   }
 
-  private String findExtendedClass( PsiMethod method )
+  private PsiModifierList getInModifierList( PsiElement parent )
+  {
+    while( !(parent instanceof PsiModifierList) )
+    {
+      if( parent == null )
+      {
+        return null;
+      }
+      parent = parent.getParent();
+    }
+    return (PsiModifierList)parent;
+  }
+
+  private boolean verify( PsiAnnotation psiAnno, AnnotationHolder holder, PsiElement parent, PsiType type )
+  {
+    PsiMethod method = getEnclosingMethod( parent );
+    if( method != null )
+    {
+      PsiTypeElement returnTypeElement = method.getReturnTypeElement();
+      if( PsiTreeUtil.isAncestor( returnTypeElement, parent, false ) ||
+          PsiTreeUtil.isAncestor( method.getParameterList(), parent, false ) )
+      {
+        // @Self is on the method's Return type or a Parameter
+
+        return verifySelfTypeSameAsEnclosing( psiAnno, holder, type, method );
+      }
+    }
+    else
+    {
+      PsiField field = getDeclaringField( parent );
+      if( field != null )
+      {
+        // @Self is on/in the field's type
+
+        return verifySelfTypeSameAsEnclosing( psiAnno, holder, type, field );
+      }
+    }
+    return false;
+  }
+
+  private PsiField getDeclaringField( PsiElement elem )
+  {
+    while( !(elem instanceof PsiField) )
+    {
+      if( elem == null )
+      {
+        return null;
+      }
+      elem = elem.getParent();
+    }
+    return (PsiField)elem;
+  }
+
+  private boolean verifySelfTypeSameAsEnclosing( PsiAnnotation psiAnno, AnnotationHolder holder, PsiType type, PsiMember member )
+  {
+    if( !member.hasModifier( JvmModifier.STATIC ) )
+    {
+      // @Self is on an Instance method or field
+
+      PsiClass containingClass = ManifoldPsiClassAnnotator.getContainingClass( psiAnno );
+      verifyTypeSameAsEnclosingClass( psiAnno, type, containingClass, holder );
+      return true;
+    }
+    else if( member instanceof PsiMethod && isExtensionMethod( (PsiMethod)member ) )
+    {
+      // @Self is on an Extension method
+
+      verifyTypeSameAsEnclosingClass( psiAnno, type, findExtendedClass( (PsiMethod)member ), holder );
+      return true;
+    }
+    return false;
+  }
+
+  private PsiClass findExtendedClass( PsiMethod method )
   {
     PsiClass extensionClass = ExtensionClassAnnotator.findExtensionClass( method );
     if( extensionClass == null )
     {
       return null;
     }
-    return ExtensionClassAnnotator.getExtendedClassName( ((PsiJavaFile)extensionClass.getContainingFile()).getPackageName() );
+    String fqnExtended = ExtensionClassAnnotator.getExtendedClassName(
+      ((PsiJavaFile)extensionClass.getContainingFile()).getPackageName() );
+    return JavaPsiFacade.getInstance( method.getProject() )
+      .findClass( fqnExtended, GlobalSearchScope.allScope( method.getProject() ) );
   }
 
   private boolean isExtensionMethod( PsiMethod method )
@@ -138,31 +204,37 @@ public class SelfUsageAnnotator implements Annotator
     return false;
   }
 
-  private void verifyTypeSameAsEnclosingClass( PsiAnnotation psiAnno, PsiType returnType, String enclosingClass, AnnotationHolder holder )
+  private void verifyTypeSameAsEnclosingClass( PsiAnnotation psiAnno, PsiType type, PsiClass enclosingClass, AnnotationHolder holder )
   {
-    PsiClassType classType = getClassType( returnType );
+    PsiClassType classType = createParameterizedType( enclosingClass );
     if( classType != null )
     {
-      //noinspection ConstantConditions
-      if( enclosingClass == null || !classType.equalsToText( enclosingClass ) )
+      type = type.getDeepComponentType();
+      if( !(type instanceof PsiClassType) ||
+          ((PsiClassType)type).hasParameters() != classType.hasParameters() ||
+          !type.isAssignableFrom( classType ) )
       {
         holder.createAnnotation( HighlightSeverity.ERROR, psiAnno.getTextRange(),
-          ExtIssueMsg.MSG_SELF_NOT_ON_CORRECT_TYPE.get( classType.getPresentableText(),
-            enclosingClass == null ? "unknown" : enclosingClass ) );
+          ExtIssueMsg.MSG_SELF_NOT_ON_CORRECT_TYPE.get( type.getPresentableText(), classType.getPresentableText() ) );
       }
     }
   }
 
-  private PsiClassType getClassType( PsiType returnType )
+  // Foo -> Foo<T>
+  private static PsiClassType createParameterizedType( PsiClass psiClass )
   {
-    if( returnType instanceof PsiClassType )
+    PsiClassType type = PsiTypesUtil.getClassType( psiClass );
+    if( !psiClass.hasTypeParameters() )
     {
-      return ((PsiClassType)returnType).rawType();
+      return type;
     }
-    if( returnType instanceof PsiArrayType )
+
+    List<PsiType> typeParams = new ArrayList<>();
+    PsiElementFactory elementFactory = JavaPsiFacade.getInstance( psiClass.getManager().getProject() ).getElementFactory();
+    for( PsiTypeParameter p: psiClass.getTypeParameters() )
     {
-      return getClassType( ((PsiArrayType)returnType).getComponentType() );
+      typeParams.add( elementFactory.createType( p ) );
     }
-    return null;
+    return elementFactory.createType( psiClass, typeParams.toArray( new PsiType[0] ) );
   }
 }

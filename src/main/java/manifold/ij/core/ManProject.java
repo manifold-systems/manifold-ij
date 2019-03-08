@@ -21,7 +21,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
-import com.intellij.psi.impl.source.resolve.JavaResolveCache;
 import com.intellij.util.messages.MessageBusConnection;
 import java.io.File;
 import java.net.MalformedURLException;
@@ -46,19 +45,18 @@ import manifold.api.fs.jar.JarFileDirectoryImpl;
 import manifold.api.host.Dependency;
 import manifold.api.host.IModule;
 import manifold.ij.extensions.FileModificationManager;
-import manifold.ij.extensions.ManJavaResolveCache;
 import manifold.ij.extensions.ManifoldPsiClass;
 import manifold.ij.extensions.ManifoldPsiClassCache;
 import manifold.ij.extensions.ModuleClasspathListener;
 import manifold.ij.extensions.ModuleRefreshListener;
 import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
+import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LockingLazyVar;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
-import org.picocontainer.MutablePicoContainer;
 
 /**
  */
@@ -121,6 +119,11 @@ public class ManProject
     if( module != null )
     {
       return module;
+    }
+
+    if( element instanceof ManLightMethodBuilder )
+    {
+      return ((ManLightMethodBuilder)element).getModule().getIjModule();
     }
 
     ManifoldPsiClass javaFacadePsiClass = element.getContainingFile().getUserData( ManifoldPsiClass.KEY_MANIFOLD_PSI_CLASS );
@@ -229,21 +232,11 @@ public class ManProject
     _projectConnection = _ijProject.getMessageBus().connect();
     _permanentProjectConnection = _ijProject.getMessageBus().connect();
 
-    overrideJavaResolveCache();
-
     addTypeRefreshListener();
     addModuleRefreshListener();
     addModuleClasspathListener();
     //addStaleClassCleaner(); // no longer required see ManChangedResourcesBuilder
     addCompilerArgs();
-  }
-
-  private void overrideJavaResolveCache()
-  {
-    // for @Self support
-    MutablePicoContainer picoContainer = (MutablePicoContainer)_ijProject.getPicoContainer();
-    picoContainer.unregisterComponent( JavaResolveCache.class.getTypeName() );
-    picoContainer.registerComponentInstance( JavaResolveCache.class.getTypeName(), new ManJavaResolveCache( _ijProject.getMessageBus() ) );
   }
 
   // no longer required see ManChangedResourcesBuilder

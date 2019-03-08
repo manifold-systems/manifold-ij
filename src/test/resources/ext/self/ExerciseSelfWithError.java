@@ -47,13 +47,13 @@ public class ExerciseSelfWithError
       return Collections.singletonMap( this, "hi" );
     }
 
-    public @Self Foo[] getArrayFoo() {
+    public @Self Foo<T>[] getArrayFoo() {
       Object array = Array.newInstance(getClass(), 1);
       Array.set( array, 0, this );
-      return (Foo[]) array;
+      return (Foo<T>[]) array;
     }
 
-    public Foo @Self[] getArrayFoo2() {
+    public Foo<T> @Self[] getArrayFoo2() {
       return getArrayFoo();
     }
 
