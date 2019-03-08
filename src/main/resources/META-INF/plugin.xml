@@ -15,7 +15,7 @@ User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&q
   .withGender(male)
   .withDob(LocalDate.of(1987, 6, 15))
   .build();
-User.request(&quot;htt://api.example.com/users&quot;).postOne(user);
+User.request(&quot;http://api.example.com/users&quot;).postOne(user);
 </code></pre>
 <h3><a href="#extensions" id="extensions"><a href="http://manifold.systems/docs.html#the-extension-manifold">Extensions</a></a></h3>
 <p>Add extension methods to existing Java classes, even String, List, and File. Eliminate boilerplate code. <a href="http://manifold.systems/images/ExtensionMethod.mp4">Check it out!</a></p>
@@ -85,24 +85,18 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Manifold Ext changes: <br>
-- Structural interface improvements <br>
--- Provide a solution to eliminate the first-time load/cast overhead for a structural interface. Enable a structural interface to provide its own proxy factory via new optional parameters to @Structural(factoryClass, baseClass) <br>
-<br>
-Manifold JSON changes: <br>
-- JSON array types are now concrete types and define a component type named <array-name>Item <br>
--- Thus a JSON array declared as "Users" has type "Users" and, if not a $ref, its nested component type is named "UsersItem" <br>
--- Before this change there was only type "Users", which was made the name of the component type <br>
--- The "Users" type is an interface and extends IJsonList<UsersItem>, which in extends List<UsersItem> <br>
--- An array property has the following representation: <br>
---- Users getUsers(); <br>
---- void setUsers(List<UsersItem>); <br>
---- The parameter type is contravariant, which is useful when building up lists separate from the API <br>
-- Added `request(URL)` static method on all JSON API interfaces <br>
--- Use to conveniently navigate an HTTP REST API with GET, POST, PUT, PATCH, & DELETE <br>
-- IJsonParser no longer wraps lists in bindings with single "value" property -- returns JSON List as-is now <br>
-- Fixed bug dealing with not preserving insertion order of oneOf/anyOf union types <br>
-- Several other bug fixes along the way <br>
+Manifold extension improvements <br>
+- Rewrite <b>@Self</b> implementation to provide comprehensive 'self' type support. Essentially, @Self is now a full <br>
+replacement for recursive generic types! <br>
+- <b>@Self</b> can be applied to: <br>
+-- instance method <i>return type</i>  <br>
+-- instance method <i>parameter type</i> <br>
+-- instance <i>field type</i> <br>
+- via Manifold the compiler establishes the type of a method/field reference at the <i>use-site</i> <br>
+- you can override methods having @Self in a parameter and maintain the super type's signature, but also have your
+subclass type enforced, no bridge methods or other shenanigans otherwise present with recursive generics <br>
+- @Self is also fully supported in extension methods <br>
+Note the completion of @Self facilitates https://github.com/manifold-systems/manifold/issues/47 -- use @Self instead of generic methods and recursive generic types. <br>
      ]]>
   </change-notes>
   
