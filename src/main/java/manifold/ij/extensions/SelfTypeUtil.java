@@ -87,7 +87,7 @@ public class SelfTypeUtil
       if( hasSelfAnnotationDirectly( type ) )
       {
         PsiType componentType = type.getComponentType();
-        return new PsiArrayType( _self.annotate( getMergedProvider( componentType, _self ) ),
+        return new PsiArrayType( _self.annotate( getMergedProviderMinusSelf( componentType, _self ) ),
           type.getAnnotationProvider() );
       }
       return super.visitArrayType( type );
@@ -127,7 +127,7 @@ public class SelfTypeUtil
 
     private PsiType makeSelfTypeDirectly( PsiClassType classType )
     {
-      PsiClassType replacedType = (PsiClassType)_self.annotate( getMergedProvider( classType, _self ) );
+      PsiClassType replacedType = (PsiClassType)_self.annotate( getMergedProviderMinusSelf( classType, _self ) );
 // no need to derive type from @Self declared type, since only the *exact* enclosing class is allowed e.g., @Self Foo<T>  *not* @Self Foo<String>
 //      if( classType.getParameterCount() > 0 )
 //      {
@@ -205,17 +205,24 @@ public class SelfTypeUtil
     }
 
     @NotNull
-    private TypeAnnotationProvider getMergedProvider( @NotNull PsiType type1, @NotNull PsiType type2 )
+    private TypeAnnotationProvider getMergedProviderMinusSelf( @NotNull PsiType type1, @NotNull PsiType type2 )
     {
+      TypeAnnotationProvider result;
       if( type1.getAnnotationProvider() == TypeAnnotationProvider.EMPTY && !(type1 instanceof PsiClassReferenceType) )
       {
-        return type2.getAnnotationProvider();
+        result = type2.getAnnotationProvider();
       }
-      if( type2.getAnnotationProvider() == TypeAnnotationProvider.EMPTY && !(type2 instanceof PsiClassReferenceType) )
+      else if( type2.getAnnotationProvider() == TypeAnnotationProvider.EMPTY && !(type2 instanceof PsiClassReferenceType) )
       {
-        return type1.getAnnotationProvider();
+        result = type1.getAnnotationProvider();
       }
-      return () -> ArrayUtil.mergeArrays( type1.getAnnotations(), type2.getAnnotations() );
+      else
+      {
+        result = () -> ArrayUtil.mergeArrays( type1.getAnnotations(), type2.getAnnotations() );
+      }
+      return () -> Arrays.stream( result.getAnnotations() )
+               .filter( e -> !e.hasQualifiedName( Self.class.getTypeName() ) )
+               .toArray( PsiAnnotation[]::new );
     }
   }
 

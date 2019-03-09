@@ -31,6 +31,7 @@ import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethod;
 import manifold.ij.psi.ManLightMethodBuilder;
+import manifold.ij.psi.ManLightMethodBuilderImpl;
 import manifold.ij.psi.ManPsiElementFactory;
 import manifold.ij.util.ManVersionUtil;
 import manifold.util.ReflectUtil;
@@ -181,7 +182,8 @@ public class ManResolveCache extends ResolveCache
     ManPsiElementFactory manPsiElemFactory = ManPsiElementFactory.instance();
     String methodName = refMethod.getName();
     PsiClass psiClass = refMethod.getContainingClass();
-    ManLightMethodBuilder method = manPsiElemFactory.createLightMethod( manModule, psiClass.getManager(), methodName )
+    ManLightMethodBuilder method = manPsiElemFactory
+      .createLightMethod( manModule, psiClass.getManager(), methodName )
       .withContainingClass( psiClass );
     method.withNavigationElement( refMethod.getNavigationElement() );
     method.withMethodReturnType( handleType( refMethod.getReturnType(), ref, refMethod ) );
