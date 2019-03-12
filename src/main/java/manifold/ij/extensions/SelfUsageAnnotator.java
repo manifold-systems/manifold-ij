@@ -64,7 +64,7 @@ public class SelfUsageAnnotator implements Annotator
         // @Self is directly on a Method (implies on the return type)
 
         PsiMethod method = (PsiMethod)modifierListOnwer;
-        if( verifySelfTypeSameAsEnclosing( psiAnno, holder, method.getReturnType(), method ) )
+        if( !method.isConstructor() && verifySelfTypeSameAsEnclosing( psiAnno, holder, method.getReturnType(), method ) )
         {
           return;
         }
