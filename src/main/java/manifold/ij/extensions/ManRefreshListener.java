@@ -4,6 +4,8 @@
 
 package manifold.ij.extensions;
 
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -138,6 +140,15 @@ public class ManRefreshListener
     Set<ITypeManifold> tms = ManModule.findTypeManifoldsForFile( _manProject.getNativeProject(), file, null, null );
     if( tms.isEmpty() )
     {
+      Module moduleForFile = ModuleUtilCore.findModuleForFile( file.getVirtualFile(), _manProject.getNativeProject() );
+      if( moduleForFile != null )
+      {
+        // at least notify the module containing the file (e.g., for extensions classes)
+        Set<String> fqnByModule = new LinkedHashSet<>();
+        ManModule manModule = ManProject.getModule( moduleForFile );
+        manModule.addFromPath( file, fqnByModule );
+        notify( manModule, file, fqnByModule, kind );
+      }
       return;
     }
 
