@@ -91,6 +91,7 @@ Manifold extension improvements <br>
 - Self type improvements <br>
 - Bug fixes <br>
 -- Fix regression where annotation processing libraries could cause problems with self types, structural types, etc. <br>
+-- Fix completion issue.  A project with multiple unrelated modules can now access extension methods from shared jar files such as Manifold's builtin extensions for String etc.
 -- Other minor fixes <br>
      ]]>
   </change-notes>
