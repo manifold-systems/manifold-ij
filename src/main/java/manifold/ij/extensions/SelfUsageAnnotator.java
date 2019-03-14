@@ -22,6 +22,7 @@ import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiTypesUtil;
+import com.intellij.psi.util.TypeConversionUtil;
 import java.util.ArrayList;
 import java.util.List;
 import manifold.ExtIssueMsg;
@@ -161,14 +162,14 @@ public class SelfUsageAnnotator implements Annotator
       // @Self is on an Instance method or field
 
       PsiClass containingClass = ManifoldPsiClassAnnotator.getContainingClass( psiAnno );
-      verifyTypeSameAsEnclosingClass( psiAnno, type, containingClass, holder );
+      verifyTypeSameAsEnclosingClass( psiAnno, type, containingClass, holder, false );
       return true;
     }
     else if( member instanceof PsiMethod && isExtensionMethod( (PsiMethod)member ) )
     {
       // @Self is on an Extension method
 
-      verifyTypeSameAsEnclosingClass( psiAnno, type, findExtendedClass( (PsiMethod)member ), holder );
+      verifyTypeSameAsEnclosingClass( psiAnno, type, findExtendedClass( (PsiMethod)member ), holder, true );
       return true;
     }
     return false;
@@ -204,7 +205,7 @@ public class SelfUsageAnnotator implements Annotator
     return false;
   }
 
-  private void verifyTypeSameAsEnclosingClass( PsiAnnotation psiAnno, PsiType type, PsiClass enclosingClass, AnnotationHolder holder )
+  private void verifyTypeSameAsEnclosingClass( PsiAnnotation psiAnno, PsiType type, PsiClass enclosingClass, AnnotationHolder holder, boolean isExtension )
   {
     PsiClassType classType = createParameterizedType( enclosingClass );
     if( classType != null )
@@ -212,7 +213,9 @@ public class SelfUsageAnnotator implements Annotator
       type = type.getDeepComponentType();
       if( !(type instanceof PsiClassType) ||
           ((PsiClassType)type).hasParameters() != classType.hasParameters() ||
-          !type.isAssignableFrom( classType ) )
+          (isExtension
+           ? !type.isAssignableFrom( TypeConversionUtil.erasure( classType ) )
+           : !type.isAssignableFrom( classType )) )
       {
         holder.createAnnotation( HighlightSeverity.ERROR, psiAnno.getTextRange(),
           ExtIssueMsg.MSG_SELF_NOT_ON_CORRECT_TYPE.get( type.getPresentableText(), classType.getPresentableText() ) );
