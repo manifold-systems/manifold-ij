@@ -10,6 +10,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Consumer;
+import manifold.ij.core.ManModule;
 import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -67,8 +68,9 @@ public class ManJavaCompletionContributor extends CompletionContributor
       PsiElement psiElem = lookupElement.getPsiElement();
       if( psiElem instanceof ManLightMethodBuilder )
       {
-        Module methodModule = ((ManLightMethodBuilder)psiElem).getModule().getIjModule();
-        return !GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( _module ).isSearchInModuleContent( methodModule );
+        return ((ManLightMethodBuilder)psiElem).getModules().stream()
+          .map( ManModule::getIjModule )
+          .noneMatch( methodModule -> GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( _module ).isSearchInModuleContent( methodModule ) );
       }
       return false;
     }

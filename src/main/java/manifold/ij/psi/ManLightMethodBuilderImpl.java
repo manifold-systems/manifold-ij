@@ -21,28 +21,48 @@ import com.intellij.psi.impl.light.LightMethodBuilder;
 import com.intellij.psi.impl.light.LightModifierList;
 import com.intellij.psi.impl.light.LightParameterListBuilder;
 import com.intellij.util.IncorrectOperationException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import manifold.ij.core.ManModule;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ *
  */
 public class ManLightMethodBuilderImpl extends LightMethodBuilder implements ManLightMethodBuilder
 {
   private ManModule _module;
+  private Set<ManModule> _modules;
   private LightIdentifier _nameIdentifier;
   private ASTNode _astNode;
 
   public ManLightMethodBuilderImpl( ManModule manModule, PsiManager manager, String name )
   {
     super( manager, JavaLanguage.INSTANCE, name,
-           new LightParameterListBuilder( manager, JavaLanguage.INSTANCE ), new ManLightModifierListImpl( manager, JavaLanguage.INSTANCE ) );
+      new LightParameterListBuilder( manager, JavaLanguage.INSTANCE ), new ManLightModifierListImpl( manager, JavaLanguage.INSTANCE ) );
     _module = manModule;
+    _modules = new LinkedHashSet<>();
+    _modules.add( manModule );
     _nameIdentifier = new LightIdentifier( manager, name );
   }
 
   public ManModule getModule()
   {
     return _module;
+  }
+
+  /**
+   * Extension classes may be referenced from multiple modules, but a class may be augmented with only one version of
+   * a given extension method, therefore a method may belong to more than one module.
+   */
+  public Set<ManModule> getModules()
+  {
+    return _modules;
+  }
+  public ManLightMethodBuilder withAdditionalModule( ManModule module )
+  {
+    _modules.add( module );
+    return this;
   }
 
   @Override
@@ -156,7 +176,7 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
     builder.append( '(' );
     if( getParameterList().getParametersCount() > 0 )
     {
-      for( PsiParameter parameter : getParameterList().getParameters() )
+      for( PsiParameter parameter: getParameterList().getParameters() )
       {
         builder.append( parameter.getType().getCanonicalText() ).append( ' ' ).append( parameter.getName() ).append( ',' );
       }
@@ -172,7 +192,7 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
   public String getAllModifierProperties( LightModifierList modifierList )
   {
     final StringBuilder builder = new StringBuilder();
-    for( String modifier : modifierList.getModifiers() )
+    for( String modifier: modifierList.getModifiers() )
     {
       if( !PsiModifier.PACKAGE_LOCAL.equals( modifier ) )
       {

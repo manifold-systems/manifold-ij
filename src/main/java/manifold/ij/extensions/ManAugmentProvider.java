@@ -29,6 +29,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -86,7 +87,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return Collections.emptyList();
     }
 
-    List<PsiElement> augFeatures = new ArrayList<>();
+    LinkedHashMap<String, PsiMethod> augFeatures = new LinkedHashMap<>();
     PsiClass psiClass = (PsiClass)element;
     String className = psiClass.getQualifiedName();
     if( className == null )
@@ -97,7 +98,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     addMethods( className, psiClass, augFeatures );
 
     //noinspection unchecked
-    return (List<E>)augFeatures;
+    return new ArrayList( augFeatures.values() );
   }
 
   protected PsiType inferType( PsiTypeElement typeElement )
@@ -109,7 +110,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     return VarHandler.instance().inferType( typeElement );
   }
 
-  private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures )
+  private void addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures )
   {
     ManProject manProject = ManProject.manProjectFrom( psiClass.getProject() );
     for( ManModule manModule : manProject.getModules().values() )
@@ -118,12 +119,12 @@ public class ManAugmentProvider extends PsiAugmentProvider
     }
   }
 
-  private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures, Module module )
+  private void addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, Module module )
   {
     addMethods( fqn, psiClass, augFeatures, module, module );
   }
 
-  private void addMethods( String fqn, PsiClass psiClass, List<PsiElement> augFeatures, Module start, Module module )
+  private void addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, Module start, Module module )
   {
     ManModule manModule = ManProject.getModule( module );
     for( ITypeManifold tm : manModule.getTypeManifolds() )
@@ -164,7 +165,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     }
   }
 
-  private void addMethods( PsiClass psiClass, List<PsiElement> augFeatures, ManModule manModule, PsiClass[] classes )
+  private void addMethods( PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, ManModule manModule, PsiClass[] classes )
   {
     if( classes.length > 0 )
     {
@@ -181,11 +182,22 @@ public class ManAugmentProvider extends PsiAugmentProvider
         SrcMethod srcMethod = addExtensionMethod( scratchClass, m, psiClass );
         if( srcMethod != null )
         {
-          PsiMethod extMethod = makePsiMethod( srcMethod, psiClass );
-          if( extMethod != null )
+          StringBuilder key = new StringBuilder();
+          srcMethod.render( key, 0 );
+          PsiMethod existingMethod = augFeatures.get( key.toString() );
+          if( existingMethod != null )
           {
-            PsiMethod plantedMethod = plantMethodInPsiClass( manModule, extMethod, psiClass, classes[0] );
-            augFeatures.add( plantedMethod );
+            // already added from another module root, the method has multiple module refs e.g., ManStringExt
+            ((ManLightMethodBuilder)existingMethod).withAdditionalModule( manModule );
+          }
+          else
+          {
+            PsiMethod extMethod = makePsiMethod( srcMethod, psiClass );
+            if( extMethod != null )
+            {
+              PsiMethod plantedMethod = plantMethodInPsiClass( manModule, extMethod, psiClass, classes[0] );
+              augFeatures.put( key.toString(), plantedMethod );
+            }
           }
         }
       }
