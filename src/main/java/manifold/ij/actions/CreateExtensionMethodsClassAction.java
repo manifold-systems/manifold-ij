@@ -112,10 +112,6 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
       {
         public PsiFile createFile( String name, String fqnExtended )
         {
-          if( DumbService.getInstance( project ).isDumb() )
-          {
-            DumbService.getInstance( project ).waitForSmartMode();
-          }
           return doCreate( dir, name, fqnExtended );
         }
 
@@ -140,6 +136,9 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
   {
     Project project = dir.getProject();
 
+    // Just in case other stuff needs indexing
+    DumbService.getInstance( project ).completeJustSubmittedTasks();
+    
     String fileName = className + ".java";
     VirtualFile srcRoot = ProjectRootManager.getInstance( project ).getFileIndex().getSourceRootForFile( dir.getVirtualFile() );
     if( srcRoot == null )
@@ -149,12 +148,19 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
 
     dir = getPsiDirectoryForExtensionClass( dir, fqnExtended, srcRoot );
 
+    // The dir we just created causes the system to enter "Dumb" mode for indexing the new directory.
+    // Must let indexing finish (in dumb mode) before proceeding.
+    DumbService.getInstance( project ).completeJustSubmittedTasks();
+
     PsiClass psiExtended = JavaPsiFacade.getInstance( project ).findClass( fqnExtended, GlobalSearchScope.projectScope( project ) );
     if( psiExtended != null && FileIndexUtil.isJavaSourceFile( project, psiExtended.getContainingFile().getVirtualFile() ) )
     {
       errorCannotExtendSourceFile( fqnExtended );
       return null;
     }
+
+    // Just in case other stuff needs indexing
+    DumbService.getInstance( project ).completeJustSubmittedTasks();
 
     final PsiPackage pkg = JavaDirectoryService.getInstance().getPackage( dir );
     if( pkg == null )
