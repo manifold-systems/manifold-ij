@@ -4,9 +4,10 @@
   <description>
     <![CDATA[
 <h2><a href="#what-is-manifold" id="what-is-manifold">What is Manifold?</a></h2>
-<p><a href="http://manifold.systems">Manifold</a> is a new breed of Java tooling. It provides powerful features to make
-Java development more appealing and productive. Simply add the Manifold jar to your project and begin taking advantage
-of it.</p>
+<p>
+<a href="http://manifold.systems">Manifold</a> re-energizes Java with powerful features like Type-safe Metaprogramming,
+Structural Typing, and Extension Methods. Simply add the Manifold jar to your project and begin taking advantage of it.
+</p>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
 <h3><a href="#meta-programming" id="meta-programming"><a href="http://manifold.systems/docs.html#manifold-in-a-nutshell">Meta-programming</a></a></h3>
 <p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as JSON Schema and YAML. Remove the code gen step in your build process.</p>
