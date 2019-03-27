@@ -85,14 +85,10 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Manifold extension improvements <br>
-- Structural typing improvements <br>
--- Provide means to satisfy a structural interface dynamically via registered IProxyFactory service <br>
-- Self type improvements <br>
-- Bug fixes <br>
--- Fix regression where annotation processing libraries could cause problems with self types, structural types, etc. <br>
--- Fix completion issue.  A project with multiple unrelated modules can now access extension methods from shared jar files such as Manifold's builtin extensions for String etc.
--- Other minor fixes <br>
+Manifold core improvements <br>
+- Fix issues with "Create Extension Method Class" dialog <br>
+- Some performance improvements esp. faster manifold resource compilation with larger projects <br>
+- Other minor changes and fixes <br>
      ]]>
   </change-notes>
   
