@@ -64,7 +64,7 @@ public class ManProject
 {
   private static final Map<Project, ManProject> PROJECTS = new ConcurrentWeakHashMap<>();
   private static final String JAR_INDICATOR = ".jar!";
-  private static final String XPLUGIN_MANIFOLD = "-Xplugin:Manifold";
+  public static final String XPLUGIN_MANIFOLD = "-Xplugin:Manifold";
   private static final String XPLUGIN_MANIFOLD_WITH_QUOTES = "-Xplugin:\"Manifold";
 
   private IjManifoldHost _host;

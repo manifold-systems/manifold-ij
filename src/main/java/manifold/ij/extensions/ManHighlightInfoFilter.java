@@ -2,7 +2,9 @@ package manifold.ij.extensions;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
+import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.JavaResolveResult;
@@ -31,10 +33,15 @@ import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiUtil;
 import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 import manifold.ext.api.Jailbreak;
+import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightMethodBuilder;
+import manifold.internal.javac.JavacPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
 
 
 import static manifold.ij.util.ManVersionUtil.is2019_1_orGreater;
@@ -58,6 +65,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
         file == null )
     {
       return true;
+    }
+
+    if( hi.getDescription().contains( "Unhandled exception:" ) )
+    {
+      return !isSuppressCheckedExceptionErrors( file );
     }
 
     PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
@@ -124,6 +136,56 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     return true;
+  }
+
+  private boolean isSuppressCheckedExceptionErrors( PsiFile file )
+  {
+    JpsJavaCompilerOptions options = JavacConfiguration.getOptions( file.getProject(), JavacConfiguration.class );
+    if( hasExceptionsArg( options.ADDITIONAL_OPTIONS_STRING ) )
+    {
+      return true;
+    }
+    Map<String, String> optionsOverride = options.ADDITIONAL_OPTIONS_OVERRIDE;
+    if( optionsOverride != null )
+    {
+      Module fileModule = ManProject.getIjModule( file );
+      return optionsOverride.keySet().stream().anyMatch( k -> {
+        if( fileModule == null || fileModule.getName().equals( k ) )
+        {
+          return hasExceptionsArg( optionsOverride.get( k ) );
+        }
+        return false;
+      } );
+    }
+    return false;
+  }
+
+  private boolean hasExceptionsArg( String optionsString )
+  {
+    if( optionsString == null )
+    {
+      return false;
+    }
+
+    String pluginArgPrefix;
+    int index = optionsString.indexOf( pluginArgPrefix = ManProject.XPLUGIN_MANIFOLD );
+    if( index < 0 )
+    {
+      index = optionsString.indexOf( pluginArgPrefix = "-Xplugin:\"Manifold" );
+    }
+    if( index >= 0 )
+    {
+      StringTokenizer tokenizer = new StringTokenizer( optionsString.substring( pluginArgPrefix.length() ), " \"" );
+      while( tokenizer.hasMoreTokens() )
+      {
+        String token = tokenizer.nextToken();
+        if( token.equals( JavacPlugin.ARG_EXCEPTIONS ) )
+        {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private boolean filterCannotAssignToFinalIfJailbreak( HighlightInfo hi, PsiElement firstElem )
