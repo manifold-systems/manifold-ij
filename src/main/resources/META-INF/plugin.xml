@@ -87,6 +87,7 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
   <change-notes>
     <![CDATA[
 Manifold core improvements <br>
+- Support Java 12 <br>
 - Fix issues with "Create Extension Method Class" dialog <br>
 - Some performance improvements esp. faster manifold resource compilation with larger projects <br>
 - Other minor changes and fixes <br>
