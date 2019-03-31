@@ -96,6 +96,9 @@ Manifold core improvements <br>
 - Manifold provides a new option to <b>Turn Off Checked Exceptions</b>! <br>
 -- Simply add the <i>exceptions</i> plugin argument e.g., &quot;-Xplugin:Manifold strings <i>exceptions</i>&quot; <br>
 -- Now checked exceptions behave like unchecked exceptions!  No more compiler errors, no more boilerplate try/catch, no more nonsense. <br>
+- Bug fixes: <br>
+-- <a href="https://github.com/manifold-systems/manifold/issues/55">#55</a>, don't display warning message re manifold jars for a project without manifold dependencies <br>
+-- other minor fixes <br>
      ]]>
   </change-notes>
   
