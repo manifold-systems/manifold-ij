@@ -4,10 +4,8 @@
   <description>
     <![CDATA[
 <h2><a href="#what-is-manifold" id="what-is-manifold">What is Manifold?</a></h2>
-<p>
-<a href="http://manifold.systems">Manifold</a> re-energizes Java with powerful features like Type-safe Metaprogramming,
-Structural Typing, and Extension Methods. Simply add the Manifold jar to your project and begin taking advantage of it.
-</p>
+<p><a href="http://manifold.systems">Manifold</a> re-energizes Java with powerful features like Type-safe Metaprogramming, Structural Typing, and Extension Methods.
+Simply add the Manifold jar to your project and begin taking advantage of it.</p>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
 <h3><a href="#meta-programming" id="meta-programming"><a href="http://manifold.systems/docs.html#manifold-in-a-nutshell">Meta-programming</a></a></h3>
 <p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as JSON Schema and YAML. Remove the code gen step in your build process.</p>
@@ -16,7 +14,7 @@ User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&q
   .withGender(male)
   .withDob(LocalDate.of(1987, 6, 15))
   .build();
-User.request(&quot;http://api.example.com/users&quot;).postOne(user);
+User.request(&quot;htt://api.example.com/users&quot;).postOne(user);
 </code></pre>
 <h3><a href="#extensions" id="extensions"><a href="http://manifold.systems/docs.html#the-extension-manifold">Extensions</a></a></h3>
 <p>Add extension methods to existing Java classes, even String, List, and File. Eliminate boilerplate code. <a href="http://manifold.systems/images/ExtensionMethod.mp4">Check it out!</a></p>
@@ -37,6 +35,14 @@ out.println(thing.getClass()); // prints &quot;java.util.HashMap&quot;
 // Direct, *type-safe* access to *all* foo's members
 foo.privateMethod(x, y, z);
 foo.privateField = value;
+</code></pre>
+<h3><a href="#checked-exception-suppression" id="checked-exception-suppression"><a href="http://manifold.systems/docs.html#checked-exception-suppression">Checked Exception Suppression</a></a></h3>
+<p>Simply add the <code>exceptions</code> plugin argument: <code>-Xplugin:Manifold strings</code><em><code>exceptions</code></em>. Now checked exceptions
+behave like unchecked exceptions!  No more compiler errors, no more boilerplate <code>try</code>/<code>catch</code> nonsense.</p>
+<pre><code class="java">List&lt;String&gt; strings = ...;
+List&lt;URL&gt; urls = list
+  .map(URL::new) // No need to handle the MalformedURLException!
+  .collect(Collectors.toList());
 </code></pre>
 <h3><a href="#string-templates-aka-string-interpolation" id="string-templates-aka-string-interpolation"><a href="http://manifold.systems/docs.html#templating">String Templates</a> (aka String Interpolation)</a></h3>
 <p>Embed variables and expressions in String literals, no more clunky string concat!</p>
