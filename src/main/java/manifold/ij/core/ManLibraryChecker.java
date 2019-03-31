@@ -79,7 +79,7 @@ public class ManLibraryChecker
     if( projectVer == null )
     {
       // missing Manifold jars
-      return true;
+      return false; // was `true`, but see https://github.com/manifold-systems/manifold/issues/55
     }
     if( pluginVer.equals( projectVer ) )
     {
