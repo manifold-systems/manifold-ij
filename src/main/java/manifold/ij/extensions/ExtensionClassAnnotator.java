@@ -244,11 +244,13 @@ public class ExtensionClassAnnotator implements Annotator
       String extendedClassName = getExtendedClassName( packageName );
       Project project = element.getProject();
       PsiClass psiExtended = JavaPsiFacade.getInstance( project ).findClass( extendedClassName, GlobalSearchScope.projectScope( project ) );
-      if( psiExtended != null && FileIndexUtil.isJavaSourceFile( project, psiExtended.getContainingFile().getVirtualFile() ) )
+      if( psiExtended != null &&
+          FileIndexUtil.isJavaSourceFile( project, psiExtended.getContainingFile().getVirtualFile() ) &&
+          ManProject.getIjModule( psiExtended ) == ManProject.getIjModule( psiFile ) )
       {
         TextRange range = new TextRange( element.getTextRange().getStartOffset(),
                                          element.getTextRange().getEndOffset() );
-        holder.createErrorAnnotation( range, ExtIssueMsg.MSG_CANNOT_EXTEND_SOURCE_FILE.get( extendedClassName ) );
+        holder.createWarningAnnotation( range, ExtIssueMsg.MSG_CANNOT_EXTEND_SOURCE_FILE.get( extendedClassName ) );
       }
     }
   }

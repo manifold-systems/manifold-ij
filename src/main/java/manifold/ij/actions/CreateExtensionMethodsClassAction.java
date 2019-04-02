@@ -39,6 +39,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import javax.swing.RootPaneContainer;
 import manifold.ExtIssueMsg;
+import manifold.ij.core.ManProject;
 import manifold.ij.extensions.StubBuilder;
 import manifold.ij.util.ManBundle;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
@@ -152,13 +153,6 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
     // Must let indexing finish (in dumb mode) before proceeding.
     DumbService.getInstance( project ).completeJustSubmittedTasks();
 
-    PsiClass psiExtended = JavaPsiFacade.getInstance( project ).findClass( fqnExtended, GlobalSearchScope.projectScope( project ) );
-    if( psiExtended != null && FileIndexUtil.isJavaSourceFile( project, psiExtended.getContainingFile().getVirtualFile() ) )
-    {
-      errorCannotExtendSourceFile( fqnExtended );
-      return null;
-    }
-
     // Just in case other stuff needs indexing
     DumbService.getInstance( project ).completeJustSubmittedTasks();
 
@@ -166,6 +160,14 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
     if( pkg == null )
     {
       throw new IncorrectOperationException( ManBundle.message( "error.new.artifact.nopackage" ) );
+    }
+
+    PsiClass psiExtended = JavaPsiFacade.getInstance( project ).findClass( fqnExtended, GlobalSearchScope.projectScope( project ) );
+    if( psiExtended != null &&
+        FileIndexUtil.isJavaSourceFile( project, psiExtended.getContainingFile().getVirtualFile() ) &&
+        ManProject.getIjModule( psiExtended ) == ManProject.getIjModule( dir ) )
+    {
+      warningCannotExtendSourceFile( fqnExtended );
     }
 
     String text =
@@ -204,11 +206,11 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
     return file;
   }
 
-  private void errorCannotExtendSourceFile( String fqnExtended )
+  private void warningCannotExtendSourceFile( String fqnExtended )
   {
     String message = ExtIssueMsg.MSG_CANNOT_EXTEND_SOURCE_FILE.get( fqnExtended );
     JBPopupFactory popupFactory = JBPopupFactory.getInstance();
-    popupFactory.createHtmlTextBalloonBuilder( message, MessageType.ERROR, null )
+    popupFactory.createHtmlTextBalloonBuilder( message, MessageType.WARNING, null )
       .setCloseButtonEnabled( true )
       .createBalloon()
       .show( ((RootPaneContainer)((WindowManagerEx)WindowManager.getInstance()).getMostRecentFocusedWindow()).getLayeredPane() );
