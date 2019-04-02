@@ -93,11 +93,10 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
   <change-notes>
     <![CDATA[
 Manifold core improvements <br>
-- Manifold provides a new option to <b>Turn Off Checked Exceptions</b>! <br>
--- Simply add the <i>exceptions</i> plugin argument e.g., &quot;-Xplugin:Manifold strings <i>exceptions</i>&quot; <br>
--- Now checked exceptions behave like unchecked exceptions!  No more compiler errors, no more boilerplate try/catch, no more nonsense. <br>
 - Bug fixes: <br>
--- <a href="https://github.com/manifold-systems/manifold/issues/55">#55</a>, don't display warning message re manifold jars for a project without manifold dependencies <br>
+-- fix regression involving extension classes where a class in the same project, but a in different module may not work <br>
+-- fix compilation with module that does not have a dependency on manifold (don't attempt to perform manifold incremental compilation on it) <br>
+-- only warn about manifold being out of date if the project is already using manifold but is using an older version than the plugin, otherwise no warning <br>
 -- other minor fixes <br>
      ]]>
   </change-notes>
