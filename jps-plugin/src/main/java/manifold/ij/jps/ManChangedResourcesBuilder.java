@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,8 @@ import org.jetbrains.jps.model.java.JavaResourceRootType;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.library.JpsLibrary;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
+import org.jetbrains.jps.model.module.JpsModule;
+import org.jetbrains.jps.model.module.JpsModuleDependency;
 import org.jetbrains.jps.model.module.JpsModuleSourceRoot;
 
 /**
@@ -243,7 +246,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
     {
       if( !(jpsSourceRoot instanceof JpsTypedElement) ||
           !(((JpsTypedElement)jpsSourceRoot).getType() instanceof JavaSourceRootType) ||
-          !hasManifoldDependency( target ) )
+          !hasManifoldDependency( target.getModule() ) )
       {
         continue;
       }
@@ -293,15 +296,25 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
     return tempMainClasses;
   }
 
-  private boolean hasManifoldDependency( ResourcesTarget target )
+  private boolean hasManifoldDependency( JpsModule module )
   {
-    if( target.getModule().getDependenciesList().getDependencies().stream()
+    return _hasManifoldDependency( module, new HashSet<>() );
+  }
+  private boolean _hasManifoldDependency( JpsModule module, Set<JpsModule> visited )
+  {
+    if( visited.contains( module ) )
+    {
+      return false;
+    }
+    visited.add( module );
+
+    if( module.getDependenciesList().getDependencies().stream()
         .anyMatch( e -> e.toString().contains( "manifold-" ) ) )
     {
       return true;
     }
 
-    List<JpsLibrary> libraries = target.getModule().getLibraryCollection().getLibraries();
+    List<JpsLibrary> libraries = module.getLibraryCollection().getLibraries();
     for( JpsLibrary lib: libraries )
     {
       if( lib.getRoots( JpsOrderRootType.COMPILED ).stream()
@@ -310,7 +323,10 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
         return true;
       }
     }
-    return false;
+
+    return module.getDependenciesList().getDependencies().stream()
+           .anyMatch( dep -> dep instanceof JpsModuleDependency &&
+                             _hasManifoldDependency( ((JpsModuleDependency)dep).getModule(), visited ) );
   }
 
   @NotNull
