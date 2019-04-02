@@ -30,6 +30,8 @@ import org.jetbrains.jps.incremental.resources.ResourcesBuilder;
 import org.jetbrains.jps.model.JpsTypedElement;
 import org.jetbrains.jps.model.java.JavaResourceRootType;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
+import org.jetbrains.jps.model.library.JpsLibrary;
+import org.jetbrains.jps.model.library.JpsOrderRootType;
 import org.jetbrains.jps.model.module.JpsModuleSourceRoot;
 
 /**
@@ -239,7 +241,9 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
     int index = 0;
     for( JpsModuleSourceRoot jpsSourceRoot : target.getModule().getSourceRoots() )
     {
-      if( !(jpsSourceRoot instanceof JpsTypedElement) || !(((JpsTypedElement)jpsSourceRoot).getType() instanceof JavaSourceRootType) )
+      if( !(jpsSourceRoot instanceof JpsTypedElement) ||
+          !(((JpsTypedElement)jpsSourceRoot).getType() instanceof JavaSourceRootType) ||
+          !hasManifoldDependency( target ) )
       {
         continue;
       }
@@ -287,6 +291,26 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
       }
     }
     return tempMainClasses;
+  }
+
+  private boolean hasManifoldDependency( ResourcesTarget target )
+  {
+    if( target.getModule().getDependenciesList().getDependencies().stream()
+        .anyMatch( e -> e.toString().contains( "manifold-" ) ) )
+    {
+      return true;
+    }
+
+    List<JpsLibrary> libraries = target.getModule().getLibraryCollection().getLibraries();
+    for( JpsLibrary lib: libraries )
+    {
+      if( lib.getRoots( JpsOrderRootType.COMPILED ).stream()
+          .anyMatch( e -> e.getUrl().contains( "manifold-" ) ) )
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   @NotNull
