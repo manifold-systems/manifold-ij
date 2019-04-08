@@ -92,12 +92,10 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Manifold core improvements <br>
-- Bug fixes: <br>
--- fix regression involving extension classes where a class in the same project, but a in different module may not work <br>
--- fix compilation with module that does not have a dependency on manifold (don't attempt to perform manifold incremental compilation on it) <br>
--- only warn about manifold being out of date if the project is already using manifold but is using an older version than the plugin, otherwise no warning <br>
--- other minor fixes <br>
+Bug fixes: <br>
+- fix jps plugin so that a source root suc as 'target/generated-sources/annotations' exists on disk before we handle incremental compilation <br>
+- fix https://github.com/manifold-systems/manifold/issues/60: regression on primitive JSON list types, ensure component type is boxed regardless of nullability <br>
+- other minor fixes <br>
      ]]>
   </change-notes>
   
