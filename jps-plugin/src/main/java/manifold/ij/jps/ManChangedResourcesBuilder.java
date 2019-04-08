@@ -251,6 +251,13 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
         continue;
       }
 
+      // The source root dir may not be there, ensure it is before we make the '_temp_' dir e.g.,
+      //   'target/generated-sources/annotations'
+      if( !jpsSourceRoot.getFile().mkdirs() )
+      {
+        continue;
+      }
+
       // generate file in '_temp_' package, Java 9 modular projects do not support the default/empty package
       File sourceRoot = new File( jpsSourceRoot.getFile(), "_temp_" );
       //noinspection ResultOfMethodCallIgnored
