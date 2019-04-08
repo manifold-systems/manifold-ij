@@ -253,11 +253,11 @@ public class ManProject
     options = options == null ? "" : options;
     if( !options.contains( XPLUGIN_MANIFOLD ) && !options.contains( XPLUGIN_MANIFOLD_WITH_QUOTES ) || options.contains( "Manifold static" ) )
     {
-      options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings\" " + maybeGetProcessorPath();
+      options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings exceptions\" " + maybeGetProcessorPath();
     }
     else if( findJdkVersion() >= 9 && (!options.contains( "-processorpath" ) || !hasCorrectManifoldJars( options )) )
     {
-      options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings\" " + maybeGetProcessorPath();
+      options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings exceptions\" " + maybeGetProcessorPath();
     }
     javacOptions.ADDITIONAL_OPTIONS_STRING = options;
   }
@@ -533,45 +533,38 @@ public class ManProject
       if( root instanceof JarFileDirectoryImpl )
       {
         JarFile jarFile = ((JarFileDirectoryImpl)root).getJarFile();
-        try
+        Manifest manifest = jarFile.getManifest();
+        if( manifest != null )
         {
-          Manifest manifest = jarFile.getManifest();
-          if( manifest != null )
+          Attributes man = manifest.getMainAttributes();
+          String paths = man.getValue( Attributes.Name.CLASS_PATH );
+          if( paths != null && !paths.isEmpty() )
           {
-            Attributes man = manifest.getMainAttributes();
-            String paths = man.getValue( Attributes.Name.CLASS_PATH );
-            if( paths != null && !paths.isEmpty() )
+            // We found a Jar with a Class-Path listing.
+            // Note sometimes happens when running from IntelliJ where the
+            // classpath would otherwise make the command line to java.exe
+            // too long.
+            for( String j : paths.split( " " ) )
             {
-              // We found a Jar with a Class-Path listing.
-              // Note sometimes happens when running from IntelliJ where the
-              // classpath would otherwise make the command line to java.exe
-              // too long.
-              for( String j : paths.split( " " ) )
+              // Add each of the paths to our classpath
+              URL url;
+              try
               {
-                // Add each of the paths to our classpath
-                URL url;
-                try
-                {
-                  url = new URL( j );
-                }
-                catch( MalformedURLException e )
-                {
-                  //Class-Path contained an invalid URL, skip it
-                  continue;
-                }
-                File dirOrJar = new File( url.toURI() );
-                IDirectory idir = getFileSystem().getIDirectory( dirOrJar );
-                if( !newClasspath.contains( idir ) )
-                {
-                  newClasspath.add( idir );
-                }
+                url = new URL( j );
+              }
+              catch( MalformedURLException e )
+              {
+                //Class-Path contained an invalid URL, skip it
+                continue;
+              }
+              File dirOrJar = new File( url.toURI() );
+              IDirectory idir = getFileSystem().getIDirectory( dirOrJar );
+              if( !newClasspath.contains( idir ) )
+              {
+                newClasspath.add( idir );
               }
             }
           }
-        }
-        catch( Exception e )
-        {
-          throw new RuntimeException( e );
         }
       }
     }
@@ -612,15 +605,8 @@ public class ManProject
     if( url.contains( JAR_INDICATOR ) )
     {
       url = url.substring( 0, url.length() - 2 );
-      try
-      {
-        IjFile ijFile = (IjFile)getHost().getFileSystem().getIFile( new URL( url ) );
-        file = ijFile.getVirtualFile();
-      }
-      catch( MalformedURLException e )
-      {
-        throw new RuntimeException( e );
-      }
+      IjFile ijFile = (IjFile)getHost().getFileSystem().getIFile( new URL( url ) );
+      file = ijFile.getVirtualFile();
     }
     return getFileSystem().getIDirectory( file );
   }

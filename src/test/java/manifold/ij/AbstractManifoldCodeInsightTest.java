@@ -50,15 +50,8 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
   @Override
   protected String getTestDataPath()
   {
-    try
-    {
-      File javaFile = new File( getClass().getResource( "/root_marker.txt" ).toURI() );
-      return javaFile.getParentFile().getAbsolutePath();
-    }
-    catch( Exception e )
-    {
-      throw new RuntimeException( e );
-    }
+    File javaFile = new File( getClass().getResource( "/root_marker.txt" ).toURI() );
+    return javaFile.getParentFile().getAbsolutePath();
   }
 
   /**
@@ -82,15 +75,8 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
       if( path.contains( "/manifold/manifold/" ) )
       {
         path = path.replace( "manifold-", "manifold-all-" );
-        try
-        {
-          path = new File( new URI( path ) ).getAbsolutePath();
-          return Collections.singletonList( path );
-        }
-        catch( URISyntaxException e )
-        {
-          throw new RuntimeException( e );
-        }
+        path = new File( new URI( path ) ).getAbsolutePath();
+        return Collections.singletonList( path );
       }
     }
     throw new RuntimeException( "Failed to add manifold-all.jar" );
@@ -193,31 +179,21 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
 
     private void cleanSourceRoot( @NotNull VirtualFile contentRoot )
     {
-      try
+      LocalFileSystem tempFs = (LocalFileSystem)contentRoot.getFileSystem();
+      for( VirtualFile child : contentRoot.getChildren() )
       {
-        LocalFileSystem tempFs = (LocalFileSystem)contentRoot.getFileSystem();
-        for( VirtualFile child : contentRoot.getChildren() )
+        if( !tempFs.exists( child ) )
         {
-          if( !tempFs.exists( child ) )
+          try
           {
-            try
-            {
-              tempFs.createChildFile( this, contentRoot, child.getName() );
-            }
-            catch( IOException ignore )
-            {
-
-            }
-
+            tempFs.createChildFile( this, contentRoot, child.getName() );
           }
-          child.delete( this );
+          catch( IOException ignore )
+          {
+          }
         }
-      }
-      catch( IOException e )
-      {
-        throw new RuntimeException( e );
+        child.delete( this );
       }
     }
-
   }
 }

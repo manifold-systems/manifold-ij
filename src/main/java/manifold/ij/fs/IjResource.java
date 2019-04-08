@@ -169,18 +169,11 @@ public abstract class IjResource implements IResource
     {
       final IjDirectory parent = (IjDirectory)getParent();
       parent.create();
-      try
-      {
-        final int index = _path.lastIndexOf( '/' );
-        final String name = _path.substring( index + 1 );
-        _virtualFile = create( parent._virtualFile, name );
-        parent._virtualFile.refresh( false, true );
-        return true;
-      }
-      catch( IOException e )
-      {
-        throw new RuntimeException( e );
-      }
+      final int index = _path.lastIndexOf( '/' );
+      final String name = _path.substring( index + 1 );
+      _virtualFile = create( parent._virtualFile, name );
+      parent._virtualFile.refresh( false, true );
+      return true;
     }
     return true;
   }

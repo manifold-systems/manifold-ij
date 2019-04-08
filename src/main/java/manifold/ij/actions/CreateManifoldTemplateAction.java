@@ -11,7 +11,6 @@ import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFile;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
@@ -86,19 +85,11 @@ public class CreateManifoldTemplateAction extends CreateFileFromTemplateAction
     FileTemplate template = FileTemplateManager.getInstance( project ).getTemplate( name );
     if( template == null )
     {
-      try
-      {
-        template = FileTemplateManager.getInstance( project ).addTemplate( name, ext );
-        template.setText( FileUtil.loadTextAndClose(
-          new InputStreamReader( getClass().getResourceAsStream(
-            '/' + getClass().getPackage().getName().replace( '.', '/' ) + "/fileTemplates/"
-            + name + "." + ext + ".ft" ) ) )
-        );
-      }
-      catch( IOException e )
-      {
-        throw new RuntimeException( e );
-      }
+      template = FileTemplateManager.getInstance( project ).addTemplate( name, ext );
+      template.setText( FileUtil.loadTextAndClose(
+        new InputStreamReader( getClass().getResourceAsStream(
+          '/' + getClass().getPackage().getName().replace( '.', '/' ) + "/fileTemplates/"
+          + name + "." + ext + ".ft" ) ) ) );
     }
   }
 }

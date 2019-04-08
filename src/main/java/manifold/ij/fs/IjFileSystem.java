@@ -12,10 +12,8 @@ import com.intellij.openapi.vfs.impl.http.RemoteFileInfo;
 import com.intellij.openapi.vfs.impl.jar.JarFileSystemImpl;
 import com.intellij.openapi.vfs.impl.local.LocalFileSystemImpl;
 import java.io.File;
-import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
 import java.util.jar.JarFile;
@@ -181,17 +179,9 @@ public class IjFileSystem extends BaseService implements IFileSystem
         case "file":
           return getIResourceFromJavaFile( _url );
         case "jar":
-          JarURLConnection urlConnection;
-          JarFile jarFile;
-          try
-          {
-            urlConnection = (JarURLConnection)_url.openConnection();
-            jarFile = urlConnection.getJarFile();
-          }
-          catch( IOException e )
-          {
-            throw new RuntimeException( e );
-          }
+        {
+          JarURLConnection urlConnection = (JarURLConnection)_url.openConnection();
+          JarFile jarFile = urlConnection.getJarFile();
           File dir = new File( jarFile.getName() );
 
           IDirectory jarFileDirectory;
@@ -205,6 +195,7 @@ public class IjFileSystem extends BaseService implements IFileSystem
             }
           }
           return getIResourceFromJarDirectoryAndEntryName( jarFileDirectory, urlConnection.getEntryName() );
+        }
         case "http":
         case "https":
           return getRemoteFile( _url );
@@ -230,10 +221,6 @@ public class IjFileSystem extends BaseService implements IFileSystem
           uri = new URI( uri.getScheme(), uri.getSchemeSpecificPart(), null );
         }
         return new File( uri );
-      }
-      catch( URISyntaxException ex )
-      {
-        throw new RuntimeException( ex );
       }
       catch( IllegalArgumentException ex )
       {

@@ -3,7 +3,6 @@ package manifold.ij.core;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -239,18 +238,7 @@ public class ManModule extends SimpleModule
       return;
     }
 
-    URL[] urls = classpath.stream().map(
-      dir ->
-      {
-        try
-        {
-          return dir.toURI().toURL();
-        }
-        catch( MalformedURLException e )
-        {
-          throw new RuntimeException( e );
-        }
-      } ).toArray( URL[]::new );
+    URL[] urls = classpath.stream().map( dir -> dir.toURI().toURL() ).toArray( URL[]::new );
 
     // note this classloader is used exclusively for finding a loading type manifold services
     _typeManifoldClassLoader = new URLClassLoader( urls, getClass().getClassLoader() );

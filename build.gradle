@@ -72,10 +72,10 @@ configurations.all {
 }
 
 compileJava {
-  options.compilerArgs += ['-proc:none', '-Xplugin:Manifold strings no-bootstrap']
+  options.compilerArgs += ['-proc:none', '-Xplugin:Manifold strings exceptions no-bootstrap']
 }
 compileTestJava {
-  options.compilerArgs += ['-proc:none', '-Xplugin:Manifold strings']
+  options.compilerArgs += ['-proc:none', '-Xplugin:Manifold strings exceptions']
 }
 
 String getIjVersion() {

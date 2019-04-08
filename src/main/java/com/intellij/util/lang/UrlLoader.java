@@ -2,7 +2,6 @@ package com.intellij.util.lang;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
@@ -42,15 +41,7 @@ public class UrlLoader extends Loader
       return null;
     }
 
-    final URL url;
-    try
-    {
-      url = new URL( getBaseURL(), ParseUtil.encodePath( name, false ) );
-    }
-    catch( MalformedURLException e )
-    {
-      throw new IllegalArgumentException();
-    }
+    final URL url = new URL( getBaseURL(), ParseUtil.encodePath( name, false ) );
     final URLConnection uc;
     try
     {
