@@ -150,6 +150,7 @@ Bug fixes: <br>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionMethodCallSiteAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.SelfUsageAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.JailbreakUsageAnnotator"/>
+    <annotator language="JAVA" implementationClass="manifold.ij.extensions.MiscAnnotator"/>
     <daemon.highlightInfoFilter implementation="manifold.ij.extensions.ManHighlightInfoFilter"/>
     <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameTypeManifoldFileProcessor" order="first"/>
     <moveFileHandler implementation="manifold.ij.extensions.MoveTypeManifoldFileProcessor" order="first"/>
