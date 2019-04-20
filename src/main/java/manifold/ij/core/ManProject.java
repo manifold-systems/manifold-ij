@@ -20,6 +20,7 @@ import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
 import com.intellij.util.messages.MessageBusConnection;
 import java.io.File;
@@ -126,7 +127,13 @@ public class ManProject
       return ((ManLightMethodBuilder)element).getModule().getIjModule();
     }
 
-    ManifoldPsiClass javaFacadePsiClass = element.getContainingFile().getUserData( ManifoldPsiClass.KEY_MANIFOLD_PSI_CLASS );
+    PsiFile psiFile = element.getContainingFile();
+    if( psiFile == null )
+    {
+      return null;
+    }
+
+    ManifoldPsiClass javaFacadePsiClass = psiFile.getUserData( ManifoldPsiClass.KEY_MANIFOLD_PSI_CLASS );
     if( javaFacadePsiClass != null )
     {
       return javaFacadePsiClass.getModule();

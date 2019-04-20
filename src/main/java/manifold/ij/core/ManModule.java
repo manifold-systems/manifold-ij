@@ -1,5 +1,6 @@
 package manifold.ij.core;
 
+import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
@@ -12,7 +13,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import manifold.api.fs.IDirectory;
@@ -28,6 +31,7 @@ import manifold.internal.host.SimpleModule;
 import manifold.util.JsonUtil;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
 
 /**
  */
@@ -365,6 +369,56 @@ public class ManModule extends SimpleModule
       {
         ManModule depMod = (ManModule)dep.getModule();
         if( depMod.hasPath( directory ) )
+        {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  public boolean isPluginArgEnabled( String pluginArg )
+  {
+    // Module-level args override project-level args
+    
+    JpsJavaCompilerOptions options = JavacConfiguration.getOptions( getIjProject(), JavacConfiguration.class );
+    Map<String, String> optionsOverride = options.ADDITIONAL_OPTIONS_OVERRIDE;
+    if( optionsOverride != null )
+    {
+      for( String moduleName: optionsOverride.keySet() )
+      {
+        if( getName().equals( moduleName ) )
+        {
+          return hasPluginArg( optionsOverride.get( moduleName ), pluginArg );
+        }
+      }
+    }
+
+    // Project-level args
+
+    return hasPluginArg( options.ADDITIONAL_OPTIONS_STRING, pluginArg );
+  }
+
+  private boolean hasPluginArg( String optionsString, String pluginArg )
+  {
+    if( optionsString == null )
+    {
+      return false;
+    }
+
+    String pluginArgPrefix;
+    int index = optionsString.indexOf( pluginArgPrefix = ManProject.XPLUGIN_MANIFOLD );
+    if( index < 0 )
+    {
+      index = optionsString.indexOf( pluginArgPrefix = "-Xplugin:\"Manifold" );
+    }
+    if( index >= 0 )
+    {
+      StringTokenizer tokenizer = new StringTokenizer( optionsString.substring( pluginArgPrefix.length() ), " \"" );
+      while( tokenizer.hasMoreTokens() )
+      {
+        String token = tokenizer.nextToken();
+        if( token.equals( pluginArg ) )
         {
           return true;
         }

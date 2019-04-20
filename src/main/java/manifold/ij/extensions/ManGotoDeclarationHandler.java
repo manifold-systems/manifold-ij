@@ -19,6 +19,7 @@ import com.intellij.psi.PsiReferenceExpression;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import manifold.api.darkj.DarkJavaTypeManifold;
@@ -80,11 +81,12 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
       return null;
     }
 
-    PsiAnnotation[] annotations = modifierList.getAnnotations();
-    if( annotations.length > 0 &&
-        Objects.equals( annotations[0].getQualifiedName(), SourcePosition.class.getName() ) )
+    PsiAnnotation sourcePosAnnotation = Arrays.stream( modifierList.getAnnotations() )
+      .filter( anno -> Objects.equals( anno.getQualifiedName(), SourcePosition.class.getName() ) )
+      .findFirst().orElse( null );
+    if( sourcePosAnnotation != null )
     {
-      return findTargetFeature( annotations[0], resolve, facade );
+      return findTargetFeature( sourcePosAnnotation, resolve, facade );
     }
 
     if( facade != null && !facade.getRawFiles().isEmpty() &&

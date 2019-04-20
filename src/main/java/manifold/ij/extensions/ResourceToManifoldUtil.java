@@ -379,7 +379,9 @@ public class ResourceToManifoldUtil
     if( annotation != null )
     {
       int textOffset = element.getTextOffset();
-      int textLength = element instanceof PsiNamedElement ? ((PsiNamedElement)element).getName().length() : element.getTextLength();
+      int textLength = element instanceof PsiNamedElement && ((PsiNamedElement)element).getName() != null
+                       ? ((PsiNamedElement)element).getName().length()
+                       : element.getTextLength();
       PsiNameValuePair[] attributes = annotation.getParameterList().getAttributes();
       int offset = -1;
       for( PsiNameValuePair pair : attributes )

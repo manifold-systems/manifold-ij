@@ -7,6 +7,7 @@ import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.LanguageInjector;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiLanguageInjectionHost;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiNameValuePair;
@@ -14,7 +15,10 @@ import com.intellij.psi.impl.source.tree.java.PsiLiteralExpressionImpl;
 import java.util.List;
 import manifold.api.templ.DisableStringLiteralTemplates;
 import manifold.api.templ.StringLiteralTemplateParser;
+import manifold.ij.core.ManModule;
+import manifold.ij.core.ManProject;
 import manifold.ij.util.ComputeUtil;
+import manifold.internal.javac.JavacPlugin;
 import org.jetbrains.annotations.NotNull;
 
 public class ManStringLiteralTemplateInjector implements LanguageInjector
@@ -84,6 +88,12 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
       return false;
     }
 
+    ManModule module = ManProject.getModule( elem );
+    if( module != null && !module.isPluginArgEnabled( JavacPlugin.ARG_STRINGS ))
+    {
+      return true;
+    }
+
     if( elem instanceof PsiModifierListOwner )
     {
       for( PsiAnnotation anno: ((PsiModifierListOwner)elem).getAnnotations() )
@@ -99,6 +109,12 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
           return true;
         }
       }
+    }
+
+    PsiElement parent = elem.getParent();
+    if( parent == null || parent instanceof PsiJavaFile )
+    {
+      return false;
     }
 
     return isStringLiteralTemplatesDisabled( elem.getParent() );

@@ -105,6 +105,10 @@ Bug fixes: <br>
       <action id="Manifold.NewTemplate" class="manifold.ij.actions.CreateManifoldTemplateAction"/>
       <add-to-group group-id="NewGroup1" anchor="last"/>
     </group>
+    <group id="Manifold.SourceCode">
+      <action class="manifold.ij.actions.ViewJavaSourceAction"/>
+      <add-to-group group-id="ViewMenu" anchor="after" relative-to-action="QuickActions"/>
+    </group>
   </actions>
 
   <application-components>
