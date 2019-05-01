@@ -77,7 +77,7 @@ public class ManifoldFindUsagesHandlerFactory extends JavaFindUsagesHandlerFacto
       @Override
       public PsiElement[] getPrimaryElements()
       {
-        return javaElements.toArray( new PsiElement[javaElements.size()] );
+        return javaElements.toArray( new PsiElement[0] );
       }
     };
   }

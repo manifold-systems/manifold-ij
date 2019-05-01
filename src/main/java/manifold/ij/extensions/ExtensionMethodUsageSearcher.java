@@ -18,9 +18,12 @@ import com.intellij.psi.impl.search.MethodUsagesSearcher;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.searches.MethodReferencesSearch;
+import com.intellij.psi.util.PsiUtil;
 import com.intellij.util.Processor;
+import java.util.Set;
 import manifold.ext.ExtensionManifold;
 import manifold.ext.api.Extension;
+import manifold.ext.api.Jailbreak;
 import manifold.ext.api.This;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.util.ReflectUtil;
@@ -32,9 +35,10 @@ import org.jetbrains.annotations.NotNull;
 public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
 {
   @Override
-  public void processQuery( @NotNull final MethodReferencesSearch.SearchParameters p, @NotNull final Processor<? super PsiReference> consumer )
+  public void processQuery( @NotNull final MethodReferencesSearch.SearchParameters searchParameters,
+                            @NotNull final Processor<? super PsiReference> consumer )
   {
-    SearchScope searchScope = p.getScopeDeterminedByUser();
+    SearchScope searchScope = searchParameters.getScopeDeterminedByUser();
     if( !(searchScope instanceof GlobalSearchScope) )
     {
       return;
@@ -43,15 +47,30 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
     if( searchScope.getClass().getSimpleName().equals( "ModuleWithDependentsScope" ) )
     {
       // include libraries to handle extended classes
-      searchScope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(
-        (Module)ReflectUtil.field( searchScope, "myModule" ).get(),
-        ApplicationManager.getApplication().isUnitTestMode() );
+      //noinspection unchecked
+      Set<Module> modules = (Set)ReflectUtil.field( searchScope, "myModules" ).get();
+      if( !modules.isEmpty() )
+      {
+        searchScope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( modules.iterator().next(),
+          ApplicationManager.getApplication().isUnitTestMode() );
+      }
+    }
+    else if( searchScope instanceof ModuleWithDependenciesScope )
+    {
+      // include libraries to handle extended classes
+      @Jailbreak ModuleWithDependenciesScope scope = (ModuleWithDependenciesScope)searchScope;
+
+      if( scope.myModule != null )
+      {
+        searchScope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( scope.myModule,
+          ApplicationManager.getApplication().isUnitTestMode() );
+      }
     }
     GlobalSearchScope theSearchScope = (GlobalSearchScope)searchScope;
 
-    PsiMethod method = p.getMethod();
-    PsiClass extensionClass = resolveInReadAction( p.getProject(), method::getContainingClass );
-    PsiAnnotation extensionAnno = resolveInReadAction( p.getProject(), () ->
+    PsiMethod method = searchParameters.getMethod();
+    PsiClass extensionClass = resolveInReadAction( searchParameters.getProject(), method::getContainingClass );
+    PsiAnnotation extensionAnno = resolveInReadAction( searchParameters.getProject(), () ->
       {
         PsiModifierList modifierList = extensionClass.getModifierList();
         return modifierList == null ? null : modifierList.findAnnotation( Extension.class.getName() );
@@ -61,20 +80,27 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
       return;
     }
 
-    PsiMethod augmentedMethod = resolveInReadAction( p.getProject(), () ->
+    PsiMethod augmentedMethod = resolveInReadAction( searchParameters.getProject(), () ->
     {
       if( method.getModifierList().findAnnotation( Extension.class.getName() ) != null )
       {
         String fqn = getExtendedFqn( extensionClass );
-        PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, theSearchScope );
-
-        for( PsiMethod m : extendedClass.findMethodsByName( method.getName(), false ) )
+        if( fqn != null )
         {
-          if( m instanceof ManLightMethodBuilder )
+          PsiClass extendedClass = JavaPsiFacade.getInstance( searchParameters.getProject() )
+            .findClass( fqn, theSearchScope );
+          if( extendedClass != null )
           {
-            if( m.getNavigationElement().equals( method.getNavigationElement() ) )
+            for( PsiMethod m: extendedClass.findMethodsByName( method.getName(), false ) )
             {
-              return m;
+              if( m instanceof ManLightMethodBuilder )
+              {
+                if( PsiUtil.allMethodsHaveSameSignature( new PsiMethod[]{(PsiMethod)m.getNavigationElement(),
+                      (PsiMethod)method.getNavigationElement()} ) )
+                {
+                  return m;
+                }
+              }
             }
           }
         }
@@ -82,10 +108,14 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
 
       for( PsiParameter psiParam : method.getParameterList().getParameters() )
       {
-        if( psiParam.getModifierList().findAnnotation( This.class.getName() ) != null )
+        PsiModifierList modifierList = psiParam.getModifierList();
+        if( modifierList != null && modifierList.findAnnotation( This.class.getName() ) != null )
         {
           String fqn = getExtendedFqn( extensionClass );
-          PsiClass extendedClass = JavaPsiFacade.getInstance( p.getProject() ).findClass( fqn, getTargetScope( theSearchScope, method ) );
+          PsiClass extendedClass = fqn == null
+                                   ? null
+                                   : JavaPsiFacade.getInstance( searchParameters.getProject() )
+                                     .findClass( fqn, getTargetScope( theSearchScope, method ) );
           if( extendedClass == null )
           {
             continue;
@@ -94,7 +124,8 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
           {
             if( m instanceof ManLightMethodBuilder )
             {
-              if( m.getNavigationElement().equals( method.getNavigationElement() ) )
+              if( PsiUtil.allMethodsHaveSameSignature( new PsiMethod[] {(PsiMethod)m.getNavigationElement(),
+                    (PsiMethod)method.getNavigationElement()} ) )
               {
                 return m;
               }
@@ -106,7 +137,9 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
     } );
     if( augmentedMethod != null )
     {
-      MethodReferencesSearch.SearchParameters searchParams = new MethodReferencesSearch.SearchParameters( augmentedMethod, searchScope, p.isStrictSignatureSearch(), p.getOptimizer() );
+      MethodReferencesSearch.SearchParameters searchParams =
+        new MethodReferencesSearch.SearchParameters( augmentedMethod, searchScope,
+          searchParameters.isStrictSignatureSearch(), searchParameters.getOptimizer() );
       super.processQuery( searchParams, consumer );
     }
   }
@@ -124,18 +157,26 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
            : GlobalSearchScope.allScope( method.getProject() );
   }
 
-  @NotNull
   private String getExtendedFqn( PsiClass extensionClass )
   {
     String fqn = extensionClass.getQualifiedName();
-    int iExt = fqn.indexOf( ExtensionManifold.EXTENSIONS_PACKAGE + '.' );
-    fqn = fqn.substring( iExt + ExtensionManifold.EXTENSIONS_PACKAGE.length() + 1 );
-    fqn = fqn.substring( 0, fqn.lastIndexOf( '.' ) );
-    return fqn;
+    if( fqn != null )
+    {
+      int iExt = fqn.indexOf( ExtensionManifold.EXTENSIONS_PACKAGE + '.' );
+      if( iExt >= 0 )
+      {
+        fqn = fqn.substring( iExt + ExtensionManifold.EXTENSIONS_PACKAGE.length() + 1 );
+        fqn = fqn.substring( 0, fqn.lastIndexOf( '.' ) );
+        return fqn;
+      }
+    }
+    return null;
   }
 
-  static <T> T resolveInReadAction( Project p, Computable<T> computable )
+  private static <T> T resolveInReadAction( Project p, Computable<T> computable )
   {
-    return ApplicationManager.getApplication().isReadAccessAllowed() ? computable.compute() : DumbService.getInstance( p ).runReadActionInSmartMode( computable );
+    return ApplicationManager.getApplication().isReadAccessAllowed()
+           ? computable.compute()
+           : DumbService.getInstance( p ).runReadActionInSmartMode( computable );
   }
 }

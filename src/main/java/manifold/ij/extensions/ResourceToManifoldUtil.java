@@ -10,6 +10,8 @@ import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -26,7 +28,9 @@ import com.intellij.psi.PsiNameValuePair;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiPlainText;
 import com.intellij.psi.PsiPlainTextFile;
+import com.intellij.psi.PsiReference;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.search.searches.ReferencesSearch;
 import java.awt.KeyboardFocusManager;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,6 +107,16 @@ public class ResourceToManifoldUtil
    */
   public static Set<PsiModifierListOwner> findJavaElementsFor( @NotNull PsiElement element )
   {
+    return findJavaElementsFor( element, new HashSet<>() );
+  }
+  private static Set<PsiModifierListOwner> findJavaElementsFor( @NotNull PsiElement element, Set<PsiElement> visited )
+  {
+    if( visited.contains( element ) )
+    {
+      return Collections.emptySet();
+    }
+    visited.add( element );
+
     if( element instanceof ManifoldPsiClass )
     {
       if( ((ManifoldPsiClass)element).getContainingClass() != null )
@@ -169,6 +183,19 @@ public class ResourceToManifoldUtil
         }
       }
     }
+
+    // Find Java elements from references to the element.  For example, int the "JS GraphQL" plugin a query field
+    // references a type field -- the fields are considered the same -- therefore make sure Java references to the query
+    // field ref are also accounted for.
+    Module moduleForPsiElement = ModuleUtilCore.findModuleForPsiElement( element );
+    for( PsiReference ref: ReferencesSearch.search( element,
+      moduleForPsiElement == null
+      ? GlobalSearchScope.projectScope( project )
+      : GlobalSearchScope.moduleScope( moduleForPsiElement ) ).findAll() )
+    {
+      result.addAll( findJavaElementsFor( ref.getElement() ) );
+    }
+
     return result;
   }
 

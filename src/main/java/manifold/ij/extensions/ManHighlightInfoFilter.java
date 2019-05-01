@@ -129,7 +129,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     //##
-    //## structural interface extensions cannot be added to the psiClass, so for now we suppress "incompatible type errors" or similar involving a structural interface extension.
+    //## structural interface extensions cannot be added to the psiClass, so for now we suppress "incompatible type
+    //## errors" or similar involving a structural interface extension.
     //##
     Boolean x = acceptInterfaceError( hi, firstElem, elem );
     if( x != null )
@@ -147,7 +148,12 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    PsiType type = ((PsiReferenceExpressionImpl)firstElem.getParent()).getType();
+    PsiElement parent = firstElem.getParent();
+    PsiType type = null;
+    if( parent instanceof PsiReferenceExpression )
+    {
+      type = ((PsiReferenceExpression)parent).getType();
+    }
     return type != null && type.findAnnotation( Jailbreak.class.getTypeName() ) != null;
   }
 

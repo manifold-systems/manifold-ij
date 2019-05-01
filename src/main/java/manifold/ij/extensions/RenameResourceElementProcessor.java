@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -135,6 +136,9 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
       }
       if( elemAt != null )
       {
+        // Make sure we rename the terminal target e.g., using the "JS GraphQL" plugin a query field is actually a ref to a field def
+        elemAt = getTerminalTarget( elemAt, new HashSet<>() );
+
         element[0] = elemAt;
         javaElems = ResourceToManifoldUtil.findJavaElementsFor( element[0] );
         if( javaElems.isEmpty() )
@@ -153,10 +157,17 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
         PsiElement elemAt = target.getContainingFile().findElementAt( target.getTextOffset() );
         if( elemAt != null )
         {
-          while( elemAt != null && (!(elemAt instanceof PsiNamedElement) /*|| oldName != null && !((PsiNamedElement)elemAt).getName().equals( oldName )*/) )
+          while( elemAt != null && !(elemAt instanceof PsiNamedElement) )
           {
             elemAt = elemAt.getParent();
           }
+
+          // Make sure we rename the terminal target e.g., using the "JS GraphQL" plugin a query field is actually a ref to a field def
+          if( elemAt != null )
+          {
+            elemAt = getTerminalTarget( elemAt, new HashSet<>() );
+          }
+
           element[0] = elemAt;
         }
       }
@@ -167,6 +178,27 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
       element[0] = findFakePlainTextElement( (PsiPlainTextFile)element[0] );
     }
     return javaElems.stream().map( e -> (PsiElement)e ).collect( Collectors.toList() );
+  }
+
+  @NotNull
+  static PsiElement getTerminalTarget( PsiElement target, Set<PsiElement> visited )
+  {
+    if( visited.contains( target ) )
+    {
+      return target;
+    }
+    visited.add( target );
+
+    PsiReference reference = target.getReference();
+    if( reference != null )
+    {
+      PsiElement ref = reference.resolve();
+      if( ref != null )
+      {
+        return getTerminalTarget( ref, visited );
+      }
+    }
+    return target;
   }
 
   @NotNull
