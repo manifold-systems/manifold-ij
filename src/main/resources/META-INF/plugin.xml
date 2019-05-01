@@ -8,7 +8,7 @@
 Simply add the Manifold jar to your project and begin taking advantage of it.</p>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
 <h3><a href="#meta-programming" id="meta-programming"><a href="http://manifold.systems/docs.html#manifold-in-a-nutshell">Meta-programming</a></a></h3>
-<p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as JSON Schema and YAML. Remove the code gen step in your build process.</p>
+<p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as JSON Schema and YAML, and GraphQL. Remove the code gen step in your build process.</p>
 <pre><code class="java">// Use your User.json schema file directly as a type, no code gen!
 User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&quot;)
   .withGender(male)
@@ -92,10 +92,22 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
+<b>GraphQL Support</b> <br>
+- "Schema-first": *.graphql schema files are first-class Java types, no code-gen step! <br>
+- support queries & mutations <br>
+- support interfaces & unions  <br>
+- support extensions  <br>
+- support scalars <br>
+-- JSON Schema format resolvers (if registered) automatically become GraphQL Scalars, for both client and server GraphQL usage <br>
+- support IntelliJ via Manifold plugin <br>
+-- navigation, find usages, rename refactor <br>
+-- works with plain text graphql files and also with the `JS GraphQL` plugin <br>
+<br>
 Bug fixes: <br>
-- fix jps plugin so that a source root suc as 'target/generated-sources/annotations' exists on disk before we handle incremental compilation <br>
-- fix https://github.com/manifold-systems/manifold/issues/60: regression on primitive JSON list types, ensure component type is boxed regardless of nullability <br>
-- other minor fixes <br>
+- https://github.com/manifold-systems/manifold/issues/70 <br>
+- https://github.com/manifold-systems/manifold/issues/68 <br>
+- https://github.com/manifold-systems/manifold/issues/67 <br>
+- several other minor fixes and improvements <br>
      ]]>
   </change-notes>
   
