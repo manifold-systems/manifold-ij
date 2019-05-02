@@ -93,7 +93,7 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
   <change-notes>
     <![CDATA[
 <b>GraphQL Support</b> <br>
-- "Schema-first": *.graphql schema files are first-class Java types, no code-gen step! <br>
+- "Schema-first": *.graphql schema (SDL )files are first-class Java types, no code-gen step! <br>
 - support queries & mutations <br>
 - support interfaces & unions  <br>
 - support extensions  <br>
