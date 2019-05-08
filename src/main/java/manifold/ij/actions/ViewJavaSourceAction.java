@@ -1,5 +1,6 @@
 package manifold.ij.actions;
 
+import com.intellij.codeInsight.lookup.LookupManager;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -77,11 +78,13 @@ public class ViewJavaSourceAction extends AnAction implements DumbAware
     final JavaSourceViewerComponent component = new JavaSourceViewerComponent( project );
     component.setText( psiClass.getDelegate().getContainingFile().getText() );
 
-    JBPopup popup = JBPopupFactory.getInstance().createComponentPopupBuilder( component, null )
+    JBPopup popup = JBPopupFactory.getInstance()
+      .createComponentPopupBuilder( component, component.getEditor().getComponent() )
       .setProject( project )
       .setResizable( true )
       .setMovable( true )
-      .setTitle( "Java Source for " + psiClass.getName() )
+      .setRequestFocus( LookupManager.getActiveLookup( component.getEditor() ) == null )
+      .setTitle( "Java Source for '" + psiClass.getName() + "'" )
       .createPopup();
     Disposer.register( popup, component );
 

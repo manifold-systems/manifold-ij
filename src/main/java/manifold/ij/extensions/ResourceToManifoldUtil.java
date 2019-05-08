@@ -184,7 +184,7 @@ public class ResourceToManifoldUtil
       }
     }
 
-    // Find Java elements from references to the element.  For example, int the "JS GraphQL" plugin a query field
+    // Find Java elements from references to the element.  For example, in the "JS GraphQL" plugin a query field
     // references a type field -- the fields are considered the same -- therefore make sure Java references to the query
     // field ref are also accounted for.
     Module moduleForPsiElement = ModuleUtilCore.findModuleForPsiElement( element );
@@ -193,7 +193,7 @@ public class ResourceToManifoldUtil
       ? GlobalSearchScope.projectScope( project )
       : GlobalSearchScope.moduleScope( moduleForPsiElement ) ).findAll() )
     {
-      result.addAll( findJavaElementsFor( ref.getElement() ) );
+      result.addAll( findJavaElementsFor( ref.getElement(), visited ) );
     }
 
     return result;

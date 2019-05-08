@@ -25,6 +25,7 @@ public class DirectiveParser
   public static final String EXTENDS = "extends";
   public static final String IMPORT = "import";
   public static final String INCLUDE = "include";
+  public static final String NEST = "nest";
   public static final String SECTION = "section";
   public static final String END = "end";
   public static final String LAYOUT = "layout";
@@ -76,6 +77,10 @@ public class DirectiveParser
 
       case INCLUDE:
         parseIncludeDirective( builder );
+        break;
+
+      case NEST:
+        parseNestDirective( builder );
         break;
 
       case SECTION:
@@ -161,6 +166,25 @@ public class DirectiveParser
     {
       PsiBuilder.Marker error = builder.mark();
       error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
+    }
+    if( builder.getTokenType() == JavaTokenType.LPARENTH )
+    {
+      _javaParser.getExpressionParser().parseArgumentList( builder );
+    }
+  }
+
+  private void parseNestDirective( PsiBuilder builder )
+  {
+    builder.advanceLexer();
+    ReferenceParser.TypeInfo type = parseType( builder );
+    if( type == null )
+    {
+      PsiBuilder.Marker error = builder.mark();
+      error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
+    }
+    if( builder.getTokenType() == JavaTokenType.LPARENTH )
+    {
+      _javaParser.getExpressionParser().parseArgumentList( builder );
     }
   }
 

@@ -70,9 +70,9 @@ public class JavaSourceViewerComponent extends JPanel implements Disposable
     return _editor.getDocument().getText();
   }
 
-  public JComponent getEditorComponent()
+  public Editor getEditor()
   {
-    return _editor.getContentComponent();
+    return _editor;
   }
 
   @Override

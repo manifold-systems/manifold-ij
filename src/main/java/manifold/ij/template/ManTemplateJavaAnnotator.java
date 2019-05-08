@@ -141,6 +141,7 @@ public class ManTemplateJavaAnnotator implements Annotator
       case DirectiveParser.EXTENDS:
       case DirectiveParser.PARAMS:
       case DirectiveParser.INCLUDE:
+      case DirectiveParser.NEST:
       case DirectiveParser.SECTION:
       case DirectiveParser.END:
       case DirectiveParser.LAYOUT:

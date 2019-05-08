@@ -11,6 +11,7 @@ import com.intellij.psi.PsiParameter;
 import manifold.ExtIssueMsg;
 import manifold.ext.api.Extension;
 import manifold.ext.api.This;
+import manifold.ij.util.ManPsiUtil;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -28,15 +29,30 @@ public class MiscAnnotator implements Annotator
   {
     if( element instanceof PsiMethodReferenceExpression )
     {
-      // Extension method ref not allowed on an extension method
 
-      PsiElement psiMethod = ((PsiMethodReferenceExpression)element).resolve();
-      if( psiMethod instanceof PsiMethod && isExtensionMethod( (PsiMethod)psiMethod ) )
+      PsiElement maybeMethod = ((PsiMethodReferenceExpression)element).resolve();
+      if( maybeMethod instanceof PsiMethod )
       {
-        holder.createAnnotation( HighlightSeverity.ERROR, element.getTextRange(),
-          ExtIssueMsg.MSG_EXTENSION_METHOD_REF_NOT_SUPPORTED.get( ((PsiMethod)psiMethod).getName() ) );
+        PsiMethod psiMethod = (PsiMethod)maybeMethod;
+        if( isExtensionMethod( psiMethod ) )
+        {
+          // Method ref not allowed on an extension method
+          holder.createAnnotation( HighlightSeverity.ERROR, element.getTextRange(),
+            ExtIssueMsg.MSG_EXTENSION_METHOD_REF_NOT_SUPPORTED.get( psiMethod.getName() ) );
+        }
+        else if( isStructuralInterfaceMethod( psiMethod ) )
+        {
+          // Method ref not allowed on a structural interface method
+          holder.createAnnotation( HighlightSeverity.ERROR, element.getTextRange(),
+            ExtIssueMsg.MSG_STRUCTURAL_METHOD_REF_NOT_SUPPORTED.get( psiMethod.getName() ) );
+        }
       }
     }
+  }
+
+  private boolean isStructuralInterfaceMethod( PsiMethod psiMethod )
+  {
+    return ManPsiUtil.isStructuralInterface( psiMethod.getContainingClass() );
   }
 
   private boolean isExtensionMethod( PsiMethod method )

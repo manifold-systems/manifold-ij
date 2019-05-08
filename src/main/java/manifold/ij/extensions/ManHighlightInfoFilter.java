@@ -8,7 +8,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.JavaResolveResult;
 import com.intellij.psi.JavaTokenType;
-import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiCapturedWildcardType;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
@@ -36,6 +35,7 @@ import manifold.ext.api.Jailbreak;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightMethodBuilder;
+import manifold.ij.util.ManPsiUtil;
 import manifold.internal.javac.JavacPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -64,14 +64,9 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return true;
     }
 
-    if( hi.getDescription().contains( "Unhandled exception:" ) )
+    if( filterUnhandledCheckedExceptions( hi, file ) )
     {
-      Module fileModule = ManProject.getIjModule( file );
-      if( fileModule != null )
-      {
-        ManModule manModule = ManProject.getModule( fileModule );
-        return !manModule.isPluginArgEnabled( JavacPlugin.ARG_EXCEPTIONS );
-      }
+      return false;
     }
 
     PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
@@ -130,7 +125,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
     //##
     //## structural interface extensions cannot be added to the psiClass, so for now we suppress "incompatible type
-    //## errors" or similar involving a structural interface extension.
+    //## errors" or similar involving a structural interface extension :(
     //##
     Boolean x = acceptInterfaceError( hi, firstElem, elem );
     if( x != null )
@@ -139,6 +134,21 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     return true;
+  }
+
+  private boolean filterUnhandledCheckedExceptions( @NotNull HighlightInfo hi, @Nullable PsiFile file )
+  {
+    // Note the message can be singular or plural e.g., "Unhandled exception[s]:"
+    if( hi.getDescription().contains( "Unhandled exception" ) )
+    {
+      Module fileModule = ManProject.getIjModule( file );
+      if( fileModule != null )
+      {
+        ManModule manModule = ManProject.getModule( fileModule );
+        return manModule.isPluginArgEnabled( JavacPlugin.ARG_EXCEPTIONS );
+      }
+    }
+    return false;
   }
 
   private boolean filterCannotAssignToFinalIfJailbreak( HighlightInfo hi, PsiElement firstElem )
@@ -301,7 +311,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean isExtendedWithInterface( PsiElement firstElem, PsiClass iface )
   {
-    if( iface == null || !isStructuralInterface( iface ) )
+    if( iface == null || !ManPsiUtil.isStructuralInterface( iface ) )
     {
       return false;
     }
@@ -462,17 +472,9 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       {
         return false;
       }
-      return isStructuralInterface( psiClass );
+      return ManPsiUtil.isStructuralInterface( psiClass );
     }
     return false;
-  }
-
-  private boolean isStructuralInterface( PsiClass psiClass )
-  {
-    PsiAnnotation structuralAnno = psiClass.getModifierList() == null
-                                   ? null
-                                   : psiClass.getModifierList().findAnnotation( "manifold.ext.api.Structural" );
-    return structuralAnno != null;
   }
 
   private PsiTypeElement findTypeElement( PsiElement elem )
