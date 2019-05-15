@@ -6,6 +6,7 @@ import com.intellij.lang.cacheBuilder.WordsScanner;
 import com.intellij.lang.findUsages.FindUsagesProvider;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
+import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,6 +25,11 @@ public class TextFindUsagesProvider implements FindUsagesProvider
   @Override
   public boolean canFindUsagesFor( @NotNull PsiElement psiElement )
   {
+    if( !ManProject.isManifoldInUse( psiElement ) )
+    {
+      return false;
+    }
+
     return psiElement instanceof PsiNamedElement;
   }
 
@@ -31,6 +37,11 @@ public class TextFindUsagesProvider implements FindUsagesProvider
   @Override
   public String getHelpId( @NotNull PsiElement psiElement )
   {
+    if( !ManProject.isManifoldInUse( psiElement ) )
+    {
+      return null;
+    }
+
     return HelpID.FIND_OTHER_USAGES;
   }
 

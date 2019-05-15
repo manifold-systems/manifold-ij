@@ -59,6 +59,11 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
   @Override
   public boolean canProcessElement( @NotNull PsiElement element )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      return false;
+    }
+
     return !isElementInsidePlainTextFile( element ) &&
            super.canProcessElement( maybeGetResourceFile( element ) );
   }
@@ -95,14 +100,25 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 
   @Nullable
   @Override
-  public PsiElement substituteElementToRename( PsiElement element, @Nullable Editor editor )
+  public PsiElement substituteElementToRename( @NotNull PsiElement element, @Nullable Editor editor )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      return super.substituteElementToRename( element, editor );
+    }
+
     return maybeGetResourceFile( element );
   }
 
+  @NotNull
   @Override
-  public RenameDialog createRenameDialog( Project project, PsiElement element, PsiElement nameSuggestionContext, Editor editor )
+  public RenameDialog createRenameDialog( @NotNull Project project, @NotNull PsiElement element, PsiElement nameSuggestionContext, Editor editor )
   {
+    if( !ManProject.isManifoldInUse( project ) )
+    {
+      return super.createRenameDialog( project, element, nameSuggestionContext, editor );
+    }
+
     return new PsiFileRenameDialog( project, element, nameSuggestionContext, editor )
     {
       protected void createNewNameComponent()
@@ -124,12 +140,15 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
           if( psiClass != null )
           {
             String className = psiClass.getName();
-            int indexName = editor.getDocument().getText().indexOf( className );
-            if( indexName >= 0 )
+            if( className != null )
             {
-              editor.getSelectionModel().setSelection( indexName, indexName + className.length() );
-              editor.getCaretModel().moveToOffset( indexName );
-              return;
+              int indexName = editor.getDocument().getText().indexOf( className );
+              if( indexName >= 0 )
+              {
+                editor.getSelectionModel().setSelection( indexName, indexName + className.length() );
+                editor.getCaretModel().moveToOffset( indexName );
+                return;
+              }
             }
           }
 
@@ -184,8 +203,13 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 
   @NotNull
   @Override
-  public Collection<PsiReference> findReferences( PsiElement element )
+  public Collection<PsiReference> findReferences( @NotNull PsiElement element )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      return Collections.emptySet();
+    }
+
     Collection<PsiReference> references = super.findReferences( element );
 
     // Store refs to manifold types
@@ -252,7 +276,7 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 
   @Nullable
   @Override
-  public Runnable getPostRenameCallback( PsiElement element, String newName, RefactoringElementListener elementListener )
+  public Runnable getPostRenameCallback( @NotNull PsiElement element, @NotNull String newName, @NotNull RefactoringElementListener elementListener )
   {
     return _usages.isEmpty() ? null : () -> renameManifoldTypeRefs( element, elementListener );
   }
@@ -275,7 +299,7 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
           return;
         }
 
-        RenameUtil.doRename( psiClass, psiClass.getName(), _usages.toArray( new UsageInfo[_usages.size()] ), element.getProject(), elementListener );
+        RenameUtil.doRename( psiClass, psiClass.getName(), _usages.toArray( new UsageInfo[0] ), element.getProject(), elementListener );
 
         // for plain text files, also rename a class name declaration if such a thing exists e.g., javascript class declaration
         if( _classDeclElement != null && _classDeclElement.getElement() != null )

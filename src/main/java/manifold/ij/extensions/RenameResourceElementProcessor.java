@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import manifold.ij.core.ManProject;
 import manifold.util.JsonUtil;
 import manifold.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -53,6 +54,11 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
   @Override
   public boolean canProcessElement( @NotNull PsiElement elem )
   {
+    if( !ManProject.isManifoldInUse( elem ) )
+    {
+      return false;
+    }
+
     PsiElement[] element = new PsiElement[]{elem};
     List<PsiElement> javaElems = _findJavaElements( element );
 
@@ -99,8 +105,13 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
 
   @Nullable
   @Override
-  public PsiElement substituteElementToRename( PsiElement elem, @Nullable Editor editor )
+  public PsiElement substituteElementToRename( @NotNull PsiElement elem, @Nullable Editor editor )
   {
+    if( !ManProject.isManifoldInUse( elem ) )
+    {
+      return super.substituteElementToRename( elem, editor );
+    }
+
     if( elem instanceof PsiModifierListOwner )
     {
       return ManGotoDeclarationHandler.find( (PsiModifierListOwner)elem );
@@ -203,8 +214,13 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
 
   @NotNull
   @Override
-  public Collection<PsiReference> findReferences( PsiElement element )
+  public Collection<PsiReference> findReferences( @NotNull PsiElement element )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      return super.findReferences( element );
+    }
+
     Collection<PsiReference> references = super.findReferences( element );
 
     if( element instanceof JsonProperty )
@@ -280,8 +296,13 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
 
   @Nullable
   @Override
-  public Runnable getPostRenameCallback( PsiElement element, String newName, RefactoringElementListener elementListener )
+  public Runnable getPostRenameCallback( @NotNull PsiElement element, @NotNull String newName, @NotNull RefactoringElementListener elementListener )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      return null;
+    }
+
     return _javaUsages.isEmpty() ? null : () -> handleManifoldRename( element, elementListener );
   }
 
@@ -321,7 +342,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
                                                            if( newFeatureName != null )
                                                            {
                                                              PsiElement targetElem = key.getSecond();
-                                                             RenameUtil.doRename( targetElem, newFeatureName, value.toArray( new UsageInfo[value.size()] ), element.getProject(), elementListener );
+                                                             RenameUtil.doRename( targetElem, newFeatureName, value.toArray( new UsageInfo[0] ), element.getProject(), elementListener );
                                                            }
                                                          }
                                                        } ) );

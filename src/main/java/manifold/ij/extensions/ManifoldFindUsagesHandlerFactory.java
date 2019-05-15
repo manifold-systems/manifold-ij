@@ -13,6 +13,7 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiPackage;
 import java.util.Set;
+import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,6 +32,12 @@ public class ManifoldFindUsagesHandlerFactory extends JavaFindUsagesHandlerFacto
   @Override
   public boolean canFindUsages( @NotNull PsiElement element )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      // Manifold jars are not used in the project
+      return false;
+    }
+
     Set<PsiModifierListOwner> javaElem = ResourceToManifoldUtil.findJavaElementsFor( element );
     return !javaElem.isEmpty() && super.canFindUsages( javaElem.iterator().next() );
   }
@@ -38,6 +45,12 @@ public class ManifoldFindUsagesHandlerFactory extends JavaFindUsagesHandlerFacto
   @Override // since IJ EAP 2019.1.0
   public FindUsagesHandler createFindUsagesHandler( @NotNull PsiElement element, @NotNull OperationMode operationMode )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      // Manifold jars are not used in the project
+      return null;
+    }
+
     return createFindUsagesHandler( element, operationMode == OperationMode.HIGHLIGHT_USAGES );
   }
 
@@ -45,6 +58,12 @@ public class ManifoldFindUsagesHandlerFactory extends JavaFindUsagesHandlerFacto
   @Override
   public FindUsagesHandler createFindUsagesHandler( @NotNull PsiElement element, boolean forHighlightUsages )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      // Manifold jars are not used in the project
+      return null;
+    }
+
     Set<PsiModifierListOwner> javaElements = ResourceToManifoldUtil.findJavaElementsFor( element );
     if( javaElements.isEmpty() )
     {

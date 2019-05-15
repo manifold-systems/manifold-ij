@@ -18,6 +18,7 @@ import java.util.Locale;
 import java.util.Set;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
+import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -27,6 +28,12 @@ public class ManifoldPsiClassAnnotator implements Annotator
   @Override
   public void annotate( @NotNull PsiElement element, @NotNull AnnotationHolder holder )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      // No manifold jars in use for this project
+      return;
+    }
+
     if( element instanceof PsiFile )
     {
       // We don't have file-level errors here, only parse errors wrt elements.

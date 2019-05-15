@@ -7,6 +7,7 @@ import com.intellij.psi.impl.PsiManagerEx;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.psi.util.ClassUtil;
+import com.intellij.util.ArrayUtil;
 import com.intellij.util.Processor;
 import java.util.HashSet;
 import java.util.Set;
@@ -34,6 +35,11 @@ public class ManShortNamesCache extends PsiShortNamesCache
   @Override
   public PsiClass[] getClassesByName( @NotNull @NonNls String name, @NotNull GlobalSearchScope scope )
   {
+    if( !ManProject.isManifoldInUse( _psiManager.getProject() ) )
+    {
+      return PsiClass.EMPTY_ARRAY;
+    }
+
     Set<PsiClass> psiClasses = new HashSet<>();
     for( ManModule module: ManTypeFinder.findModules( scope ) )
     {
@@ -84,6 +90,11 @@ public class ManShortNamesCache extends PsiShortNamesCache
   @Override
   public String[] getAllClassNames()
   {
+    if( !ManProject.isManifoldInUse( _psiManager.getProject() ) )
+    {
+      return ArrayUtil.EMPTY_STRING_ARRAY;
+    }
+
     HashSet<String> names = new HashSet<>();
     getAllClassNames( names );
     return names.toArray( new String[0] );
@@ -91,7 +102,6 @@ public class ManShortNamesCache extends PsiShortNamesCache
 
   private void getAllClassNames( HashSet<String> dest )
   {
-
     final ManProject manProject = ManProject.manProjectFrom( _psiManager.getProject() );
     for( ManModule module: manProject.getRootModules() )
     {

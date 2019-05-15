@@ -13,6 +13,7 @@ import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.tree.IElementType;
 import manifold.ExtIssueMsg;
 import manifold.ext.api.Jailbreak;
+import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 
 public class JailbreakUsageAnnotator implements Annotator
@@ -20,6 +21,12 @@ public class JailbreakUsageAnnotator implements Annotator
   @Override
   public void annotate( @NotNull PsiElement element, @NotNull AnnotationHolder holder )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      // Manifold jars are not used in the project
+      return;
+    }
+
     prohibitCompoundAssignmentUse( element, holder );
     prohibitPostfixAssignmentUse( element, holder );
     prohibitPrefixAssignmentUse( element, holder );

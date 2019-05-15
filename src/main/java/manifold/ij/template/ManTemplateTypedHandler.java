@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.FileViewProvider;
 import com.intellij.psi.PsiFile;
+import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 
 public class ManTemplateTypedHandler extends TypedHandlerDelegate
@@ -14,6 +15,12 @@ public class ManTemplateTypedHandler extends TypedHandlerDelegate
   @Override
   public Result charTyped( char c, @NotNull Project project, @NotNull Editor editor, @NotNull PsiFile file )
   {
+    if( !ManProject.isManifoldInUse( project ) )
+    {
+      // Manifold jars are not used in the project
+      return Result.CONTINUE;
+    }
+
     int offset = editor.getCaretModel().getOffset();
     FileViewProvider provider = file.getViewProvider();
 

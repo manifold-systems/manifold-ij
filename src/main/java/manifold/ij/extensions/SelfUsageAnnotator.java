@@ -28,6 +28,7 @@ import java.util.List;
 import manifold.ExtIssueMsg;
 import manifold.ext.api.Self;
 import manifold.ext.api.This;
+import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -38,6 +39,11 @@ public class SelfUsageAnnotator implements Annotator
   @Override
   public void annotate( @NotNull PsiElement element, @NotNull AnnotationHolder holder )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      return;
+    }
+
     if( !(element instanceof PsiAnnotation) )
     {
       return;

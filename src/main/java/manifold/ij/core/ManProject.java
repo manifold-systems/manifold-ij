@@ -60,34 +60,31 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
 
 /**
+ *
  */
 public class ManProject
 {
   private static final Map<Project, ManProject> PROJECTS = new ConcurrentWeakHashMap<>();
   private static final String JAR_INDICATOR = ".jar!";
-  public static final String XPLUGIN_MANIFOLD = "-Xplugin:Manifold";
+  static final String XPLUGIN_MANIFOLD = "-Xplugin:Manifold";
   private static final String XPLUGIN_MANIFOLD_WITH_QUOTES = "-Xplugin:\"Manifold";
 
   private IjManifoldHost _host;
   private final Project _ijProject;
+  private boolean _manInUse;
   private IjFileSystem _fs;
   private LockingLazyVar<Map<Module, ManModule>> _modules;
   private MessageBusConnection _projectConnection;
   private MessageBusConnection _applicationConnection;
   private MessageBusConnection _permanentProjectConnection;
-  private ModuleClasspathListener _moduleClasspathListener;
   private FileModificationManager _fileModificationManager;
   private ManifoldPsiClassCache _psiClassCache;
   private LocklessLazyVar<Set<ManModule>> _rootModules;
 
+  @SuppressWarnings("unused")
   public static Collection<ManProject> getAllProjects()
   {
     return PROJECTS.values().stream().filter( p -> !p.getNativeProject().isDisposed() ).collect( Collectors.toSet() );
-  }
-
-  public static Project projectFrom( ManModule module )
-  {
-    return module.getIjProject();
   }
 
   public static ManProject manProjectFrom( Module module )
@@ -103,6 +100,7 @@ public class ManProject
   public static ManModule getModule( Module module )
   {
     ManProject manProject = getProject( module.getProject() );
+    assert manProject != null;
     ManModule manModule = manProject.getModules().get( module );
     if( manModule != null )
     {
@@ -174,8 +172,31 @@ public class ManProject
     _ijProject = project;
   }
 
+  public static boolean isManifoldInUse( @NotNull PsiElement element )
+  {
+    return isManifoldInUse( element.getProject() );
+  }
+
+  public static boolean isManifoldInUse( @NotNull Project project )
+  {
+    ManProject manProject = ManProject.manProjectFrom( project );
+    return manProject != null && manProject.isManifoldInUse();
+  }
+
+  private boolean isManifoldInUse()
+  {
+    return _manInUse;
+  }
+
   private void init()
   {
+    _manInUse = ManLibraryChecker.instance().isUsingManifoldJars( _ijProject );
+    if( !_manInUse )
+    {
+      removeCompilerArgs();
+      return;
+    }
+
     _host = new IjManifoldHost( this );
     _fs = new IjFileSystem( this );
     _psiClassCache = new ManifoldPsiClassCache( this );
@@ -191,9 +212,9 @@ public class ManProject
     return LocklessLazyVar.make(
       () -> {
         HashSet<ManModule> roots = new HashSet<>( getModules().values() );
-        for( ManModule module : new ArrayList<>( roots ) )
+        for( ManModule module: new ArrayList<>( roots ) )
         {
-          for( Dependency d : module.getDependencies() )
+          for( Dependency d: module.getDependencies() )
           {
             //noinspection SuspiciousMethodCalls
             roots.remove( d.getModule() );
@@ -239,11 +260,14 @@ public class ManProject
     _projectConnection = _ijProject.getMessageBus().connect();
     _permanentProjectConnection = _ijProject.getMessageBus().connect();
 
-    addTypeRefreshListener();
     addModuleRefreshListener();
     addModuleClasspathListener();
-    //addStaleClassCleaner(); // no longer required see ManChangedResourcesBuilder
-    addCompilerArgs();
+
+    if( isManifoldInUse() )
+    {
+      // only listen to type changes if this project is using manifold jars
+      addTypeRefreshListener();
+    }
   }
 
   // no longer required see ManChangedResourcesBuilder
@@ -266,6 +290,47 @@ public class ManProject
     {
       options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings exceptions\" " + maybeGetProcessorPath();
     }
+    javacOptions.ADDITIONAL_OPTIONS_STRING = options;
+  }
+
+  private void removeCompilerArgs()
+  {
+    JpsJavaCompilerOptions javacOptions = JavacConfiguration.getOptions( _ijProject, JavacConfiguration.class );
+    String options = javacOptions.ADDITIONAL_OPTIONS_STRING;
+    if( options == null )
+    {
+      return;
+    }
+    int index = options.indexOf( XPLUGIN_MANIFOLD );
+    if( index >= 0 )
+    {
+      StringBuilder sb = new StringBuilder( options );
+      sb.delete( index, index + XPLUGIN_MANIFOLD.length() );
+      options = sb.toString();
+    }
+    else
+    {
+      index = options.indexOf( XPLUGIN_MANIFOLD_WITH_QUOTES );
+      if( index >= 0 )
+      {
+        int end = options.indexOf( '"', index + XPLUGIN_MANIFOLD_WITH_QUOTES.length() );
+        if( end > index )
+        {
+          StringBuilder sb = new StringBuilder( options );
+          sb.delete( index, end+1 );
+          options = sb.toString();
+        }
+        else
+        {
+          return;
+        }
+      }
+      else
+      {
+        return;
+      }
+    }
+    options = removeManifoldJarsFromProcessorPath( options );
     javacOptions.ADDITIONAL_OPTIONS_STRING = options;
   }
 
@@ -304,6 +369,47 @@ public class ManProject
     return processorPath.toString();
   }
 
+  private String removeManifoldJarsFromProcessorPath( String options )
+  {
+    int index = options.indexOf( "-processorpath " );
+    if( index < 0 )
+    {
+      // no -processorpath
+      return options;
+    }
+
+    int iNextArg = options.indexOf( " -", index );
+    int iEnd = iNextArg >= 0 ?iNextArg : options.length();
+    int iStart = index + "-processorpath".length() + 1;
+    String processorPaths = options.substring( iStart, iEnd );
+    if( !processorPaths.contains( "manifold" ) )
+    {
+      // no manifold jars to remove from -processorpath
+      return options;
+    }
+
+    String[] paths = processorPaths.split( File.pathSeparator );
+    String[] nonManifoldPaths = Arrays.stream( paths )
+      .filter( path -> !path.contains( "manifold" ) )
+      .toArray( String[]::new );
+    if( nonManifoldPaths.length == 0 )
+    {
+      // all the paths in -processorpath are manifold jars, remove the entire -processorpath
+      StringBuilder sb = new StringBuilder( options );
+      sb.delete( index, iEnd );
+      return sb.toString().trim();
+    }
+
+    // remove manifold jars from -processorpath
+    StringBuilder newOptions = new StringBuilder()
+     .append( options, 0, iStart );
+    Arrays.stream( nonManifoldPaths )
+      .map( String::trim )
+      .forEach( path -> newOptions.append( path ).append( File.pathSeparatorChar ) );
+    newOptions.append( options, iEnd, options.length() );
+    return newOptions.toString().trim();
+  }
+
   private int findJdkVersion()
   {
     Sdk projectSdk = ProjectRootManager.getInstance( _ijProject ).getProjectSdk();
@@ -320,13 +426,13 @@ public class ManProject
     // 'java version "11"'
     // etc.
     String version = projectSdk.getVersionString();
-    int iQuote = version.indexOf( '"' );
+    int iQuote = version == null ? -1 : version.indexOf( '"' );
     if( iQuote < 0 )
     {
       return -1;
     }
 
-    String majorVer = version.substring( iQuote+1 );
+    String majorVer = version.substring( iQuote + 1 );
     int iStop = majorVer.indexOf( '.' );
     if( iStop < 0 )
     {
@@ -344,26 +450,25 @@ public class ManProject
     }
   }
 
-  public ModuleClasspathListener getModuleClasspathListener()
-  {
-    return _moduleClasspathListener;
-  }
-
   private void addModuleClasspathListener()
   {
-    _moduleClasspathListener = new ModuleClasspathListener();
-    _permanentProjectConnection.subscribe( ProjectTopics.PROJECT_ROOTS, _moduleClasspathListener );
+    ModuleClasspathListener moduleClasspathListener = new ModuleClasspathListener();
+    _permanentProjectConnection.subscribe( ProjectTopics.PROJECT_ROOTS, moduleClasspathListener );
   }
 
-  public void projectClosed()
+  void projectClosed()
   {
     _projectConnection.disconnect();
     _projectConnection = null;
     PROJECTS.remove( getNativeProject() );
-    _fileModificationManager.getManRefresher().nukeFromOrbit();
+    if( _fileModificationManager != null )
+    {
+      _fileModificationManager.getManRefresher().nukeFromOrbit();
+    }
   }
 
-  private void addTypeRefreshListener() {
+  private void addTypeRefreshListener()
+  {
     _projectConnection.subscribe( PsiDocumentTransactionListener.TOPIC, getFileModificationManager() );
     _applicationConnection.subscribe( VirtualFileManager.VFS_CHANGES, getFileModificationManager() );
   }
@@ -394,7 +499,7 @@ public class ManProject
     // create modules
     Map<Module, ManModule> modules = new HashMap<>();
     Map<Module, ManModule> allModules = new LinkedHashMap<>();
-    for( Module ijModule : allIjModules )
+    for( Module ijModule: allIjModules )
     {
       final ManModule module = defineModule( ijModule );
       modules.put( ijModule, module );
@@ -402,7 +507,7 @@ public class ManProject
     }
 
     // add module dependencies
-    for( Module ijModule : allIjModules )
+    for( Module ijModule: allIjModules )
     {
       addModuleDependencies( modules, modules.get( ijModule ) );
     }
@@ -426,7 +531,7 @@ public class ManProject
   private void addModuleDependencies( Map<Module, ManModule> modules, ManModule manModule )
   {
     Module ijModule = manModule.getIjModule();
-    for( Module child : ModuleRootManager.getInstance( ijModule ).getDependencies() )
+    for( Module child: ModuleRootManager.getInstance( ijModule ).getDependencies() )
     {
       IModule moduleDep = modules.get( child );
       if( moduleDep != null )
@@ -436,9 +541,9 @@ public class ManProject
     }
   }
 
-  public static boolean isExported( Module ijModule, Module child )
+  private static boolean isExported( Module ijModule, Module child )
   {
-    for( OrderEntry entry : ModuleRootManager.getInstance( ijModule ).getOrderEntries() )
+    for( OrderEntry entry: ModuleRootManager.getInstance( ijModule ).getOrderEntries() )
     {
       if( entry instanceof ModuleOrderEntry )
       {
@@ -463,8 +568,8 @@ public class ManProject
     List<VirtualFile> sourceFolders = getSourceRoots( ijModule );
     VirtualFile outputPath = CompilerPaths.getModuleOutputDirectory( ijModule, false );
     return createModule( ijModule, getInitialClasspaths( ijModule ),
-                         sourceFolders.stream().map( this::toDirectory ).collect( Collectors.toList() ),
-                         outputPath == null ? null : getFileSystem().getIDirectory( outputPath ) );
+      sourceFolders.stream().map( this::toDirectory ).collect( Collectors.toList() ),
+      outputPath == null ? null : getFileSystem().getIDirectory( outputPath ) );
   }
 
   private ManModule createModule( Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePaths, IDirectory outputPath )
@@ -483,7 +588,7 @@ public class ManProject
   private static void scanPaths( List<IDirectory> paths, List<IDirectory> roots )
   {
     //noinspection Convert2streamapi
-    for( IDirectory root : paths )
+    for( IDirectory root: paths )
     {
       // roots without manifests are considered source roots
       if( IFileUtil.hasSourceFiles( root ) )
@@ -526,11 +631,11 @@ public class ManProject
   {
     if( classpath == null )
     {
-      return classpath;
+      return null;
     }
 
     ArrayList<IDirectory> newClasspath = new ArrayList<>();
-    for( IDirectory root : classpath )
+    for( IDirectory root: classpath )
     {
       //add the root JAR itself first, preserving ordering
       if( !newClasspath.contains( root ) )
@@ -551,7 +656,7 @@ public class ManProject
             // Note sometimes happens when running from IntelliJ where the
             // classpath would otherwise make the command line to java.exe
             // too long.
-            for( String j : paths.split( " " ) )
+            for( String j: paths.split( " " ) )
             {
               // Add each of the paths to our classpath
               URL url;
@@ -584,12 +689,12 @@ public class ManProject
     return getExcludedRoots( ijModule ).stream().map( this::toDirectory ).collect( Collectors.toList() );
   }
 
-  public static List<VirtualFile> getSourceRoots( Module ijModule )
+  private static List<VirtualFile> getSourceRoots( Module ijModule )
   {
     final ModuleRootManager moduleManager = ModuleRootManager.getInstance( ijModule );
     final List<VirtualFile> sourcePaths = new ArrayList<>();
     List<VirtualFile> excludeRoots = Arrays.asList( moduleManager.getExcludeRoots() );
-    for( VirtualFile sourceRoot : moduleManager.getSourceRoots() )
+    for( VirtualFile sourceRoot: moduleManager.getSourceRoots() )
     {
       if( !excludeRoots.contains( sourceRoot ) )
       {
@@ -600,7 +705,7 @@ public class ManProject
     return sourcePaths;
   }
 
-  public static List<VirtualFile> getExcludedRoots( Module ijModule )
+  private static List<VirtualFile> getExcludedRoots( Module ijModule )
   {
     final ModuleRootManager moduleManager = ModuleRootManager.getInstance( ijModule );
     return Arrays.asList( moduleManager.getExcludeRoots() );
@@ -622,7 +727,7 @@ public class ManProject
   {
     List<String> paths = getDirectClassPaths( ijModule );
     List<IDirectory> dirs = new ArrayList<>();
-    for( String path : paths )
+    for( String path: paths )
     {
       dirs.add( manProjectFrom( ijModule ).getFileSystem().getIDirectory( new File( path ) ) );
     }
@@ -635,12 +740,12 @@ public class ManProject
     final List<OrderEntry> orderEntries = Arrays.asList( rootManager.getOrderEntries() );
 
     List<String> paths = new ArrayList<>();
-    for( OrderEntry entry : orderEntries.stream().filter( (LibraryOrderEntry.class)::isInstance ).collect( Collectors.toList() ) )
+    for( OrderEntry entry: orderEntries.stream().filter( (LibraryOrderEntry.class)::isInstance ).collect( Collectors.toList() ) )
     {
       final Library lib = ((LibraryOrderEntry)entry).getLibrary();
       if( lib != null )
       {
-        for( VirtualFile virtualFile : lib.getFiles( OrderRootType.CLASSES ) )
+        for( VirtualFile virtualFile: lib.getFiles( OrderRootType.CLASSES ) )
         {
           final File file = new File( stripExtraCharacters( virtualFile.getPath() ) );
           if( file.exists() )

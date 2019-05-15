@@ -5,6 +5,7 @@ import com.intellij.ide.actions.CreateFileFromTemplateDialog;
 import com.intellij.ide.fileTemplates.FileTemplate;
 import com.intellij.ide.fileTemplates.FileTemplateManager;
 import com.intellij.json.JsonFileType;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.IconLoader;
@@ -14,9 +15,11 @@ import com.intellij.psi.PsiFile;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
-import javax.swing.ImageIcon;
+import manifold.ij.core.ManLibraryChecker;
+import manifold.ij.core.ManProject;
 import manifold.ij.util.ManBundle;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 
 /**
  */
@@ -35,6 +38,13 @@ public class CreateManifoldTemplateAction extends CreateFileFromTemplateAction
     FT_TO_EXT.put( "Text ManTL File", "txt" );
   }
 
+  @Override
+  public void update( @NotNull AnActionEvent e )
+  {
+    super.update( e );
+    e.getPresentation().setEnabledAndVisible( true );
+  }
+
   public CreateManifoldTemplateAction()
   {
     super( ManBundle.message( "new.template.menu.action.text" ),
@@ -46,6 +56,25 @@ public class CreateManifoldTemplateAction extends CreateFileFromTemplateAction
   protected String getDefaultTemplateProperty()
   {
     return DEFAULT_PROP;
+  }
+
+  @Override
+  public void beforeActionPerformedUpdate( @NotNull AnActionEvent e )
+  {
+    super.beforeActionPerformedUpdate( e );
+
+    Project project = e.getProject();
+    if( project == null )
+    {
+      return;
+    }
+
+    if( !ManProject.isManifoldInUse( project ) )
+    {
+      // Manifold jars are not used in the project
+      ManLibraryChecker.instance().warnFeatureRequiresManifold( e.getProject() );
+      e.getPresentation().setEnabled( false );
+    }
   }
 
   @Override
@@ -62,7 +91,7 @@ public class CreateManifoldTemplateAction extends CreateFileFromTemplateAction
   }
 
   @Override
-  protected String getActionName( PsiDirectory directory, String newName, String templateName )
+  protected String getActionName( PsiDirectory directory, @NotNull String newName, String templateName )
   {
     return ManBundle.message( "new.template.progress.text" );
   }

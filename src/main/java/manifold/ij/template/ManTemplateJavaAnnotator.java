@@ -18,6 +18,7 @@ import com.intellij.psi.PsiReferenceList;
 import com.intellij.psi.PsiWhiteSpace;
 import com.intellij.psi.impl.JavaPsiFacadeEx;
 import com.intellij.psi.templateLanguages.OuterLanguageElement;
+import manifold.ij.core.ManProject;
 import manifold.ij.template.psi.DirectiveParser;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,6 +27,12 @@ public class ManTemplateJavaAnnotator implements Annotator
   @Override
   public void annotate( @NotNull final PsiElement element, @NotNull AnnotationHolder holder )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      // Manifold jars are not used in the project
+      return;
+    }
+
     if( element.getContainingFile().getLanguage() != ManTemplateJavaLanguage.INSTANCE )
     {
       return;

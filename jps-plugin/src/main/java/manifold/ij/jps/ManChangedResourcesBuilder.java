@@ -255,7 +255,10 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
       //   'target/generated-sources/annotations'
       if( !jpsSourceRoot.getFile().mkdirs() )
       {
-        continue;
+        if( !jpsSourceRoot.getFile().exists() )
+        {
+          continue;
+        }
       }
 
       // generate file in '_temp_' package, Java 9 modular projects do not support the default/empty package

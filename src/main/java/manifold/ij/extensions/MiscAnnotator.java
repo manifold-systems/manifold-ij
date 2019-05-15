@@ -11,6 +11,7 @@ import com.intellij.psi.PsiParameter;
 import manifold.ExtIssueMsg;
 import manifold.ext.api.Extension;
 import manifold.ext.api.This;
+import manifold.ij.core.ManProject;
 import manifold.ij.util.ManPsiUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,6 +23,11 @@ public class MiscAnnotator implements Annotator
   @Override
   public void annotate( @NotNull PsiElement element, @NotNull AnnotationHolder holder )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      return;
+    }
+
     verifyMethodRefNotExtension( element, holder );
   }
 

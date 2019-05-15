@@ -39,9 +39,11 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import javax.swing.RootPaneContainer;
 import manifold.ExtIssueMsg;
+import manifold.ij.core.ManLibraryChecker;
 import manifold.ij.core.ManProject;
 import manifold.ij.extensions.StubBuilder;
 import manifold.ij.util.ManBundle;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 
 /**
@@ -56,7 +58,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
   }
 
   @Override
-  public void update( AnActionEvent e )
+  public void update( @NotNull AnActionEvent e )
   {
     super.update( e );
 
@@ -87,7 +89,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
     e.getPresentation().setEnabled( enabled );
   }
 
-  public void actionPerformed( AnActionEvent e )
+  public void actionPerformed( @NotNull AnActionEvent e )
   {
     final DataContext dataContext = e.getDataContext();
 
@@ -102,6 +104,13 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
     final PsiDirectory dir = view.getOrChooseDirectory();
     if( dir == null || project == null )
     {
+      return;
+    }
+
+    if( !ManProject.isManifoldInUse( project ) )
+    {
+      // Manifold jars are not used in the project
+      ManLibraryChecker.instance().warnFeatureRequiresManifold( project );
       return;
     }
 

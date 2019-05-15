@@ -20,8 +20,8 @@ import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiNameValuePair;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.PsiTypeParameter;
+import com.intellij.psi.PsiTypeParameterList;
 import com.intellij.psi.augment.PsiAugmentProvider;
 import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.util.IncorrectOperationException;
@@ -53,6 +53,7 @@ import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManPsiElementFactory;
+import org.jetbrains.annotations.NotNull;
 
 
 import static manifold.api.type.ContributorKind.Supplemental;
@@ -68,12 +69,19 @@ public class ManAugmentProvider extends PsiAugmentProvider
 {
   static final Key<List<String>> KEY_MAN_INTERFACE_EXTENSIONS = new Key<>( "MAN_INTERFACE_EXTENSIONS" );
 
-  public <E extends PsiElement> List<E> getAugments( PsiElement element, Class<E> cls )
+  @NotNull
+  public <E extends PsiElement> List<E> getAugments( @NotNull PsiElement element, @NotNull Class<E> cls )
   {
-    return ApplicationManager.getApplication().runReadAction( (Computable<List<E>>)() -> getAugments( null, element, cls ) );
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      // Manifold jars are not used in the project
+      return Collections.emptyList();
+    }
+
+    return ApplicationManager.getApplication().runReadAction( (Computable<List<E>>)() -> _getAugments( element, cls ) );
   }
 
-  public <E extends PsiElement> List<E> getAugments( Module module, PsiElement element, Class<E> cls )
+  private <E extends PsiElement> List<E> _getAugments( PsiElement element, Class<E> cls )
   {
     // Module is assigned to user-data via ManTypeFinder, which loads the psiClass (element)
     if( DumbService.getInstance( element.getProject() ).isDumb() )
@@ -101,15 +109,6 @@ public class ManAugmentProvider extends PsiAugmentProvider
     return new ArrayList( augFeatures.values() );
   }
 
-  protected PsiType inferType( PsiTypeElement typeElement )
-  {
-    if( null == typeElement || DumbService.isDumb( typeElement.getProject() ) )
-    {
-      return null;
-    }
-    return VarHandler.instance().inferType( typeElement );
-  }
-
   private void addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures )
   {
     ManProject manProject = ManProject.manProjectFrom( psiClass.getProject() );
@@ -120,11 +119,6 @@ public class ManAugmentProvider extends PsiAugmentProvider
   }
 
   private void addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, Module module )
-  {
-    addMethods( fqn, psiClass, augFeatures, module, module );
-  }
-
-  private void addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, Module start, Module module )
   {
     ManModule manModule = ManProject.getModule( module );
     for( ITypeManifold tm : manModule.getTypeManifolds() )
@@ -144,8 +138,11 @@ public class ManAugmentProvider extends PsiAugmentProvider
 
             PsiFile psiFile = PsiManager.getInstance( module.getProject() ).findFile( vFile );
             PsiJavaFile psiJavaFile = (PsiJavaFile)psiFile;
-            PsiClass[] classes = psiJavaFile.getClasses();
-            addMethods( psiClass, augFeatures, manModule, classes );
+            if( psiJavaFile != null )
+            {
+              PsiClass[] classes = psiJavaFile.getClasses();
+              addMethods( psiClass, augFeatures, manModule, classes );
+            }
           }
         }
       }
@@ -285,7 +282,12 @@ public class ManAugmentProvider extends PsiAugmentProvider
   {
     for( PsiAnnotation anno : refMethod.getModifierList().getAnnotations() )
     {
-      PsiAnnotation psiAnnotation = method.getModifierList().addAnnotation( anno.getQualifiedName() );
+      String qualifiedName = anno.getQualifiedName();
+      if( qualifiedName == null )
+      {
+        continue;
+      }
+      PsiAnnotation psiAnnotation = method.getModifierList().addAnnotation( qualifiedName );
       for( PsiNameValuePair pair : anno.getParameterList().getAttributes() )
       {
         psiAnnotation.setDeclaredAttributeValue( pair.getName(), pair.getValue() );
@@ -301,12 +303,13 @@ public class ManAugmentProvider extends PsiAugmentProvider
     {
       PsiParameter[] extParams = m.getParameterList().getParameters();
       PsiParameter[] plantedParams = plantedMethod.getParameterList().getParameters();
-      if( extParams.length - 1 == plantedParams.length )
+      int offset = getParamOffset( m );
+      if( extParams.length - offset == plantedParams.length )
       {
-        for( int i = 1; i < extParams.length; i++ )
+        for( int i = offset; i < extParams.length; i++ )
         {
           PsiParameter extParam = extParams[i];
-          PsiParameter plantedParam = plantedParams[i - 1];
+          PsiParameter plantedParam = plantedParams[i - offset];
           PsiType extErased = TypeConversionUtil.erasure( extParam.getType() );
           PsiType plantedErased = TypeConversionUtil.erasure( plantedParam.getType() );
           if( !extErased.toString().equals( plantedErased.toString() ) )
@@ -318,6 +321,14 @@ public class ManAugmentProvider extends PsiAugmentProvider
       }
     }
     return null;
+  }
+
+  private int getParamOffset( PsiMethod m )
+  {
+    boolean isStaticExtension = Arrays.stream( m.getModifierList().getAnnotations() )
+      .anyMatch( anno ->
+        anno.getQualifiedName() != null && anno.getQualifiedName().equals( Extension.class.getTypeName() ) );
+    return isStaticExtension ? 0 : 1;
   }
 
   private void addModifier( PsiMethod psiMethod, ManLightMethodBuilder method, String modifier )
@@ -365,11 +376,15 @@ public class ManAugmentProvider extends PsiAugmentProvider
     List<SrcType> typeParams = method.getTypeVariables();
 
     // extension method must reflect extended type's type vars before its own
-    int extendedTypeVarCount = extendedType.getTypeParameterList().getTypeParameters().length;
-    for( int i = isInstanceExtensionMethod ? extendedTypeVarCount : 0; i < typeParams.size(); i++ )
+    PsiTypeParameterList typeParameterList = extendedType.getTypeParameterList();
+    if( typeParameterList != null )
     {
-      SrcType typeVar = typeParams.get( i );
-      srcMethod.addTypeVar( typeVar );
+      int extendedTypeVarCount = typeParameterList.getTypeParameters().length;
+      for( int i = isInstanceExtensionMethod ? extendedTypeVarCount : 0; i < typeParams.size(); i++ )
+      {
+        SrcType typeVar = typeParams.get( i );
+        srcMethod.addTypeVar( typeVar );
+      }
     }
 
     @SuppressWarnings("unchecked")

@@ -35,6 +35,20 @@ public class ViewJavaSourceAction extends AnAction implements DumbAware
   @Override
   public void update( @NotNull AnActionEvent e )
   {
+    Project project = e.getProject();
+    if( project == null )
+    {
+      return;
+    }
+
+    if( !ManProject.isManifoldInUse( project ) )
+    {
+      // Manifold jars are not used in the project
+      e.getPresentation().setVisible( true );
+      e.getPresentation().setEnabled( false );
+      return;
+    }
+
     Presentation presentation = e.getPresentation();
     presentation.setEnabled( getPsiClass( e ) != null );
   }

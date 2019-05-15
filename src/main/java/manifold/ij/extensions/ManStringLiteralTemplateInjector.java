@@ -23,9 +23,10 @@ import org.jetbrains.annotations.NotNull;
 
 public class ManStringLiteralTemplateInjector implements LanguageInjector
 {
+  static final String FIELD_NAME = "_muhField_";
   private static final String PREFIX =
     "class _Muh_Class_ {\n" +
-    "  Object _muhField_ = ";
+    "  Object " + FIELD_NAME + " = ";
   private static final String SUFFIX =
     ";\n" +
     "}\n";
@@ -34,6 +35,11 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
   @Override
   public void getLanguagesToInject( @NotNull PsiLanguageInjectionHost host, @NotNull InjectedLanguagePlaces injectionPlacesRegistrar )
   {
+    if( !ManProject.isManifoldInUse( host.getProject() ) )
+    {
+      return;
+    }
+
     PsiLiteralExpressionImpl stringLiteral = getJavaStringLiteral( host );
     if( stringLiteral == null )
     {

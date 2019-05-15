@@ -25,6 +25,7 @@ import manifold.ext.ExtensionManifold;
 import manifold.ext.api.Extension;
 import manifold.ext.api.Jailbreak;
 import manifold.ext.api.This;
+import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
@@ -38,6 +39,12 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
   public void processQuery( @NotNull final MethodReferencesSearch.SearchParameters searchParameters,
                             @NotNull final Processor<? super PsiReference> consumer )
   {
+    if( !ManProject.isManifoldInUse( searchParameters.getProject() ) )
+    {
+      // Manifold jars are not used in the project
+      return;
+    }
+
     SearchScope searchScope = searchParameters.getScopeDeterminedByUser();
     if( !(searchScope instanceof GlobalSearchScope) )
     {
@@ -88,7 +95,7 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
         if( fqn != null )
         {
           PsiClass extendedClass = JavaPsiFacade.getInstance( searchParameters.getProject() )
-            .findClass( fqn, theSearchScope );
+            .findClass( fqn, getTargetScope( theSearchScope, method ) );
           if( extendedClass != null )
           {
             for( PsiMethod m: extendedClass.findMethodsByName( method.getName(), false ) )

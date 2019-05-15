@@ -33,12 +33,22 @@ public class MoveTypeManifoldFileProcessor extends MoveFileHandler
   @Override
   public boolean canProcessElement( PsiFile element )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      return false;
+    }
+
     return getFqnsForFile( element ).length > 0;
   }
 
   @Override
   public void prepareMovedFile( PsiFile file, PsiDirectory moveDestination, Map<PsiElement, PsiElement> oldToNewMap )
   {
+    if( !ManProject.isManifoldInUse( file ) )
+    {
+      return;
+    }
+
     oldToNewMap.put( file, moveDestination );
   }
 
@@ -46,6 +56,11 @@ public class MoveTypeManifoldFileProcessor extends MoveFileHandler
   @Override
   public List<UsageInfo> findUsages( PsiFile psiFile, PsiDirectory newParent, boolean searchInComments, boolean searchInNonJavaFiles )
   {
+    if( !ManProject.isManifoldInUse( psiFile ) )
+    {
+      return null;
+    }
+
     Module mod = ModuleUtilCore.findModuleForPsiElement( psiFile );
     ManModule module = ManProject.getModule( mod );
     PsiClass psiClass = findPsiClass( psiFile );

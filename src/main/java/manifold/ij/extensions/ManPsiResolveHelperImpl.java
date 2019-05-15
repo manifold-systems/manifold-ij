@@ -18,6 +18,7 @@ import com.intellij.psi.impl.source.resolve.PsiResolveHelperImpl;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
 import manifold.ext.api.Jailbreak;
+import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,6 +38,13 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
                                @Nullable PsiElement currentFileResolveScope )
   {
     boolean accessible = super.isAccessible( member, modifierList, place, accessObjectClass, currentFileResolveScope );
+
+    if( !ManProject.isManifoldInUse( member ) )
+    {
+      // Manifold jars are not used in the project
+      return accessible;
+    }
+
     if( accessible )
     {
       return true;
@@ -89,6 +97,13 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
   public JavaResolveResult[] multiResolveConstructor( @NotNull PsiClassType type, @NotNull PsiExpressionList argumentList, @NotNull PsiElement place )
   {
     JavaResolveResult[] results = super.multiResolveConstructor( type, argumentList, place );
+
+    if( !ManProject.isManifoldInUse( place ) )
+    {
+      // Manifold jars are not used in the project
+      return results;
+    }
+
     for( JavaResolveResult result: results )
     {
       if( result instanceof CandidateInfo )

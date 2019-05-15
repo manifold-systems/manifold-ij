@@ -15,6 +15,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import manifold.ij.template.psi.ManTemplateFile;
 import manifold.ij.util.MessageUtil;
 
@@ -28,6 +31,19 @@ public class ManLibraryChecker
 
   private ManLibraryChecker()
   {
+  }
+
+  public void warnFeatureRequiresManifold( Project project )
+  {
+    EventQueue.invokeLater(
+      () ->
+        MessageUtil.showWarning( project, MessageUtil.Placement.CENTER,
+          "This feature requires <b>Manifold</b> dependencies, which appear to be missing from your project's build configuration.\n" +
+          "\n" +
+          "Please add or update Manifold libraries in your project to at least version: <b>" + getVersionFromPlugin() + "</b>.\n" +
+          "\n" +
+          "Visit <a href=\"http://manifold.systems/docs.html#setup\">Setup</a> to learn more about configuring Manifold libraries in your project." )
+      );
   }
 
   public void warnIfManifoldJarsAreOld( Project project )
@@ -59,6 +75,23 @@ public class ManLibraryChecker
           MessageUtil.showWarning( psiFile.getProject(), "The use of templates in Module '${module.getName()}' requires a dependency on <b>manifold-templates</b> or <b>manifold-all</b>" );
         }
       } );
+  }
+
+  public boolean isUsingManifoldJars( Project project )
+  {
+    if( project.isDisposed() )
+    {
+      // project is closed/disposed
+      return false;
+    }
+
+    String pluginVer = getVersionFromPlugin();
+    if( pluginVer == null )
+    {
+      // can't find plugin jars
+      return false;
+    }
+    return null != getVersionFromProject( project );
   }
 
   private boolean projectJarOlderThanPluginJar( Project project )
@@ -200,11 +233,25 @@ public class ManLibraryChecker
     for( VirtualFile path: pathsList.getVirtualFiles() )
     {
       String extension = path.getExtension();
-      if( extension != null && extension.equals( "jar" ) && path.getNameWithoutExtension().contains( "manifold-" ) )
+      if( extension != null &&
+          extension.equalsIgnoreCase( "jar" ) &&
+          path.getNameWithoutExtension().contains( "manifold" ) )
       {
         try
         {
-          result.add( new File( new URL( path.getUrl() ).getFile() ).getAbsolutePath() );
+          String canonicalPath = path.getCanonicalPath();
+          if( canonicalPath == null )
+          {
+            continue;
+          }
+          File file = new File( new URL( path.getUrl() ).getFile() );
+          Manifest manifest = new JarFile( file.getAbsoluteFile() ).getManifest();
+          Attributes attributes = manifest.getMainAttributes();
+          String vendor = attributes.getValue( "Implementation-Vendor-Id" );
+          if( vendor != null && vendor.trim().equals( "systems.manifold" ) )
+          {
+            result.add( file.getAbsolutePath() );
+          }
         }
         catch( MalformedURLException e )
         {

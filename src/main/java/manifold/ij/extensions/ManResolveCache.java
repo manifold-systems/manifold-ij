@@ -31,7 +31,6 @@ import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethod;
 import manifold.ij.psi.ManLightMethodBuilder;
-import manifold.ij.psi.ManLightMethodBuilderImpl;
 import manifold.ij.psi.ManPsiElementFactory;
 import manifold.ij.util.ManVersionUtil;
 import manifold.util.ReflectUtil;
@@ -51,6 +50,12 @@ public class ManResolveCache extends ResolveCache
                                                                                  final boolean incompleteCode,
                                                                                  @NotNull final PsiFile containingFile )
   {
+    if( !ManProject.isManifoldInUse( containingFile ) )
+    {
+      // Manifold jars are not used in the project
+      return super.resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
+    }
+
     boolean physical = containingFile.isPhysical();
     Map<T, ResolveResult[]> map;
     @Jailbreak ResolveCache me = this;

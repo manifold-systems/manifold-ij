@@ -92,22 +92,19 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-<b>GraphQL Support</b> <br>
-- "Schema-first": *.graphql schema (SDL )files are first-class Java types, no code-gen step! <br>
-- support queries & mutations <br>
-- support interfaces & unions  <br>
-- support extensions  <br>
-- support scalars <br>
--- JSON Schema format resolvers (if registered) automatically become GraphQL Scalars, for both client and server GraphQL usage <br>
-- support IntelliJ via Manifold plugin <br>
--- navigation, find usages, rename refactor <br>
--- works with plain text graphql files and also with the `JS GraphQL` plugin <br>
-<br>
-Bug fixes: <br>
-- https://github.com/manifold-systems/manifold/issues/70 <br>
-- https://github.com/manifold-systems/manifold/issues/68 <br>
-- https://github.com/manifold-systems/manifold/issues/67 <br>
-- several other minor fixes and improvements <br>
+Bug fixes, feature requests, and improvements <br>
+- Improved `View | Show Java Source` source viewer on Manifold resources (a debugging aid for type manifold impls in IJ) <br>
+- https://github.com/manifold-systems/manifold/issues/75 <br>
+-- Fix stack overflow involving element refs <br>
+- https://github.com/manifold-systems/manifold/issues/76 <br>
+-- Define a new directive: `nest`. Behaves exactly like `include` but retains and distributes the indentation whitespace immediately preceding the `nest` directive, and retains whitespace immediately following the directive.  The indentation is applied to each line in the resulting `nest`ed template or section. This behavior facilitates the code generation use-case where whitespace formatting, esp. indentation, is significant. <br>
+- https://github.com/manifold-systems/manifold/issues/74 <br>
+-- Suppress a missed case for unhandled checked exception errors <br>
+- https://github.com/manifold-systems/manifold/issues/64 <br>
+-- provide a compile-time error indicating a method reference is not supported on a structural interface method, instead a lambda expression must be used. <br>
+- https://github.com/manifold-systems/manifold/issues/63 <br>
+-- Fully support relative JSON refs <br>
+- other minor fixes <br>
      ]]>
   </change-notes>
   
@@ -179,6 +176,7 @@ Bug fixes: <br>
     <resolveScopeEnlarger implementation="manifold.ij.extensions.ManResolveScopeProvider" order="first"/>
     <elementDescriptionProvider implementation="manifold.ij.extensions.ManElementDescriptionProvider"/>
     <languageInjector implementation="manifold.ij.extensions.ManStringLiteralTemplateInjector" order="first"/>
+    <implicitUsageProvider implementation="manifold.ij.extensions.ManStringLiteralTemplateUsageProvider"/>
     <targetElementEvaluator language="TEXT" implementationClass="manifold.ij.extensions.ManTextElementEvaluator"/>
     <completion.contributor language="JAVA" implementationClass="manifold.ij.extensions.ManJavaCompletionContributor" order="first"/>
 

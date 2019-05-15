@@ -12,6 +12,7 @@ import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.search.GlobalSearchScope;
 import manifold.ij.core.ManModule;
+import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,6 +24,12 @@ public class ExtensionMethodCallSiteAnnotator implements Annotator
   @Override
   public void annotate( @NotNull PsiElement element, @NotNull AnnotationHolder holder )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      // Manifold jars are not used in the project
+      return;
+    }
+
     if( element instanceof PsiMethodCallExpression )
     {
       PsiReferenceExpression methodExpression = ((PsiMethodCallExpression)element).getMethodExpression();

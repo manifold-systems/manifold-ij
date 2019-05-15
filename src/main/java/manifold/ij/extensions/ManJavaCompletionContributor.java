@@ -11,6 +11,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Consumer;
 import manifold.ij.core.ManModule;
+import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,6 +23,12 @@ public class ManJavaCompletionContributor extends CompletionContributor
   @Override
   public void fillCompletionVariants( @NotNull CompletionParameters parameters, @NotNull CompletionResultSet result )
   {
+    if( !ManProject.isManifoldInUse( parameters.getOriginalFile() ) )
+    {
+      // Manifold jars are not used in the project
+      return;
+    }
+
     result.runRemainingContributors( parameters, new MyConsumer( parameters, result ) );
     result.stopHere();
   }

@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Objects;
 import manifold.api.darkj.DarkJavaTypeManifold;
 import manifold.api.type.SourcePosition;
+import manifold.ij.core.ManProject;
+import org.jetbrains.annotations.Nullable;
 
 
 /**
@@ -31,10 +33,16 @@ import manifold.api.type.SourcePosition;
 public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
 {
   @Override
-  public PsiElement getGotoDeclarationTarget( PsiElement sourceElement, Editor editor )
+  public PsiElement getGotoDeclarationTarget( @Nullable PsiElement sourceElement, Editor editor )
   {
     if( sourceElement == null )
     {
+      return null;
+    }
+
+    if( !ManProject.isManifoldInUse( sourceElement ) )
+    {
+      // Manifold jars are not used in the project
       return null;
     }
 

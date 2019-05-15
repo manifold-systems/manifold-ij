@@ -9,7 +9,6 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.JavaSdkVersion;
 import com.intellij.openapi.projectRoots.Sdk;
@@ -18,11 +17,10 @@ import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.util.IconLoader;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.File;
 import javax.swing.Icon;
-import manifold.ij.core.ManProject;
-import manifold.ij.fs.IjFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -70,7 +68,7 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
       return;
     }
 
-    VirtualFile toolsJarFile = findToolsJarFile( rootModel.getProject() );
+    VirtualFile toolsJarFile = findToolsJarFile();
     if( toolsJarFile == null )
     {
       Notifications.Bus.notify( new Notification( "Project JDK", "tools.jar not found!", "Please add tools.jar to your JDK", NotificationType.ERROR ) );
@@ -100,7 +98,7 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
     return false;
   }
 
-  private static VirtualFile findToolsJarFile( Project project )
+  private static VirtualFile findToolsJarFile()
   {
     File file = new File( System.getProperty( "java.home" ) );
     if( file.getName().equalsIgnoreCase( "jre" ) )
@@ -118,8 +116,7 @@ public class ManSupportProvider extends FrameworkSupportProviderBase
       return null;
     }
 
-    IjFile ijFile = (IjFile)ManProject.manProjectFrom( project ).getFileSystem().getIFile( file );
-    return ijFile.getVirtualFile();
+    return LocalFileSystem.getInstance().findFileByIoFile( file );
   }
 
   @NotNull

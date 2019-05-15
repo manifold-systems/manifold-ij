@@ -57,9 +57,23 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   @Override
   public boolean accept( @NotNull HighlightInfo hi, @Nullable PsiFile file )
   {
-    if( hi.getDescription() == null ||
-        hi.getSeverity() != HighlightSeverity.ERROR ||
-        file == null )
+    if( file == null )
+    {
+      return true;
+    }
+
+    if( !ManProject.isManifoldInUse( file ) )
+    {
+      // Manifold jars are not used in the project
+      return true;
+    }
+
+    if( hi.getDescription() == null )
+    {
+      return true;
+    }
+
+    if( hi.getSeverity() != HighlightSeverity.ERROR )
     {
       return true;
     }

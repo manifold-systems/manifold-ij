@@ -47,6 +47,11 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public PsiClass[] findClasses( String fqn, GlobalSearchScope globalSearchScope )
   {
+    if( !ManProject.isManifoldInUse( _project ) )
+    {
+      return PsiClass.EMPTY_ARRAY;
+    }
+
     //System.out.println( "PsiClass[] findClasses() : " + fqn + " : " + globalSearchScope );
 
     Project project = globalSearchScope.getProject();
@@ -72,6 +77,11 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public PsiClass findClass( String fqn, GlobalSearchScope globalSearchScope )
   {
+    if( !ManProject.isManifoldInUse( _project ) )
+    {
+      return null;
+    }
+
     //System.out.println( "findClass() : " + fqn + " : " + globalSearchScope );
 
     Project project = globalSearchScope.getProject();
@@ -111,6 +121,11 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public PsiClass[] getClasses( PsiPackage psiPackage, GlobalSearchScope scope )
   {
+    if( !ManProject.isManifoldInUse( _project ) )
+    {
+      return PsiClass.EMPTY_ARRAY;
+    }
+
     //System.out.println( "getClasses() : " + psiPackage + " : " + scope );
 
     if( DumbService.getInstance( scope.getProject() ).isDumb() )
@@ -156,12 +171,22 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public PsiClass[] getClasses( String className, PsiPackage psiPackage, GlobalSearchScope scope )
   {
+    if( !ManProject.isManifoldInUse( _project ) )
+    {
+      return PsiClass.EMPTY_ARRAY;
+    }
+
     return super.getClasses( className, psiPackage, scope );
   }
 
   @Override
   public PsiPackage[] getSubPackages( PsiPackage psiPackage, GlobalSearchScope scope )
   {
+    if( !ManProject.isManifoldInUse( _project ) )
+    {
+      return PsiPackage.EMPTY_ARRAY;
+    }
+
     //System.out.println( "getSubPackages() : " + psiPackage + " : " + scope );
 
     List<ManModule> modules = findModules( scope );
@@ -203,7 +228,13 @@ public class ManTypeFinder extends PsiElementFinder
   public boolean processPackageDirectories(@NotNull PsiPackage psiPackage,
                                            @NotNull final GlobalSearchScope scope,
                                            @NotNull final Processor<PsiDirectory> consumer,
-                                           boolean includeLibrarySources) {
+                                           boolean includeLibrarySources)
+  {
+    if( !ManProject.isManifoldInUse( _project ) )
+    {
+      return true;
+    }
+
     //System.out.println( "processDirectories() : " + psiPackage + " : " + scope );
 
     final PsiManager psiManager = PsiManager.getInstance( _project );
@@ -222,6 +253,11 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public PsiPackage findPackage( String fqn )
   {
+    if( !ManProject.isManifoldInUse( _project ) )
+    {
+      return null;
+    }
+
     //System.out.println( "findPackage() : " + fqn );
 
     Collection<ManModule> modules = ManProject.manProjectFrom( _project ).getModules().values();

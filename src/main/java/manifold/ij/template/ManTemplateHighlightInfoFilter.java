@@ -9,6 +9,7 @@ import com.intellij.psi.PsiIdentifier;
 import com.intellij.psi.PsiLocalVariable;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiReferenceExpression;
+import manifold.ij.core.ManProject;
 import manifold.ij.template.psi.DirectiveParser;
 import manifold.ij.template.psi.ManTemplateJavaFile;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +20,17 @@ public class ManTemplateHighlightInfoFilter implements HighlightInfoFilter
   @Override
   public boolean accept( @NotNull HighlightInfo hi, @Nullable PsiFile file )
   {
+    if( file == null )
+    {
+      return true;
+    }
+
+    if( !ManProject.isManifoldInUse( file ) )
+    {
+      // Manifold jars are not used in the project
+      return true;
+    }
+
     if( isNotInititializedErrorOnParamRef( hi, file ) ||
         isNeverAssignedOnParam( hi, file ) )
     {

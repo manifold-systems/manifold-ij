@@ -52,8 +52,14 @@ import static manifold.api.type.ContributorKind.Supplemental;
 public class ExtensionClassAnnotator implements Annotator
 {
   @Override
-  public void annotate( PsiElement element, AnnotationHolder holder )
+  public void annotate( @NotNull PsiElement element, @NotNull AnnotationHolder holder )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      // Manifold jars are not used in the project
+      return;
+    }
+
     if( DumbService.getInstance( element.getProject() ).isDumb() )
     {
       // skip processing during index rebuild

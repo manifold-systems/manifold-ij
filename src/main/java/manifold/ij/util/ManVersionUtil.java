@@ -35,6 +35,11 @@ public class ManVersionUtil
   @NotNull
   private static Boolean isOrGreater( int primary, int secondary )
   {
+//    if( isAndroid( ApplicationInfo.getInstance() ) )
+//    {
+//      return android_isOrGreater( primary, secondary );
+//    }
+//
     String major = ApplicationInfo.getInstance().getMajorVersion();
     try
     {
@@ -52,6 +57,35 @@ public class ManVersionUtil
       return true;
     }
   }
+
+//  private static boolean android_isOrGreater( int primary, int secondary )
+//  {
+//    if( primary <= 2018 )
+//    {
+//      String major = ApplicationInfo.getInstance().getMajorVersion();
+//      try
+//      {
+//        int iMajor = Integer.parseInt( major );
+//        if( iMajor >= 3 )
+//        {
+//          String minor = getMinorVersionMainPart();
+//          int iMinor = Integer.parseInt( minor );
+//          return iMinor >= 4;
+//        }
+//        return iMajor > primary;
+//      }
+//      catch( Exception e )
+//      {
+//        return false;
+//      }
+//    }
+//    return false;
+//  }
+//
+//  private static boolean isAndroid( ApplicationInfo instance )
+//  {
+//    return instance.getCompanyURL().contains( "android" );
+//  }
 
   private static String getMinorVersionMainPart()
   {

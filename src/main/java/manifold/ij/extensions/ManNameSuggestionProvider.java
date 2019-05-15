@@ -5,6 +5,7 @@ import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.codeStyle.SuggestedNameInfo;
 import com.intellij.refactoring.rename.PreferrableNameSuggestionProvider;
 import java.util.Set;
+import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -17,6 +18,12 @@ public class ManNameSuggestionProvider extends PreferrableNameSuggestionProvider
   @Override
   public SuggestedNameInfo getSuggestedNames( PsiElement element, @Nullable PsiElement nameSuggestionContext, Set<String> result )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      // Manifold jars are not used in the project
+      return null;
+    }
+
     if( element instanceof PsiNamedElement &&
         ((PsiNamedElement)element).getName() == null &&
         element.getClass().getTypeName().contains( "GraphQLVariable" ) )

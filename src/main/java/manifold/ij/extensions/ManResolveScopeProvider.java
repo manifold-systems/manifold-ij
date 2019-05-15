@@ -29,6 +29,11 @@ public class ManResolveScopeProvider extends ResolveScopeEnlarger
   @Override
   public SearchScope getAdditionalResolveScope( @NotNull VirtualFile file, Project project )
   {
+    if( !ManProject.isManifoldInUse( project ) )
+    {
+      return null;
+    }
+
     ManProject manProject = ManProject.manProjectFrom( project );
     PsiFile psiFile = PsiManager.getInstance( project ).findFile( file );
     GlobalSearchScope unionScope = null;
