@@ -92,19 +92,17 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Bug fixes, feature requests, and improvements <br>
-- Improved `View | Show Java Source` source viewer on Manifold resources (a debugging aid for type manifold impls in IJ) <br>
-- https://github.com/manifold-systems/manifold/issues/75 <br>
--- Fix stack overflow involving element refs <br>
-- https://github.com/manifold-systems/manifold/issues/76 <br>
--- Define a new directive: `nest`. Behaves exactly like `include` but retains and distributes the indentation whitespace immediately preceding the `nest` directive, and retains whitespace immediately following the directive.  The indentation is applied to each line in the resulting `nest`ed template or section. This behavior facilitates the code generation use-case where whitespace formatting, esp. indentation, is significant. <br>
-- https://github.com/manifold-systems/manifold/issues/74 <br>
--- Suppress a missed case for unhandled checked exception errors <br>
-- https://github.com/manifold-systems/manifold/issues/64 <br>
--- provide a compile-time error indicating a method reference is not supported on a structural interface method, instead a lambda expression must be used. <br>
-- https://github.com/manifold-systems/manifold/issues/63 <br>
--- Fully support relative JSON refs <br>
-- other minor fixes <br>
+Bug fixes and improvements <br>
+- https://github.com/manifold-systems/manifold/issues/62 <br>
+-- fix "never accessed" warnings for string interpolation <br>
+- https://github.com/manifold-systems/manifold/issues/80 <br>
+- https://github.com/manifold-systems/manifold/issues/81 <br>
+-- fix static ext methods re usages, rename <br>
+- https://github.com/manifold-systems/manifold/issues/84 <br>
+-- manifold plugin extensions are "dumb" when project has no dependencies on manifold -- they have no side effects when called <br>
+- https://github.com/manifold-systems/manifold/issues/85 <br>
+-- fix incremental compile/hotswap of manifold types <br>
+- If the project has no manifold dependencies, invoking UI action to create an extension class or ManTL file produces a warning message indicating the dependencies must be added <br>
      ]]>
   </change-notes>
   
