@@ -55,7 +55,7 @@ public class ManifoldPsiClass extends LightClass
     for( IFile ifile : _ifiles )
     {
       VirtualFile vfile = ((IjFile)ifile).getVirtualFile();
-      if( vfile != null )
+      if( vfile != null && vfile.isValid() )
       {
         PsiFile file = manager.findFile( vfile );
         _files.add( file );

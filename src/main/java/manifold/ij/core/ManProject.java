@@ -100,8 +100,13 @@ public class ManProject
   public static ManModule getModule( Module module )
   {
     ManProject manProject = getProject( module.getProject() );
-    assert manProject != null;
-    ManModule manModule = manProject.getModules().get( module );
+    if( manProject == null )
+    {
+      return null;
+    }
+
+    Map<Module, ManModule> modules = manProject.getModules();
+    ManModule manModule = modules == null ? null : modules.get( module );
     if( manModule != null )
     {
       return manModule;
@@ -251,7 +256,7 @@ public class ManProject
 
   public Map<Module, ManModule> getModules()
   {
-    return _modules.get();
+    return _modules == null ? null : _modules.get();
   }
 
   void projectOpened()

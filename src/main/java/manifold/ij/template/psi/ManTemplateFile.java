@@ -25,7 +25,6 @@ public class ManTemplateFile extends PsiFileBase
   ManTemplateFile( @NotNull FileViewProvider viewProvider )
   {
     super( viewProvider, ManTemplateLanguage.INSTANCE );
-    ManLibraryChecker.instance().warnIfManifoldTemplatesNotConfiguredForProject( this );
   }
 
   @NotNull

@@ -11,12 +11,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.psi.PsiDirectory;
-import com.intellij.psi.PsiFile;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import manifold.ij.core.ManLibraryChecker;
 import manifold.ij.core.ManProject;
+import manifold.ij.template.psi.ManTemplateFile;
 import manifold.ij.util.ManBundle;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -97,10 +97,12 @@ public class CreateManifoldTemplateAction extends CreateFileFromTemplateAction
   }
 
   @Override
-  protected PsiFile createFile( String name, String templateName, PsiDirectory dir )
+  protected ManTemplateFile createFile( String name, String templateName, PsiDirectory dir )
   {
     FileTemplate template = FileTemplateManager.getInstance( dir.getProject() ).getTemplate( templateName );
-    return createFileFromTemplate( name + '.' + FT_TO_EXT.get( templateName ), template, dir );
+    ManTemplateFile mantlFile = (ManTemplateFile)createFileFromTemplate( name + '.' + FT_TO_EXT.get( templateName ), template, dir );
+    ManLibraryChecker.instance().warnIfManifoldTemplatesNotConfiguredForProject( mantlFile );
+    return mantlFile;
   }
 
   @Override

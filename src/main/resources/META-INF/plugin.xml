@@ -93,16 +93,13 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
   <change-notes>
     <![CDATA[
 Bug fixes and improvements <br>
-- https://github.com/manifold-systems/manifold/issues/62 <br>
--- fix "never accessed" warnings for string interpolation <br>
-- https://github.com/manifold-systems/manifold/issues/80 <br>
-- https://github.com/manifold-systems/manifold/issues/81 <br>
--- fix static ext methods re usages, rename <br>
-- https://github.com/manifold-systems/manifold/issues/84 <br>
--- manifold plugin extensions are "dumb" when project has no dependencies on manifold -- they have no side effects when called <br>
-- https://github.com/manifold-systems/manifold/issues/85 <br>
--- fix incremental compile/hotswap of manifold types <br>
-- If the project has no manifold dependencies, invoking UI action to create an extension class or ManTL file produces a warning message indicating the dependencies must be added <br>
+- https://github.com/manifold-systems/manifold/issues/87 <br>
+-- handle case where a jar file has both a file entry and a directory entry as siblings with the same exact name <br>
+- https://github.com/manifold-systems/manifold/issues/88 <br>
+-- extension classes fix <br>
+- https://github.com/manifold-systems/manifold/issues/89 <br>
+-- support `graphqls` extension <br>
+- fix NPEs related to recent changes involving manifold plugin dormancy when a project is not using manifold dependencies <br>
      ]]>
   </change-notes>
   
