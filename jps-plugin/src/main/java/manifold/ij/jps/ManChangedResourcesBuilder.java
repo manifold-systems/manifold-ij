@@ -319,7 +319,10 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
     visited.add( module );
 
     if( module.getDependenciesList().getDependencies().stream()
-        .anyMatch( e -> e.toString().contains( "manifold-" ) ) )
+        .anyMatch( e -> // must be at least manifold.jar, not utilities etc.
+          e.toString().contains( "manifold-" ) &&
+          !e.toString().contains( "manifold-util" ) &&
+          !e.toString().contains( "manifold-bootstrap" ) ) )
     {
       return true;
     }
@@ -328,7 +331,10 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
     for( JpsLibrary lib: libraries )
     {
       if( lib.getRoots( JpsOrderRootType.COMPILED ).stream()
-          .anyMatch( e -> e.getUrl().contains( "manifold-" ) ) )
+          .anyMatch( e -> // must be at least manifold.jar, not utilities etc.
+            e.getUrl().contains( "manifold-" ) &&
+            !e.getUrl().contains( "manifold-util" ) &&
+            !e.getUrl().contains( "manifold-bootstrap" ) ) )
       {
         return true;
       }
