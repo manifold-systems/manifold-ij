@@ -52,7 +52,9 @@ import manifold.ij.extensions.ModuleClasspathListener;
 import manifold.ij.extensions.ModuleRefreshListener;
 import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
+import manifold.ij.license.CheckLicense;
 import manifold.ij.psi.ManLightMethodBuilder;
+import manifold.ij.util.MessageUtil;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LockingLazyVar;
 import manifold.util.concurrent.LocklessLazyVar;
@@ -196,6 +198,9 @@ public class ManProject
   private void init()
   {
     _manInUse = ManLibraryChecker.instance().isUsingManifoldJars( _ijProject );
+
+    licenseCheck();
+
     if( !_manInUse )
     {
       removeCompilerArgs();
@@ -209,6 +214,20 @@ public class ManProject
     _rootModules = assignRootModuleLazy();
     addCompilerArgs(); // in case manifold jar was added we might need to update compiler args
     ManLibraryChecker.instance().warnIfManifoldJarsAreOld( getNativeProject() );
+  }
+
+  private void licenseCheck()
+  {
+    if( _manInUse )
+    {
+      if( !CheckLicense.isLicensed() )
+      {
+        _manInUse = false;
+        ApplicationManager.getApplication().invokeLater( () ->
+          MessageUtil.showWarning( _ijProject, MessageUtil.Placement.CENTER,
+            "Your copy of the Manifold plugin is not licensed." ) );
+      }
+    }
   }
 
   @NotNull

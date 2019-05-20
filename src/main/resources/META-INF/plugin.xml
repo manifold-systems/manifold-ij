@@ -90,6 +90,8 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
   <!-- please see http://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
   <idea-version since-build="This value is patched by the build script"/>
 
+  <product-descriptor code="PMANIFOLD" release-date="20190520" release-version="20191"/>
+
   <change-notes>
     <![CDATA[
 Bug fixes and improvements <br>
