@@ -271,7 +271,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     {
       throw new IllegalStateException();
     }
-    fqn = fqn.substring( lastDot );
+    fqn = fqn.substring( 0, lastDot );
     return findTopLevelFqn( tm, fqn );
   }
 
