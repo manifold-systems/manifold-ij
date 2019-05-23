@@ -92,12 +92,9 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Bug fixes and improvements <br>
-- https://github.com/manifold-systems/manifold/issues/90 <br>
--- improve encoding of an identifier with all invalid characters <br>
--- coerce json api create/build parameters to binding values <br>
-- fix JPS compiler plugin bug involving projects without manifold dependencies <br>
-- add Copier/Copy API support for GraphQL types and operations <br>
+Bug fixes <br>
+- Fix race condition in IJ plugin involving internal caching <br>
+- Several minor GraphQL related fixes <br>
      ]]>
   </change-notes>
   
