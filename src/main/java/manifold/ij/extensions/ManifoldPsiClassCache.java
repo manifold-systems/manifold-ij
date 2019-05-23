@@ -231,24 +231,25 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     {
       String result = "";
       DiagnosticCollector<JavaFileObject> issues = new DiagnosticCollector<>();
+      String topLevelFqn = null;
       for( ITypeManifold tm : tms )
       {
         // MUST start with top-level class, otherwise the classes enclosing an inner class will have null userData
         // cached with their names, preventing the them from ever loading.  So when we cache a class name we always get
         // its outermost enclosing class and cache that and the entire nest of classes it contains, top-down.  See the
         // cacheAll() call following this for loop.
-        fqn = findTopLevelFqn( tm, fqn );
+        topLevelFqn = topLevelFqn == null ? findTopLevelFqn( tm, fqn ) : topLevelFqn;
 
         if( found != null && (found.getContributorKind() == Primary || tm.getContributorKind() == Primary) )
         {
           throw new ConflictingTypeManifoldsException( fqn, found, tm );
         }
         found = tm;
-        result = tm.contribute( null, fqn, result, issues );
+        result = tm.contribute( null, topLevelFqn, result, issues );
       }
 
       ManModule actualModule = (ManModule)found.getModule();
-      PsiClass delegate = createPsiClass( actualModule, fqn, result );
+      PsiClass delegate = createPsiClass( actualModule, topLevelFqn, result );
       cacheAll( delegate, actualModule, found, issues );
     }
 
