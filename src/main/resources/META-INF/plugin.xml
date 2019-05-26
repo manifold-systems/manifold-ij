@@ -8,7 +8,7 @@
 Simply add the Manifold jar to your project and begin taking advantage of it.</p>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
 <h3><a href="#meta-programming" id="meta-programming"><a href="http://manifold.systems/docs.html#manifold-in-a-nutshell">Meta-programming</a></a></h3>
-<p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as JSON Schema and YAML, and GraphQL. Remove the code gen step in your build process.</p>
+<p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as GraphQL, JSON Schema, YAML, and Javascript. Remove the code gen step in your build process.</p>
 <pre><code class="java">// Use your User.json schema file directly as a type, no code gen!
 User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&quot;)
   .withGender(male)
@@ -92,9 +92,9 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Bug fixes <br>
-- Fix race condition in IJ plugin involving internal caching <br>
-- Several minor GraphQL related fixes <br>
+Big fixes & Early access release preparation<br>
+- Fix some JPMS related issues with multi-module projects
+- Early access release preparation, and preparation for JetBrains Marketplace
      ]]>
   </change-notes>
   
