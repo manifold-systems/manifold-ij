@@ -220,12 +220,15 @@ public class ManProject
   {
     if( _manInUse )
     {
-      if( !CheckLicense.isLicensed() )
+      if( !CheckLicense.isLicensed() && !ApplicationManager.getApplication().isUnitTestMode() )
       {
         _manInUse = false;
         ApplicationManager.getApplication().invokeLater( () ->
           MessageUtil.showWarning( _ijProject, MessageUtil.Placement.CENTER,
-            "Your copy of the Manifold plugin is not licensed." ) );
+            "Your copy of the <b>Manifold</b> plugin is not licensed or your license has expired.<br>" +
+            "For uninterrupted use of the plugin please visit the " +
+            "<a href=\"https://plugins.jetbrains.com/plugin/10057-manifold\">JetBrains Marketplace</a> to<br>" +
+            "directly create or update your Manifold plugin subscription." ) );
       }
     }
   }
