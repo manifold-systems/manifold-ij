@@ -221,7 +221,7 @@ public class SelfTypeUtil
         result = () -> ArrayUtil.mergeArrays( type1.getAnnotations(), type2.getAnnotations() );
       }
       return () -> Arrays.stream( result.getAnnotations() )
-               .filter( e -> !e.hasQualifiedName( Self.class.getTypeName() ) )
+               .filter( e -> !Self.class.getTypeName().equals( e.getQualifiedName() ) )
                .toArray( PsiAnnotation[]::new );
     }
   }

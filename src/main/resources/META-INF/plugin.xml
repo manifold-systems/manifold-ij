@@ -142,7 +142,10 @@ Big fixes & Early access release preparation<br>
                     serviceImplementation="manifold.ij.extensions.ManResolveCache" overrides="true"/>
 
     <!--<library.type implementation="manifold.ij.extensions.ManLibraryType"/>-->
-    <frameworkSupport implementation="manifold.ij.extensions.ManSupportProvider"/>
+
+<!--    disabled indefinitely, inconsistent wrt downloading manifold etc.  -->
+<!--    <frameworkSupport implementation="manifold.ij.extensions.ManSupportProvider"/>-->
+
     <framework.type implementation="manifold.ij.extensions.ManFrameworkType"/>
     <java.elementFinder implementation="manifold.ij.extensions.ManTypeFinder" order="first, before java"/>
     <java.shortNamesCache implementation="manifold.ij.extensions.ManShortNamesCache"/>

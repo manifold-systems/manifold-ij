@@ -196,20 +196,20 @@ public class ManResolveCache extends ResolveCache
 
     copyModifiers( refMethod, method );
 
-    for( PsiTypeParameter tv : refMethod.getTypeParameters() )
+    for( PsiTypeParameter tv: refMethod.getTypeParameters() )
     {
       method.withTypeParameter( tv );
     }
 
     PsiParameter[] parameters = refMethod.getParameterList().getParameters();
-    for( PsiParameter psiParameter : parameters )
+    for( PsiParameter psiParameter: parameters )
     {
 //      method.withParameter( psiParameter.getName(), psiParameter.getType() );
       PsiType type = handleType( psiParameter.getType(), ref, refMethod );
       method.withParameter( psiParameter.getName(), type );
     }
 
-    for( PsiClassType psiClassType : refMethod.getThrowsList().getReferencedTypes() )
+    for( PsiClassType psiClassType: refMethod.getThrowsList().getReferencedTypes() )
     {
       method.withException( psiClassType );
     }
@@ -225,7 +225,7 @@ public class ManResolveCache extends ResolveCache
     method.withMethodReturnType( handleType( refMethod.getReturnType(), ref, method ) );
 
     PsiParameter[] parameters = refMethod.getParameterList().getParameters();
-    for( PsiParameter psiParameter : parameters )
+    for( PsiParameter psiParameter: parameters )
     {
 //      method.withParameter( psiParameter, psiParameter.getType() );
       method.withParameter( psiParameter, handleType( psiParameter.getType(), ref, method ) );
@@ -249,16 +249,16 @@ public class ManResolveCache extends ResolveCache
 
   private void copyAnnotations( PsiMethod refMethod, ManLightMethodBuilder method )
   {
-    for( PsiAnnotation anno : refMethod.getModifierList().getAnnotations() )
+    for( PsiAnnotation anno: refMethod.getModifierList().getAnnotations() )
     {
-      if( anno.hasQualifiedName( Self.class.getTypeName() ) )
+      if( Self.class.getTypeName().equals( anno.getQualifiedName() ) )
       {
         // do not transfer @Self, to target type
         continue;
       }
 
       PsiAnnotation psiAnnotation = method.getModifierList().addAnnotation( anno.getQualifiedName() );
-      for( PsiNameValuePair pair : anno.getParameterList().getAttributes() )
+      for( PsiNameValuePair pair: anno.getParameterList().getAttributes() )
       {
         psiAnnotation.setDeclaredAttributeValue( pair.getName(), pair.getValue() );
       }
