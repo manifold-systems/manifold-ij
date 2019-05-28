@@ -6,8 +6,10 @@ import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiNamedElement;
+import com.intellij.psi.PsiReference;
 import com.intellij.psi.search.LocalSearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
+import com.intellij.util.Processor;
 
 /**
  * For Manifold's StringLiteral LanguageInjector, prevents "assigned but never accessed" warnings when there is a usage
@@ -41,8 +43,9 @@ public class ManStringLiteralTemplateUsageProvider implements ImplicitUsageProvi
       PsiFile containingFile = elem.getContainingFile();
       if( containingFile instanceof PsiJavaFile )
       {
-        return ReferencesSearch.search( namedElement, new LocalSearchScope( containingFile ) )
-          .anyMatch( e -> isInStringLiteral( e.getElement() ) );
+        return !ReferencesSearch.search( namedElement, new LocalSearchScope( containingFile ) )
+                    //!! keep casting as is here for backward compatibility with 2017.x.x IJ
+          .forEach( (Processor)e -> isInStringLiteral( ((PsiReference)e).getElement() ) );
       }
     }
     return false;
