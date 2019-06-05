@@ -92,11 +92,10 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Release 2019.1.2 <br>
-- Shade third-party packages used in `manifold-all` to avoid package conflicts with projects <br>
-- Fix some JPMS related issues with named module projects <br>
-- Fix issue with -processorpath v. --processor-module-path regarding Java 8 v. 9+ <br>
-- Release preparations for JetBrains Marketplace <br>
+Bug fixes (official release) <br>
+- Shade third-party packages used in `manifold-all` to avoid package conflicts with JPMS projects <br>
+- Fix issues stemming from use of `-processorpath` v. `--processor-module-path` <br>
+- Final release preparations for JetBrains Marketplace <br>
      ]]>
   </change-notes>
   
