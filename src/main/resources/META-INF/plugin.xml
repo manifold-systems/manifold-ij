@@ -92,10 +92,11 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Big fixes & Early access release preparation <br>
-- Fix IJ API related issues with 2017/2018 backward compatibility <br>
-- Fix some JPMS related issues with multi-module projects <br>
-- Early access release preparation, and preparation for JetBrains Marketplace <br>
+Release 2019.1.2 <br>
+- Shade third-party packages used in `manifold-all` to avoid package conflicts with projects <br>
+- Fix some JPMS related issues with named module projects <br>
+- Fix issue with -processorpath v. --processor-module-path regarding Java 8 v. 9+ <br>
+- Release preparations for JetBrains Marketplace <br>
      ]]>
   </change-notes>
   

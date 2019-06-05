@@ -291,9 +291,18 @@ public class ManProject
     {
       options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings exceptions\" " + maybeGetProcessorPath();
     }
-    else if( findJdkVersion() >= 9 && (!options.contains( "-processorpath" ) || !hasCorrectManifoldJars( options )) )
+    else if( findJdkVersion() >= 9 &&
+             ((!options.contains( "-processorpath" ) && !options.contains( "--processor-module-path" )) || !hasCorrectManifoldJars( options )) )
     {
       options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings exceptions\" " + maybeGetProcessorPath();
+    }
+    if( findJdkVersion() == 8 )
+    {
+      options = options.replace( "--processor-module-path", "-processorpath" );
+    }
+    else
+    {
+      options = options.replace( "-processorpath", "--processor-module-path" );
     }
     javacOptions.ADDITIONAL_OPTIONS_STRING = options;
   }
@@ -335,7 +344,9 @@ public class ManProject
         return;
       }
     }
-    options = removeManifoldJarsFromProcessorPath( options );
+    int jdkVersion = findJdkVersion();
+    options = removeManifoldJarsFromProcessorPath( options,
+      jdkVersion == 8 ? "-processorpath" : "-processor-module-path" );
     javacOptions.ADDITIONAL_OPTIONS_STRING = options;
   }
 
@@ -362,7 +373,7 @@ public class ManProject
       {
         if( processorPath.length() == 0 )
         {
-          processorPath.append( " -processorpath " );
+          processorPath.append( " --processor-module-path " );
         }
         else
         {
@@ -374,9 +385,9 @@ public class ManProject
     return processorPath.toString();
   }
 
-  private String removeManifoldJarsFromProcessorPath( String options )
+  private String removeManifoldJarsFromProcessorPath( String options, String processorPathArg )
   {
-    int index = options.indexOf( "-processorpath " );
+    int index = options.indexOf( processorPathArg + " " );
     if( index < 0 )
     {
       // no -processorpath
@@ -385,7 +396,7 @@ public class ManProject
 
     int iNextArg = options.indexOf( " -", index );
     int iEnd = iNextArg >= 0 ?iNextArg : options.length();
-    int iStart = index + "-processorpath".length() + 1;
+    int iStart = index + processorPathArg.length() + 1;
     String processorPaths = options.substring( iStart, iEnd );
     if( !processorPaths.contains( "manifold" ) )
     {
