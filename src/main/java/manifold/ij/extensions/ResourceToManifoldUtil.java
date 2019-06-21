@@ -29,6 +29,7 @@ import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiPlainText;
 import com.intellij.psi.PsiPlainTextFile;
 import com.intellij.psi.PsiReference;
+import com.intellij.psi.impl.source.resolve.FileContextUtil;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import java.awt.KeyboardFocusManager;
@@ -40,6 +41,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import manifold.api.fs.IFile;
+import manifold.api.fs.IFileFragment;
 import manifold.api.type.ContributorKind;
 import manifold.api.type.ITypeManifold;
 import manifold.api.type.SourcePosition;
@@ -47,9 +50,11 @@ import manifold.api.type.TypeReference;
 import manifold.ext.IExtensionClassProducer;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.ij.extensions.ManDefaultASTFactoryImpl.ManPsiCommentImpl;
 import manifold.ij.fs.IjFile;
 import manifold.ij.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  */
@@ -153,13 +158,11 @@ public class ResourceToManifoldUtil
 
     Project project = element.getProject();
     ManProject manProject = ManProject.manProjectFrom( project );
-    PsiFile containingFile = element.getContainingFile();
-    VirtualFile virtualFile = containingFile == null ? null : containingFile.getVirtualFile();
-    if( virtualFile == null )
+    IFile file = fileFromElement( element, manProject );
+    if( file == null )
     {
       return Collections.emptySet();
     }
-    IjFile file = FileUtil.toIFile( manProject, virtualFile );
     Set<ITypeManifold> set = ManModule.findTypeManifoldsForFile( manProject.getNativeProject(), file,
       tm ->  tm.getContributorKind() == ContributorKind.Primary,
       tm -> tm.getContributorKind() == ContributorKind.Primary );
@@ -178,7 +181,7 @@ public class ResourceToManifoldUtil
           }
           else
           {
-            result.addAll( findJavaElementsFor( psiClass, element ) );
+            result.addAll( findJavaElementsFor( psiClass, file, element ) );
           }
         }
       }
@@ -199,7 +202,30 @@ public class ResourceToManifoldUtil
     return result;
   }
 
-  private static Collection<String> findTypesForFile( ITypeManifold tf, IjFile file )
+  @Nullable
+  private static IFile fileFromElement( PsiElement element, ManProject manProject )
+  {
+    PsiFile containingFile = element.getContainingFile();
+    if( containingFile == null )
+    {
+      return null;
+    }
+    PsiElement fileContext = FileContextUtil.getFileContext( containingFile );
+    IFile file;
+    if( fileContext instanceof ManPsiCommentImpl )
+    {
+      // account for fragments
+      file = ((ManPsiCommentImpl)fileContext).getFragment();
+    }
+    else
+    {
+      VirtualFile virtualFile = containingFile.getVirtualFile();
+      file = virtualFile == null ? null : FileUtil.toIFile( manProject, virtualFile );
+    }
+    return file;
+  }
+
+  private static Collection<String> findTypesForFile( ITypeManifold tf, IFile file )
   {
     Set<String> fqns = new HashSet<>();
     fqns.addAll( Arrays.stream( tf.getTypesForFile( file ) ).collect( Collectors.toSet() ) );
@@ -338,16 +364,16 @@ public class ResourceToManifoldUtil
     return newOffset;
   }
 
-  private static List<PsiModifierListOwner> findJavaElementsFor( PsiClass psiClass, PsiElement element )
+  private static List<PsiModifierListOwner> findJavaElementsFor( PsiClass psiClass, IFile file, PsiElement element )
   {
-    return findJavaElementsFor( psiClass, element, new FeaturePath( psiClass ) );
+    return findJavaElementsFor( psiClass, file, element, new FeaturePath( psiClass ) );
   }
 
-  private static List<PsiModifierListOwner> findJavaElementsFor( PsiClass psiClass, PsiElement element, FeaturePath parent )
+  private static List<PsiModifierListOwner> findJavaElementsFor( PsiClass psiClass, IFile file, PsiElement element, FeaturePath parent )
   {
     List<PsiModifierListOwner> result = new ArrayList<>();
 
-    if( isJavaElementFor( psiClass, psiClass, element ) )
+    if( isJavaElementFor( psiClass, file, psiClass, element ) )
     {
       result.add( psiClass );
       psiClass.putUserData( KEY_FEATURE_PATH, FeaturePath.make( parent, FeaturePath.FeatureType.Class, 0, 1 ) );
@@ -357,7 +383,7 @@ public class ResourceToManifoldUtil
     for( int i = 0; i < methods.length; i++ )
     {
       PsiMethod method = methods[i];
-      if( isJavaElementFor( psiClass, method, element ) ||
+      if( isJavaElementFor( psiClass, file, method, element ) ||
           element instanceof PsiClass && isJavaElementForType( method, (PsiClass)element ) )
       {
         result.add( method );
@@ -368,7 +394,7 @@ public class ResourceToManifoldUtil
     for( int i = 0; i < fields.length; i++ )
     {
       PsiField field = fields[i];
-      if( isJavaElementFor( psiClass, field, element ) ||
+      if( isJavaElementFor( psiClass, file, field, element ) ||
           element instanceof PsiClass && isJavaElementForType( field, (PsiClass)element ) )
       {
         result.add( field );
@@ -379,13 +405,13 @@ public class ResourceToManifoldUtil
     for( int i = 0; i < inners.length; i++ )
     {
       PsiClass inner = inners[i];
-      if( isJavaElementFor( psiClass, inner, element ) ||
+      if( isJavaElementFor( psiClass, file, inner, element ) ||
           element instanceof PsiClass && isJavaElementForType( inner, (PsiClass)element ) )
       {
         result.add( inner );
         inner.putUserData( KEY_FEATURE_PATH, FeaturePath.make( parent, FeaturePath.FeatureType.Class, i, inners.length ) );
       }
-      result.addAll( findJavaElementsFor( inner, element, new FeaturePath( parent, FeaturePath.FeatureType.Class, i, inners.length ) ) );
+      result.addAll( findJavaElementsFor( inner, file, element, new FeaturePath( parent, FeaturePath.FeatureType.Class, i, inners.length ) ) );
     }
     return result;
   }
@@ -394,7 +420,7 @@ public class ResourceToManifoldUtil
    * Does the Java source member, {@code modifierListOwner}, have a SourcePosition annotation that matches the
    * name and location of the given {@code element}?
    */
-  private static boolean isJavaElementFor( PsiClass declaringClass, PsiModifierListOwner modifierListOwner, PsiElement element )
+  private static boolean isJavaElementFor( PsiClass declaringClass, IFile file, PsiModifierListOwner modifierListOwner, PsiElement element )
   {
     String targetFeatureName = element.getText();
     if( targetFeatureName == null || targetFeatureName.isEmpty() )
@@ -405,7 +431,12 @@ public class ResourceToManifoldUtil
     PsiAnnotation annotation = modifierListOwner.getModifierList().findAnnotation( SourcePosition.class.getName() );
     if( annotation != null )
     {
-      int textOffset = element.getTextOffset();
+      int textOffset = 0;
+      if( file instanceof IFileFragment )
+      {
+        textOffset = ((IFileFragment)file).getOffset();
+      }
+      textOffset += element.getTextOffset();
       int textLength = element instanceof PsiNamedElement && ((PsiNamedElement)element).getName() != null
                        ? ((PsiNamedElement)element).getName().length()
                        : element.getTextLength();

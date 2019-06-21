@@ -67,7 +67,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
 
       registerClasses();
 
-      IjIncrementalCompileDriver.INSTANCES.set( null );
+      IjResourceIncrementalCompileDriver.INSTANCES.set( null );
     }
   }
 
@@ -139,7 +139,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
         _tempMainClasses = makeTempMainClasses( context, target );
         if( !_tempMainClasses.isEmpty() )
         {
-          IjIncrementalCompileDriver driver = IjIncrementalCompileDriver.INSTANCES.get().get( _tempMainClasses.iterator().next().getAbsolutePath() );
+          IjResourceIncrementalCompileDriver driver = getDrivers().get( _tempMainClasses.iterator().next().getAbsolutePath() );
           driver.getChangedFiles().addAll( changedFiles );
         }
       }
@@ -188,13 +188,13 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
 
   private void registerClasses()
   {
-    if( IjIncrementalCompileDriver.INSTANCES.get().isEmpty() )
+    if( getDrivers().isEmpty() )
     {
       return;
     }
 
     Set<BuildOutputConsumerImpl> ocs = new LinkedHashSet<>();
-    for( IjIncrementalCompileDriver driver: IjIncrementalCompileDriver.INSTANCES.get().values() )
+    for( IjResourceIncrementalCompileDriver driver: getDrivers().values() )
     {
       Map<File, Set<String>> typesToFile = driver.getTypesToFile();
       for( Map.Entry<File, Set<String>> entry : typesToFile.entrySet() )
@@ -272,7 +272,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
       tempMainClass.deleteOnExit(); // in case the compiler exits abnormally
       try
       {
-        IjIncrementalCompileDriver driver = new IjIncrementalCompileDriver( context );
+        IjResourceIncrementalCompileDriver driver = new IjResourceIncrementalCompileDriver( context );
         //noinspection ResultOfMethodCallIgnored
         tempMainClass.createNewFile();
         FileWriter writer = new FileWriter( tempMainClass );
@@ -283,7 +283,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
           "import manifold.api.type.IncrementalCompile;\n" +
           "\n" +
           addResourceRoots( resourceRoots ) +
-          "@IncrementalCompile( driverClass = \"manifold.ij.jps.IjIncrementalCompileDriver\",\n" +
+          "@IncrementalCompile( driverClass = \"manifold.ij.jps.IjResourceIncrementalCompileDriver\",\n" +
           "                     driverInstance = " + System.identityHashCode( driver ) + " )\n" +
           "public class " + manifold_temp_main_ + index + "\n" +
           "{\n" +
@@ -293,7 +293,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
         writer.close();
         FSOperations.markDirty( context, CompilationRound.CURRENT, tempMainClass );
 
-        Map<String, IjIncrementalCompileDriver> drivers = getDrivers();
+        Map<String, IjResourceIncrementalCompileDriver> drivers = getDrivers();
         drivers.put( tempMainClass.getAbsolutePath(), driver );
 
         tempMainClasses.add( tempMainClass );
@@ -346,12 +346,12 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
   }
 
   @NotNull
-  private Map<String, IjIncrementalCompileDriver> getDrivers()
+  private Map<String, IjResourceIncrementalCompileDriver> getDrivers()
   {
-    Map<String, IjIncrementalCompileDriver> drivers = IjIncrementalCompileDriver.INSTANCES.get();
+    Map<String, IjResourceIncrementalCompileDriver> drivers = IjResourceIncrementalCompileDriver.INSTANCES.get();
     if( drivers == null )
     {
-      IjIncrementalCompileDriver.INSTANCES.set( drivers = new ConcurrentHashMap<>() );
+      IjResourceIncrementalCompileDriver.INSTANCES.set( drivers = new ConcurrentHashMap<>() );
     }
     return drivers;
   }

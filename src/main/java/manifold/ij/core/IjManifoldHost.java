@@ -2,6 +2,7 @@ package manifold.ij.core;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import manifold.api.fs.IFileFragment;
 import manifold.api.fs.IFileSystem;
 import manifold.api.host.IModule;
 import manifold.api.host.ITypeSystemListener;
@@ -55,6 +56,11 @@ public class IjManifoldHost extends AbstractManifoldHost
     }
 
     manProject.getFileModificationManager().getManRefresher().addTypeSystemListenerAsWeakRef( listener );
+  }
+
+  @Override
+  public void createdType( IFileFragment iFile, String[] strings )
+  {
   }
 
   private ManProject getManProject( Object ctx )

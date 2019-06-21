@@ -13,18 +13,22 @@ import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.Navigatable;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiComment;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.light.LightClass;
+import com.intellij.psi.impl.smartPointers.SmartPointerManagerImpl;
 import com.intellij.psi.util.ClassUtil;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.Icon;
 import javax.tools.DiagnosticCollector;
 import manifold.api.fs.IFile;
+import manifold.api.fs.IFileFragment;
 import manifold.ij.core.ManModule;
+import manifold.ij.extensions.ManDefaultASTFactoryImpl.ManPsiCommentImpl;
 import manifold.ij.fs.IjFile;
 
 public class ManifoldPsiClass extends LightClass
@@ -54,7 +58,7 @@ public class ManifoldPsiClass extends LightClass
     _files = new ArrayList<>( _ifiles.size() );
     for( IFile ifile : _ifiles )
     {
-      VirtualFile vfile = ((IjFile)ifile).getVirtualFile();
+      VirtualFile vfile = ((IjFile)ifile.getPhysicalFile()).getVirtualFile();
       if( vfile != null && vfile.isValid() )
       {
         PsiFile file = manager.findFile( vfile );
@@ -63,6 +67,45 @@ public class ManifoldPsiClass extends LightClass
       }
     }
     delegate.getContainingFile().putUserData( KEY_MANIFOLD_PSI_CLASS, this );
+    reassignFragmentContainer();
+  }
+
+  /**
+   * Update the PsiComment hosting the fragment
+   */
+  private void reassignFragmentContainer()
+  {
+    if( !isFragment() )
+    {
+      return;
+    }
+
+    for( IFile file: _ifiles )
+    {
+      if( file instanceof IFileFragment )
+      {
+        Object container = ((IFileFragment)file).getContainer();
+        if( !(container instanceof ManPsiCommentImpl) )
+        {
+          continue;
+        }
+        ((IFileFragment)file).setContainer( null );
+
+        PsiFile psiFile = PsiManager.getInstance( getProject() ).findFile( ((IjFile)file.getPhysicalFile()).getVirtualFile() );
+        if( psiFile != null )
+        {
+          PsiElement elem = psiFile.findElementAt( ((IFileFragment)file).getOffset() );
+          while( elem != null && !(elem instanceof PsiComment) )
+          {
+            elem = elem.getParent();
+          }
+          if( elem != null )
+          {
+            ((IFileFragment)file).setContainer( SmartPointerManagerImpl.createPointer( elem ) );
+          }
+        }
+      }
+    }
   }
 
   @Override
@@ -116,6 +159,11 @@ public class ManifoldPsiClass extends LightClass
   public List<PsiFile> getRawFiles()
   {
     return _files;
+  }
+
+  public List<IFile> getFiles()
+  {
+    return _ifiles;
   }
 
   @Override
@@ -179,5 +227,10 @@ public class ManifoldPsiClass extends LightClass
   public DiagnosticCollector getIssues()
   {
     return _issues;
+  }
+
+  public boolean isFragment()
+  {
+    return _ifiles.stream().anyMatch( e -> e instanceof IFileFragment );
   }
 }

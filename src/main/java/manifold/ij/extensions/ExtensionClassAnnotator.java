@@ -314,7 +314,7 @@ public class ExtensionClassAnnotator implements Annotator
           List<IFile> files = sp.findFilesForType( fqn );
           for( IFile file : files )
           {
-            VirtualFile vExtensionClassFile = ((IjFile)file).getVirtualFile();
+            VirtualFile vExtensionClassFile = ((IjFile)file.getPhysicalFile()).getVirtualFile();
             if( !vExtensionClassFile.isValid() )
             {
               continue;

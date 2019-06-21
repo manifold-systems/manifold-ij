@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import manifold.api.fs.IFile;
 import manifold.api.fs.IResource;
 import manifold.api.host.IModule;
 import manifold.api.host.ITypeSystemListener;
@@ -131,16 +132,21 @@ public class ManRefreshListener
 
   private void notify( IResource res, RefreshKind kind  )
   {
-    if( !(res instanceof IjFile) )
+    if( !(res instanceof IFile) )
     {
       return;
     }
 
-    IjFile file = (IjFile)res;
+    if( !(((IFile)res).getPhysicalFile() instanceof IjFile) )
+    {
+      return;
+    }
+
+    IFile file = (IFile)res;
     Set<ITypeManifold> tms = ManModule.findTypeManifoldsForFile( _manProject.getNativeProject(), file, null, null );
     if( tms.isEmpty() )
     {
-      Module moduleForFile = ModuleUtilCore.findModuleForFile( file.getVirtualFile(), _manProject.getNativeProject() );
+      Module moduleForFile = ModuleUtilCore.findModuleForFile( ((IjFile)file.getPhysicalFile()).getVirtualFile(), _manProject.getNativeProject() );
       if( moduleForFile != null )
       {
         // at least notify the module containing the file (e.g., for extensions classes)
@@ -166,7 +172,7 @@ public class ManRefreshListener
     moduleToFqns.forEach( (module, fqns) -> notify( module, file, fqns, kind ) );
   }
 
-  private void notify( IModule module, IjFile file, Set<String> result, RefreshKind kind )
+  private void notify( IModule module, IFile file, Set<String> result, RefreshKind kind )
   {
     RefreshRequest request = new RefreshRequest( file, result.toArray( new String[0] ), module, kind );
     List<ITypeSystemListener> listeners = getListeners();

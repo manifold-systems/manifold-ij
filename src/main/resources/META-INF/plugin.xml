@@ -142,6 +142,12 @@ Bug fixes (official release) <br>
     <projectService serviceInterface="com.intellij.psi.impl.source.resolve.ResolveCache"
                     serviceImplementation="manifold.ij.extensions.ManResolveCache" overrides="true"/>
 
+    <!--  These application service overrides facilitate file fragments -->
+    <applicationService serviceInterface="com.intellij.lang.DefaultASTFactory"
+                        serviceImplementation="manifold.ij.extensions.ManDefaultASTFactoryImpl" overrides="true"/>
+    <applicationService serviceInterface="com.intellij.lang.PsiBuilderFactory"
+                        serviceImplementation="manifold.ij.extensions.ManPsiBuilderFactoryImpl" overrides="true"/>
+
     <!--<library.type implementation="manifold.ij.extensions.ManLibraryType"/>-->
 
 <!--    disabled indefinitely, inconsistent wrt downloading manifold etc.  -->
@@ -169,6 +175,7 @@ Bug fixes (official release) <br>
     <nameSuggestionProvider implementation="manifold.ij.extensions.ManNameSuggestionProvider" order="first"/>
     <resolveScopeEnlarger implementation="manifold.ij.extensions.ManResolveScopeProvider" order="first"/>
     <elementDescriptionProvider implementation="manifold.ij.extensions.ManElementDescriptionProvider"/>
+    <languageInjector implementation="manifold.ij.extensions.ManCommentFragmentInjector" order="first"/>
     <languageInjector implementation="manifold.ij.extensions.ManStringLiteralTemplateInjector" order="first"/>
     <implicitUsageProvider implementation="manifold.ij.extensions.ManStringLiteralTemplateUsageProvider"/>
     <targetElementEvaluator language="TEXT" implementationClass="manifold.ij.extensions.ManTextElementEvaluator"/>

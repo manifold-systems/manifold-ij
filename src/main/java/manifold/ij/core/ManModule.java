@@ -165,7 +165,7 @@ public class ManModule extends SimpleModule
                                                                       Predicate<ITypeManifold> terminate)
   {
     Set<ITypeManifold> result = Collections.emptySet();
-    Module moduleForFile = ModuleUtilCore.findModuleForFile( ((IjFile)file).getVirtualFile(), project );
+    Module moduleForFile = ModuleUtilCore.findModuleForFile( ((IjFile)file.getPhysicalFile()).getVirtualFile(), project );
     Collection<ManModule> modules = moduleForFile == null
                                     ? ManProject.manProjectFrom( project ).getModules().values()
                                     : ManProject.getModule( moduleForFile )._modulesDependingOnMe.get();

@@ -130,7 +130,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
           List<IFile> files = tm.findFilesForType( fqn );
           for( IFile file : files )
           {
-            VirtualFile vFile = ((IjFile)file).getVirtualFile();
+            VirtualFile vFile = ((IjFile)file.getPhysicalFile()).getVirtualFile();
             if( !vFile.isValid() )
             {
               continue;

@@ -5,16 +5,20 @@
 package manifold.ij.extensions;
 
 import com.intellij.ide.highlighter.JavaFileType;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiComment;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiTreeChangeAdapter;
 import com.intellij.psi.PsiTreeChangeEvent;
+import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.PsiModificationTrackerImpl;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -27,11 +31,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
 import manifold.api.fs.IFile;
+import manifold.api.fs.IFileFragment;
 import manifold.api.host.AbstractTypeSystemListener;
 import manifold.api.host.RefreshRequest;
 import manifold.api.type.ITypeManifold;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.internal.javac.CommentProcessor;
 import manifold.util.cache.FqnCache;
 import manifold.util.cache.FqnCacheNode;
 import manifold.util.cache.IllegalTypeNameException;
@@ -87,8 +93,53 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     {
       return null;
     }
-    return getPsiClass_NoShortCircuit( module, fqn );
+    PsiClass psiClass = getPsiClass_NoShortCircuit( module, fqn );
+    return removeTypeIfStale( psiClass );
   }
+
+  private PsiClass removeTypeIfStale( PsiClass psiClass )
+  {
+    if( psiClass instanceof ManifoldPsiClass )
+    {
+      List<IFile> files = ((ManifoldPsiClass)psiClass).getFiles();
+      for( IFile file: files )
+      {
+        if( isStaleFileFragment( file ) )
+        {
+          getProject().getFileModificationManager().getManRefresher().deleted( file );
+          return null;
+        }
+      }
+    }
+    return psiClass;
+  }
+
+  private boolean isStaleFileFragment( IFile file )
+  {
+    if( file instanceof IFileFragment )
+    {
+      SmartPsiElementPointer container = (SmartPsiElementPointer)((IFileFragment)file).getContainer();
+      if( container == null )
+      {
+        return true;
+      }
+      else
+      {
+        PsiElement elem = container.getElement();
+        if( !(elem instanceof PsiComment) )
+        {
+          return true;
+        }
+        CommentProcessor.Fragment fragment = CommentProcessor.instance().parseFragment( 0, elem.getText(), ManCommentFragmentInjector.makeStyle( (PsiComment)elem ) );
+        if( fragment == null || !fragment.getName().equals( file.getBaseName() ) || !fragment.getExt().equalsIgnoreCase( file.getExtension() ) )
+        {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   private PsiClass getPsiClass_NoShortCircuit( ManModule module, String fqn )
   {
     if( !isValidFqn( fqn ) )
@@ -340,7 +391,8 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       PsiClass removedFacade = _filePathToPsi.remove( pathString );
       if( removedFacade != null )
       {
-        ((PsiModificationTrackerImpl)removedFacade.getManager().getModificationTracker()).incCounter();
+        ApplicationManager.getApplication().invokeLater( () ->
+          ((PsiModificationTrackerImpl)removedFacade.getManager().getModificationTracker()).incCounter() );
         _fqnPsiCache.remove( removedFacade.getQualifiedName() );
       }
     }

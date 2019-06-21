@@ -10,13 +10,13 @@ import manifold.api.type.IIncrementalCompileDriver;
 import org.jetbrains.jps.builders.java.JavaBuilderUtil;
 import org.jetbrains.jps.incremental.CompileContext;
 
-public class IjIncrementalCompileDriver implements IIncrementalCompileDriver
+public class IjResourceIncrementalCompileDriver implements IIncrementalCompileDriver
 {
   /** _Manifold_Temp_Main_.java file name -> compile driver */
-  static ThreadLocal<Map<String, IjIncrementalCompileDriver>> INSTANCES = new ThreadLocal<>();
-  public static IjIncrementalCompileDriver getInstance( int identityHash )
+  static ThreadLocal<Map<String, IjResourceIncrementalCompileDriver>> INSTANCES = new ThreadLocal<>();
+  public static IjResourceIncrementalCompileDriver getInstance( int identityHash )
   {
-    for( IjIncrementalCompileDriver driver: INSTANCES.get().values() )
+    for( IjResourceIncrementalCompileDriver driver: INSTANCES.get().values() )
     {
       if( System.identityHashCode( driver ) == identityHash )
       {
@@ -31,7 +31,7 @@ public class IjIncrementalCompileDriver implements IIncrementalCompileDriver
   private Map<File, Set<String>> _typesToFile;
 
 
-  public IjIncrementalCompileDriver( CompileContext context )
+  public IjResourceIncrementalCompileDriver( CompileContext context )
   {
     _context = context;
     _files = new ArrayList<>();
