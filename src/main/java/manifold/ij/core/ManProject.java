@@ -321,14 +321,15 @@ public class ManProject
     {
       options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings exceptions\" " + maybeGetProcessorPath();
     }
-    if( findJdkVersion() == 8 )
-    {
+// todo: -processorpath v. --process-module-path
+//    if( findJdkVersion() == 8 )
+//    {
       options = options.replace( "--processor-module-path", "-processorpath" );
-    }
-    else
-    {
-      options = options.replace( "-processorpath", "--processor-module-path" );
-    }
+//    }
+//    else
+//    {
+//      options = options.replace( "-processorpath", "--processor-module-path" );
+//    }
     javacOptions.ADDITIONAL_OPTIONS_STRING = options;
   }
 
@@ -371,7 +372,9 @@ public class ManProject
     }
     int jdkVersion = findJdkVersion();
     options = removeManifoldJarsFromProcessorPath( options,
-      jdkVersion == 8 ? "-processorpath" : "-processor-module-path" );
+    // todo: -processorpath v. --process-module-path
+    // jdkVersion == 8 ? "-processorpath" : "-processor-module-path"*/
+    "-processorpath" );
     javacOptions.ADDITIONAL_OPTIONS_STRING = options;
   }
 
@@ -398,7 +401,9 @@ public class ManProject
       {
         if( processorPath.length() == 0 )
         {
-          processorPath.append( " --processor-module-path " );
+          // todo: -processorpath v. --process-module-path
+          // processorPath.append( " --processor-module-path " );
+          processorPath.append( " -processorpath " );
         }
         else
         {
