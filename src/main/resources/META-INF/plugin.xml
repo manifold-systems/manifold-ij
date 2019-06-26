@@ -104,6 +104,8 @@ New Feature (experimental)<br>
 -- IDE type system (intellij plugin)<br>
 -- IDE injection site editing (intellij plugin)<br>
 -- Incremental compiler (JPS plugin)<br>
+Bug fix<br>
+- fix problem building non-maven/gradle projects involving --processor-module-path v. -processorpath<br>
     ]]>
   </change-notes>
   
