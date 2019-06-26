@@ -4,17 +4,18 @@
   <description>
     <![CDATA[
 <h2><a href="#what-is-manifold" id="what-is-manifold">What is Manifold?</a></h2>
-<p><a href="http://manifold.systems">Manifold</a> re-energizes Java with powerful features like Type-safe Metaprogramming, Structural Typing, and Extension Methods.
-Simply add the Manifold jar to your project and begin taking advantage of it.</p>
+<p><a href="http://manifold.systems">Manifold</a> supplements Java with useful features like Type-safe Metaprogramming, Structural
+Typing, and Extension Methods. Simply add the Manifold jar to your project and begin taking advantage of it.</p>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
-<h3><a href="#meta-programming" id="meta-programming"><a href="http://manifold.systems/docs.html#manifold-in-a-nutshell">Meta-programming</a></a></h3>
-<p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as GraphQL, JSON Schema, YAML, and Javascript. Remove the code gen step in your build process.</p>
+<h3><a href="#meta-programming" id="meta-programming"><a href="http://manifold.systems/docs.html">Meta-programming</a></a></h3>
+<p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as <strong>GraphQL</strong>, <strong>JSON Schema</strong>
+and <strong>YAML</strong>. Remove the code gen step in your build process. <a href="http://manifold.systems/images/graphql.mp4">Check it out!</a></p>
 <pre><code class="java">// Use your User.json schema file directly as a type, no code gen!
 User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&quot;)
   .withGender(male)
   .withDob(LocalDate.of(1987, 6, 15))
   .build();
-User.request(&quot;htt://api.example.com/users&quot;).postOne(user);
+User.request(&quot;http://api.example.com/users&quot;).postOne(user);
 </code></pre>
 <h3><a href="#extensions" id="extensions"><a href="http://manifold.systems/docs.html#the-extension-manifold">Extensions</a></a></h3>
 <p>Add extension methods to existing Java classes, even String, List, and File. Eliminate boilerplate code. <a href="http://manifold.systems/images/ExtensionMethod.mp4">Check it out!</a></p>
@@ -22,7 +23,7 @@ User.request(&quot;htt://api.example.com/users&quot;).postOne(user);
 greeting.myMethod(); // Add your own methods to String!
 </code></pre>
 <h3><a href="#structural-typing" id="structural-typing"><a href="http://manifold.systems/docs.html#structural-interfaces">Structural Typing</a></a></h3>
-<p>Unify disparate APIs. Bridge software components you do not control. Access maps through type-safe interfaces.</p>
+<p>Unify disparate APIs. Bridge software components you do not control. Access maps through type-safe interfaces. <a href="http://manifold.systems/images/structural%20typing.mp4">Check it out!</a></p>
 <pre><code class="java">Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();
 MyThingInterface thing = (MyThingInterface) map; // O_o
 thing.setFoo(new Foo());
@@ -30,22 +31,22 @@ Foo foo = thing.getFoo();
 out.println(thing.getClass()); // prints &quot;java.util.HashMap&quot;
 </code></pre>
 <h3><a href="#type-safe-reflection" id="type-safe-reflection"><a href="http://manifold.systems/docs.html#type-safe-reflection">Type-safe Reflection</a></a></h3>
-<p>Access private features with <b>@Jailbreak</b> to avoid the drudgery and vulnerability of Java reflection.</p>
+<p>Access private features with <b>@Jailbreak</b> to avoid the drudgery and vulnerability of Java reflection. <a href="http://manifold.systems/images/jailbreak.mp4">Check it out!</a></p>
 <pre><code class="java">@Jailbreak Foo foo = new Foo();
 // Direct, *type-safe* access to *all* foo's members
 foo.privateMethod(x, y, z);
 foo.privateField = value;
 </code></pre>
 <h3><a href="#checked-exception-suppression" id="checked-exception-suppression"><a href="http://manifold.systems/docs.html#checked-exception-suppression">Checked Exception Suppression</a></a></h3>
-<p>Simply add the <code>exceptions</code> plugin argument: <code>-Xplugin:Manifold strings</code><em><code>exceptions</code></em>. Now checked exceptions
-behave like unchecked exceptions!  No more compiler errors, no more boilerplate <code>try</code>/<code>catch</code> nonsense.</p>
+<p>You now have an option to make checked exceptions behave like unchecked exceptions!  No more unintended exception
+swallowing, no more boilerplate <code>try</code>/<code>catch</code>/<code>wrap</code>/<code>rethrow</code> nonsense.</p>
 <pre><code class="java">List&lt;String&gt; strings = ...;
 List&lt;URL&gt; urls = list
   .map(URL::new) // No need to handle the MalformedURLException!
   .collect(Collectors.toList());
 </code></pre>
 <h3><a href="#string-templates-aka-string-interpolation" id="string-templates-aka-string-interpolation"><a href="http://manifold.systems/docs.html#templating">String Templates</a> (aka String Interpolation)</a></h3>
-<p>Embed variables and expressions in String literals, no more clunky string concat!</p>
+<p>Embed variables and expressions in String literals, no more clunky string concat! <a href="http://manifold.systems/images/string_interpolation.mp4">Check it out!</a></p>
 <pre><code class="java">int hour = 15;
 // Simple variable access with '$'
 String result = &quot;The hour is $hour&quot;; // Yes!!!
@@ -53,11 +54,12 @@ String result = &quot;The hour is $hour&quot;; // Yes!!!
 result = &quot;It is ${hour &gt; 12 ? hour-12 : hour} o'clock&quot;;
 </code></pre>
 <h3><a href="#template-files-with-mantl" id="template-files-with-mantl"><a href="http://manifold.systems/manifold-templates.html">Template Files with <em>ManTL</em></a></a></h3>
-<p>Author template files with the full expressive power of Java, use your templates directly in your code as types.</p>
+<p>Author template files with the full expressive power of Java, use your templates directly in your code as types.
+Supports type-safe inclusion of other templates, shared layouts, and more. <a href="http://manifold.systems/images/mantl.mp4">Check it out!</a></p>
 <pre><code class="java">List&lt;User&gt; users = ...;
 String content = abc.example.UserSample.render(users);
 </code></pre>
-<p>A tempate file <code>abc/example/UserSample.html.mtl</code></p>
+<p>A template file <code>abc/example/UserSample.html.mtl</code></p>
 <pre><code class="html">&lt;%@ import java.util.List %&gt;
 &lt;%@ import com.example.User %&gt;
 &lt;%@ params(List&lt;User&gt; users) %&gt;
@@ -90,13 +92,19 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
   <!-- please see http://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
   <idea-version since-build="This value is patched by the build script"/>
 
+  <product-descriptor code="PMANIFOLD" release-date="20190625" release-version="20191"/>
+
   <change-notes>
     <![CDATA[
-Bug fixes (official release) <br>
-- Shade third-party packages used in `manifold-all` to avoid package conflicts with JPMS projects <br>
-- Fix issues stemming from use of `-processorpath` v. `--processor-module-path` <br>
-- Final release preparations for JetBrains Marketplace <br>
-     ]]>
+New Feature (experimental)<br>
+- Type-safely embed Manifold-supported languages directly in Java source<br>
+- Languages include GraphQL, JSON, YAML, Templates, Javascript, etc.<br>
+- Supports complete development environment:<br>
+-- Compiler (javac plugin)<br>
+-- IDE type system (intellij plugin)<br>
+-- IDE injection site editing (intellij plugin)<br>
+-- Incremental compiler (JPS plugin)<br>
+    ]]>
   </change-notes>
   
   <actions>

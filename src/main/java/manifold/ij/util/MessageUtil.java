@@ -62,6 +62,8 @@ public final class MessageUtil
     JBPopupFactory popupFactory = JBPopupFactory.getInstance();
     popupFactory.createHtmlTextBalloonBuilder( message, messageType, new PluginManagerMain.MyHyperlinkListener() )
       .setCloseButtonEnabled( true )
+      .setShowCallout( false )
+      .setDialogMode( true )
       .createBalloon()
       .show( getPosition( project, placement ), Balloon.Position.atRight );
 

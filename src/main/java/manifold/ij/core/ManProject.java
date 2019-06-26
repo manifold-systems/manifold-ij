@@ -22,6 +22,7 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
+import com.intellij.util.PlatformUtils;
 import com.intellij.util.messages.MessageBusConnection;
 import java.io.File;
 import java.net.MalformedURLException;
@@ -52,7 +53,9 @@ import manifold.ij.extensions.ModuleClasspathListener;
 import manifold.ij.extensions.ModuleRefreshListener;
 import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
+import manifold.ij.license.CheckLicense;
 import manifold.ij.psi.ManLightMethodBuilder;
+import manifold.ij.util.MessageUtil;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LockingLazyVar;
 import manifold.util.concurrent.LocklessLazyVar;
@@ -196,6 +199,9 @@ public class ManProject
   private void init()
   {
     _manInUse = ManLibraryChecker.instance().isUsingManifoldJars( _ijProject );
+
+    licenseCheck();
+
     if( !_manInUse )
     {
       removeCompilerArgs();
@@ -209,6 +215,25 @@ public class ManProject
     _rootModules = assignRootModuleLazy();
     addCompilerArgs(); // in case manifold jar was added we might need to update compiler args
     ManLibraryChecker.instance().warnIfManifoldJarsAreOld( getNativeProject() );
+  }
+
+  private void licenseCheck()
+  {
+    if( _manInUse )
+    {
+      if( PlatformUtils.isIdeaUltimate() && //todo: remove this check once Community IJ supports marketplace (2019.2)
+          !CheckLicense.isLicensed() &&
+          !ApplicationManager.getApplication().isUnitTestMode() )
+      {
+        _manInUse = false;
+        ApplicationManager.getApplication().invokeLater( () ->
+          MessageUtil.showWarning( _ijProject, MessageUtil.Placement.CENTER,
+            "Your copy of the <b>Manifold</b> plugin is not licensed or your license has expired.<br>" +
+            "For uninterrupted use of the plugin please visit the " +
+            "<a href=\"https://plugins.jetbrains.com/plugin/10057-manifold\">JetBrains Marketplace</a> to<br>" +
+            "directly create or update your Manifold plugin subscription." ) );
+      }
+    }
   }
 
   @NotNull
