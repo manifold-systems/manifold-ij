@@ -10,7 +10,6 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiComment;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
@@ -37,7 +36,7 @@ import manifold.api.host.RefreshRequest;
 import manifold.api.type.ITypeManifold;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
-import manifold.internal.javac.CommentProcessor;
+import manifold.internal.javac.FragmentProcessor;
 import manifold.util.cache.FqnCache;
 import manifold.util.cache.FqnCacheNode;
 import manifold.util.cache.IllegalTypeNameException;
@@ -126,11 +125,11 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       else
       {
         PsiElement elem = container.getElement();
-        if( !(elem instanceof PsiComment) )
+        if( !(elem instanceof PsiFileFragment) )
         {
           return true;
         }
-        CommentProcessor.Fragment fragment = CommentProcessor.instance().parseFragment( 0, elem.getText(), ManCommentFragmentInjector.makeStyle( (PsiComment)elem ) );
+        FragmentProcessor.Fragment fragment = FragmentProcessor.instance().parseFragment( 0, elem.getText(), ((PsiFileFragment)elem).getStyle() );
         if( fragment == null || !fragment.getName().equals( file.getBaseName() ) || !fragment.getExt().equalsIgnoreCase( file.getExtension() ) )
         {
           return true;

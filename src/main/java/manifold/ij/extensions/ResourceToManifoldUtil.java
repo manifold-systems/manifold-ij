@@ -50,7 +50,6 @@ import manifold.api.type.TypeReference;
 import manifold.ext.IExtensionClassProducer;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
-import manifold.ij.extensions.ManDefaultASTFactoryImpl.ManPsiCommentImpl;
 import manifold.ij.fs.IjFile;
 import manifold.ij.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
@@ -212,10 +211,10 @@ public class ResourceToManifoldUtil
     }
     PsiElement fileContext = FileContextUtil.getFileContext( containingFile );
     IFile file;
-    if( fileContext instanceof ManPsiCommentImpl )
+    if( fileContext instanceof PsiFileFragment )
     {
       // account for fragments
-      file = ((ManPsiCommentImpl)fileContext).getFragment();
+      file = ((PsiFileFragment)fileContext).getFragment();
     }
     else
     {

@@ -4,7 +4,12 @@ import com.intellij.codeInsight.highlighting.PairedBraceMatcherAdapter;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageAnnotators;
 import com.intellij.lang.LanguageBraceMatching;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.psi.impl.java.stubs.JavaLiteralExpressionElementType;
+import com.intellij.psi.impl.java.stubs.JavaStubElementTypes;
+import com.intellij.psi.tree.IElementType;
+import manifold.ij.extensions.ManJavaLiteralExpressionElementType;
 import manifold.ij.extensions.ManifoldPsiClassAnnotator;
 import manifold.ij.template.ManTemplateBraceMatcher;
 import manifold.ij.template.ManTemplateLanguage;
@@ -13,6 +18,7 @@ import manifold.internal.runtime.Bootstrap;
 import manifold.util.ReflectUtil;
 
 /**
+ *
  */
 public class ManApplicationComponent implements ApplicationComponent
 {
@@ -22,6 +28,8 @@ public class ManApplicationComponent implements ApplicationComponent
     registerAnnotatorWithAllLanguages();
 
     turnOnManifoldRuntimeSupport();
+
+    overrideJavaStringLiterals();
   }
 
   private void turnOnManifoldRuntimeSupport()
@@ -31,6 +39,27 @@ public class ManApplicationComponent implements ApplicationComponent
       // Manifold runtime needed to support DarkJ usage to support older versions of IJ
       Bootstrap.init();
     }
+  }
+
+  /**
+   * Override Java String literals to handle fragments
+   */
+  private void overrideJavaStringLiterals()
+  {
+    ManJavaLiteralExpressionElementType override = new ManJavaLiteralExpressionElementType();
+    ReflectUtil.field( JavaStubElementTypes.class, "LITERAL_EXPRESSION" ).setStatic( override );
+
+    ApplicationManager.getApplication().runReadAction( () -> {
+      IElementType[] registry = (IElementType[])ReflectUtil.field( IElementType.class, "ourRegistry" ).getStatic();
+      for( int i = 0; i < registry.length; i++ )
+      {
+        if( registry[i] instanceof JavaLiteralExpressionElementType )
+        {
+          // ensure the original JavaLiteralExpressionElementType is replaced with ours
+          registry[i] = override;
+        }
+      }
+    } );
   }
 
   @Override

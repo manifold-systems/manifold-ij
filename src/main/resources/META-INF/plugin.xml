@@ -108,7 +108,9 @@ Bug fix<br>
 - fix problem building non-maven/gradle projects involving --processor-module-path v. -processorpath<br>
     ]]>
   </change-notes>
-  
+
+<!--  <depends>com.intellij.modules.java</depends>-->
+
   <actions>
     <group id="Manifold.New">
       <action id="Manifold.NewExtensionClass" class="manifold.ij.actions.CreateExtensionMethodsClassAction"/>
@@ -186,6 +188,7 @@ Bug fix<br>
     <resolveScopeEnlarger implementation="manifold.ij.extensions.ManResolveScopeProvider" order="first"/>
     <elementDescriptionProvider implementation="manifold.ij.extensions.ManElementDescriptionProvider"/>
     <languageInjector implementation="manifold.ij.extensions.ManCommentFragmentInjector" order="first"/>
+    <languageInjector implementation="manifold.ij.extensions.ManStringFragmentInjector" order="first"/>
     <languageInjector implementation="manifold.ij.extensions.ManStringLiteralTemplateInjector" order="first"/>
     <implicitUsageProvider implementation="manifold.ij.extensions.ManStringLiteralTemplateUsageProvider"/>
     <targetElementEvaluator language="TEXT" implementationClass="manifold.ij.extensions.ManTextElementEvaluator"/>

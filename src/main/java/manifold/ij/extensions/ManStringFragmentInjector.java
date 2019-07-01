@@ -8,16 +8,16 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.InjectedLanguagePlaces;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.LanguageInjector;
-import com.intellij.psi.PsiComment;
 import com.intellij.psi.PsiLanguageInjectionHost;
-import com.intellij.psi.javadoc.PsiDocComment;
+import com.intellij.psi.impl.source.tree.java.PsiLiteralExpressionImpl;
+import com.intellij.psi.tree.IElementType;
 import manifold.ij.core.ManProject;
 import manifold.internal.javac.FragmentProcessor;
 import manifold.internal.javac.HostKind;
 import org.jetbrains.annotations.NotNull;
 
 
-public class ManCommentFragmentInjector implements LanguageInjector
+public class ManStringFragmentInjector implements LanguageInjector
 {
   @Override
   public void getLanguagesToInject( @NotNull PsiLanguageInjectionHost host, @NotNull InjectedLanguagePlaces injectionPlacesRegistrar )
@@ -27,15 +27,15 @@ public class ManCommentFragmentInjector implements LanguageInjector
       return;
     }
 
-    PsiComment psiComment = getJavaComment( host );
-    if( psiComment == null )
+    HostKind stringKind = getStringKind( host );
+    if( stringKind == null )
     {
       return;
     }
 
     String hostText = host.getText();
     FragmentProcessor fragmentProcessor = FragmentProcessor.instance();
-    FragmentProcessor.Fragment fragment = fragmentProcessor.parseFragment( 0, hostText, makeStyle( psiComment ) );
+    FragmentProcessor.Fragment fragment = fragmentProcessor.parseFragment( 0, hostText, stringKind );
     if( fragment != null )
     {
       Language language = getLanguageFromExt( fragment.getExt() );
@@ -52,30 +52,21 @@ public class ManCommentFragmentInjector implements LanguageInjector
     return LanguageUtil.getFileTypeLanguage( FileTypeManager.getInstance().getFileTypeByExtension( ext ) );
   }
 
-  public static HostKind makeStyle( PsiComment psiComment )
-  {
-    if( psiComment instanceof PsiDocComment )
-    {
-      return HostKind.JAVADOC_COMMENT;
-    }
-    if( psiComment.getTokenType() == JavaTokenType.C_STYLE_COMMENT )
-    {
-      return HostKind.BLOCK_COMMENT;
-    }
-    if( psiComment.getTokenType() == JavaTokenType.END_OF_LINE_COMMENT )
-    {
-      return HostKind.LINE_COMMENT;
-    }
-    throw new IllegalStateException( "Unexpected comment type: " + psiComment.getTokenType() );
-  }
-
-  private PsiComment getJavaComment( @NotNull PsiLanguageInjectionHost host )
+  private HostKind getStringKind( @NotNull PsiLanguageInjectionHost host )
   {
     // Only applies to Java string literal expression
     if( host.getLanguage().isKindOf( JavaLanguage.INSTANCE ) &&
-        host instanceof PsiComment )
+        host instanceof PsiLiteralExpressionImpl )
     {
-      return (PsiComment)host;
+      IElementType type = ((PsiLiteralExpressionImpl)host).getLiteralElementType();
+      if( type == JavaTokenType.STRING_LITERAL )
+      {
+        return HostKind.DOUBLE_QUOTE_LITERAL;
+      }
+      else if( type == JavaTokenType.RAW_STRING_LITERAL )
+      {
+        return HostKind.BACKTICK_LITERAL;
+      }
     }
     return null;
   }

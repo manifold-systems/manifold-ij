@@ -28,7 +28,6 @@ import javax.tools.DiagnosticCollector;
 import manifold.api.fs.IFile;
 import manifold.api.fs.IFileFragment;
 import manifold.ij.core.ManModule;
-import manifold.ij.extensions.ManDefaultASTFactoryImpl.ManPsiCommentImpl;
 import manifold.ij.fs.IjFile;
 
 public class ManifoldPsiClass extends LightClass
@@ -85,7 +84,7 @@ public class ManifoldPsiClass extends LightClass
       if( file instanceof IFileFragment )
       {
         Object container = ((IFileFragment)file).getContainer();
-        if( !(container instanceof ManPsiCommentImpl) )
+        if( !(container instanceof PsiFileFragment) )
         {
           continue;
         }
@@ -95,7 +94,7 @@ public class ManifoldPsiClass extends LightClass
         if( psiFile != null )
         {
           PsiElement elem = psiFile.findElementAt( ((IFileFragment)file).getOffset() );
-          while( elem != null && !(elem instanceof PsiComment) )
+          while( elem != null && !(elem instanceof PsiFileFragment) )
           {
             elem = elem.getParent();
           }
