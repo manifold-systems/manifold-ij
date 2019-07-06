@@ -9,6 +9,7 @@ import com.intellij.lang.impl.PsiBuilderFactoryImpl;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.lexer.Lexer;
 import com.intellij.openapi.project.Project;
+import manifold.ij.core.ManProject;
 import manifold.util.Stack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,6 +51,11 @@ public class ManPsiBuilderFactoryImpl extends PsiBuilderFactoryImpl
   @Override
   public PsiBuilder createBuilder( @NotNull Project project, @NotNull ASTNode chameleon, @Nullable Lexer lexer, @NotNull Language lang, @NotNull CharSequence seq )
   {
+    if( !ManProject.isManifoldInUse( project ) )
+    {
+      return super.createBuilder( project, chameleon, lexer, lang, seq );
+    }
+
     pushNode( chameleon );
     final ParserDefinition parserDefinition = LanguageParserDefinitions.INSTANCE.forLanguage( lang );
     return new ManPsiBuilderImpl( project, parserDefinition, lexer != null ? lexer : createLexer( project, lang ), chameleon, seq );
