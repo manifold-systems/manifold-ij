@@ -88,7 +88,7 @@ intellij {
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA 192.5281.24'
   pluginName project.name
   version getIjVersion() // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
-  plugins = [/*'java',*/ 'com.intellij.lang.jsgraphql:2.1.0'] //include PsiViewer & GraphQL JS in sandbox
+  plugins = [/*'java',*/ 'com.intellij.lang.jsgraphql:2.2.0'] //include PsiViewer & GraphQL JS in sandbox
 }
 
 runIde {
