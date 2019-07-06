@@ -221,7 +221,8 @@ public class ManProject
   {
     if( _manInUse )
     {
-      if( PlatformUtils.isIdeaUltimate() && //todo: remove this check once Community IJ supports marketplace (2019.2)
+      if( PlatformUtils.isIdeaUltimate() && // only apply license to Ultimate
+          !ApplicationManager.getApplication().isEAP() && // only apply license to official releases
           !CheckLicense.isLicensed() &&
           !ApplicationManager.getApplication().isUnitTestMode() )
       {
