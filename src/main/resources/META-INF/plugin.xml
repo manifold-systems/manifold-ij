@@ -96,16 +96,32 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-New Feature (experimental)<br>
-- Type-safely embed Manifold-supported languages directly in Java source<br>
-- Languages include GraphQL, JSON, YAML, Templates, Javascript, etc.<br>
-- Supports complete development environment:<br>
--- Compiler (javac plugin)<br>
--- IDE type system (intellij plugin)<br>
--- IDE injection site editing (intellij plugin)<br>
--- Incremental compiler (JPS plugin)<br>
-Bug fix<br>
-- fix problem building non-maven/gradle projects involving --processor-module-path v. -processorpath<br>
+Manifold <b>core</b> change <br>
+- support a fragment as an r-value embedded in a Java String literal a la F# type provider <br>
+- support Manifold fragments values in Java 13 text blocks <br>
+- this change is part of the larger "file fragment" set of changes supporting fragments in comments as type declarations and in String literals as values <br>
+<br>
+Manifold <b>JSON</b> changes <br>
+- add fromSource() method for JSON/YAML types to enable quick usage of by-example JSON/YAML resource data e.g., <br>
+Person person = Person.fromSource(); // Use the data in Preson.json directly and type-safely from the inferred type <br>
+- enable JSON/YAML fragments e.g, as type-safe embedded comments, use fromSource() to gain type-safe access to data <br>
+<br>
+Manifold <b>Javascript</b> changes <br>
+- replace nashorn dependency with rhino <br>
+- remove ScriptEngine usage, instead go straight to rhino <br>
+- using a shared global scope per thread to avoid expensive js initialization <br>
+- each program/class/template has its own scope which in turn delegates to the shared scope <br>
+- support javascript type-safely embedded in a string literal via file fragments e.g., <br>
+int value = (int) "[>.js<] 3 + 4 + 5"; <br>
+- this is more a proof of concept to demonstrate: <br>
+1. the relative simplicity to enable any manifold resource for literal embedding <br>
+2. GraphQL is not the only manifold that can be embedded in a literal <br>
+3. to set the stage for more languages such a R <br>
+4. to get the general feature in place and ready for java 13 where multiline literals allow embedding of larger scripts (intellij's injection editing makes this quite attractive) <br>
+<br>
+Bug <b>fixes</b>: <br>
+- Fix https://github.com/manifold-systems/manifold/issues/102 <br>
+- other minor fixes and improvements <br>
     ]]>
   </change-notes>
 
