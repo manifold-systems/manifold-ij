@@ -63,9 +63,9 @@ public class ManStringFragmentInjector implements LanguageInjector
       {
         return HostKind.DOUBLE_QUOTE_LITERAL;
       }
-      else if( type == JavaTokenType.RAW_STRING_LITERAL )
+      else if( "TEXT_BLOCK_LITERAL".equals( type.toString() ) )
       {
-        return HostKind.BACKTICK_LITERAL;
+        return HostKind.TEXT_BLOCK_LITERAL;
       }
     }
     return null;

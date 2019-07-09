@@ -57,7 +57,7 @@ public class ManPsiLiteralExpressionImpl extends PsiLiteralExpressionImpl
   public PsiType getType()
   {
     final IElementType type = getLiteralElementType();
-    if( type == JavaTokenType.STRING_LITERAL || type == JavaTokenType.RAW_STRING_LITERAL )
+    if( type == JavaTokenType.STRING_LITERAL || "TEXT_BLOCK_LITERAL".equals( type.toString() ) )
     {
       ASTNode token = getNode().getFirstChildNode();
       if( token instanceof ManPsiBuilderImpl.ManPsiStringLiteral )

@@ -1,6 +1,7 @@
 package manifold.ij.extensions;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
+import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerEx;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.PsiBuilderFactory;
 import com.intellij.openapi.application.ApplicationManager;
@@ -118,11 +119,14 @@ interface PsiFileFragment extends ASTNode, PsiElement
       () -> {
         try
         {
-          DaemonCodeAnalyzer.getInstance( getProject() ).restart( containingFile );
+          if( DaemonCodeAnalyzerEx.getInstance( getProject() ).isHighlightingAvailable( containingFile ) )
+          {
+            DaemonCodeAnalyzer.getInstance( getProject() ).restart( containingFile );
+          }
         }
         catch( PsiInvalidElementAccessException ieae )
         {
-          System.out.println( ieae );
+          ieae.printStackTrace();
         }
       } );
   }

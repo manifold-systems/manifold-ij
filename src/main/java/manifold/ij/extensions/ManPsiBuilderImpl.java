@@ -50,7 +50,7 @@ public class ManPsiBuilderImpl extends PsiBuilderImpl
   @Override
   protected TreeElement createLeaf( @NotNull IElementType type, int start, int end )
   {
-    if( type == JavaTokenType.STRING_LITERAL || type == JavaTokenType.RAW_STRING_LITERAL )
+    if( type == JavaTokenType.STRING_LITERAL || "TEXT_BLOCK_LITERAL".equals( type.toString() ) )
     {
       CharSequence text = ((CharTable)ReflectUtil.field( this, "myCharTable" ).get())
         .intern( getOriginalText(), start, end );
@@ -90,7 +90,7 @@ public class ManPsiBuilderImpl extends PsiBuilderImpl
     {
       return getTokenType() == JavaTokenType.STRING_LITERAL
              ? HostKind.DOUBLE_QUOTE_LITERAL
-             : HostKind.BACKTICK_LITERAL;
+             : HostKind.TEXT_BLOCK_LITERAL;
     }
   }
 }
