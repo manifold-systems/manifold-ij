@@ -7,9 +7,17 @@ import com.intellij.lang.ParserDefinition;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.impl.PsiBuilderFactoryImpl;
 import com.intellij.lang.java.JavaLanguage;
+import com.intellij.lang.java.lexer.JavaLexer;
 import com.intellij.lexer.Lexer;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.text.BlockSupport;
+import com.intellij.testFramework.LightVirtualFile;
 import manifold.ij.core.ManProject;
+import manifold.ij.util.FileUtil;
 import manifold.util.Stack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +32,7 @@ public class ManPsiBuilderFactoryImpl extends PsiBuilderFactoryImpl
     _buildingNodes = ThreadLocal.withInitial( Stack::new );
   }
 
-  private void pushNode( @NotNull ASTNode chameleon )
+  void pushNode( @NotNull ASTNode chameleon )
   {
     if( chameleon.getElementType().getLanguage() instanceof JavaLanguage )
     {
@@ -56,9 +64,25 @@ public class ManPsiBuilderFactoryImpl extends PsiBuilderFactoryImpl
       return super.createBuilder( project, chameleon, lexer, lang, seq );
     }
 
-    pushNode( chameleon );
     final ParserDefinition parserDefinition = LanguageParserDefinitions.INSTANCE.forLanguage( lang );
-    return new ManPsiBuilderImpl( project, parserDefinition, lexer != null ? lexer : createLexer( project, lang ), chameleon, seq );
+
+    if( lexer instanceof JavaLexer )
+    {
+      // Replace lexer to handle Preprocessor
+      lexer = new ManJavaLexer( (JavaLexer)lexer );
+    }
+    else if( lexer == null )
+    {
+      lexer = createLexer( project, lang );
+    }
+
+    if( lexer instanceof ManJavaLexer )
+    {
+      // For preprocessor
+      ((ManJavaLexer)lexer).setChameleon( chameleon );
+    }
+    
+    return new ManPsiBuilderImpl( project, parserDefinition, lexer, chameleon, seq );
   }
 
   @NotNull
@@ -67,5 +91,41 @@ public class ManPsiBuilderFactoryImpl extends PsiBuilderFactoryImpl
     final ParserDefinition parserDefinition = LanguageParserDefinitions.INSTANCE.forLanguage( lang );
     assert parserDefinition != null : "ParserDefinition absent for language: " + lang.getID();
     return parserDefinition.createLexer( project );
+  }
+
+  static PsiJavaFile getPsiFile( ASTNode chameleon )
+  {
+    PsiFile containingFile = null;
+    PsiElement psi = chameleon.getPsi();
+    if( psi != null )
+    {
+      if( psi instanceof PsiFile )
+      {
+        containingFile = (PsiFile)psi;
+      }
+      else if( psi.getContainingFile() != null )
+      {
+        containingFile = psi.getContainingFile();
+        if( containingFile.getVirtualFile() == null || containingFile.getVirtualFile() instanceof LightVirtualFile )
+        {
+          containingFile = null;
+        }
+      }
+    }
+
+    if( containingFile == null )
+    {
+      ASTNode originalNode = Pair.getFirst( chameleon.getUserData( BlockSupport.TREE_TO_BE_REPARSED ) );
+      if( originalNode == null )
+      {
+        return null;
+      }
+
+      containingFile = originalNode.getPsi().getContainingFile();
+    }
+
+    return containingFile instanceof PsiJavaFile && FileUtil.toVirtualFile( containingFile ) != null
+           ? (PsiJavaFile)containingFile
+           : null;
   }
 }

@@ -1,9 +1,11 @@
 package manifold.ij.core;
 
+import com.intellij.AppTopics;
 import com.intellij.ProjectTopics;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilerPaths;
+import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.module.ModuleUtil;
@@ -293,6 +295,10 @@ public class ManProject
 
     addModuleRefreshListener();
     addModuleClasspathListener();
+    addBuildPropertiesFilePersistenceListener();
+
+    EditorFactory.getInstance().getEventMulticaster().addDocumentListener(
+      new ManPreprocessorDocumentListener( _ijProject ), _ijProject );
 
     if( isManifoldInUse() )
     {
@@ -358,7 +364,7 @@ public class ManProject
         if( end > index )
         {
           StringBuilder sb = new StringBuilder( options );
-          sb.delete( index, end+1 );
+          sb.delete( index, end + 1 );
           options = sb.toString();
         }
         else
@@ -373,9 +379,9 @@ public class ManProject
     }
     int jdkVersion = findJdkVersion();
     options = removeManifoldJarsFromProcessorPath( options,
-    // todo: -processorpath v. --process-module-path
-    // jdkVersion == 8 ? "-processorpath" : "-processor-module-path"*/
-    "-processorpath" );
+      // todo: -processorpath v. --process-module-path
+      // jdkVersion == 8 ? "-processorpath" : "-processor-module-path"*/
+      "-processorpath" );
     javacOptions.ADDITIONAL_OPTIONS_STRING = options;
   }
 
@@ -426,7 +432,7 @@ public class ManProject
     }
 
     int iNextArg = options.indexOf( " -", index );
-    int iEnd = iNextArg >= 0 ?iNextArg : options.length();
+    int iEnd = iNextArg >= 0 ? iNextArg : options.length();
     int iStart = index + processorPathArg.length() + 1;
     String processorPaths = options.substring( iStart, iEnd );
     if( !processorPaths.contains( "manifold" ) )
@@ -449,7 +455,7 @@ public class ManProject
 
     // remove manifold jars from -processorpath
     StringBuilder newOptions = new StringBuilder()
-     .append( options, 0, iStart );
+      .append( options, 0, iStart );
     Arrays.stream( nonManifoldPaths )
       .map( String::trim )
       .forEach( path -> newOptions.append( path ).append( File.pathSeparatorChar ) );
@@ -497,10 +503,16 @@ public class ManProject
     }
   }
 
+  private void addBuildPropertiesFilePersistenceListener()
+  {
+    _permanentProjectConnection.subscribe( AppTopics.FILE_DOCUMENT_SYNC,
+      new BuildPropertiesFilePersistenceListener( _ijProject ) );
+  }
+
   private void addModuleClasspathListener()
   {
-    ModuleClasspathListener moduleClasspathListener = new ModuleClasspathListener();
-    _permanentProjectConnection.subscribe( ProjectTopics.PROJECT_ROOTS, moduleClasspathListener );
+    _permanentProjectConnection.subscribe( ProjectTopics.PROJECT_ROOTS,
+      new ModuleClasspathListener() );
   }
 
   void projectClosed()

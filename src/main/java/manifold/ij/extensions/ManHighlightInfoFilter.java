@@ -11,6 +11,7 @@ import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.PsiCapturedWildcardType;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiComment;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiFile;
@@ -110,6 +111,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if( filterUnclosedComment( hi, firstElem ) )
+    {
+      return false;
+    }
+
     if( !is2019_1_orGreater() )
     {
       if( isInvalidStaticMethodOnInterface( hi ) )
@@ -148,6 +154,14 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     return true;
+  }
+
+  private boolean filterUnclosedComment( HighlightInfo hi, PsiElement firstElem )
+  {
+    // Preprocessor directives mask away text source in the lexer as comment tokens, obviously these will not
+    // be closed with a normal comment terminator such as '*/'
+    return firstElem instanceof PsiComment &&
+           firstElem.getText().startsWith( "#" );
   }
 
   private boolean filterUnhandledCheckedExceptions( @NotNull HighlightInfo hi, @Nullable PsiFile file )

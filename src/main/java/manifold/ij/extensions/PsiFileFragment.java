@@ -5,12 +5,10 @@ import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerEx;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.PsiBuilderFactory;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.util.Pair;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiInvalidElementAccessException;
-import com.intellij.psi.text.BlockSupport;
-import com.intellij.testFramework.LightVirtualFile;
+import com.intellij.psi.PsiJavaFile;
 import java.util.Set;
 import manifold.api.fs.IFileFragment;
 import manifold.api.fs.def.FileFragmentImpl;
@@ -45,36 +43,8 @@ interface PsiFileFragment extends ASTNode, PsiElement
       return;
     }
 
-    PsiFile containingFile = null;
-    PsiElement psi = buildingNode.getPsi();
-    if( psi != null )
-    {
-      if( psi instanceof PsiFile )
-      {
-        containingFile = (PsiFile)psi;
-      }
-      else if( psi.getContainingFile() != null )
-      {
-        containingFile = psi.getContainingFile();
-        if( containingFile.getVirtualFile() == null || containingFile.getVirtualFile() instanceof LightVirtualFile )
-        {
-          containingFile = null;
-        }
-      }
-    }
-
+    PsiJavaFile containingFile = ManPsiBuilderFactoryImpl.getPsiFile( buildingNode );
     if( containingFile == null )
-    {
-      ASTNode originalNode = Pair.getFirst( buildingNode.getUserData( BlockSupport.TREE_TO_BE_REPARSED ) );
-      if( originalNode == null )
-      {
-        return;
-      }
-
-      containingFile = originalNode.getPsi().getContainingFile();
-    }
-
-    if( containingFile == null || FileUtil.toVirtualFile( containingFile ) == null )
     {
       return;
     }

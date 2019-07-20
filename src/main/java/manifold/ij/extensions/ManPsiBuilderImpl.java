@@ -36,6 +36,7 @@ public class ManPsiBuilderImpl extends PsiBuilderImpl
   @Override
   public ASTNode getTreeBuilt()
   {
+    ((ManPsiBuilderFactoryImpl)PsiBuilderFactory.getInstance()).pushNode( _building );
     try
     {
       return super.getTreeBuilt();
