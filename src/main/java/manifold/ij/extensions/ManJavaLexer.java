@@ -3,7 +3,6 @@ package manifold.ij.extensions;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.java.lexer.JavaLexer;
 import com.intellij.lexer.LexerBase;
-import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.JavaTokenType;
@@ -11,26 +10,24 @@ import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.TokenType;
 import com.intellij.psi.impl.source.tree.JavaDocElementType;
 import com.intellij.psi.tree.IElementType;
-import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.text.CharArrayUtil;
-import com.intellij.util.text.CharSequenceHashingStrategy;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import manifold.ext.api.Jailbreak;
+import manifold.ij.util.ManVersionUtil;
 import manifold.preprocessor.PreprocessorParser;
 import manifold.preprocessor.definitions.Definitions;
 import manifold.preprocessor.statement.FileStatement;
 import manifold.preprocessor.statement.IfStatement;
 import manifold.preprocessor.statement.SourceStatement;
 import manifold.preprocessor.statement.Statement;
+import manifold.util.ReflectUtil;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 
-import static com.intellij.psi.PsiKeyword.*;
 import static manifold.preprocessor.TokenType.Error;
 import static manifold.preprocessor.TokenType.*;
 
@@ -39,32 +36,10 @@ import static manifold.preprocessor.TokenType.*;
  */
 public class ManJavaLexer extends LexerBase
 {
-  public static final Key<Definitions> PP_DEFINITIONS = Key.create( "preprocessor_definitions" );
-
-  private static final Set<String> KEYWORDS = ContainerUtil.newTroveSet(
-    ABSTRACT, BOOLEAN, BREAK, BYTE, CASE, CATCH, CHAR, CLASS, CONST, CONTINUE, DEFAULT, DO, DOUBLE, ELSE, EXTENDS, FINAL, FINALLY,
-    FLOAT, FOR, GOTO, IF, IMPLEMENTS, IMPORT, INSTANCEOF, INT, INTERFACE, LONG, NATIVE, NEW, PACKAGE, PRIVATE, PROTECTED, PUBLIC,
-    RETURN, SHORT, STATIC, STRICTFP, SUPER, SWITCH, SYNCHRONIZED, THIS, THROW, THROWS, TRANSIENT, TRY, VOID, VOLATILE, WHILE,
-    TRUE, FALSE, NULL );
-
-  private static final Set<CharSequence> JAVA9_KEYWORDS = ContainerUtil.newTroveSet(
-    CharSequenceHashingStrategy.CASE_SENSITIVE,
-    OPEN, MODULE, REQUIRES, EXPORTS, OPENS, USES, PROVIDES, TRANSITIVE, TO, WITH );
-
-  public static boolean isKeyword( String id, @NotNull LanguageLevel level )
-  {
-    return KEYWORDS.contains( id ) ||
-           level.isAtLeast( LanguageLevel.JDK_1_4 ) && ASSERT.equals( id ) ||
-           level.isAtLeast( LanguageLevel.JDK_1_5 ) && ENUM.equals( id );
-  }
-
-  public static boolean isSoftKeyword( CharSequence id, @NotNull LanguageLevel level )
-  {
-    return id != null &&
-           (level.isAtLeast( LanguageLevel.JDK_1_9 ) && JAVA9_KEYWORDS.contains( id ) ||
-            level.isAtLeast( LanguageLevel.JDK_10 ) && VAR.contentEquals( id ));
-  }
-
+  private static final IElementType TEXT_BLOCK_LITERAL =
+    ManVersionUtil.is2019_2_orGreater()
+    ? (IElementType)ReflectUtil.field( JavaTokenType.class, "TEXT_BLOCK_LITERAL" ).getStatic()
+    : null;
 
   private final com.intellij.lang.java.lexer.@Jailbreak _JavaLexer myFlexLexer;
   private CharSequence myBuffer;
@@ -222,10 +197,24 @@ public class ManJavaLexer extends LexerBase
         }
         break;
 
-      case '"':
       case '\'':
-        myTokenType = c == '"' ? JavaTokenType.STRING_LITERAL : JavaTokenType.CHARACTER_LITERAL;
+        myTokenType = JavaTokenType.CHARACTER_LITERAL;
         myTokenEndOffset = getClosingQuote( myBufferIndex + 1, c );
+        break;
+
+      case '"':
+        if( TEXT_BLOCK_LITERAL != null && // non-null if IJ >= 2019.2
+            myBufferIndex + 2 < myBufferEndOffset &&
+            charAt( myBufferIndex + 2 ) == '"' && charAt( myBufferIndex + 1 ) == '"' )
+        {
+          myTokenType = TEXT_BLOCK_LITERAL;
+          myTokenEndOffset = getTextBlockEnd( myBufferIndex + 2 );
+        }
+        else
+        {
+          myTokenType = JavaTokenType.STRING_LITERAL;
+          myTokenEndOffset = getClosingQuote( myBufferIndex + 1, c );
+        }
         break;
 
       case '`':
@@ -316,11 +305,11 @@ public class ManJavaLexer extends LexerBase
     {
       return -1;
     }
-    
+
     for( int i = 0; i < _visibleStmts.size(); i++ )
     {
       Statement stmt = _visibleStmts.get( i );
-      if( nestedIf && i == _visibleStmts.size()-1 )
+      if( nestedIf && i == _visibleStmts.size() - 1 )
       {
         assert stmt.getTokenEnd() == stmt.getTokenStart(); // the empty statement
         // a nested `#if` must match a real
@@ -454,6 +443,22 @@ public class ManJavaLexer extends LexerBase
     }
 
     return pos + 1;
+  }
+
+  private int getTextBlockEnd( int offset )
+  {
+    int pos = offset;
+
+    while( (pos = getClosingQuote( pos + 1, '"' )) < myBufferEndOffset )
+    {
+      if( pos + 1 < myBufferEndOffset && charAt( pos + 1 ) == '"' && charAt( pos ) == '"' )
+      {
+        pos += 2;
+        break;
+      }
+    }
+
+    return pos;
   }
 
   private int getClosingComment( int offset )
