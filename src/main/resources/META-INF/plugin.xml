@@ -96,32 +96,23 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Manifold <b>core</b> change <br>
-- support a fragment as an r-value embedded in a Java String literal a la F# type provider <br>
-- support Manifold fragments values in Java 13 text blocks <br>
-- this change is part of the larger "file fragment" set of changes supporting fragments in comments as type declarations and in String literals as values <br>
+Manifold now provides a fully integrated <b>Java Preprocessor</b>! <br>
+The Java Preprocessor is designed exclusively for <i>conditional compilation</i> of Java source code. It is directly
+integrated into the Java compiler via the Javac <i>Plugin</i> API. Unlike conventional preprocessors it does <i>not</i> incur
+separate build steps or additional file I/O, instead it directly contributes to the compilation pipeline.
 <br>
-Manifold <b>JSON</b> changes <br>
-- add fromSource() method for JSON/YAML types to enable quick usage of by-example JSON/YAML resource data e.g., <br>
-Person person = Person.fromSource(); // Use the data in Preson.json directly and type-safely from the inferred type <br>
-- enable JSON/YAML fragments e.g, as type-safe embedded comments, use fromSource() to gain type-safe access to data <br>
+<p><img src="http://manifold.systems/images/compilerflow.png" alt="echo method" width="60%" height="60%"/></p>
 <br>
-Manifold <b>Javascript</b> changes <br>
-- replace nashorn dependency with rhino <br>
-- remove ScriptEngine usage, instead go straight to rhino <br>
-- using a shared global scope per thread to avoid expensive js initialization <br>
-- each program/class/template has its own scope which in turn delegates to the shared scope <br>
-- support javascript type-safely embedded in a string literal via file fragments e.g., <br>
-int value = (int) "[>.js<] 3 + 4 + 5"; <br>
-- this is more a proof of concept to demonstrate: <br>
-1. the relative simplicity to enable any manifold resource for literal embedding <br>
-2. GraphQL is not the only manifold that can be embedded in a literal <br>
-3. to set the stage for more languages such a R <br>
-4. to get the general feature in place and ready for java 13 where multiline literals allow embedding of larger scripts (intellij's injection editing makes this quite attractive) <br>
+The preprocessor offers a simple and convenient way to support multiple build targets with a single codebase.  It
+provides advanced features such as tiered symbol definition via <i>build.properties</i> files, <i>-Akey[=value]</i> compiler
+arguments, and environmental symbols such as <i>JAVA_9_or_Later</i> and <i>JPMS_NAMED</i>.  The preprocessor is also fully
+integrated into IntelliJ IDEA using the Manifold plugin:<br>
+
+<p><img src="http://manifold.systems/images/preprocessor.png" alt="preprocessor" width="60%" height="60%"/></p>
+
 <br>
-Bug <b>fixes</b>: <br>
-- Fix https://github.com/manifold-systems/manifold/issues/102 <br>
-- other minor fixes and improvements <br>
+
+<p><a href="https://github.com/manifold-systems/manifold/blob/master/manifold-deps-parent/manifold-preprocessor/readme.md">Learn More</a></p>
     ]]>
   </change-notes>
 
