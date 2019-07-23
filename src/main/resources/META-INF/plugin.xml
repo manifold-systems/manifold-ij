@@ -96,7 +96,7 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Manifold now provides a fully integrated <b>Java Preprocessor</b>! <br>
+Manifold now provides a fully integrated <b>Java Preprocessor</b>. <br>
 The Java Preprocessor is designed exclusively for <i>conditional compilation</i> of Java source code. It is directly
 integrated into the Java compiler via the Javac <i>Plugin</i> API. Unlike conventional preprocessors it does <i>not</i> incur
 separate build steps or additional file I/O, instead it directly contributes to the compilation pipeline.
