@@ -1,13 +1,8 @@
 package manifold.ij.extensions;
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
-import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerEx;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.PsiBuilderFactory;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiInvalidElementAccessException;
 import com.intellij.psi.PsiJavaFile;
 import java.util.Set;
 import manifold.api.fs.IFileFragment;
@@ -16,6 +11,7 @@ import manifold.api.type.ITypeManifold;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.FileUtil;
+import manifold.ij.util.ReparseUtil;
 import manifold.internal.javac.FragmentProcessor;
 import manifold.internal.javac.HostKind;
 
@@ -25,6 +21,7 @@ import static manifold.api.type.ContributorKind.Supplemental;
 interface PsiFileFragment extends ASTNode, PsiElement
 {
   IFileFragment getFragment();
+
   void setFragment( IFileFragment fragment );
 
   HostKind getStyle();
@@ -79,26 +76,8 @@ interface PsiFileFragment extends ASTNode, PsiElement
       fragment.setContainer( this );
       deletedFragment( ManProject.manProjectFrom( containingFile.getProject() ), fragment );
       createdFragment( ManProject.manProjectFrom( containingFile.getProject() ), fragment );
-      rerunAnnotators( containingFile );
+      ReparseUtil.rerunAnnotators( containingFile );
     }
-  }
-
-  default void rerunAnnotators( PsiFile containingFile )
-  {
-    ApplicationManager.getApplication().invokeLater(
-      () -> {
-        try
-        {
-          if( DaemonCodeAnalyzerEx.getInstance( getProject() ).isHighlightingAvailable( containingFile ) )
-          {
-            DaemonCodeAnalyzer.getInstance( getProject() ).restart( containingFile );
-          }
-        }
-        catch( PsiInvalidElementAccessException ieae )
-        {
-          ieae.printStackTrace();
-        }
-      } );
   }
 
   default void createdFragment( ManProject project, IFileFragment file )

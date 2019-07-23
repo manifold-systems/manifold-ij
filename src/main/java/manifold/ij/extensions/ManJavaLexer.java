@@ -1,5 +1,6 @@
 package manifold.ij.extensions;
 
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.java.lexer.JavaLexer;
 import com.intellij.lexer.LexerBase;
@@ -16,8 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 import manifold.ext.api.Jailbreak;
 import manifold.ij.util.ManVersionUtil;
+import manifold.ij.util.ReparseUtil;
 import manifold.preprocessor.PreprocessorParser;
 import manifold.preprocessor.definitions.Definitions;
+import manifold.preprocessor.expression.Expression;
+import manifold.preprocessor.expression.ExpressionParser;
 import manifold.preprocessor.statement.FileStatement;
 import manifold.preprocessor.statement.IfStatement;
 import manifold.preprocessor.statement.SourceStatement;
@@ -28,7 +32,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 
-import static manifold.preprocessor.TokenType.Error;
 import static manifold.preprocessor.TokenType.*;
 
 /**
@@ -41,21 +44,24 @@ public class ManJavaLexer extends LexerBase
     ? (IElementType)ReflectUtil.field( JavaTokenType.class, "TEXT_BLOCK_LITERAL" ).getStatic()
     : null;
 
-  private final com.intellij.lang.java.lexer.@Jailbreak _JavaLexer myFlexLexer;
-  private CharSequence myBuffer;
-  private @Nullable
-  char[] myBufferArray;
-  private int myBufferIndex;
-  private int myBufferEndOffset;
-  private int myTokenEndOffset;  // positioned after the last symbol of the current token
-  private IElementType myTokenType;
+  private static final String MANIFOLD_PREPROCESSOR_DUMB_MODE = "manifold.preprocessor.dumb_mode";
+  private static final LocklessLazyVar<boolean[]> PREPROCESSOR_DUMB_MODE = LocklessLazyVar.make( () ->
+    new boolean[] {PropertiesComponent.getInstance().getBoolean( MANIFOLD_PREPROCESSOR_DUMB_MODE )} );
+
+  private final com.intellij.lang.java.lexer.@Jailbreak _JavaLexer _flexLexer;
+  private CharSequence _buffer;
+  private @Nullable char[] _bufferArray;
+  private int _bufferIndex;
+  private int _bufferEndOffset;
+  private int _tokenEndOffset;  // positioned after the last symbol of the current token
+  private IElementType _tokenType;
   private PsiJavaFile _psiFile;
   private final List<SourceStatement> _visibleStmts = new ArrayList<>();
   private final LocklessLazyVar<Definitions> _definitions = LocklessLazyVar.make( () -> {
     Definitions definitions = makeDefinitions();
     if( _psiFile != null )
     {
-      CharSequence text = myBuffer.length() < _psiFile.getTextLength() ? _psiFile.getText() : myBuffer;
+      CharSequence text = _buffer.length() < _psiFile.getTextLength() ? _psiFile.getText() : _buffer;
       if( StringUtil.contains( text, "#define" ) || StringUtil.contains( text, "#undef" ) )
       {
         FileStatement fileStmt = new PreprocessorParser( text, null ).parseFile();
@@ -65,6 +71,17 @@ public class ManJavaLexer extends LexerBase
     return definitions;
   } );
 
+  static boolean isDumbPreprocessorMode()
+  {
+    return PREPROCESSOR_DUMB_MODE.get()[0];
+  }
+  static void setDumbPreprocessorMode( boolean dumbMode )
+  {
+    PREPROCESSOR_DUMB_MODE.get()[0] = dumbMode;
+    PropertiesComponent.getInstance().setValue( MANIFOLD_PREPROCESSOR_DUMB_MODE, dumbMode );
+    ReparseUtil.reparseOpenJavaFilesForAllProjects();
+  }
+
   @NotNull
   private ManDefinitions makeDefinitions()
   {
@@ -73,12 +90,12 @@ public class ManJavaLexer extends LexerBase
 
   public ManJavaLexer( @NotNull LanguageLevel level )
   {
-    myFlexLexer = new com.intellij.lang.java.lexer.@Jailbreak _JavaLexer( level );
+    _flexLexer = new com.intellij.lang.java.lexer.@Jailbreak _JavaLexer( level );
   }
 
   public ManJavaLexer( @Jailbreak JavaLexer lexer )
   {
-    myFlexLexer = lexer.myFlexLexer;
+    _flexLexer = lexer.myFlexLexer;
   }
 
   public void setChameleon( ASTNode chameleon )
@@ -91,13 +108,13 @@ public class ManJavaLexer extends LexerBase
   {
     _visibleStmts.clear();
     _definitions.clear();
-    myBuffer = buffer;
-    myBufferArray = CharArrayUtil.fromSequenceWithoutCopying( buffer );
-    myBufferIndex = startOffset;
-    myBufferEndOffset = endOffset;
-    myTokenType = null;
-    myTokenEndOffset = startOffset;
-    myFlexLexer.reset( myBuffer, startOffset, endOffset, 0 );
+    _buffer = buffer;
+    _bufferArray = CharArrayUtil.fromSequenceWithoutCopying( buffer );
+    _bufferIndex = startOffset;
+    _bufferEndOffset = endOffset;
+    _tokenType = null;
+    _tokenEndOffset = startOffset;
+    _flexLexer.reset( _buffer, startOffset, endOffset, 0 );
   }
 
   @Override
@@ -110,45 +127,45 @@ public class ManJavaLexer extends LexerBase
   public final IElementType getTokenType()
   {
     locateToken();
-    return myTokenType;
+    return _tokenType;
   }
 
   @Override
   public final int getTokenStart()
   {
-    return myBufferIndex;
+    return _bufferIndex;
   }
 
   @Override
   public final int getTokenEnd()
   {
     locateToken();
-    return myTokenEndOffset;
+    return _tokenEndOffset;
   }
 
   @Override
   public final void advance()
   {
     locateToken();
-    myTokenType = null;
+    _tokenType = null;
   }
 
   private void locateToken()
   {
-    if( myTokenType != null )
+    if( _tokenType != null )
     {
       return;
     }
 
-    if( myTokenEndOffset == myBufferEndOffset )
+    if( _tokenEndOffset == _bufferEndOffset )
     {
-      myBufferIndex = myBufferEndOffset;
+      _bufferIndex = _bufferEndOffset;
       return;
     }
 
-    myBufferIndex = myTokenEndOffset;
+    _bufferIndex = _tokenEndOffset;
 
-    char c = charAt( myBufferIndex );
+    char c = charAt( _bufferIndex );
     switch( c )
     {
       case ' ':
@@ -156,38 +173,38 @@ public class ManJavaLexer extends LexerBase
       case '\n':
       case '\r':
       case '\f':
-        myTokenType = TokenType.WHITE_SPACE;
-        myTokenEndOffset = getWhitespaces( myBufferIndex + 1 );
+        _tokenType = TokenType.WHITE_SPACE;
+        _tokenEndOffset = getWhitespaces( _bufferIndex + 1 );
         break;
 
       case '/':
-        if( myBufferIndex + 1 >= myBufferEndOffset )
+        if( _bufferIndex + 1 >= _bufferEndOffset )
         {
-          myTokenType = JavaTokenType.DIV;
-          myTokenEndOffset = myBufferEndOffset;
+          _tokenType = JavaTokenType.DIV;
+          _tokenEndOffset = _bufferEndOffset;
         }
         else
         {
-          char nextChar = charAt( myBufferIndex + 1 );
+          char nextChar = charAt( _bufferIndex + 1 );
           if( nextChar == '/' )
           {
-            myTokenType = JavaTokenType.END_OF_LINE_COMMENT;
-            myTokenEndOffset = getLineTerminator( myBufferIndex + 2 );
+            _tokenType = JavaTokenType.END_OF_LINE_COMMENT;
+            _tokenEndOffset = getLineTerminator( _bufferIndex + 2 );
           }
           else if( nextChar == '*' )
           {
-            if( myBufferIndex + 2 >= myBufferEndOffset ||
-                (charAt( myBufferIndex + 2 )) != '*' ||
-                (myBufferIndex + 3 < myBufferEndOffset &&
-                 (charAt( myBufferIndex + 3 )) == '/') )
+            if( _bufferIndex + 2 >= _bufferEndOffset ||
+                (charAt( _bufferIndex + 2 )) != '*' ||
+                (_bufferIndex + 3 < _bufferEndOffset &&
+                 (charAt( _bufferIndex + 3 )) == '/') )
             {
-              myTokenType = JavaTokenType.C_STYLE_COMMENT;
-              myTokenEndOffset = getClosingComment( myBufferIndex + 2 );
+              _tokenType = JavaTokenType.C_STYLE_COMMENT;
+              _tokenEndOffset = getClosingComment( _bufferIndex + 2 );
             }
             else
             {
-              myTokenType = JavaDocElementType.DOC_COMMENT;
-              myTokenEndOffset = getClosingComment( myBufferIndex + 3 );
+              _tokenType = JavaDocElementType.DOC_COMMENT;
+              _tokenEndOffset = getClosingComment( _bufferIndex + 3 );
             }
           }
           else
@@ -198,94 +215,33 @@ public class ManJavaLexer extends LexerBase
         break;
 
       case '\'':
-        myTokenType = JavaTokenType.CHARACTER_LITERAL;
-        myTokenEndOffset = getClosingQuote( myBufferIndex + 1, c );
+        _tokenType = JavaTokenType.CHARACTER_LITERAL;
+        _tokenEndOffset = getClosingQuote( _bufferIndex + 1, c );
         break;
 
       case '"':
         if( TEXT_BLOCK_LITERAL != null && // non-null if IJ >= 2019.2
-            myBufferIndex + 2 < myBufferEndOffset &&
-            charAt( myBufferIndex + 2 ) == '"' && charAt( myBufferIndex + 1 ) == '"' )
+            _bufferIndex + 2 < _bufferEndOffset &&
+            charAt( _bufferIndex + 2 ) == '"' && charAt( _bufferIndex + 1 ) == '"' )
         {
-          myTokenType = TEXT_BLOCK_LITERAL;
-          myTokenEndOffset = getTextBlockEnd( myBufferIndex + 2 );
+          _tokenType = TEXT_BLOCK_LITERAL;
+          _tokenEndOffset = getTextBlockEnd( _bufferIndex + 2 );
         }
         else
         {
-          myTokenType = JavaTokenType.STRING_LITERAL;
-          myTokenEndOffset = getClosingQuote( myBufferIndex + 1, c );
+          _tokenType = JavaTokenType.STRING_LITERAL;
+          _tokenEndOffset = getClosingQuote( _bufferIndex + 1, c );
         }
         break;
 
       case '`':
-        myTokenType = JavaTokenType.RAW_STRING_LITERAL;
-        myTokenEndOffset = getRawLiteralEnd( myBufferIndex );
+        _tokenType = JavaTokenType.RAW_STRING_LITERAL;
+        _tokenEndOffset = getRawLiteralEnd( _bufferIndex );
         break;
 
       case '#':
       {
-        int offset = myBufferIndex + 1;
-        if( match( Elif.getDirective(), offset ) ||
-            match( Else.getDirective(), offset ) )
-        {
-          myTokenType = JavaTokenType.C_STYLE_COMMENT;
-          myTokenEndOffset = findCommentRangeEnd( false );
-        }
-        else if( match( Endif.getDirective(), offset ) )
-        {
-          myTokenType = JavaTokenType.C_STYLE_COMMENT;
-          myTokenEndOffset = offset + Endif.getDirective().length();
-        }
-        else if( match( If.getDirective(), offset ) )
-        {
-          int rangeEnd = findCommentRangeEnd( true );
-          if( rangeEnd > 0 )
-          {
-            // handle nested `#if`
-            myTokenType = JavaTokenType.C_STYLE_COMMENT;
-            myTokenEndOffset = rangeEnd;
-          }
-          else
-          {
-            // Create a PreprocessorParser with position set to '#' char, then call parseStatement()
-            // Then use that to figure out what is a comment and what is not :)
-            PreprocessorParser preProc = new PreprocessorParser( myBuffer, myBufferIndex, myBufferEndOffset, null );
-            IfStatement statement = (IfStatement)preProc.parseStatement();
-
-            // note we always parse the toplevel #if, and nested #ifs are parsed with it.  since the lexer tokenizes
-            // the whole #if statement, we only ever have just one list of visible stmts to manage
-            _visibleStmts.clear();
-            statement.execute( _visibleStmts, true, _definitions.get() );
-            // add empty statement marking end of if-stmt
-            _visibleStmts.add( new SourceStatement( null, statement.getTokenEnd(), statement.getTokenEnd() ) );
-
-            myTokenType = JavaTokenType.C_STYLE_COMMENT;
-            myTokenEndOffset = findCommentRangeEnd( false );
-          }
-        }
-        else if( match( Define.getDirective(), offset ) ||
-                 match( Undef.getDirective(), offset ) )
-        {
-          PreprocessorParser preProc = new PreprocessorParser( myBuffer, myBufferIndex, myBufferEndOffset, null );
-          Statement statement = preProc.parseStatement();
-
-          statement.execute( new ArrayList<>(), true, _definitions.get() );
-
-          myTokenType = JavaTokenType.C_STYLE_COMMENT;
-          myTokenEndOffset = statement.getTokenEnd();
-        }
-        else if( match( Error.getDirective(), offset ) ||
-                 match( Warning.getDirective(), offset ) )
-        {
-          PreprocessorParser preProc = new PreprocessorParser( myBuffer, myBufferIndex, myBufferEndOffset, null );
-          Statement statement = preProc.parseStatement();
-          myTokenType = JavaTokenType.C_STYLE_COMMENT;
-          myTokenEndOffset = statement.getTokenEnd();
-        }
-        else
-        {
-          flexLocateToken();
-        }
+        makeDirective();
         break;
       }
 
@@ -293,9 +249,114 @@ public class ManJavaLexer extends LexerBase
         flexLocateToken();
     }
 
-    if( myTokenEndOffset > myBufferEndOffset )
+    if( _tokenEndOffset > _bufferEndOffset )
     {
-      myTokenEndOffset = myBufferEndOffset;
+      _tokenEndOffset = _bufferEndOffset;
+    }
+  }
+
+  private void makeDirective()
+  {
+    if( isDumbPreprocessorMode() )
+    {
+      makeDumbDirective();
+    }
+    else
+    {
+      makeSmartDirective();
+    }
+  }
+  private void makeDumbDirective()
+  {
+    int offset = _bufferIndex + 1;
+    String directive;
+    if( match( directive = Define.getDirective(), offset ) ||
+        match( directive = Undef.getDirective(), offset ) ||
+        match( directive = If.getDirective(), offset ) ||
+        match( directive = Elif.getDirective(), offset )||
+        match( directive = Error.getDirective(), offset ) ||
+        match( directive = Warning.getDirective(), offset ) )
+    {
+      offset = skipSpaces( offset + directive.length() );
+      Expression expr = new ExpressionParser( _buffer, offset, _bufferEndOffset ).parse();
+
+      _tokenType = JavaTokenType.C_STYLE_COMMENT;
+      _tokenEndOffset = expr.getEndOffset();
+    }
+    else if( match( directive = Else.getDirective(), offset ) ||
+             match( directive = Endif.getDirective(), offset ) )
+    {
+      _tokenType = JavaTokenType.C_STYLE_COMMENT;
+      _tokenEndOffset = offset + directive.length();
+    }
+    else
+    {
+      flexLocateToken();
+    }
+  }
+  private void makeSmartDirective()
+  {
+    int offset = _bufferIndex + 1;
+    if( match( Elif.getDirective(), offset ) ||
+        match( Else.getDirective(), offset ) )
+    {
+      _tokenType = JavaTokenType.C_STYLE_COMMENT;
+      _tokenEndOffset = findCommentRangeEnd( false );
+    }
+    else if( match( Endif.getDirective(), offset ) )
+    {
+      _tokenType = JavaTokenType.C_STYLE_COMMENT;
+      _tokenEndOffset = offset + Endif.getDirective().length();
+    }
+    else if( match( If.getDirective(), offset ) )
+    {
+      int rangeEnd = findCommentRangeEnd( true );
+      if( rangeEnd > 0 )
+      {
+        // handle nested `#if`
+        _tokenType = JavaTokenType.C_STYLE_COMMENT;
+        _tokenEndOffset = rangeEnd;
+      }
+      else
+      {
+        // Create a PreprocessorParser with position set to '#' char, then call parseStatement()
+        // Then use that to figure out what is a comment and what is not :)
+        PreprocessorParser preProc = new PreprocessorParser( _buffer, _bufferIndex, _bufferEndOffset, null );
+        IfStatement statement = (IfStatement)preProc.parseStatement();
+
+        // note we always parse the toplevel #if, and nested #ifs are parsed with it.  since the lexer tokenizes
+        // the whole #if statement, we only ever have just one list of visible stmts to manage
+        _visibleStmts.clear();
+        statement.execute( _visibleStmts, true, _definitions.get() );
+        // add empty statement marking end of if-stmt
+        _visibleStmts.add( new SourceStatement( null, statement.getTokenEnd(), statement.getTokenEnd() ) );
+
+        _tokenType = JavaTokenType.C_STYLE_COMMENT;
+        _tokenEndOffset = findCommentRangeEnd( false );
+      }
+    }
+    else if( match( Define.getDirective(), offset ) ||
+             match( Undef.getDirective(), offset ) )
+    {
+      PreprocessorParser preProc = new PreprocessorParser( _buffer, _bufferIndex, _bufferEndOffset, null );
+      Statement statement = preProc.parseStatement();
+
+      statement.execute( new ArrayList<>(), true, _definitions.get() );
+
+      _tokenType = JavaTokenType.C_STYLE_COMMENT;
+      _tokenEndOffset = statement.getTokenEnd();
+    }
+    else if( match( Error.getDirective(), offset ) ||
+             match( Warning.getDirective(), offset ) )
+    {
+      PreprocessorParser preProc = new PreprocessorParser( _buffer, _bufferIndex, _bufferEndOffset, null );
+      Statement statement = preProc.parseStatement();
+      _tokenType = JavaTokenType.C_STYLE_COMMENT;
+      _tokenEndOffset = statement.getTokenEnd();
+    }
+    else
+    {
+      flexLocateToken();
     }
   }
 
@@ -316,24 +377,24 @@ public class ManJavaLexer extends LexerBase
         return -1;
       }
 
-      if( myBufferIndex < stmt.getTokenStart() )
+      if( _bufferIndex < stmt.getTokenStart() )
       {
         return stmt.getTokenStart();
       }
 
-      if( myBufferIndex < stmt.getTokenEnd() )
+      if( _bufferIndex < stmt.getTokenEnd() )
       {
-        throw new IllegalStateException( "Directive is located in a visible statement at: " + myBufferIndex );
+        throw new IllegalStateException( "Directive is located in a visible statement at: " + _bufferIndex );
       }
     }
-    return myBufferEndOffset;
+    return _bufferEndOffset;
   }
 
   private int getWhitespaces( int offset )
   {
-    if( offset >= myBufferEndOffset )
+    if( offset >= _bufferEndOffset )
     {
-      return myBufferEndOffset;
+      return _bufferEndOffset;
     }
 
     int pos = offset;
@@ -342,7 +403,30 @@ public class ManJavaLexer extends LexerBase
     while( c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' )
     {
       pos++;
-      if( pos == myBufferEndOffset )
+      if( pos == _bufferEndOffset )
+      {
+        return pos;
+      }
+      c = charAt( pos );
+    }
+
+    return pos;
+  }
+
+  private int skipSpaces( int offset )
+  {
+    if( offset >= _bufferEndOffset )
+    {
+      return _bufferEndOffset;
+    }
+
+    int pos = offset;
+    char c = charAt( pos );
+
+    while( c == ' ' || c == '\t' )
+    {
+      pos++;
+      if( pos == _bufferEndOffset )
       {
         return pos;
       }
@@ -354,7 +438,7 @@ public class ManJavaLexer extends LexerBase
 
   private boolean match( String str, int offset )
   {
-    if( myBuffer.length() < offset + str.length() )
+    if( _buffer.length() < offset + str.length() )
     {
       return false;
     }
@@ -362,18 +446,18 @@ public class ManJavaLexer extends LexerBase
     int i;
     for( i = 0; i < str.length(); i++ )
     {
-      if( str.charAt( i ) != myBuffer.charAt( offset + i ) )
+      if( str.charAt( i ) != _buffer.charAt( offset + i ) )
       {
         return false;
       }
     }
 
-    if( offset + i >= myBuffer.length() )
+    if( offset + i >= _buffer.length() )
     {
       return true;
     }
 
-    char c = myBuffer.charAt( offset + i );
+    char c = _buffer.charAt( offset + i );
     return !Character.isJavaIdentifierPart( c );
   }
 
@@ -382,9 +466,9 @@ public class ManJavaLexer extends LexerBase
   {
     try
     {
-      myFlexLexer.goTo( myBufferIndex );
-      myTokenType = myFlexLexer.advance();
-      myTokenEndOffset = myFlexLexer.getTokenEnd();
+      _flexLexer.goTo( _bufferIndex );
+      _tokenType = _flexLexer.advance();
+      _tokenEndOffset = _flexLexer.getTokenEnd();
     }
     catch( IOException e )
     { /* impossible */ }
@@ -392,9 +476,9 @@ public class ManJavaLexer extends LexerBase
 
   private int getClosingQuote( int offset, char quoteChar )
   {
-    if( offset >= myBufferEndOffset )
+    if( offset >= _bufferEndOffset )
     {
-      return myBufferEndOffset;
+      return _bufferEndOffset;
     }
 
     int pos = offset;
@@ -405,9 +489,9 @@ public class ManJavaLexer extends LexerBase
       while( c != quoteChar && c != '\n' && c != '\r' && c != '\\' )
       {
         pos++;
-        if( pos >= myBufferEndOffset )
+        if( pos >= _bufferEndOffset )
         {
-          return myBufferEndOffset;
+          return _bufferEndOffset;
         }
         c = charAt( pos );
       }
@@ -415,9 +499,9 @@ public class ManJavaLexer extends LexerBase
       if( c == '\\' )
       {
         pos++;
-        if( pos >= myBufferEndOffset )
+        if( pos >= _bufferEndOffset )
         {
-          return myBufferEndOffset;
+          return _bufferEndOffset;
         }
         c = charAt( pos );
         if( c == '\n' || c == '\r' )
@@ -425,9 +509,9 @@ public class ManJavaLexer extends LexerBase
           continue;
         }
         pos++;
-        if( pos >= myBufferEndOffset )
+        if( pos >= _bufferEndOffset )
         {
-          return myBufferEndOffset;
+          return _bufferEndOffset;
         }
         c = charAt( pos );
       }
@@ -449,9 +533,9 @@ public class ManJavaLexer extends LexerBase
   {
     int pos = offset;
 
-    while( (pos = getClosingQuote( pos + 1, '"' )) < myBufferEndOffset )
+    while( (pos = getClosingQuote( pos + 1, '"' )) < _bufferEndOffset )
     {
-      if( pos + 1 < myBufferEndOffset && charAt( pos + 1 ) == '"' && charAt( pos ) == '"' )
+      if( pos + 1 < _bufferEndOffset && charAt( pos + 1 ) == '"' && charAt( pos ) == '"' )
       {
         pos += 2;
         break;
@@ -465,7 +549,7 @@ public class ManJavaLexer extends LexerBase
   {
     int pos = offset;
 
-    while( pos < myBufferEndOffset - 1 )
+    while( pos < _bufferEndOffset - 1 )
     {
       char c = charAt( pos );
       if( c == '*' && (charAt( pos + 1 )) == '/' )
@@ -482,7 +566,7 @@ public class ManJavaLexer extends LexerBase
   {
     int pos = offset;
 
-    while( pos < myBufferEndOffset )
+    while( pos < _bufferEndOffset )
     {
       char c = charAt( pos );
       if( c == '\r' || c == '\n' )
@@ -499,7 +583,7 @@ public class ManJavaLexer extends LexerBase
   {
     int pos = offset;
 
-    while( pos < myBufferEndOffset && charAt( pos ) == '`' )
+    while( pos < _bufferEndOffset && charAt( pos ) == '`' )
     {
       pos++;
     }
@@ -508,37 +592,37 @@ public class ManJavaLexer extends LexerBase
     int start;
     do
     {
-      while( pos < myBufferEndOffset && charAt( pos ) != '`' )
+      while( pos < _bufferEndOffset && charAt( pos ) != '`' )
       {
         pos++;
       }
       start = pos;
-      while( pos < myBufferEndOffset && charAt( pos ) == '`' )
+      while( pos < _bufferEndOffset && charAt( pos ) == '`' )
       {
         pos++;
       }
     }
-    while( pos - start != quoteLen && pos < myBufferEndOffset );
+    while( pos - start != quoteLen && pos < _bufferEndOffset );
 
     return pos;
   }
 
   private char charAt( int position )
   {
-    return myBufferArray != null ? myBufferArray[position] : myBuffer.charAt( position );
+    return _bufferArray != null ? _bufferArray[position] : _buffer.charAt( position );
   }
 
   @NotNull
   @Override
   public CharSequence getBufferSequence()
   {
-    return myBuffer;
+    return _buffer;
   }
 
   @Override
   public final int getBufferEnd()
   {
-    return myBufferEndOffset;
+    return _bufferEndOffset;
   }
 
 }

@@ -212,6 +212,8 @@ Bug <b>fixes</b>: <br>
     <targetElementEvaluator language="TEXT" implementationClass="manifold.ij.extensions.ManTextElementEvaluator"/>
     <completion.contributor language="JAVA" implementationClass="manifold.ij.extensions.ManJavaCompletionContributor" order="first"/>
 
+    <applicationConfigurable instance="manifold.ij.extensions.ManConfigurable"/>
+
     <!-- ManJavaSyntaxHighlighterFactory exists solely so we can include '$' as an escapable for String literal templates
          see ManJavaFileHighlighter -->
     <lang.syntaxHighlighterFactory language="JAVA" implementationClass="manifold.ij.extensions.ManJavaSyntaxHighlighterFactory" order="first"/>

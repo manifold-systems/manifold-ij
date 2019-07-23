@@ -1,18 +1,13 @@
 package manifold.ij.core;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener;
-import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
-import com.intellij.util.FileContentUtil;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.stream.Collectors;
+import manifold.ij.util.ReparseUtil;
 import manifold.preprocessor.definitions.Definitions;
 import org.jetbrains.annotations.NotNull;
 
@@ -50,17 +45,8 @@ class BuildPropertiesFilePersistenceListener implements FileDocumentManagerListe
   {
     if( isBuildProperties( document ) )
     {
-      ApplicationManager.getApplication().invokeLater(
-        () -> ApplicationManager.getApplication().runReadAction(
-          () -> FileContentUtil.reparseFiles( _ijProject, getOpenJavaFiles(), false ) ) );
+      ReparseUtil.reparseOpenJavaFiles( _ijProject );
     }
-  }
-
-  private Collection<? extends VirtualFile> getOpenJavaFiles()
-  {
-    return Arrays.stream( FileEditorManager.getInstance( _ijProject ).getOpenFiles() )
-      .filter( vfile -> "java".equalsIgnoreCase( vfile.getExtension() ) )
-      .collect( Collectors.toSet() );
   }
 
   private boolean isBuildProperties( Document document )
