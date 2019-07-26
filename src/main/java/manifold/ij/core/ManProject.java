@@ -85,6 +85,7 @@ public class ManProject
   private FileModificationManager _fileModificationManager;
   private ManifoldPsiClassCache _psiClassCache;
   private LocklessLazyVar<Set<ManModule>> _rootModules;
+  private boolean _hasNamedModule;
 
   @SuppressWarnings("unused")
   public static Collection<ManProject> getAllProjects()
@@ -213,9 +214,9 @@ public class ManProject
     _host = new IjManifoldHost( this );
     _fs = new IjFileSystem( this );
     _psiClassCache = new ManifoldPsiClassCache( this );
+    _hasNamedModule = false;
     _modules = LockingLazyVar.make( () -> ApplicationManager.getApplication().<Map<Module, ManModule>>runReadAction( this::defineModules ) );
     _rootModules = assignRootModuleLazy();
-    addCompilerArgs(); // in case manifold jar was added we might need to update compiler args
     ManLibraryChecker.instance().warnIfManifoldJarsAreOld( getNativeProject() );
   }
 
@@ -237,6 +238,20 @@ public class ManProject
             "directly create or update your Manifold plugin subscription." ) );
       }
     }
+  }
+
+  private boolean isNamedModule( Module module )
+  {
+    List<VirtualFile> sourceRoots = getSourceRoots( module );
+    for( VirtualFile file: sourceRoots )
+    {
+      VirtualFile child = file.findChild( "module-info.java" );
+      if( child != null && !child.isDirectory() )
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   @NotNull
@@ -262,8 +277,11 @@ public class ManProject
   {
     ApplicationManager.getApplication().runReadAction(
       () -> {
-        init();
-        getFileModificationManager().getManRefresher().nukeFromOrbit();
+        if( _modules.isLoaded() ) // prevent double reset()
+        {
+          init();
+          getFileModificationManager().getManRefresher().nukeFromOrbit();
+        }
       } );
   }
 
@@ -328,15 +346,14 @@ public class ManProject
     {
       options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings exceptions\" " + maybeGetProcessorPath();
     }
-// todo: -processorpath v. --process-module-path
-//    if( findJdkVersion() == 8 )
-//    {
+    if( findJdkVersion() == 8 || !hasNamedModule() )
+    {
       options = options.replace( "--processor-module-path", "-processorpath" );
-//    }
-//    else
-//    {
-//      options = options.replace( "-processorpath", "--processor-module-path" );
-//    }
+    }
+    else
+    {
+      options = options.replace( "-processorpath", "--processor-module-path" );
+    }
     javacOptions.ADDITIONAL_OPTIONS_STRING = options;
   }
 
@@ -379,9 +396,7 @@ public class ManProject
     }
     int jdkVersion = findJdkVersion();
     options = removeManifoldJarsFromProcessorPath( options,
-      // todo: -processorpath v. --process-module-path
-      // jdkVersion == 8 ? "-processorpath" : "-processor-module-path"*/
-      "-processorpath" );
+      jdkVersion == 8 || !hasNamedModule() ? "-processorpath" : "-processor-module-path" );
     javacOptions.ADDITIONAL_OPTIONS_STRING = options;
   }
 
@@ -408,9 +423,7 @@ public class ManProject
       {
         if( processorPath.length() == 0 )
         {
-          // todo: -processorpath v. --process-module-path
-          // processorPath.append( " --processor-module-path " );
-          processorPath.append( " -processorpath " );
+          processorPath.append( " --processor-module-path " );
         }
         else
         {
@@ -545,6 +558,12 @@ public class ManProject
                                       : _fileModificationManager;
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+  private boolean hasNamedModule()
+  {
+    return _hasNamedModule;
+  }
+
   public Set<ManModule> getRootModules()
   {
     return _rootModules.get();
@@ -563,6 +582,7 @@ public class ManProject
       final ManModule module = defineModule( ijModule );
       modules.put( ijModule, module );
       allModules.put( ijModule, module );
+      _hasNamedModule = _hasNamedModule || isNamedModule( ijModule );
     }
 
     // add module dependencies
@@ -583,6 +603,8 @@ public class ManProject
     {
       manModule.initializeTypeManifolds();
     }
+
+    addCompilerArgs();
 
     return allModules;
   }

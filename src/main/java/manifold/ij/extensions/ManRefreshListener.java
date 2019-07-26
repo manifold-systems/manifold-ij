@@ -142,6 +142,12 @@ public class ManRefreshListener
       return;
     }
 
+    if( isModuleInfo( res ) )
+    {
+      _manProject.reset();
+      return;
+    }
+
     IFile file = (IFile)res;
     Set<ITypeManifold> tms = ManModule.findTypeManifoldsForFile( _manProject.getNativeProject(), file, null, null );
     if( tms.isEmpty() )
@@ -170,6 +176,11 @@ public class ManRefreshListener
       }
     }
     moduleToFqns.forEach( (module, fqns) -> notify( module, file, fqns, kind ) );
+  }
+
+  private boolean isModuleInfo( IResource res )
+  {
+    return res instanceof IFile && res.getName().equals( "module-info.java" );
   }
 
   private void notify( IModule module, IFile file, Set<String> result, RefreshKind kind )
