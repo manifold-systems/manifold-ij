@@ -6,8 +6,11 @@ configurations {
 
 intellij {
 //  type = 'JPS'
-  version defaultIjVersion // e.g., '2018.2.4'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
-  plugins = ['java']
+  version defaultIjVersion // e.g.,'2018.2.4'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
+  if( version.contains( "EAP" ) )
+  {
+    plugins = ['java']
+  }
 }
 
 dependencies {
