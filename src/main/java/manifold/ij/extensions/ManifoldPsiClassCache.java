@@ -391,7 +391,8 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       if( removedFacade != null )
       {
         ApplicationManager.getApplication().invokeLater( () ->
-          ((PsiModificationTrackerImpl)removedFacade.getManager().getModificationTracker()).incCounter() );
+          ApplicationManager.getApplication().runWriteAction( () ->
+            ((PsiModificationTrackerImpl)removedFacade.getManager().getModificationTracker()).incCounter() ) );
         _fqnPsiCache.remove( removedFacade.getQualifiedName() );
       }
     }
