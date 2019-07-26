@@ -5,9 +5,9 @@ configurations {
 }
 
 intellij {
-  //type = 'JPS'
+//  type = 'JPS'
   version defaultIjVersion // e.g., '2018.2.4'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
-//  plugins ['java']
+  plugins = ['java']
 }
 
 dependencies {
