@@ -5,7 +5,7 @@
     <![CDATA[
 <h2><a href="#what-is-manifold" id="what-is-manifold">What is Manifold?</a></h2>
 <p><a href="http://manifold.systems">Manifold</a> supplements Java with useful features like Type-safe Metaprogramming, Structural
-Typing, and Extension Methods. Simply add the Manifold jar to your project and begin taking advantage of it.</p>
+Typing, Extension Methods, and a Preprocessor. Simply add Manifold to your project and begin taking advantage of it.</p>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
 <h3><a href="#meta-programming" id="meta-programming"><a href="http://manifold.systems/docs.html">Meta-programming</a></a></h3>
 <p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as <strong>GraphQL</strong>, <strong>JSON Schema</strong>
@@ -21,6 +21,17 @@ User.request(&quot;http://api.example.com/users&quot;).postOne(user);
 <p>Add extension methods to existing Java classes, even String, List, and File. Eliminate boilerplate code. <a href="http://manifold.systems/images/ExtensionMethod.mp4">Check it out!</a></p>
 <pre><code class="java">String greeting = &quot;hello&quot;;
 greeting.myMethod(); // Add your own methods to String!
+</code></pre>
+<h3><a href="#preprocessor" id="preprocessor"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">Preprocessor</a></a></h3>
+<p>Use familiar directives such as <code>#define</code> and <code>#if</code> to conditionally compile your Java projects. The preprocessor offers
+a simple and convenient way to support multiple build targets with a single codebase. <a href="http://manifold.systems/images/preprocessor.mp4">Check it out!</a></p>
+<pre><code class="csharp">#if JAVA_8_OR_LATER
+  @Override
+  public void setTime(LocalDateTime time) {...)
+#else
+  @Override
+  public void setTime(Calendar time) {...}
+#endif
 </code></pre>
 <h3><a href="#structural-typing" id="structural-typing"><a href="http://manifold.systems/docs.html#structural-interfaces">Structural Typing</a></a></h3>
 <p>Unify disparate APIs. Bridge software components you do not control. Access maps through type-safe interfaces. <a href="http://manifold.systems/images/structural%20typing.mp4">Check it out!</a></p>
@@ -98,6 +109,14 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
+Bug fixes <br>
+- Fix incremental compilation <br>
+-- fixes problem where types corresponding with resource files appeared to recompile (or not) randomly in IJ during an incremental build <br>
+-- fixes problem where manifold fragments would also appear to randomly recompile (or not) during an incremental build <br>
+- Fix -processorpath v. --processor-module-path involving JPMS named module[s] in a project <br>
+- Fix preprocessor issue where a Java file would not display preprocessor directives correctly in the presence of manifold fragments <br>
+<br>
+New Feature:<br>
 Manifold now provides a fully integrated <b>Java Preprocessor</b>. <br>
 The Java Preprocessor is designed exclusively for <i>conditional compilation</i> of Java source code. It is directly
 integrated into the Java compiler via the Javac <i>Plugin</i> API. Unlike conventional preprocessors it does <i>not</i> incur
