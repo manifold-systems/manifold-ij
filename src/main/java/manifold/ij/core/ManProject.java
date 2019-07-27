@@ -277,7 +277,7 @@ public class ManProject
   {
     ApplicationManager.getApplication().runReadAction(
       () -> {
-        if( _modules != null && _modules.isLoaded() ) // prevent double reset()
+        if( _modules == null || _modules.isLoaded() ) // prevent double reset()
         {
           init();
           getFileModificationManager().getManRefresher().nukeFromOrbit();
