@@ -86,6 +86,7 @@ String getIjVersion() {
 intellij {
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2017.3.4'
   //alternativeIdePath = 'C:\\Program Files\\Android\\Android Studio'
+  //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2018.3.4'
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA 192.5281.24'
   pluginName project.name
   version getIjVersion() // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'

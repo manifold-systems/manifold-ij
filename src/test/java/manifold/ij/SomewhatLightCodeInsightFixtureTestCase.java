@@ -140,6 +140,10 @@ public abstract class SomewhatLightCodeInsightFixtureTestCase extends UsefulTest
     {
       myFixture.tearDown();
     }
+    catch( Throwable e )
+    {
+      addSuppressedException( e );
+    }
     finally
     {
       myFixture = null;
