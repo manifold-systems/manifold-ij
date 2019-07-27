@@ -107,7 +107,7 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
    */
   protected String getPath_JdkRoot()
   {
-    return "." + File.separatorChar + "jdk";
+    return new File( "jdk" ).getAbsolutePath();
   }
 
   /**
