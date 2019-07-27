@@ -284,7 +284,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
 
     Query<PsiReference> search = ReferencesSearch.search( element, GlobalSearchScope.moduleScope( module ) );
     List<UsageInfo> usages = new ArrayList<>();
-    for( PsiReference ref : search.findAll() )
+    for( PsiReference ref : ResourceToManifoldUtil.searchForElement( search ) )
     {
       MoveRenameUsageInfo usageInfo = new MoveRenameUsageInfo( ref.getElement(), ref, ref.getRangeInElement().getStartOffset(),
                                                                ref.getRangeInElement().getEndOffset(), element,

@@ -238,7 +238,7 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 
     Query<PsiReference> search = ReferencesSearch.search( psiClass, GlobalSearchScope.projectScope( mod.getProject() ) );
     List<UsageInfo> usages = new ArrayList<>();
-    for( PsiReference ref: search.findAll() )
+    for( PsiReference ref: ResourceToManifoldUtil.searchForElement( search ) )
     {
       usages.add( new MoveRenameUsageInfo( ref.getElement(), ref, ref.getRangeInElement().getStartOffset(),
         ref.getRangeInElement().getEndOffset(), element,

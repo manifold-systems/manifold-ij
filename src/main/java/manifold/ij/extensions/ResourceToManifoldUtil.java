@@ -3,6 +3,7 @@ package manifold.ij.extensions;
 import com.intellij.ide.DataManager;
 import com.intellij.navigation.NavigationItem;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -12,6 +13,8 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
+import com.intellij.openapi.progress.EmptyProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -32,6 +35,7 @@ import com.intellij.psi.PsiReference;
 import com.intellij.psi.impl.source.resolve.FileContextUtil;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
+import com.intellij.util.Query;
 import java.awt.KeyboardFocusManager;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -190,15 +194,26 @@ public class ResourceToManifoldUtil
     // references a type field -- the fields are considered the same -- therefore make sure Java references to the query
     // field ref are also accounted for.
     Module moduleForPsiElement = ModuleUtilCore.findModuleForPsiElement( element );
-    for( PsiReference ref: ReferencesSearch.search( element,
+    Query<PsiReference> search = ReferencesSearch.search( element,
       moduleForPsiElement == null
       ? GlobalSearchScope.projectScope( project )
-      : GlobalSearchScope.moduleScope( moduleForPsiElement ) ).findAll() )
+      : GlobalSearchScope.moduleScope( moduleForPsiElement ) );
+    for( PsiReference ref: searchForElement( search ) )
     {
       result.addAll( findJavaElementsFor( ref.getElement(), visited ) );
     }
 
     return result;
+  }
+
+  @NotNull
+  public static Collection<PsiReference> searchForElement( Query<PsiReference> search )
+  {
+    if( ApplicationManager.getApplication().isDispatchThread() )
+    {
+      return search.findAll();
+    }
+    return ProgressManager.getInstance().runProcess( () -> search.findAll(), new EmptyProgressIndicator() );
   }
 
   @Nullable

@@ -71,7 +71,7 @@ public class MoveTypeManifoldFileProcessor extends MoveFileHandler
 
     Query<PsiReference> search = ReferencesSearch.search( psiClass, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ) );
     List<UsageInfo> usages = new ArrayList<>();
-    for( PsiReference ref: search.findAll() )
+    for( PsiReference ref: ResourceToManifoldUtil.searchForElement( search ) )
     {
       usages.add( new MoveRenameUsageInfo( ref.getElement(), ref, ref.getRangeInElement().getStartOffset(),
         ref.getRangeInElement().getEndOffset(), psiClass,
