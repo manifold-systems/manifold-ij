@@ -18,7 +18,7 @@ import com.intellij.psi.text.BlockSupport;
 import com.intellij.testFramework.LightVirtualFile;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.FileUtil;
-import manifold.util.Stack;
+import manifold.api.util.Stack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

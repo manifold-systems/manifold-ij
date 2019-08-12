@@ -4,10 +4,11 @@
   <description>
     <![CDATA[
 <h2><a href="#what-is-manifold" id="what-is-manifold">What is Manifold?</a></h2>
-<p><a href="http://manifold.systems">Manifold</a> supplements Java with useful features like Type-safe Metaprogramming, Structural
-Typing, Extension Methods, and a Preprocessor. Simply add Manifold to your project and begin taking advantage of it.</p>
+<p><a href="http://manifold.systems">Manifold</a> plugs into Java to supplement it with game-changing features, from Type-safe Metaprogramming,
+Structural Typing, and Extension Methods to an integrated Template Engine and a Preprocessor. All fully supported in IntelliJ IDEA.
+Simply add Manifold to your project and begin taking advantage of it.</p>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
-<h3><a href="#meta-programming" id="meta-programming"><a href="http://manifold.systems/docs.html">Meta-programming</a></a></h3>
+<h3><a href="#meta-programming" id="meta-programming"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold">Meta-programming</a></a></h3>
 <p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as <strong>GraphQL</strong>, <strong>JSON Schema</strong>
 and <strong>YAML</strong>. Remove the code gen step in your build process. <a href="http://manifold.systems/images/graphql.mp4">Check it out!</a></p>
 <pre><code class="java">// Use your User.json schema file directly as a type, no code gen!
@@ -17,7 +18,7 @@ User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&q
   .build();
 User.request(&quot;http://api.example.com/users&quot;).postOne(user);
 </code></pre>
-<h3><a href="#extensions" id="extensions"><a href="http://manifold.systems/docs.html#the-extension-manifold">Extensions</a></a></h3>
+<h3><a href="#extensions" id="extensions"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extensions</a></a></h3>
 <p>Add extension methods to existing Java classes, even String, List, and File. Eliminate boilerplate code. <a href="http://manifold.systems/images/ExtensionMethod.mp4">Check it out!</a></p>
 <pre><code class="java">String greeting = &quot;hello&quot;;
 greeting.myMethod(); // Add your own methods to String!
@@ -25,7 +26,7 @@ greeting.myMethod(); // Add your own methods to String!
 <h3><a href="#preprocessor" id="preprocessor"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">Preprocessor</a></a></h3>
 <p>Use familiar directives such as <code>#define</code> and <code>#if</code> to conditionally compile your Java projects. The preprocessor offers
 a simple and convenient way to support multiple build targets with a single codebase. <a href="http://manifold.systems/images/preprocessor.mp4">Check it out!</a></p>
-<pre><code class="csharp">#if JAVA_8_OR_LATER
+<pre><code class="java">#if JAVA_8_OR_LATER
   @Override
   public void setTime(LocalDateTime time) {...)
 #else
@@ -33,7 +34,7 @@ a simple and convenient way to support multiple build targets with a single code
   public void setTime(Calendar time) {...}
 #endif
 </code></pre>
-<h3><a href="#structural-typing" id="structural-typing"><a href="http://manifold.systems/docs.html#structural-interfaces">Structural Typing</a></a></h3>
+<h3><a href="#structural-typing" id="structural-typing"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#structural-interfaces-via-structural">Structural Typing</a></a></h3>
 <p>Unify disparate APIs. Bridge software components you do not control. Access maps through type-safe interfaces. <a href="http://manifold.systems/images/structural%20typing.mp4">Check it out!</a></p>
 <pre><code class="java">Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();
 MyThingInterface thing = (MyThingInterface) map; // O_o
@@ -41,14 +42,14 @@ thing.setFoo(new Foo());
 Foo foo = thing.getFoo();
 out.println(thing.getClass()); // prints &quot;java.util.HashMap&quot;
 </code></pre>
-<h3><a href="#type-safe-reflection" id="type-safe-reflection"><a href="http://manifold.systems/docs.html#type-safe-reflection">Type-safe Reflection</a></a></h3>
+<h3><a href="#type-safe-reflection" id="type-safe-reflection"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#type-safe-reflection-via-jailbreak">Type-safe Reflection</a></a></h3>
 <p>Access private features with <b>@Jailbreak</b> to avoid the drudgery and vulnerability of Java reflection. <a href="http://manifold.systems/images/jailbreak.mp4">Check it out!</a></p>
 <pre><code class="java">@Jailbreak Foo foo = new Foo();
 // Direct, *type-safe* access to *all* foo's members
 foo.privateMethod(x, y, z);
 foo.privateField = value;
 </code></pre>
-<h3><a href="#checked-exception-suppression" id="checked-exception-suppression"><a href="http://manifold.systems/docs.html#checked-exception-suppression">Checked Exception Suppression</a></a></h3>
+<h3><a href="#checked-exception-handling" id="checked-exception-handling"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-exceptions">Checked Exception Handling</a></a></h3>
 <p>You now have an option to make checked exceptions behave like unchecked exceptions!  No more unintended exception
 swallowing, no more boilerplate <code>try</code>/<code>catch</code>/<code>wrap</code>/<code>rethrow</code> nonsense.</p>
 <pre><code class="java">List&lt;String&gt; strings = ...;
@@ -56,7 +57,7 @@ List&lt;URL&gt; urls = list
   .map(URL::new) // No need to handle the MalformedURLException!
   .collect(Collectors.toList());
 </code></pre>
-<h3><a href="#string-templates-aka-string-interpolation" id="string-templates-aka-string-interpolation"><a href="http://manifold.systems/docs.html#templating">String Templates</a> (aka String Interpolation)</a></h3>
+<h3><a href="#string-templates-aka-string-interpolation" id="string-templates-aka-string-interpolation"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-strings">String Templates</a> (aka String Interpolation)</a></h3>
 <p>Embed variables and expressions in String literals, no more clunky string concat! <a href="http://manifold.systems/images/string_interpolation.mp4">Check it out!</a></p>
 <pre><code class="java">int hour = 15;
 // Simple variable access with '$'
@@ -64,7 +65,7 @@ String result = &quot;The hour is $hour&quot;; // Yes!!!
 // Use expressions with '${}'
 result = &quot;It is ${hour &gt; 12 ? hour-12 : hour} o'clock&quot;;
 </code></pre>
-<h3><a href="#template-files-with-mantl" id="template-files-with-mantl"><a href="http://manifold.systems/manifold-templates.html">Template Files with <em>ManTL</em></a></a></h3>
+<h3><a href="#template-files-with-mantl" id="template-files-with-mantl"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">Template Files with <em>ManTL</em></a></a></h3>
 <p>Author template files with the full expressive power of Java, use your templates directly in your code as types.
 Supports type-safe inclusion of other templates, shared layouts, and more. <a href="http://manifold.systems/images/mantl.mp4">Check it out!</a></p>
 <pre><code class="java">List&lt;User&gt; users = ...;
@@ -85,7 +86,7 @@ String content = abc.example.UserSample.render(users);
 &lt;/body&gt;
 &lt;/html&gt;
 </code></pre>
-<h3><a href="#libraries" id="libraries"><a href="http://manifold.systems/docs.html#extension-libraries">Libraries</a></a></h3>
+<h3><a href="#libraries" id="libraries"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates#extension-libraries">Libraries</a></a></h3>
 <p>Leverage stock Manifold extension libraries for standard Java classes. Save time and reduce boilerplate code.</p>
 <pre><code class="java">File file = new File(path);
 // Use refreshing extensions to File
@@ -109,31 +110,20 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Bug fixes <br>
-- Fix incremental compilation <br>
--- fixes problem where types corresponding with resource files appeared to recompile (or not) randomly in IJ during an incremental build <br>
--- fixes problem where manifold fragments would also appear to randomly recompile (or not) during an incremental build <br>
-- Fix -processorpath v. --processor-module-path involving JPMS named module[s] in a project <br>
-- Fix preprocessor issue where a Java file would not display preprocessor directives correctly in the presence of manifold fragments <br>
-<br>
-New Feature:<br>
-Manifold now provides a fully integrated <b>Java Preprocessor</b>. <br>
-The Java Preprocessor is designed exclusively for <i>conditional compilation</i> of Java source code. It is directly
-integrated into the Java compiler via the Javac <i>Plugin</i> API. Unlike conventional preprocessors it does <i>not</i> incur
-separate build steps or additional file I/O, instead it directly contributes to the compilation pipeline.
-<br>
-<p><img src="http://manifold.systems/images/compilerflow.png" alt="echo method" width="60%" height="60%"/></p>
-<br>
-The preprocessor offers a simple and convenient way to support multiple build targets with a single codebase.  It
-provides advanced features such as tiered symbol definition via <i>build.properties</i> files, <i>-Akey[=value]</i> compiler
-arguments, and environmental symbols such as <i>JAVA_9_or_Later</i> and <i>JPMS_NAMED</i>.  The preprocessor is also fully
-integrated into IntelliJ IDEA using the Manifold plugin:<br>
-
-<p><img src="http://manifold.systems/images/preprocessor.png" alt="preprocessor" width="60%" height="60%"/></p>
-
-<br>
-
-<p><a href="https://github.com/manifold-systems/manifold/blob/master/manifold-deps-parent/manifold-preprocessor/readme.md">Learn More</a></p>
+Manifold project-wide API cleansing and documentation focus: <br>
+- Refined project readme.md files, standardized them, and overall shifted documentation focus more toward Manifold’s
+individual projects and away from the current monolithic docs <br>
+- JPMS related changes: <br>
+-- All manifold projects are defined as "automatic" modules now, with explicit names via "Automatic-Module-Name" <br>
+-- API changes <br>
+--- clash: manifold v. manifold.util: manifold.util -> manifold.api.util <br>
+--- clash: manifold.ext  ''                         -> manifold.ext.api <br>
+- Removed bootstrap plugin, no longer necessary <br>
+- Manifold JavacPlugin is now a self registered Plugin service <br>
+- DEPRECATED: -Xplugin:Manifold arguments: 'strings' and 'exceptions' <br>
+-- replaced with dependencies: manifold-strings and manifold.exceptions <br>
+-- manifold.api.templ -> manifold.strings.api <br>
+- Sample application improvements: building, docs, and structure
     ]]>
   </change-notes>
 

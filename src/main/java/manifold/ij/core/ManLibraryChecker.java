@@ -1,7 +1,9 @@
 package manifold.ij.core;
 
 import com.intellij.ide.plugins.cl.PluginClassLoader;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PathsList;
@@ -227,9 +229,19 @@ public class ManLibraryChecker
 
   public List<String> getManifoldJarsInProject( Project project )
   {
-    List<String> result = new ArrayList<>();
     PathsList pathsList = ProjectRootManager.getInstance( project )
       .orderEntries().withoutSdk().librariesOnly().getPathsList();
+    return getManifoldJars( pathsList );
+  }
+  public List<String> getManifoldJarsInModule( Module module )
+  {
+    PathsList pathsList = ModuleRootManager.getInstance( module )
+      .orderEntries().withoutSdk().librariesOnly().getPathsList();
+    return getManifoldJars( pathsList );
+  }
+  private List<String> getManifoldJars( PathsList pathsList )
+  {
+    List<String> result = new ArrayList<>();
     for( VirtualFile path: pathsList.getVirtualFiles() )
     {
       String extension = path.getExtension();

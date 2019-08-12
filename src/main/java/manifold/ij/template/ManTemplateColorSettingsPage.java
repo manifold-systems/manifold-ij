@@ -3,7 +3,7 @@ package manifold.ij.template;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.fileTypes.SyntaxHighlighter;
 import com.intellij.openapi.options.colors.*;
-import manifold.api.templ.DisableStringLiteralTemplates;
+import manifold.strings.api.DisableStringLiteralTemplates;
 import org.jetbrains.annotations.*;
 
 import javax.swing.*;

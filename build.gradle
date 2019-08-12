@@ -58,6 +58,8 @@ dependencies {
   compile group: 'systems.manifold', name: 'manifold-darkj', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-image', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-ext', version: manifoldVersion
+  compile group: 'systems.manifold', name: 'manifold-strings', version: manifoldVersion
+  compile group: 'systems.manifold', name: 'manifold-exceptions', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-preprocessor', version: manifoldVersion
 
   testCompile group: 'junit', name: 'junit', version: '4.12'
@@ -73,10 +75,10 @@ configurations.all {
 }
 
 compileJava {
-  options.compilerArgs += ['-proc:none', '-Xplugin:Manifold strings exceptions no-bootstrap']
+  options.compilerArgs += ['-proc:none', '-Xplugin:Manifold no-bootstrap']
 }
 compileTestJava {
-  options.compilerArgs += ['-proc:none', '-Xplugin:Manifold strings exceptions']
+  options.compilerArgs += ['-proc:none', '-Xplugin:Manifold']
 }
 
 String getIjVersion() {

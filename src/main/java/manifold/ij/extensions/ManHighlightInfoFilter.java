@@ -37,7 +37,6 @@ import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.util.ManPsiUtil;
-import manifold.internal.javac.JavacPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -173,7 +172,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       if( fileModule != null )
       {
         ManModule manModule = ManProject.getModule( fileModule );
-        return manModule.isPluginArgEnabled( JavacPlugin.ARG_EXCEPTIONS );
+        return manModule.isExceptionsEnabled();
       }
     }
     return false;

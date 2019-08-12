@@ -339,12 +339,12 @@ public class ManProject
     options = options == null ? "" : options;
     if( !options.contains( XPLUGIN_MANIFOLD ) && !options.contains( XPLUGIN_MANIFOLD_WITH_QUOTES ) || options.contains( "Manifold static" ) )
     {
-      options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings exceptions\" " + maybeGetProcessorPath();
+      options = XPLUGIN_MANIFOLD + " " + maybeGetProcessorPath();
     }
     else if( findJdkVersion() >= 9 &&
              ((!options.contains( "-processorpath" ) && !options.contains( "--processor-module-path" )) || !hasCorrectManifoldJars( options )) )
     {
-      options = XPLUGIN_MANIFOLD_WITH_QUOTES + " strings exceptions\" " + maybeGetProcessorPath();
+      options = XPLUGIN_MANIFOLD + " " + maybeGetProcessorPath();
     }
     if( findJdkVersion() == 8 || !hasNamedModule() )
     {

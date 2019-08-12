@@ -13,12 +13,12 @@ import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiNameValuePair;
 import com.intellij.psi.impl.source.tree.java.PsiLiteralExpressionImpl;
 import java.util.List;
-import manifold.api.templ.DisableStringLiteralTemplates;
-import manifold.api.templ.StringLiteralTemplateParser;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.ComputeUtil;
 import manifold.internal.javac.JavacPlugin;
+import manifold.strings.StringLiteralTemplateParser;
+import manifold.strings.api.DisableStringLiteralTemplates;
 import org.jetbrains.annotations.NotNull;
 
 public class ManStringLiteralTemplateInjector implements LanguageInjector
@@ -95,7 +95,7 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
     }
 
     ManModule module = ManProject.getModule( elem );
-    if( module != null && !module.isPluginArgEnabled( JavacPlugin.ARG_STRINGS ))
+    if( module != null && !module.isStringsEnabled() )
     {
       return true;
     }

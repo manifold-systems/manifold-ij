@@ -36,8 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import manifold.ij.core.ManProject;
-import manifold.util.JsonUtil;
-import manifold.util.Pair;
+import manifold.api.util.JsonUtil;
+import manifold.api.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -2,7 +2,7 @@ package manifold.ij.template.psi;
 
 import com.intellij.lexer.LexerBase;
 import com.intellij.psi.tree.IElementType;
-import manifold.util.Stack;
+import manifold.api.util.Stack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import static manifold.ij.template.psi.ManTemplateTokenType.*;

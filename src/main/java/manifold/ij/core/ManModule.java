@@ -4,6 +4,8 @@ import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.search.GlobalSearchScope;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -25,10 +27,12 @@ import manifold.api.host.Dependency;
 import manifold.api.type.ITypeManifold;
 import manifold.api.type.ResourceFileTypeManifold;
 import manifold.api.type.TypeName;
+import manifold.exceptions.CheckedExceptionSuppressor;
 import manifold.ext.IExtensionClassProducer;
 import manifold.ij.fs.IjFile;
 import manifold.internal.host.SimpleModule;
-import manifold.util.JsonUtil;
+import manifold.strings.StringLiteralTemplateProcessor;
+import manifold.api.util.JsonUtil;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -43,6 +47,8 @@ public class ManModule extends SimpleModule
   private List<IDirectory> _excludedDirs;
   private URLClassLoader _typeManifoldClassLoader;
   private LocklessLazyVar<List<ManModule>> _modulesDependingOnMe;
+  private LocklessLazyVar<Boolean> _isStringsEnabled;
+  private LocklessLazyVar<Boolean> _isExceptionsEnabled;
 
   ManModule( ManProject manProject, Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePath, List<IDirectory> outputPath, List<IDirectory> excludedDirs )
   {
@@ -57,6 +63,12 @@ public class ManModule extends SimpleModule
         ModuleUtilCore.collectModulesDependsOn( getIjModule(), result );
         return result.stream().map( ManProject::getModule ).collect( Collectors.toList() );
       } );
+    _isStringsEnabled = LocklessLazyVar.make(
+      () -> null != JavaPsiFacade.getInstance( getProject().getNativeProject() )
+        .findClass( StringLiteralTemplateProcessor.class.getTypeName(), GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( _ijModule ) ) );
+    _isExceptionsEnabled = LocklessLazyVar.make(
+      () -> null != JavaPsiFacade.getInstance( getProject().getNativeProject() )
+        .findClass( CheckedExceptionSuppressor.class.getTypeName(), GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( _ijModule ) ) );
   }
 
   @Override
@@ -375,6 +387,16 @@ public class ManModule extends SimpleModule
       }
     }
     return false;
+  }
+
+  public boolean isStringsEnabled()
+  {
+    return _isStringsEnabled.get();
+  }
+
+  public boolean isExceptionsEnabled()
+  {
+    return _isExceptionsEnabled.get();
   }
 
   public boolean isPluginArgEnabled( String pluginArg )

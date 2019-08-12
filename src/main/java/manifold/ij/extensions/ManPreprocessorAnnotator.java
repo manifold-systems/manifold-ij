@@ -21,7 +21,7 @@ import java.util.List;
 import manifold.preprocessor.PreprocessorParser;
 import manifold.preprocessor.TokenType;
 import manifold.preprocessor.Tokenizer;
-import manifold.util.Pair;
+import manifold.api.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

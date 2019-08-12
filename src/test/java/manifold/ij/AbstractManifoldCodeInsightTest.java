@@ -16,12 +16,11 @@ import com.intellij.testFramework.PsiTestUtil;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import manifold.internal.runtime.UrlClassLoaderWrapper;
-import manifold.util.PathUtil;
+import manifold.api.util.PathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

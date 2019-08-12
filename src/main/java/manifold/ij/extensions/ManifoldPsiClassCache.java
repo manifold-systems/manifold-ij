@@ -37,9 +37,9 @@ import manifold.api.type.ITypeManifold;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.internal.javac.FragmentProcessor;
-import manifold.util.cache.FqnCache;
-import manifold.util.cache.FqnCacheNode;
-import manifold.util.cache.IllegalTypeNameException;
+import manifold.api.util.cache.FqnCache;
+import manifold.api.util.cache.FqnCacheNode;
+import manifold.api.util.cache.IllegalTypeNameException;
 import org.jetbrains.annotations.NotNull;
 
 
