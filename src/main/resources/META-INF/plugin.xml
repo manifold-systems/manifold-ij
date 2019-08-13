@@ -8,7 +8,7 @@
 Structural Typing, and Extension Methods to an integrated Template Engine and a Preprocessor. All fully supported in IntelliJ IDEA.
 Simply add Manifold to your project and begin taking advantage of it.</p>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
-<h3><a href="#meta-programming" id="meta-programming"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold">Meta-programming</a></a></h3>
+<h3><a href="#meta-programming" id="meta-programming"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold">Meta-programming</a></a></h3>
 <p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as <strong>GraphQL</strong>, <strong>JSON Schema</strong>
 and <strong>YAML</strong>. Remove the code gen step in your build process. <a href="http://manifold.systems/images/graphql.mp4">Check it out!</a></p>
 <pre><code class="java">// Use your User.json schema file directly as a type, no code gen!

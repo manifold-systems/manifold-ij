@@ -2,40 +2,30 @@ package manifold.ij.license;
 
 import com.intellij.openapi.application.PermanentInstallationID;
 import com.intellij.ui.LicensingFacade;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
-import java.security.cert.CertPathBuilder;
-import java.security.cert.CertStore;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CollectionCertStoreParameters;
-import java.security.cert.PKIXBuilderParameters;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509CertSelector;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import org.jetbrains.annotations.NotNull;
+import java.security.cert.*;
+import java.util.*;
 
 
 /**
  * @author Eugene Zhuravlev
  * Date: 26-Jul-18
  */
-public class CheckLicense
-{
+public class CheckLicense {
   /**
    * PRODUCT_CODE must be the same specified in plugin.xml inside the <productCode> tag
    */
-  private static final String PRODUCT_CODE = "PMANIFOLD";
+  private static final String PRODUCT_CODE = "SMPL";
   private static final String KEY_PREFIX = "key:";
   private static final String STAMP_PREFIX = "stamp:";
+  private static final String EVAL_PREFIX = "eval:";
 
   /**
    * Public root certificates needed to verify JetBrains-signed licenses
@@ -127,7 +117,21 @@ public class CheckLicense
       // licensed via ticket obtained from JetBrains Floating License Server
       return isLicenseServerStampValid(cstamp.substring(STAMP_PREFIX.length()));
     }
+    if (cstamp.startsWith(EVAL_PREFIX)) {
+      return isEvaluationValid(cstamp.substring(EVAL_PREFIX.length()));
+    }
     return false;
+  }
+
+  private static boolean isEvaluationValid(String expirationTime) {
+    try {
+      final Date now = new Date();
+      final Date expiration = new Date(Long.parseLong(expirationTime));
+      return now.before(expiration);
+    }
+    catch (NumberFormatException e) {
+      return false;
+    }
   }
 
   private static boolean isKeyValid(String key) {
@@ -143,6 +147,9 @@ public class CheckLicense
 
     try {
       final Signature sig = Signature.getInstance("SHA1withRSA");
+      // the last parameter of 'createCertificate()' set to 'false' switches off certificate expiration checks.
+      // This might be the case if the key is at the same time a perpetual fallback license for older IDE versions.
+      // Here it is only important that the key was signed with an authentic JetBrains certificate.
       sig.initVerify(createCertificate(
         Base64.getMimeDecoder().decode(certBase64.getBytes(StandardCharsets.UTF_8)), Collections.emptySet(), false
       ));
@@ -165,7 +172,7 @@ public class CheckLicense
     try {
       final String[] parts = serverStamp.split(":");
       final Base64.Decoder base64 = Base64.getMimeDecoder();
-      
+
       final long timeStamp = Long.parseLong(parts[0]);
       final String machineId = parts[1];
       final String signatureType = parts[2];
@@ -177,7 +184,11 @@ public class CheckLicense
       }
 
       final Signature sig = Signature.getInstance(signatureType);
-      sig.initVerify(createCertificate(certBytes, intermediate, false));
+
+      // the last parameter of 'createCertificate()' set to 'true' causes the certificate to be checked for
+      // expiration. Expired certificates from a license server cannot be trusted
+      sig.initVerify(createCertificate(certBytes, intermediate, true));
+
       sig.update((parts[0] + ":" + parts[1]).getBytes(StandardCharsets.UTF_8));
       if (sig.verify(signatureBytes)) {
         final String thisMachineId = PermanentInstallationID.get();
@@ -197,40 +208,45 @@ public class CheckLicense
     final CertificateFactory x509factory = CertificateFactory.getInstance("X.509");
     final X509Certificate cert = (X509Certificate) x509factory.generateCertificate(new ByteArrayInputStream(certBytes));
 
-
     final Collection<Certificate> allCerts = new HashSet<>();
     allCerts.add(cert);
     for (byte[] bytes : intermediateCertsBytes) {
       allCerts.add(x509factory.generateCertificate(new ByteArrayInputStream(bytes)));
     }
 
-    // Create the selector that specifies the starting certificate
-    final X509CertSelector selector = new X509CertSelector();
-    selector.setCertificate(cert);
-    // Configure the PKIX certificate builder algorithm parameters
-    final Set<TrustAnchor> trustAchors = new HashSet<>();
-    for (String rc : ROOT_CERTIFICATES) {
-      trustAchors.add(new TrustAnchor(
-        (X509Certificate) x509factory.generateCertificate(new ByteArrayInputStream(rc.getBytes(StandardCharsets.UTF_8))), null
-      ));
-    }
+    try {
+      // Create the selector that specifies the starting certificate
+      final X509CertSelector selector = new X509CertSelector();
+      selector.setCertificate(cert);
+      // Configure the PKIX certificate builder algorithm parameters
+      final Set<TrustAnchor> trustAchors = new HashSet<>();
+      for (String rc : ROOT_CERTIFICATES) {
+        trustAchors.add(new TrustAnchor(
+          (X509Certificate) x509factory.generateCertificate(new ByteArrayInputStream(rc.getBytes(StandardCharsets.UTF_8))), null
+        ));
+      }
 
-    final PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(trustAchors, selector);
-    pkixParams.setRevocationEnabled(false);
-    if (!checkValidityAtCurrentDate) {
-      // deliberately check validity on the start date of cert validity period, so that we do not depend on
-      // the actual moment when the check is performed
-      pkixParams.setDate(cert.getNotBefore());
+      final PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(trustAchors, selector);
+      pkixParams.setRevocationEnabled(false);
+      if (!checkValidityAtCurrentDate) {
+        // deliberately check validity on the start date of cert validity period, so that we do not depend on
+        // the actual moment when the check is performed
+        pkixParams.setDate(cert.getNotBefore());
+      }
+      pkixParams.addCertStore(
+        CertStore.getInstance("Collection", new CollectionCertStoreParameters(allCerts))
+      );
+      // Build and verify the certification chain
+      final CertPath path = CertPathBuilder.getInstance("PKIX").build(pkixParams).getCertPath();
+      if (path != null) {
+        CertPathValidator.getInstance("PKIX").validate(path, pkixParams);
+        return cert;
+      }
     }
-    pkixParams.addCertStore(
-      CertStore.getInstance("Collection", new CollectionCertStoreParameters(allCerts))
-    );
-    // Build and verify the certification chain
-    if (CertPathBuilder.getInstance("PKIX").build(pkixParams).getCertPath() == null) {
-      throw new Exception ("Certificate used to sign the license is not signed by JetBrains root certificate");
+    catch (Exception e) {
+      // debug the reason here
     }
-
-    return cert;
+    throw new Exception ("Certificate used to sign the license is not signed by JetBrains root certificate");
   }
 
 
