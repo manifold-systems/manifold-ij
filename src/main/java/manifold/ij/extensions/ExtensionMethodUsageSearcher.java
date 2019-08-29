@@ -77,6 +77,10 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
 
     PsiMethod method = searchParameters.getMethod();
     PsiClass extensionClass = resolveInReadAction( searchParameters.getProject(), method::getContainingClass );
+    if( extensionClass == null )
+    {
+      return;
+    }
     PsiAnnotation extensionAnno = resolveInReadAction( searchParameters.getProject(), () ->
       {
         PsiModifierList modifierList = extensionClass.getModifierList();
