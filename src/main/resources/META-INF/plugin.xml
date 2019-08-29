@@ -110,20 +110,7 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Manifold project-wide API cleansing and documentation focus: <br>
-- Refined project readme.md files, standardized them, and overall shifted documentation focus more toward Manifold’s
-individual projects and away from the current monolithic docs <br>
-- JPMS related changes: <br>
--- All manifold projects are defined as "automatic" modules now, with explicit names via "Automatic-Module-Name" <br>
--- API changes <br>
---- clash: manifold v. manifold.util: manifold.util -> manifold.api.util <br>
---- clash: manifold.ext  ''                         -> manifold.ext.api <br>
-- Removed bootstrap plugin, no longer necessary <br>
-- Manifold JavacPlugin is now a self registered Plugin service <br>
-- DEPRECATED: -Xplugin:Manifold arguments: 'strings' and 'exceptions' <br>
--- replaced with dependencies: manifold-strings and manifold.exceptions <br>
--- manifold.api.templ -> manifold.strings.api <br>
-- Sample application improvements: building, docs, and structure
+Bug fixes, cosmetic changes, and build documentation improvements <br>
     ]]>
   </change-notes>
 
