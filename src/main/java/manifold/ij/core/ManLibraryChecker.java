@@ -256,13 +256,22 @@ public class ManLibraryChecker
           {
             continue;
           }
+
           File file = new File( new URL( path.getUrl() ).getFile() );
-          Manifest manifest = new JarFile( file.getAbsoluteFile() ).getManifest();
-          Attributes attributes = manifest.getMainAttributes();
-          String vendor = attributes.getValue( "Implementation-Vendor-Id" );
-          if( vendor != null && vendor.trim().equals( "systems.manifold" ) )
+          try
           {
-            result.add( file.getAbsolutePath() );
+            Manifest manifest = new JarFile( file.getAbsoluteFile() ).getManifest();
+            Attributes attributes = manifest.getMainAttributes();
+            String vendor = attributes.getValue( "Implementation-Vendor-Id" );
+            if( vendor != null && vendor.trim().equals( "systems.manifold" ) )
+            {
+              result.add( file.getAbsolutePath() );
+            }
+          }
+          catch( Exception e )
+          {
+            // todo: some customers get NoSuchFileException for the Jar even though it's there, must add in this case
+            e.printStackTrace();
           }
         }
         catch( MalformedURLException e )

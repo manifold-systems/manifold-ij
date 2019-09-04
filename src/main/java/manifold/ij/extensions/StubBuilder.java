@@ -41,6 +41,10 @@ public class StubBuilder
     if( psiClass == null )
     {
       psiClass = javaPsiFacade.findClass( fqn, GlobalSearchScope.allScope( module.getIjProject() ) );
+      if( psiClass == null )
+      {
+        return null;
+      }
     }
     return makeSrcClass( fqn, psiClass, module );
   }

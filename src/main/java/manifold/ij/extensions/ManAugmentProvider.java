@@ -169,6 +169,11 @@ public class ManAugmentProvider extends PsiAugmentProvider
       addInterfaceExtensions( psiClass, classes[0] );
 
       SrcClass srcExtClass = new StubBuilder().make( classes[0].getQualifiedName(), manModule );
+      if( srcExtClass == null )
+      {
+        return;
+      }
+
       SrcClass scratchClass = new SrcClass( psiClass.getQualifiedName(), psiClass.isInterface() ? SrcClass.Kind.Interface : SrcClass.Kind.Class );
       for( PsiTypeParameter tv : psiClass.getTypeParameters() )
       {

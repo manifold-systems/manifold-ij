@@ -110,7 +110,7 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Bug fixes, cosmetic changes, and build documentation improvements <br>
+Fix https://github.com/manifold-systems/manifold/issues/117: NoSuchFileException loading plugin with IntelliJ 2019.2.1<br>
     ]]>
   </change-notes>
 
