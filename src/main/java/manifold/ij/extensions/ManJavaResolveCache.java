@@ -55,18 +55,9 @@ public class ManJavaResolveCache extends JavaResolveCache
     super( messageBus );
   }
 
-//  @Nullable
-//  @Override
-//  public <T extends PsiExpression> PsiType getType( @NotNull T expr, @NotNull Function<T, PsiType> f )
-//  {
-//    return super.getType( expr, f );
-//  }
-
-
   @Nullable
   //@Override
-//  public <T extends PsiExpression> PsiType getType( @NotNull T expr, @NotNull Function<T, PsiType> f )
-  public <T extends PsiExpression> PsiType getType( @NotNull T expr, @NotNull Function<? super T, ? extends PsiType> f )
+  public <T extends PsiExpression> PsiType getType( @NotNull T expr, @NotNull Function<T, PsiType> f )
   {
     if( !(expr instanceof PsiBinaryExpression) )
     {

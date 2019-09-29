@@ -110,8 +110,8 @@ runIde {
 }
 
 patchPluginXml {
-  sinceBuild '192'
-  untilBuild '192.*'
+  sinceBuild '191'
+  untilBuild '191.*'
 }
 
 publishPlugin {
