@@ -110,8 +110,8 @@ runIde {
 }
 
 patchPluginXml {
-  sinceBuild '173'
-  untilBuild '999.*'
+  sinceBuild '192.999' // like 193, but includes 193 EAP builds
+  untilBuild '193.*'
 }
 
 publishPlugin {

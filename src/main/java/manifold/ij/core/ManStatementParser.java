@@ -14,8 +14,6 @@ import com.intellij.psi.impl.source.tree.JavaElementType;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.ILazyParseableElementType;
 import com.intellij.psi.tree.TokenSet;
-import manifold.ij.util.ManVersionUtil;
-import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -127,10 +125,9 @@ public class ManStatementParser extends StatementParser
     else if (tokenType == JavaTokenType.BREAK_KEYWORD) {
       return parseBreakStatement(builder);
     }
-    else if ( ManVersionUtil.is2019_2_orGreater() &&
-             tokenType == JavaTokenType.IDENTIFIER &&
-              ReflectUtil.field( PsiKeyword.class, "YIELD" ).getStatic().equals(builder.getTokenText()) &&
-              getLanguageLevel(builder).isAtLeast( (LanguageLevel)ReflectUtil.field( LanguageLevel.class, "JDK_13" ).getStatic() ) ) {
+    else if ( tokenType == JavaTokenType.IDENTIFIER &&
+              PsiKeyword.YIELD.equals(builder.getTokenText()) &&
+              getLanguageLevel(builder).isAtLeast(LanguageLevel.JDK_13_PREVIEW)) {
       return parseYieldStatement(builder);
     }
     else if (tokenType == JavaTokenType.CONTINUE_KEYWORD) {
@@ -492,7 +489,7 @@ public class ManStatementParser extends StatementParser
   @NotNull
   private PsiBuilder.Marker parseYieldStatement(PsiBuilder builder) {
     PsiBuilder.Marker statement = builder.mark();
-    builder.remapCurrentToken( (IElementType)ReflectUtil.field( JavaTokenType.class, "YIELD_KEYWORD").getStatic() );
+    builder.remapCurrentToken( JavaTokenType.YIELD_KEYWORD );
     builder.advanceLexer();
 
     if (myParser.getExpressionParser().parse(builder) == null) {
@@ -502,7 +499,7 @@ public class ManStatementParser extends StatementParser
       semicolon(builder);
     }
 
-    done(statement, (IElementType)ReflectUtil.field( JavaElementType.class, "YIELD_STATEMENT").getStatic() );
+    done(statement, JavaElementType.YIELD_STATEMENT);
     return statement;
   }
 
