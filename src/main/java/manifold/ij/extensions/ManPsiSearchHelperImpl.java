@@ -1,7 +1,7 @@
 package manifold.ij.extensions;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.impl.PsiManagerEx;
 import com.intellij.psi.impl.search.PsiSearchHelperImpl;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiNonJavaFileReferenceProcessor;
@@ -10,15 +10,9 @@ import org.jetbrains.annotations.Nullable;
 
 public class ManPsiSearchHelperImpl extends PsiSearchHelperImpl
 {
-//  @NonInjectable
-//  public ManPsiSearchHelperImpl( @NotNull PsiManagerEx manager )
-//  {
-//    super( manager );
-//  }
-
-  public ManPsiSearchHelperImpl( @NotNull Project project )
+  public ManPsiSearchHelperImpl( @NotNull PsiManagerEx manager )
   {
-    super( project );
+    super( manager );
   }
 
   @Override

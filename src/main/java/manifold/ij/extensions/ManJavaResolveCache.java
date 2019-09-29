@@ -1,6 +1,5 @@
 package manifold.ij.extensions;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Ref;
 import com.intellij.psi.JavaTokenType;
@@ -28,6 +27,7 @@ import com.intellij.psi.scope.util.PsiScopesUtil;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.util.Function;
+import com.intellij.util.messages.MessageBus;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,14 +50,9 @@ public class ManJavaResolveCache extends JavaResolveCache
     // note ==, !=, >, >=, <, <=  are covered via Comparable **iff implementing manifold-science interfaces**
   }};
 
-//  public ManJavaResolveCache( @Nullable("can be null in com.intellij.core.JavaCoreApplicationEnvironment.JavaCoreApplicationEnvironment") MessageBus messageBus )
-//  {
-//    super( messageBus );
-//  }
-
-  public ManJavaResolveCache( Project p )
+  public ManJavaResolveCache( @Nullable("can be null in com.intellij.core.JavaCoreApplicationEnvironment.JavaCoreApplicationEnvironment") MessageBus messageBus )
   {
-    super( p );
+    super( messageBus );
   }
 
 //  @Nullable
