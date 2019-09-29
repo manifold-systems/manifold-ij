@@ -2,17 +2,17 @@ package manifold.ij.template.psi;
 
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.java.parser.JavaParser;
-import com.intellij.lang.java.parser.StatementParser;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.impl.source.tree.JavaElementType;
 import java.util.List;
+import manifold.ij.core.ManStatementParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 
 import static com.intellij.lang.java.parser.JavaParserUtil.done;
 
-class MyStatementParser extends StatementParser
+class MyStatementParser extends ManStatementParser
 {
   private JavaParser _javaParser;
   private final ManTemplateJavaParser _manParser;

@@ -2,6 +2,8 @@ package manifold.ij.core;
 
 import com.intellij.AppTopics;
 import com.intellij.ProjectTopics;
+import com.intellij.codeInsight.daemon.impl.HighlightVisitor;
+import com.intellij.codeInsight.daemon.impl.analysis.HighlightVisitorImpl;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilerPaths;
@@ -24,6 +26,7 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
+import com.intellij.psi.impl.source.resolve.JavaResolveCache;
 import com.intellij.util.PlatformUtils;
 import com.intellij.util.messages.MessageBusConnection;
 import java.io.File;
@@ -57,12 +60,15 @@ import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
 import manifold.ij.license.CheckLicense;
 import manifold.ij.psi.ManLightMethodBuilder;
+import manifold.ij.util.ManVersionUtil;
 import manifold.ij.util.MessageUtil;
+import manifold.util.ReflectUtil;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LockingLazyVar;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
+import org.picocontainer.MutablePicoContainer;
 
 /**
  *
@@ -218,6 +224,14 @@ public class ManProject
     _modules = LockingLazyVar.make( () -> ApplicationManager.getApplication().<Map<Module, ManModule>>runReadAction( this::defineModules ) );
     _rootModules = assignRootModuleLazy();
     ManLibraryChecker.instance().warnIfManifoldJarsAreOld( getNativeProject() );
+
+    removeHighlighter();
+  }
+
+  private void removeHighlighter()
+  {
+    // ManHighlightVisitor replaces this
+    HighlightVisitor.EP_HIGHLIGHT_VISITOR.getPoint( getNativeProject() ).unregisterExtension( HighlightVisitorImpl.class );
   }
 
   private void licenseCheck()
@@ -324,13 +338,6 @@ public class ManProject
       addTypeRefreshListener();
     }
   }
-
-  // no longer required see ManChangedResourcesBuilder
-//  private void addStaleClassCleaner()
-//  {
-//    MessageBusConnection connection = _ijProject.getMessageBus().connect( _ijProject );
-//    connection.subscribe( BuildManagerListener.TOPIC, new ManStaleClassCleaner() );
-//   }
 
   private void addCompilerArgs()
   {

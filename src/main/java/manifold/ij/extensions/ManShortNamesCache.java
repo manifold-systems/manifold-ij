@@ -1,7 +1,9 @@
 package manifold.ij.extensions;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.impl.PsiManagerEx;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -26,9 +28,15 @@ public class ManShortNamesCache extends PsiShortNamesCache
 {
   private final PsiManagerEx _psiManager;
 
-  public ManShortNamesCache( PsiManagerEx manager )
+//  public ManShortNamesCache( PsiManagerEx manager )
+//  {
+//    _psiManager = manager;
+//    _project = _psiManager.getProject();
+//  }
+
+  public ManShortNamesCache( Project project )
   {
-    _psiManager = manager;
+    _psiManager = (PsiManagerEx)PsiManager.getInstance( project );
   }
 
   @NotNull

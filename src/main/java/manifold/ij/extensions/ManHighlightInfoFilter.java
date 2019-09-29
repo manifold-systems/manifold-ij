@@ -390,7 +390,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     psiClass.getMethods(); // force the ManAugmentProvider to add the KEY_MAN_INTERFACE_EXTENSIONS data, if it hasn't yet
-    List<String> ifaceExtenions = psiClass.getCopyableUserData( ManAugmentProvider.KEY_MAN_INTERFACE_EXTENSIONS );
+    List<String> ifaceExtenions = psiClass.getUserData( ManAugmentProvider.KEY_MAN_INTERFACE_EXTENSIONS );
     if( ifaceExtenions == null || ifaceExtenions.isEmpty() )
     {
       return false;

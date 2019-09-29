@@ -15,6 +15,7 @@ import com.intellij.psi.tree.IElementType;
 import java.util.Collections;
 import java.util.List;
 import manifold.ext.api.Jailbreak;
+import manifold.ij.core.ManExpressionParser;
 import manifold.ij.template.IManTemplateOffsets;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,6 +35,7 @@ public class ManTemplateJavaParser implements PsiParser
     List<Integer> directiveOffsets = getDirectiveOffsets( builder );
     MyStatementParser stmtParser = new MyStatementParser( javaParser, this, exprOffsets, directiveOffsets );
     javaParser.myStatementParser = stmtParser;
+    javaParser.myExpressionParser = new ManExpressionParser( javaParser ); // for binding expressions
     while( !builder.eof() )
     {
       int offset = builder.getCurrentOffset();

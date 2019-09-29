@@ -233,11 +233,11 @@ public class ManJavaLexer extends LexerBase
           _tokenEndOffset = getClosingQuote( _bufferIndex + 1, c );
         }
         break;
-
-      case '`':
-        _tokenType = JavaTokenType.RAW_STRING_LITERAL;
-        _tokenEndOffset = getRawLiteralEnd( _bufferIndex );
-        break;
+//
+//      case '`':
+//        _tokenType = JavaTokenType.RAW_STRING_LITERAL;
+//        _tokenEndOffset = getRawLiteralEnd( _bufferIndex );
+//        break;
 
       case '#':
       {

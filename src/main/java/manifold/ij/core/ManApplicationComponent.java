@@ -4,11 +4,14 @@ import com.intellij.codeInsight.highlighting.PairedBraceMatcherAdapter;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageAnnotators;
 import com.intellij.lang.LanguageBraceMatching;
+import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.psi.impl.java.stubs.JavaLiteralExpressionElementType;
 import com.intellij.psi.impl.java.stubs.JavaStubElementTypes;
+import com.intellij.psi.impl.source.tree.JavaElementType;
 import com.intellij.psi.tree.IElementType;
+import java.util.function.Supplier;
 import manifold.ij.extensions.ManJavaLiteralExpressionElementType;
 import manifold.ij.extensions.ManifoldPsiClassAnnotator;
 import manifold.ij.template.ManTemplateBraceMatcher;
@@ -29,7 +32,17 @@ public class ManApplicationComponent implements ApplicationComponent
 
     turnOnManifoldRuntimeSupport();
 
+    replaceJavaExpressionParser();
+
     overrideJavaStringLiterals();
+  }
+
+  private void replaceJavaExpressionParser()
+  {
+    ReflectUtil.field( JavaParser.INSTANCE, "myExpressionParser" ).set( new ManExpressionParser( JavaParser.INSTANCE ) );
+    ReflectUtil.field( JavaElementType.BINARY_EXPRESSION, "myConstructor" ).set( (Supplier)ManPsiBinaryExpressionImpl::new );
+
+    ReflectUtil.field( JavaParser.INSTANCE, "myStatementParser" ).set( new ManStatementParser( JavaParser.INSTANCE ) );
   }
 
   private void turnOnManifoldRuntimeSupport()

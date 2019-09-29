@@ -159,6 +159,9 @@ Fix https://github.com/manifold-systems/manifold/issues/117: NoSuchFileException
     <projectService serviceInterface="com.intellij.psi.impl.source.resolve.ResolveCache"
                     serviceImplementation="manifold.ij.extensions.ManResolveCache" overrides="true"/>
 
+    <projectService serviceInterface="com.intellij.psi.impl.source.resolve.JavaResolveCache"
+                    serviceImplementation="manifold.ij.extensions.ManJavaResolveCache" overrides="true"/>
+
     <!--  These application service overrides facilitate file fragments -->
     <applicationService serviceInterface="com.intellij.lang.DefaultASTFactory"
                         serviceImplementation="manifold.ij.extensions.ManDefaultASTFactoryImpl" overrides="true"/>
@@ -200,6 +203,7 @@ Fix https://github.com/manifold-systems/manifold/issues/117: NoSuchFileException
     <implicitUsageProvider implementation="manifold.ij.extensions.ManStringLiteralTemplateUsageProvider"/>
     <targetElementEvaluator language="TEXT" implementationClass="manifold.ij.extensions.ManTextElementEvaluator"/>
     <completion.contributor language="JAVA" implementationClass="manifold.ij.extensions.ManJavaCompletionContributor" order="first"/>
+    <highlightVisitor implementation="manifold.ij.extensions.ManHighlightVisitor"/>
 
     <applicationConfigurable instance="manifold.ij.extensions.ManConfigurable"/>
 

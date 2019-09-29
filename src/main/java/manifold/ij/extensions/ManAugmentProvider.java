@@ -215,7 +215,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
       .map( PsiClassType::resolve )
       .filter( Objects::nonNull )
       .map( PsiClass::getQualifiedName ).collect( Collectors.toList() );
-    psiClass.putCopyableUserData( KEY_MAN_INTERFACE_EXTENSIONS, ifaceExtensions );
+    psiClass.putUserData( KEY_MAN_INTERFACE_EXTENSIONS, ifaceExtensions );
   }
 
   private PsiMethod makePsiMethod( AbstractSrcMethod method, PsiClass psiClass )

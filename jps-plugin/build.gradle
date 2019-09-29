@@ -7,9 +7,9 @@ configurations {
 intellij {
 //  type = 'JPS'
   version defaultIjVersion // e.g.,'2018.2.4'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
-  if( version.contains( "EAP" ) )
+  if( version.contains( "EAP" ) || Double.parseDouble( version.substring(0, version.lastIndexOf('.'))) >= 2019.2 )
   {
-    plugins = ['java']
+    plugins = ['java'] //include PsiViewer & GraphQL JS in sandbox
   }
 }
 

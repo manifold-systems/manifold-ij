@@ -5,7 +5,6 @@ import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiModifierList;
@@ -110,7 +109,7 @@ public class StubBuilder
     StringBuilder sb = new StringBuilder();
     sb.append( typeVar.getName() );
 
-    PsiJavaCodeReferenceElement[] bounds = typeVar.getExtendsList().getReferenceElements();
+    PsiClassType[] bounds = typeVar.getExtendsList().getReferencedTypes();
     if( bounds.length > 0 )
     {
       sb.append( " extends " );

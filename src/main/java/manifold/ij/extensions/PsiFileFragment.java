@@ -94,4 +94,9 @@ interface PsiFileFragment extends ASTNode, PsiElement
   {
     project.getFileModificationManager().getManRefresher().modified( file );
   }
+
+  default int getStartOffsetInParent()
+  {
+    return ASTNode.super.getStartOffsetInParent();
+  }
 }
