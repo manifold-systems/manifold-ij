@@ -14,8 +14,6 @@ import com.intellij.psi.impl.source.tree.JavaElementType;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
 import java.util.function.Function;
-import manifold.ij.util.ManVersionUtil;
-import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.PropertyKey;
@@ -43,7 +41,7 @@ public class ManExpressionParser extends ExpressionParser {
   private static final TokenSet LITERALS = TokenSet.create(
     JavaTokenType.TRUE_KEYWORD, JavaTokenType.FALSE_KEYWORD, JavaTokenType.NULL_KEYWORD, JavaTokenType.INTEGER_LITERAL,
     JavaTokenType.LONG_LITERAL, JavaTokenType.FLOAT_LITERAL, JavaTokenType.DOUBLE_LITERAL, JavaTokenType.CHARACTER_LITERAL,
-    JavaTokenType.STRING_LITERAL, (ManVersionUtil.is2019_2_orGreater() ? (IElementType)ReflectUtil.field( JavaTokenType.class, "TEXT_BLOCK_LITERAL" ).getStatic() : JavaTokenType.STRING_LITERAL) );
+    JavaTokenType.STRING_LITERAL, JavaTokenType.TEXT_BLOCK_LITERAL );
   private static final TokenSet CONDITIONAL_OR_OPS = TokenSet.create(JavaTokenType.OROR);
   private static final TokenSet CONDITIONAL_AND_OPS = TokenSet.create(JavaTokenType.ANDAND);
   private static final TokenSet OR_OPS = TokenSet.create(JavaTokenType.OR);

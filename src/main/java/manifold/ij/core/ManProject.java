@@ -26,7 +26,6 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
-import com.intellij.psi.impl.source.resolve.JavaResolveCache;
 import com.intellij.util.PlatformUtils;
 import com.intellij.util.messages.MessageBusConnection;
 import java.io.File;
@@ -60,15 +59,12 @@ import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
 import manifold.ij.license.CheckLicense;
 import manifold.ij.psi.ManLightMethodBuilder;
-import manifold.ij.util.ManVersionUtil;
 import manifold.ij.util.MessageUtil;
-import manifold.util.ReflectUtil;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LockingLazyVar;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
-import org.picocontainer.MutablePicoContainer;
 
 /**
  *

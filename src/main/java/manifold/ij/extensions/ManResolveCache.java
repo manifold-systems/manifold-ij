@@ -32,8 +32,6 @@ import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethod;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManPsiElementFactory;
-import manifold.ij.util.ManVersionUtil;
-import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class ManResolveCache extends ResolveCache
@@ -59,16 +57,8 @@ public class ManResolveCache extends ResolveCache
     boolean physical = containingFile.isPhysical();
     Map<T, ResolveResult[]> map;
     @Jailbreak ResolveCache me = this;
-    if( ManVersionUtil.is2018_1_orGreater() )
-    {
-      int index = me.getIndex( incompleteCode, true );
-      map = me.getMap( physical, index );
-    }
-    else
-    {
-      int index = (int)ReflectUtil.method( me, "getIndex", boolean.class, boolean.class, boolean.class ).invoke( physical, incompleteCode, true );
-      map = (Map<T, ResolveResult[]>)ReflectUtil.method( me, "getMap", int.class ).invoke( index );
-    }
+    int index = me.getIndex( incompleteCode, true );
+    map = me.getMap( physical, index );
     ResolveResult[] results = map.get( ref );
     if( results != null )
     {

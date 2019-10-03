@@ -25,7 +25,6 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.IFileElementType;
 import com.intellij.psi.tree.TokenSet;
 import manifold.ij.template.ManTemplateJavaLanguage;
-import manifold.ij.util.ManVersionUtil;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,11 +57,7 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
   @NotNull
   public TokenSet getWhitespaceTokens()
   {
-    if( ManVersionUtil.is2018_2_orGreater() )
-    {
-      return ElementType.JAVA_COMMENT_OR_WHITESPACE_BIT_SET;
-    }
-    return (TokenSet)ReflectUtil.field( ElementType.class, "JAVA_WHITESPACE_BIT_SET" ).getStatic();
+    return ElementType.JAVA_COMMENT_OR_WHITESPACE_BIT_SET;
   }
 
   @Override
