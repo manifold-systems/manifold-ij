@@ -16,7 +16,7 @@ public class IjBinder extends AbstractBinder<BinExprType, PsiBinaryExpression, P
   private final Map<Pair<PsiType, PsiType>, BinExprType> _mapReactions;
   private PsiBinaryExpression _expr;
 
-  public IjBinder( PsiBinaryExpression expr )
+  IjBinder( PsiBinaryExpression expr )
   {
     _expr = expr;
     _mapReactions = new HashMap<>();
@@ -56,11 +56,11 @@ public class IjBinder extends AbstractBinder<BinExprType, PsiBinaryExpression, P
     }
     else
     {
-      PsiType binder = ManJavaResolveCache.getBinaryType( "prefixBind", lhs, rhs );
+      PsiType binder = ManJavaResolveCache.getBinaryType( "prefixBind", lhs, rhs, _expr );
       boolean swapped = false;
       if( binder == null )
       {
-        binder = ManJavaResolveCache.getBinaryType( "postfixBind", rhs, lhs );
+        binder = ManJavaResolveCache.getBinaryType( "postfixBind", rhs, lhs, _expr );
         swapped = true;
       }
       return binder == null ? null : new BinExprType( binder, null, swapped );
@@ -72,10 +72,10 @@ public class IjBinder extends AbstractBinder<BinExprType, PsiBinaryExpression, P
     // Handle operator overloading
 
     boolean swapped = false;
-    PsiType exprType = ManJavaResolveCache.getBinaryType( operator, left, right );
+    PsiType exprType = ManJavaResolveCache.getBinaryType( operator, left, right, _expr );
     if( exprType == null && ManJavaResolveCache.isCommutative( operator ) )
     {
-      exprType = ManJavaResolveCache.getBinaryType( operator, right, left );
+      exprType = ManJavaResolveCache.getBinaryType( operator, right, left, _expr );
       swapped = true;
     }
 
@@ -130,7 +130,7 @@ public class IjBinder extends AbstractBinder<BinExprType, PsiBinaryExpression, P
     private final PsiExpression _right;
     private final BinExprType _binExprType;
 
-    public MyPsiBinaryExpressionImpl( PsiExpression left, PsiExpression right, BinExprType binExprType )
+    MyPsiBinaryExpressionImpl( PsiExpression left, PsiExpression right, BinExprType binExprType )
     {
       _left = left;
       _right = right;

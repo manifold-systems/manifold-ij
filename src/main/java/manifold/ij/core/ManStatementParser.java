@@ -127,12 +127,6 @@ public class ManStatementParser extends StatementParser
     else if (tokenType == JavaTokenType.BREAK_KEYWORD) {
       return parseBreakStatement(builder);
     }
-    else if ( ManVersionUtil.is2019_2_orGreater() &&
-             tokenType == JavaTokenType.IDENTIFIER &&
-              ReflectUtil.field( PsiKeyword.class, "YIELD" ).getStatic().equals(builder.getTokenText()) &&
-              getLanguageLevel(builder).isAtLeast( (LanguageLevel)ReflectUtil.field( LanguageLevel.class, "JDK_13" ).getStatic() ) ) {
-      return parseYieldStatement(builder);
-    }
     else if (tokenType == JavaTokenType.CONTINUE_KEYWORD) {
       return parseContinueStatement(builder);
     }
@@ -486,23 +480,6 @@ public class ManStatementParser extends StatementParser
     }
     semicolon(builder);
     done(statement, JavaElementType.BREAK_STATEMENT);
-    return statement;
-  }
-
-  @NotNull
-  private PsiBuilder.Marker parseYieldStatement(PsiBuilder builder) {
-    PsiBuilder.Marker statement = builder.mark();
-    builder.remapCurrentToken( (IElementType)ReflectUtil.field( JavaTokenType.class, "YIELD_KEYWORD").getStatic() );
-    builder.advanceLexer();
-
-    if (myParser.getExpressionParser().parse(builder) == null) {
-      error(builder, JavaErrorMessages.message("expected.expression"));
-    }
-    else {
-      semicolon(builder);
-    }
-
-    done(statement, (IElementType)ReflectUtil.field( JavaElementType.class, "YIELD_STATEMENT").getStatic() );
     return statement;
   }
 

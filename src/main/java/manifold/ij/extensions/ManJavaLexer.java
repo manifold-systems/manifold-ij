@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import manifold.ext.api.Jailbreak;
-import manifold.ij.util.ManVersionUtil;
 import manifold.ij.util.ReparseUtil;
 import manifold.preprocessor.PreprocessorParser;
 import manifold.preprocessor.definitions.Definitions;
@@ -26,7 +25,6 @@ import manifold.preprocessor.statement.FileStatement;
 import manifold.preprocessor.statement.IfStatement;
 import manifold.preprocessor.statement.SourceStatement;
 import manifold.preprocessor.statement.Statement;
-import manifold.util.ReflectUtil;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,11 +37,6 @@ import static manifold.preprocessor.TokenType.*;
  */
 public class ManJavaLexer extends LexerBase
 {
-  private static final IElementType TEXT_BLOCK_LITERAL =
-    ManVersionUtil.is2019_2_orGreater()
-    ? (IElementType)ReflectUtil.field( JavaTokenType.class, "TEXT_BLOCK_LITERAL" ).getStatic()
-    : null;
-
   private static final String MANIFOLD_PREPROCESSOR_DUMB_MODE = "manifold.preprocessor.dumb_mode";
   private static final LocklessLazyVar<boolean[]> PREPROCESSOR_DUMB_MODE = LocklessLazyVar.make( () ->
     new boolean[] {PropertiesComponent.getInstance().getBoolean( MANIFOLD_PREPROCESSOR_DUMB_MODE )} );
@@ -220,18 +213,8 @@ public class ManJavaLexer extends LexerBase
         break;
 
       case '"':
-        if( TEXT_BLOCK_LITERAL != null && // non-null if IJ >= 2019.2
-            _bufferIndex + 2 < _bufferEndOffset &&
-            charAt( _bufferIndex + 2 ) == '"' && charAt( _bufferIndex + 1 ) == '"' )
-        {
-          _tokenType = TEXT_BLOCK_LITERAL;
-          _tokenEndOffset = getTextBlockEnd( _bufferIndex + 2 );
-        }
-        else
-        {
-          _tokenType = JavaTokenType.STRING_LITERAL;
-          _tokenEndOffset = getClosingQuote( _bufferIndex + 1, c );
-        }
+        _tokenType = JavaTokenType.STRING_LITERAL;
+        _tokenEndOffset = getClosingQuote( _bufferIndex + 1, c );
         break;
 //
 //      case '`':

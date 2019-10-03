@@ -21,8 +21,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import manifold.ij.util.ManVersionUtil;
-import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import static manifold.ij.template.psi.ManTemplateTokenType.CONTENT;
 import static manifold.ij.template.psi.ManTemplateTokenType.STMT;
@@ -66,13 +64,7 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
   @NotNull
   private static TemplateDataElementType createTemplateDataElementType( Language lang )
   {
-    if( ManVersionUtil.is2018_2_orGreater() )
-    {
-      return new ManTemplateDataElementType( "ManTL_Java", lang, CONTENT );
-    }
-    return (TemplateDataElementType)
-      ReflectUtil.constructor( "manifold.ij.template.ManTemplateDataElementType_Pre2018_2",
-        String.class, Language.class, IElementType.class ).newInstance( "ManTL_Java", lang, CONTENT );
+    return new ManTemplateDataElementType( "ManTL_Java", lang, CONTENT );
   }
 
 

@@ -8,40 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class ManVersionUtil
 {
-  private static LocklessLazyVar<Boolean> is2018_1_orGreater =
-    LocklessLazyVar.make( () -> isOrGreater( 2018, 1 ) );
-
-  private static LocklessLazyVar<Boolean> is2018_2_orGreater =
-    LocklessLazyVar.make( () -> isOrGreater( 2018, 2 ) );
-
-  private static LocklessLazyVar<Boolean> is2019_1_orGreater =
-    LocklessLazyVar.make( () -> isOrGreater( 2019, 1 ) );
-
-  private static LocklessLazyVar<Boolean> is2019_2_orGreater =
-    LocklessLazyVar.make( () -> isOrGreater( 2019, 2 ) );
-
   private static LocklessLazyVar<Boolean> is2019_3_orGreater =
     LocklessLazyVar.make( () -> isOrGreater( 2019, 3 ) );
-
-  public static boolean is2018_1_orGreater()
-  {
-    return is2018_1_orGreater.get();
-  }
-
-  public static boolean is2018_2_orGreater()
-  {
-    return is2018_2_orGreater.get();
-  }
-
-  public static boolean is2019_1_orGreater()
-  {
-    return is2019_1_orGreater.get();
-  }
-
-  public static boolean is2019_2_orGreater()
-  {
-    return is2019_2_orGreater.get();
-  }
 
   public static boolean is2019_3_orGreater()
   {
