@@ -15,6 +15,7 @@ import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiJavaToken;
 import com.intellij.psi.PsiMember;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiParenthesizedExpression;
 import com.intellij.psi.PsiPrimitiveType;
 import com.intellij.psi.PsiSubstitutor;
 import com.intellij.psi.PsiType;
@@ -143,7 +144,7 @@ public class ManJavaResolveCache extends JavaResolveCache
     {
       return true;
     }
-    if( !(expr instanceof PsiExpression) )
+    if( !(expr instanceof PsiExpression) || expr instanceof PsiParenthesizedExpression )
     {
       return false;
     }
