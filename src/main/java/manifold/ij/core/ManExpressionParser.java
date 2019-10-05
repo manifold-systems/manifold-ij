@@ -208,7 +208,11 @@ public class ManExpressionParser extends ExpressionParser {
   //Manifold: modify parseBinary() to handle binding expressions
   @Nullable
   private PsiBuilder.Marker parseBinary( final PsiBuilder builder, final ExprType type, final TokenSet ops) {
-    PsiBuilder.Marker result = parseExpression(builder, type);
+    return parseBinary( null, builder, type, ops );
+  }
+  private PsiBuilder.Marker parseBinary( final PsiBuilder.Marker lhs, final PsiBuilder builder, final ExprType type, final TokenSet ops) {
+    //Manifold: optional lhs from binding expr parsing
+    PsiBuilder.Marker result = lhs == null ? parseExpression(builder, type) : lhs;
     if (result == null) return null;
     int operandCount = 1;
 
@@ -228,7 +232,7 @@ public class ManExpressionParser extends ExpressionParser {
         advanceGtToken( builder, tokenType );
       }
 
-      final PsiBuilder.Marker right = parseExpression(builder, type);
+      final PsiBuilder.Marker right = isBinderExpr ? parseBinderRhs( builder, type ) : parseExpression(builder, type);
       operandCount++;
       tokenType = getGtTokenType(builder);
       //Manifold: comment out if-stmt to prevent "polyadic" expressions, favor binary expressions instead to make bindings work
@@ -246,6 +250,58 @@ public class ManExpressionParser extends ExpressionParser {
     }
 
     return result;
+  }
+
+  //Manifold:
+  private PsiBuilder.Marker parseBinderRhs( PsiBuilder builder, ExprType type )
+  {
+    IElementType tokenType = builder.getTokenType();
+
+    PsiBuilder.Marker expr = null;
+
+    if (LITERALS.contains(tokenType)) {
+      final PsiBuilder.Marker literal = builder.mark();
+      builder.advanceLexer();
+      literal.done(JavaElementType.LITERAL_EXPRESSION);
+      expr = literal;
+    }
+    else if (tokenType == JavaTokenType.LPARENTH) {
+      final PsiBuilder.Marker parenth = builder.mark();
+      builder.advanceLexer();
+
+      final PsiBuilder.Marker inner = parse(builder);
+      if (inner == null) {
+        error(builder, JavaErrorMessages.message("expected.expression"));
+      }
+
+      if (!expect(builder, JavaTokenType.RPARENTH)) {
+        if (inner != null) {
+          error(builder, JavaErrorMessages.message("expected.rparen"));
+        }
+      }
+
+      parenth.done(JavaElementType.PARENTH_EXPRESSION);
+      expr = parenth;
+    }
+    else if (tokenType == JavaTokenType.IDENTIFIER) {
+      final PsiBuilder.Marker refExpr;
+      refExpr = builder.mark();
+      builder.mark().done(JavaElementType.REFERENCE_PARAMETER_LIST);
+
+      builder.advanceLexer();
+      refExpr.done(JavaElementType.REFERENCE_EXPRESSION);
+      expr = refExpr;
+    }
+    else {
+      return null;
+    }
+
+    tokenType = getGtTokenType( builder );
+    if( MULTIPLICATIVE_OPS.contains( tokenType ) )
+    {
+      expr = parseBinary( expr, builder, ExprType.UNARY, MULTIPLICATIVE_OPS );
+    }
+    return expr;
   }
 
   //Manifold: binding expr operands start with Identifier or Literal or LeftParen

@@ -7,7 +7,7 @@ import manifold.science.util.Rational;
 
 import static manifold.science.MetricScaleUnit.r;
 import static manifold.science.util.UnitConstants.m;
-import static manifold.science.util.RangeConstants.*;
+import static manifold.collections.api.range.RangeFun.*;
 
 public class ExerciseBindingExpressions
 {
@@ -17,7 +17,11 @@ public class ExerciseBindingExpressions
     {
       System.out.println( l );
     }
-    for( Rational rat : 5r to 10r )
+    for( Rational rat : 5r to 20r/2 )
+    {
+      System.out.println( rat );
+    }
+    for( Rational rat : 5r to (10r) )
     {
       System.out.println( rat );
     }
