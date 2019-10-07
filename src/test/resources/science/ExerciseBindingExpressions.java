@@ -26,4 +26,9 @@ public class ExerciseBindingExpressions
       System.out.println( rat );
     }
   }
+
+  public void testNegation()
+  {
+    Length l = -(5m);
+  }
 }

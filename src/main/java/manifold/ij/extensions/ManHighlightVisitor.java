@@ -61,7 +61,7 @@ public class ManHighlightVisitor extends HighlightVisitorImpl
       if( !TypeConversionUtil.isBinaryOperatorApplicable( operationSign, lType, rType, false ) )
       {
         if( expression instanceof PsiBinaryExpression &&
-            ManJavaResolveCache.getTypeForOverloadedOperator( (PsiBinaryExpression)expression ) != null )
+            ManJavaResolveCache.getTypeForOverloadedBinaryOperator( (PsiBinaryExpression)expression ) != null )
         {
           continue;
         }

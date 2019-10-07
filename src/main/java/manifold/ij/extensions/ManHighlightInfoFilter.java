@@ -33,6 +33,7 @@ import java.util.List;
 import manifold.ext.api.Jailbreak;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.ij.core.ManPsiPrefixExpressionImpl;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.util.ManPsiUtil;
 import org.jetbrains.annotations.NotNull;
@@ -111,6 +112,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if( filterOperatorMinusCannotBeApplied( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+
     //##
     //## structural interface extensions cannot be added to the psiClass, so for now we suppress "incompatible type
     //## errors" or similar involving a structural interface extension :(
@@ -122,6 +128,15 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     return true;
+  }
+
+  // allow negation operator overload
+  private boolean filterOperatorMinusCannotBeApplied( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    return firstElem instanceof PsiJavaToken && ((PsiJavaToken)firstElem).getTokenType() == JavaTokenType.MINUS &&
+           elem instanceof ManPsiPrefixExpressionImpl &&
+           hi.getDescription().contains( "Operator '-' cannot be applied to" ) &&
+           ((ManPsiPrefixExpressionImpl)elem).getTypeForOverloadedOperator() != null;
   }
 
   private boolean filterUnclosedComment( HighlightInfo hi, PsiElement firstElem )
