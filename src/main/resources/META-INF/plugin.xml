@@ -128,12 +128,6 @@ Fix https://github.com/manifold-systems/manifold/issues/117: NoSuchFileException
     </group>
   </actions>
 
-  <application-components>
-    <component>
-      <implementation-class>manifold.ij.core.ManApplicationComponent</implementation-class>
-    </component>
-  </application-components>
-
   <project-components>
     <component>
       <implementation-class>manifold.ij.core.ManProjectComponent</implementation-class>
