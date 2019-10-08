@@ -5,7 +5,7 @@ import java.util.List;
 import manifold.science.Length;
 import manifold.science.util.Rational;
 
-import static manifold.science.MetricScaleUnit.r;
+import static manifold.science.util.CoercionConstants.r;
 import static manifold.science.util.UnitConstants.m;
 import static manifold.collections.api.range.RangeFun.*;
 

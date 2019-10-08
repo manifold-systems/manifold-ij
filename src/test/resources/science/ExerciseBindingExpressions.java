@@ -8,8 +8,8 @@ import manifold.science.Length;
 import manifold.science.util.Rational;
 
 
-import static manifold.science.MetricScaleUnit.r;
 import static manifold.science.util.UnitConstants.m;
+import static manifold.science.util.CoercionConstants.*;
 import static manifold.collections.api.range.RangeFun.*;
 
 
@@ -19,8 +19,11 @@ public class ExerciseBindingExpressions
 {
   public void testBigDecimal()
   {
-    BigDecimal bd1 = new BigDecimal( "1.2" );
-    BigDecimal bd2 = new BigDecimal( "2.4" );
+    BigDecimal bd1 = 1.2bd;
+    BigDecimal bd2 = 2.4bd;
+
+    assertTrue( new BigDecimal( "1.2" ) == bd1 );
+    assertTrue( new BigDecimal( "2.4" ) == bd2 );
 
     assertTrue( new BigDecimal( "-1.2" ) == -bd1 );
     assertTrue( new BigDecimal( "3.6" ) == bd1 + bd2 );
