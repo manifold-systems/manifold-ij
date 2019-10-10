@@ -33,6 +33,16 @@ public class ExerciseBindingExpressions
     assertTrue( new BigDecimal( "1.2" ) == bd1 % bd2 );
   }
 
+  public void testComparable()
+  {
+    assertTrue( "A" < "B" );
+    assertTrue( "A" <= "B" );
+    assertTrue( "A" <= "A" );
+    assertTrue( "B" > "A" );
+    assertTrue( "B" >= "A" );
+    assertTrue( "B" >= "B" );
+  }
+
   public void testFuzz()
   {
     Fuzz bar = new Fuzz(3.0);

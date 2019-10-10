@@ -43,6 +43,7 @@ import org.jetbrains.annotations.Nullable;
 public class ManJavaResolveCache extends JavaResolveCache
 {
   // public static final Key<CachedBindingPsiType> KEY_BINARY_EXPR_TYPE = new Key<>( "KEY_BINARY_EXPR_TYPE" );
+  private static final String COMPARE_TO = "compareTo";
   private static final String COMPARE_TO_USING = "compareToUsing";
   private static Map<IElementType, String> BINARY_OP_TO_NAME = new HashMap<IElementType, String>()
   {{
@@ -132,6 +133,16 @@ public class ManJavaResolveCache extends JavaResolveCache
     if( type == null && isCommutative( op ) )
     {
       type = getBinaryType( opName, right, left, expr );
+    }
+    else if( type == null && opName.equals( COMPARE_TO_USING ) &&
+             !(left instanceof PsiPrimitiveType) && isRelationalOperator( op ) )
+    {
+      // Support > >= < <= on any Comparable implementor
+      type = getBinaryType( COMPARE_TO, left, right, expr );
+      if( type != null && type.equals( PsiType.INT ) )
+      {
+        type = PsiType.BOOLEAN;
+      }
     }
     return type;
   }
@@ -316,6 +327,15 @@ public class ManJavaResolveCache extends JavaResolveCache
   {
     return tag == JavaTokenType.EQEQ ||
            tag == JavaTokenType.NE ||
+           tag == JavaTokenType.LT ||
+           tag == JavaTokenType.LE ||
+           tag == JavaTokenType.GT ||
+           tag == JavaTokenType.GE;
+  }
+
+  private static boolean isRelationalOperator( IElementType tag )
+  {
+    return tag == JavaTokenType.NE ||
            tag == JavaTokenType.LT ||
            tag == JavaTokenType.LE ||
            tag == JavaTokenType.GT ||

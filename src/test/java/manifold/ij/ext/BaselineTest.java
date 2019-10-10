@@ -40,9 +40,9 @@ public class BaselineTest extends LightFixtureCompletionTestCase
 
     @NotNull
     @Override
-    public ModuleType getModuleType()
+    public String getModuleTypeId()
     {
-      return StdModuleTypes.JAVA;
+      return StdModuleTypes.JAVA.getId();
     }
 
     @Override
@@ -52,7 +52,6 @@ public class BaselineTest extends LightFixtureCompletionTestCase
              ? _sdk = JavaSdk.getInstance().createJdk( "1.8", new File( getPath_JdkRoot() + File.separatorChar + getJdkVersion() ).getAbsolutePath(), false )
              : _sdk;
     }
-
 
     /**
      * @return The root directory of JDKs
