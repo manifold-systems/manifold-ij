@@ -117,17 +117,22 @@ public class ManJavaResolveCache extends JavaResolveCache
     }
 
     PsiType left = expr.getLOperand().getType();
+    if( left == null )
+    {
+      return null;
+    }
+
     PsiExpression rOperand = expr.getROperand();
     if( rOperand == null )
     {
       return null;
     }
+
     PsiType right = rOperand.getType();
     if( right == null || left instanceof PsiPrimitiveType && right instanceof PsiPrimitiveType )
     {
       return null;
     }
-
 
     PsiType type = getBinaryType( opName, left, right, expr );
     if( type == null && isCommutative( op ) )
