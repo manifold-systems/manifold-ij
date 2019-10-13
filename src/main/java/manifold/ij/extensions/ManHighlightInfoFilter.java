@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.JavaResolveResult;
 import com.intellij.psi.JavaTokenType;
+import com.intellij.psi.PsiBinaryExpression;
 import com.intellij.psi.PsiCapturedWildcardType;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
@@ -25,6 +26,7 @@ import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeCastExpression;
 import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.PsiWildcardType;
+import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiLocalVariableImpl;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -38,6 +40,9 @@ import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.util.ManPsiUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+
+import static manifold.ij.extensions.ManAugmentProvider.KEY_MAN_INTERFACE_EXTENSIONS;
 
 
 /**
@@ -68,6 +73,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     if( hi.getDescription() == null )
     {
       return true;
+    }
+
+    if( filterComparedUsingEquals( hi, file ) )
+    {
+      return false;
     }
 
     if( hi.getSeverity() != HighlightSeverity.ERROR )
@@ -128,6 +138,31 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     return true;
+  }
+
+  // Operator overloading: Filter warning messages like "Number objects are compared using '==', not 'equals()'"
+  private boolean filterComparedUsingEquals( HighlightInfo hi, PsiFile file )
+  {
+    if( hi != null )
+    {
+      String description = hi.getDescription();
+      if( description != null &&
+          (description.contains( "compared using '=='" ) ||
+           description.contains( "compared using '!='" )) )
+      {
+        PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
+        if( firstElem != null )
+        {
+          PsiElement parent = firstElem.getParent();
+          if( parent instanceof PsiBinaryExpressionImpl )
+          {
+            PsiType type = ManJavaResolveCache.getTypeForOverloadedBinaryOperator( (PsiBinaryExpression)parent );
+            return type != null;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   // allow negation operator overload
@@ -374,7 +409,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     psiClass.getMethods(); // force the ManAugmentProvider to add the KEY_MAN_INTERFACE_EXTENSIONS data, if it hasn't yet
-    List<String> ifaceExtenions = psiClass.getUserData( ManAugmentProvider.KEY_MAN_INTERFACE_EXTENSIONS );
+    List<String> ifaceExtenions = psiClass.getUserData( KEY_MAN_INTERFACE_EXTENSIONS );
     if( ifaceExtenions == null || ifaceExtenions.isEmpty() )
     {
       return false;
