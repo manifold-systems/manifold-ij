@@ -26,6 +26,7 @@ import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeCastExpression;
 import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.PsiWildcardType;
+import com.intellij.psi.impl.source.tree.ChildRole;
 import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiLocalVariableImpl;
 import com.intellij.psi.infos.MethodCandidateInfo;
@@ -42,6 +43,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 
+import static com.intellij.psi.impl.source.tree.ChildRole.OPERATION_SIGN;
 import static manifold.ij.extensions.ManAugmentProvider.KEY_MAN_INTERFACE_EXTENSIONS;
 
 
@@ -75,15 +77,31 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return true;
     }
 
+    //
+    // Handle Warnings OR Errors...
+    //
+
     if( filterComparedUsingEquals( hi, file ) )
     {
       return false;
     }
 
+    if( filterCanBeReplacedWith( hi, file ) )
+    {
+      return false;
+    }
+
+
+
     if( hi.getSeverity() != HighlightSeverity.ERROR )
     {
       return true;
     }
+
+
+    //
+    // Handle only Errors...
+    //
 
     if( filterUnhandledCheckedExceptions( hi, file ) )
     {
@@ -160,6 +178,32 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
             return type != null;
           }
         }
+      }
+    }
+    return false;
+  }
+
+  // Filter warning messages like "1 Xxx can be replaced with Xxx" where '1 Xxx' is a binding expression
+  private boolean filterCanBeReplacedWith( HighlightInfo hi, PsiFile file )
+  {
+    if( hi != null )
+    {
+      String description = hi.getDescription();
+      if( description != null && description.contains( "can be replaced with" ) )
+      {
+        PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
+        while( !(firstElem instanceof PsiBinaryExpressionImpl)  )
+        {
+          if( firstElem == null )
+          {
+            return false;
+          }
+          firstElem = firstElem.getParent();
+        }
+
+        // a null operator indicates a biding expression
+        PsiElement child = ((PsiBinaryExpressionImpl)firstElem).findChildByRoleAsPsiElement( OPERATION_SIGN );
+        return child == null;
       }
     }
     return false;
