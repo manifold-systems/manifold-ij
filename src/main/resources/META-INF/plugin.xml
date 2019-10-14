@@ -247,6 +247,12 @@ Length distance = rate * time;
     </group>
   </actions>
 
+  <application-components>
+    <component>
+      <implementation-class>manifold.ij.core.ManApplicationComponent</implementation-class>
+    </component>
+  </application-components>
+
   <project-components>
     <component>
       <implementation-class>manifold.ij.core.ManProjectComponent</implementation-class>
