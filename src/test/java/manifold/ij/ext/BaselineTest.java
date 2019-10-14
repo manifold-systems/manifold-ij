@@ -53,7 +53,6 @@ public class BaselineTest extends LightFixtureCompletionTestCase
              : _sdk;
     }
 
-
     /**
      * @return The root directory of JDKs
      */
