@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.JavaResolveResult;
 import com.intellij.psi.JavaTokenType;
+import com.intellij.psi.PsiBinaryExpression;
 import com.intellij.psi.PsiCapturedWildcardType;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
@@ -25,6 +26,8 @@ import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeCastExpression;
 import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.PsiWildcardType;
+import com.intellij.psi.impl.source.tree.ChildRole;
+import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiLocalVariableImpl;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -33,10 +36,15 @@ import java.util.List;
 import manifold.ext.api.Jailbreak;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.ij.core.ManPsiPrefixExpressionImpl;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.util.ManPsiUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+
+import static com.intellij.psi.impl.source.tree.ChildRole.OPERATION_SIGN;
+import static manifold.ij.extensions.ManAugmentProvider.KEY_MAN_INTERFACE_EXTENSIONS;
 
 
 /**
@@ -69,10 +77,31 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return true;
     }
 
+    //
+    // Handle Warnings OR Errors...
+    //
+
+    if( filterComparedUsingEquals( hi, file ) )
+    {
+      return false;
+    }
+
+    if( filterCanBeReplacedWith( hi, file ) )
+    {
+      return false;
+    }
+
+
+
     if( hi.getSeverity() != HighlightSeverity.ERROR )
     {
       return true;
     }
+
+
+    //
+    // Handle only Errors...
+    //
 
     if( filterUnhandledCheckedExceptions( hi, file ) )
     {
@@ -111,6 +140,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if( filterOperatorMinusCannotBeApplied( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+
     //##
     //## structural interface extensions cannot be added to the psiClass, so for now we suppress "incompatible type
     //## errors" or similar involving a structural interface extension :(
@@ -122,6 +156,66 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     return true;
+  }
+
+  // Operator overloading: Filter warning messages like "Number objects are compared using '==', not 'equals()'"
+  private boolean filterComparedUsingEquals( HighlightInfo hi, PsiFile file )
+  {
+    if( hi != null )
+    {
+      String description = hi.getDescription();
+      if( description != null &&
+          (description.contains( "compared using '=='" ) ||
+           description.contains( "compared using '!='" )) )
+      {
+        PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
+        if( firstElem != null )
+        {
+          PsiElement parent = firstElem.getParent();
+          if( parent instanceof PsiBinaryExpressionImpl )
+          {
+            PsiType type = ManJavaResolveCache.getTypeForOverloadedBinaryOperator( (PsiBinaryExpression)parent );
+            return type != null;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  // Filter warning messages like "1 Xxx can be replaced with Xxx" where '1 Xxx' is a binding expression
+  private boolean filterCanBeReplacedWith( HighlightInfo hi, PsiFile file )
+  {
+    if( hi != null )
+    {
+      String description = hi.getDescription();
+      if( description != null && description.contains( "can be replaced with" ) )
+      {
+        PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
+        while( !(firstElem instanceof PsiBinaryExpressionImpl)  )
+        {
+          if( firstElem == null )
+          {
+            return false;
+          }
+          firstElem = firstElem.getParent();
+        }
+
+        // a null operator indicates a biding expression
+        PsiElement child = ((PsiBinaryExpressionImpl)firstElem).findChildByRoleAsPsiElement( OPERATION_SIGN );
+        return child == null;
+      }
+    }
+    return false;
+  }
+
+  // allow negation operator overload
+  private boolean filterOperatorMinusCannotBeApplied( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    return firstElem instanceof PsiJavaToken && ((PsiJavaToken)firstElem).getTokenType() == JavaTokenType.MINUS &&
+           elem instanceof ManPsiPrefixExpressionImpl &&
+           hi.getDescription().contains( "Operator '-' cannot be applied to" ) &&
+           ((ManPsiPrefixExpressionImpl)elem).getTypeForOverloadedOperator() != null;
   }
 
   private boolean filterUnclosedComment( HighlightInfo hi, PsiElement firstElem )
@@ -359,7 +453,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     psiClass.getMethods(); // force the ManAugmentProvider to add the KEY_MAN_INTERFACE_EXTENSIONS data, if it hasn't yet
-    List<String> ifaceExtenions = psiClass.getUserData( ManAugmentProvider.KEY_MAN_INTERFACE_EXTENSIONS );
+    List<String> ifaceExtenions = psiClass.getUserData( KEY_MAN_INTERFACE_EXTENSIONS );
     if( ifaceExtenions == null || ifaceExtenions.isEmpty() )
     {
       return false;

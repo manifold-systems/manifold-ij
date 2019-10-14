@@ -4,13 +4,14 @@
   <description>
     <![CDATA[
 <h2><a href="#what-is-manifold" id="what-is-manifold">What is Manifold?</a></h2>
-<p><a href="http://manifold.systems">Manifold</a> plugs into Java to supplement it with game-changing features, from Type-safe Metaprogramming,
-Structural Typing, and Extension Methods to an integrated Template Engine and a Preprocessor. All fully supported in IntelliJ IDEA.
-Simply add Manifold to your project and begin taking advantage of it.</p>
+<p><a href="http://manifold.systems">Manifold</a> plugs into Java to supplement it with game-changing features, from Type-safe
+Metaprogramming, Extension Methods, Operator Overloading, and Unit Expressions to an integrated Template Engine and a
+Preprocessor. All fully supported in IntelliJ IDEA. Simply add Manifold to your project and begin taking advantage of
+it.</p>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
 <h3><a href="#meta-programming" id="meta-programming"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold">Meta-programming</a></a></h3>
 <p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as <strong>GraphQL</strong>, <strong>JSON Schema</strong>
-and <strong>YAML</strong>. Remove the code gen step in your build process. <a href="http://manifold.systems/images/graphql.mp4">Check it out!</a></p>
+and <strong>YAML</strong>. Remove the code gen step in your build process. <a href="http://manifold.systems/images/graphql.mp4">&nbsp;<strong>▶</strong>&nbsp;Check&nbsp;it&nbsp;out!</a></p>
 <pre><code class="java">// Use your User.json schema file directly as a type, no code gen!
 User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&quot;)
   .withGender(male)
@@ -18,14 +19,57 @@ User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&q
   .build();
 User.request(&quot;http://api.example.com/users&quot;).postOne(user);
 </code></pre>
-<h3><a href="#extensions" id="extensions"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extensions</a></a></h3>
-<p>Add extension methods to existing Java classes, even String, List, and File. Eliminate boilerplate code. <a href="http://manifold.systems/images/ExtensionMethod.mp4">Check it out!</a></p>
+<h3><a href="#extension-methods" id="extension-methods"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extension Methods</a></a></h3>
+<p>Add your own methods to existing Java classes, even <code>String</code>, <code>List</code>, and <code>File</code>. Eliminate boilerplate code.
+<a href="http://manifold.systems/images/ExtensionMethod.mp4">&nbsp;<strong>▶</strong>&nbsp;Check&nbsp;it&nbsp;out!</a></p>
 <pre><code class="java">String greeting = &quot;hello&quot;;
 greeting.myMethod(); // Add your own methods to String!
 </code></pre>
+<h3><a href="#operator-overloading" id="operator-overloading"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#operator-overloading">Operator Overloading</a></a></h3>
+<p>Implement <em>operator</em> methods on any type to directly support arithmetic, relational, and unit operators.</p>
+<pre><code class="java">// BigDecimal expressions
+if (bigDec1 &gt; bigDec2) {
+  BigDecimal result = bigDec1 + bigDec2;
+  ...
+}
+// Implemnet operators for any type
+MyType value = myType1 + myType2;
+</code></pre>
+<h3><a href="#unit-expressions" id="unit-expressions"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions">Unit Expressions</a></a></h3>
+<p>Unit or <em>binding</em> operations are unique to the Manifold framework. They provide a powerfully concise syntax and can be
+applied to a wide range of applications.</p>
+<pre><code class="java">import static manifold.science.util.UnitConstants.*; // kg, m, s, ft, etc
+...
+Length distance = 100 mph * 3 hr;
+Force f = 5.2 kg m/s/s; // same as 5.2 N
+Mass infant = 9 lb + 8.71 oz;
+</code></pre>
+<h3><a href="#ranges" id="ranges"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-collections#ranges">Ranges</a></a></h3>
+<p>Easily work with the <code>Range</code> API using <a href="(https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions)">unit expressions</a>.
+Simply import the <code>RangeFun</code> constants to create ranges.</p>
+<pre><code class="java">// imports the `to`, `step`, and other &quot;binding&quot; constants
+import static manifold.collections.api.range.RangeFun.*;
+...
+for (int i: 1 to 5) {
+  out.println(i);
+}
+
+for (Mass m: 0kg to 10kg step 22r unit g) {
+  out.println(m);
+}
+</code></pre>
+<h3><a href="#science" id="science"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">Science</a></a></h3>
+<p>Use the <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">manifold-science</a>
+framework to type-safely incorporate units and precise measurements into your applications.</p>
+<pre><code class="java">import static manifold.science.util.UnitConstants.*; // kg, m, s, ft, etc.
+...
+Velocity rate = 65mph;
+Time time = 1min + 3.7sec;
+Length distance = rate * time;
+</code></pre>
 <h3><a href="#preprocessor" id="preprocessor"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">Preprocessor</a></a></h3>
 <p>Use familiar directives such as <code>#define</code> and <code>#if</code> to conditionally compile your Java projects. The preprocessor offers
-a simple and convenient way to support multiple build targets with a single codebase. <a href="http://manifold.systems/images/preprocessor.mp4">Check it out!</a></p>
+a simple and convenient way to support multiple build targets with a single codebase. <a href="http://manifold.systems/images/preprocessor.mp4">&nbsp;<strong>▶</strong>&nbsp;Check&nbsp;it&nbsp;out!</a></p>
 <pre><code class="java">#if JAVA_8_OR_LATER
   @Override
   public void setTime(LocalDateTime time) {...)
@@ -35,7 +79,7 @@ a simple and convenient way to support multiple build targets with a single code
 #endif
 </code></pre>
 <h3><a href="#structural-typing" id="structural-typing"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#structural-interfaces-via-structural">Structural Typing</a></a></h3>
-<p>Unify disparate APIs. Bridge software components you do not control. Access maps through type-safe interfaces. <a href="http://manifold.systems/images/structural%20typing.mp4">Check it out!</a></p>
+<p>Unify disparate APIs. Bridge software components you do not control. Access maps through type-safe interfaces. <a href="http://manifold.systems/images/structural%20typing.mp4">&nbsp;<strong>▶</strong>&nbsp;Check&nbsp;it&nbsp;out!</a></p>
 <pre><code class="java">Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();
 MyThingInterface thing = (MyThingInterface) map; // O_o
 thing.setFoo(new Foo());
@@ -43,7 +87,7 @@ Foo foo = thing.getFoo();
 out.println(thing.getClass()); // prints &quot;java.util.HashMap&quot;
 </code></pre>
 <h3><a href="#type-safe-reflection" id="type-safe-reflection"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#type-safe-reflection-via-jailbreak">Type-safe Reflection</a></a></h3>
-<p>Access private features with <b>@Jailbreak</b> to avoid the drudgery and vulnerability of Java reflection. <a href="http://manifold.systems/images/jailbreak.mp4">Check it out!</a></p>
+<p>Access private features with <b>@Jailbreak</b> to avoid the drudgery and vulnerability of Java reflection. <a href="http://manifold.systems/images/jailbreak.mp4">&nbsp;<strong>▶</strong>&nbsp;Check&nbsp;it&nbsp;out!</a></p>
 <pre><code class="java">@Jailbreak Foo foo = new Foo();
 // Direct, *type-safe* access to *all* foo's members
 foo.privateMethod(x, y, z);
@@ -57,8 +101,8 @@ List&lt;URL&gt; urls = list
   .map(URL::new) // No need to handle the MalformedURLException!
   .collect(Collectors.toList());
 </code></pre>
-<h3><a href="#string-templates-aka-string-interpolation" id="string-templates-aka-string-interpolation"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-strings">String Templates</a> (aka String Interpolation)</a></h3>
-<p>Embed variables and expressions in String literals, no more clunky string concat! <a href="http://manifold.systems/images/string_interpolation.mp4">Check it out!</a></p>
+<h3><a href="#string-templates" id="string-templates"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-strings">String Templates</a></a></h3>
+<p>Embed variables and expressions in String literals, no more clunky string concat! <a href="http://manifold.systems/images/string_interpolation.mp4">&nbsp;<strong>▶</strong>&nbsp;Check&nbsp;it&nbsp;out!</a></p>
 <pre><code class="java">int hour = 15;
 // Simple variable access with '$'
 String result = &quot;The hour is $hour&quot;; // Yes!!!
@@ -67,7 +111,7 @@ result = &quot;It is ${hour &gt; 12 ? hour-12 : hour} o'clock&quot;;
 </code></pre>
 <h3><a href="#template-files-with-mantl" id="template-files-with-mantl"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">Template Files with <em>ManTL</em></a></a></h3>
 <p>Author template files with the full expressive power of Java, use your templates directly in your code as types.
-Supports type-safe inclusion of other templates, shared layouts, and more. <a href="http://manifold.systems/images/mantl.mp4">Check it out!</a></p>
+Supports type-safe inclusion of other templates, shared layouts, and more. <a href="http://manifold.systems/images/mantl.mp4">&nbsp;<strong>▶</strong>&nbsp;Check&nbsp;it&nbsp;out!</a></p>
 <pre><code class="java">List&lt;User&gt; users = ...;
 String content = abc.example.UserSample.render(users);
 </code></pre>
@@ -86,16 +130,48 @@ String content = abc.example.UserSample.render(users);
 &lt;/body&gt;
 &lt;/html&gt;
 </code></pre>
-<h3><a href="#libraries" id="libraries"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates#extension-libraries">Libraries</a></a></h3>
-<p>Leverage stock Manifold extension libraries for standard Java classes. Save time and reduce boilerplate code.</p>
-<pre><code class="java">File file = new File(path);
-// Use refreshing extensions to File
-String content = file.readText();
-</code></pre>
-<h3><a href="#intellij" id="intellij"><a href="http://manifold.systems/docs.html#working-with-intellij">IntelliJ</a></a></h3>
-<p>Use the Manifold IntelliJ IDEA plugin to fully leverage Manifold in your development cycle. The plugin provides
-comprehensive support for IntelliJ features including code completion, navigation, usage searching, refactoring,
-incremental compilation, hotswap debugging, full-featured template editing, and more.</p>
+<h3><a href="#intellij" id="intellij"><a href="http://manifold.systems/docs.html#ide--intellij-idea">IntelliJ</a></a></h3>
+<p>Use the <a href="https://plugins.jetbrains.com/plugin/10057-manifold">Manifold IntelliJ IDEA plugin</a> to fully leverage
+Manifold in your development cycle. The plugin provides comprehensive support for IntelliJ features including code
+completion, navigation, usage searching, refactoring, incremental compilation, hotswap debugging, full-featured
+template editing, integrated preprocessor, and more.</p>
+<p><img src="http://manifold.systems/images/ManifoldPlugin.png" alt="manifold ij plugin" width="60%" height="60%"/></p>
+<blockquote>
+  <p>Note the Manifold Plugin for IntelliJ IDEA is <strong>free</strong> for use with IntelliJ IDEA <strong>Community Edition</strong> which like
+  the Manifold project is free and open source. The plugin is also commercially available on a trial basis via the
+  JetBrains Marketplace for use with IntelliJ IDEA <strong>Ultimate Edition</strong>.</p>
+</blockquote>
+<h3><a href="#projects" id="projects"><a href="http://manifold.systems/projects.html">Projects</a></a></h3>
+<p>The Manifold project consists of the core Manifold framework and a collection of sub-projects implementing SPIs provided
+by the core framework. Each project represents a separate <strong>dependency</strong> you can easily add to your project:</p>
+<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold">Manifold : <em>Core</em></a><br></p>
+<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-graphql">Manifold : <em>GraphQL</em></a><br>
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-json">Manifold : <em>JSON</em></a><br>
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-yaml">Manifold : <em>YAML</em></a><br>
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-properties">Manifold : <em>Properties</em></a><br>
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-image">Manifold : <em>Image</em></a><br>
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-darkj">Manifold : <em>Dark Java</em></a><br>
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-js">Manifold : <em>JavaScript</em></a><br></p>
+<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Manifold : <em>Java Extension</em></a><br></p>
+<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">Manifold : <em>Templates (ManTL)</em></a><br></p>
+<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-strings">Manifold : <em>String Interpolation</em></a><br>
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-exceptions">Manifold : <em>[Un]checked Exceptions</em></a><br></p>
+<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">Manifold : <em>Preprocessor</em></a><br></p>
+<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">Manifold : <em>Science</em></a><br></p>
+<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-collections">Manifold : <em>Collections</em></a><br>
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-io">Manifold : <em>I/0</em></a><br>
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-text">Manifold : <em>Text</em></a><br></p>
+<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-all">Manifold : <em>All&nbsp;&nbsp;(Über jar)</em></a><br></p>
+<blockquote>
+  <p>Experiment with sample projects:<br></p>
+  <ul>
+    <li><a href="https://github.com/manifold-systems/manifold-sample-project">Manifold : <em>Sample App</em></a><br></li>
+    <li><a href="https://github.com/manifold-systems/manifold-sample-graphql-app">Manifold : <em>Sample GraphQL App</em></a><br></li>
+    <li><a href="https://github.com/manifold-systems/manifold-sample-rest-api">Manifold : <em>Sample REST API App</em></a><br></li>
+    <li><a href="https://github.com/manifold-systems/manifold-sample-web-app">Manifold : <em>Sample Web App</em></a></li>
+  </ul>
+</blockquote>
+<br>
 <h3><a href="#learn-more" id="learn-more"><a href="http://manifold.systems/docs.html">Learn More</a></a></h3>
     ]]>
   </description>
@@ -110,7 +186,50 @@ incremental compilation, hotswap debugging, full-featured template editing, and 
 
   <change-notes>
     <![CDATA[
-Fix https://github.com/manifold-systems/manifold/issues/117: NoSuchFileException loading plugin with IntelliJ 2019.2.1<br>
+<h2>New Features!</h3>
+<p/>
+<h3><a href="#operator-overloading" id="operator-overloading"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#operator-overloading">Operator Overloading</a></a></h3>
+<p>Implement <em>operator</em> methods on any type to directly support arithmetic, relational, and unit operators.</p>
+<pre><code class="java">// BigDecimal expressions
+if (bigDec1 &gt; bigDec2) {
+  BigDecimal result = bigDec1 + bigDec2;
+  ...
+}
+// Implemnet operators for any type
+MyType value = myType1 + myType2;
+</code></pre>
+<h3><a href="#unit-expressions" id="unit-expressions"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions">Unit Expressions</a></a></h3>
+<p>Unit or <em>binding</em> operations are unique to the Manifold framework. They provide a powerfully concise syntax and can be
+applied to a wide range of applications.</p>
+<pre><code class="java">import static manifold.science.util.UnitConstants.*; // kg, m, s, ft, etc
+...
+Length distance = 100 mph * 3 hr;
+Force f = 5.2 kg m/s/s; // same as 5.2 N
+Mass infant = 9 lb + 8.71 oz;
+</code></pre>
+<h3><a href="#ranges" id="ranges"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-collections#ranges">Ranges</a></a></h3>
+<p>Easily work with the <code>Range</code> API using <a href="(https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions)">unit expressions</a>.
+Simply import the <code>RangeFun</code> constants to create ranges.</p>
+<pre><code class="java">// imports the `to`, `step`, and other &quot;binding&quot; constants
+import static manifold.collections.api.range.RangeFun.*;
+...
+for (int i: 1 to 5) {
+  out.println(i);
+}
+
+for (Mass m: 0kg to 10kg step 22r unit g) {
+  out.println(m);
+}
+</code></pre>
+<h3><a href="#science" id="science"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">Science</a></a></h3>
+<p>Use the <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">manifold-science</a>
+framework to type-safely incorporate units and precise measurements into your applications.</p>
+<pre><code class="java">import static manifold.science.util.UnitConstants.*; // kg, m, s, ft, etc.
+...
+Velocity rate = 65mph;
+Time time = 1min + 3.7sec;
+Length distance = rate * time;
+</code></pre>
     ]]>
   </change-notes>
 
@@ -127,12 +246,6 @@ Fix https://github.com/manifold-systems/manifold/issues/117: NoSuchFileException
       <add-to-group group-id="ViewMenu" anchor="after" relative-to-action="QuickActions"/>
     </group>
   </actions>
-
-  <application-components>
-    <component>
-      <implementation-class>manifold.ij.core.ManApplicationComponent</implementation-class>
-    </component>
-  </application-components>
 
   <project-components>
     <component>
