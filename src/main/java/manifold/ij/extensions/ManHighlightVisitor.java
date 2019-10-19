@@ -14,6 +14,7 @@ import com.intellij.psi.PsiResolveHelper;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.TypeConversionUtil;
+import manifold.ij.core.ManProject;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +40,13 @@ public class ManHighlightVisitor extends HighlightVisitorImpl
   @Override
   public void visitPolyadicExpression( PsiPolyadicExpression expression )
   {
+    if( !ManProject.isManifoldInUse( expression ) )
+    {
+      // Manifold jars are not used in the project
+      super.visitPolyadicExpression( expression );
+      return;
+    }
+
     visitExpression( expression );
     Object myHolder = ReflectUtil.field( this, "myHolder" ).get();
     if( !(boolean)ReflectUtil.method( myHolder, "hasErrorResults" ).invoke() )

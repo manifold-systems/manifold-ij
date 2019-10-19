@@ -203,6 +203,9 @@ public class ManProject
 
   private void init()
   {
+    // Remove stock highlighter regardless of _manInUse since we add a replacement in plugin.xml
+    removeHighlighter();
+    
     _manInUse = ManLibraryChecker.instance().isUsingManifoldJars( _ijProject );
 
     licenseCheck();
@@ -220,8 +223,6 @@ public class ManProject
     _modules = LockingLazyVar.make( () -> ApplicationManager.getApplication().<Map<Module, ManModule>>runReadAction( this::defineModules ) );
     _rootModules = assignRootModuleLazy();
     ManLibraryChecker.instance().warnIfManifoldJarsAreOld( getNativeProject() );
-
-    removeHighlighter();
   }
 
   private void removeHighlighter()

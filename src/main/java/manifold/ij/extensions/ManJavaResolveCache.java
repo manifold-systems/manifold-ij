@@ -36,6 +36,7 @@ import com.intellij.util.messages.MessageBus;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import manifold.ij.core.ManProject;
 import manifold.internal.javac.AbstractBinder.Node;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -64,6 +65,12 @@ public class ManJavaResolveCache extends JavaResolveCache
   @Override
   public <T extends PsiExpression> PsiType getType( @NotNull T expr, @NotNull Function<T, PsiType> f )
   {
+    if( !ManProject.isManifoldInUse( expr ) )
+    {
+      // Manifold jars are not used in the project
+      return super.getType( expr, f );
+    }
+
     if( expr instanceof PsiBinaryExpression )
     {
       PsiType type = getTypeForOverloadedBinaryOperator( (PsiBinaryExpression)expr );
