@@ -230,6 +230,10 @@ Velocity rate = 65mph;
 Time time = 1min + 3.7sec;
 Length distance = rate * time;
 </code></pre>
+<h3>Bug Fixes:</h3>
+<ul>
+<li><a href="https://github.com/manifold-systems/manifold/issues/127">Issue #127:&nbsp;</a>IntelliJ plugin: Project <i>without</i> Manifold dependency never finishes inspections in editor</li>
+</ul>
     ]]>
   </change-notes>
 
