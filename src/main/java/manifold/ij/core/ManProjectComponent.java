@@ -10,22 +10,14 @@ import com.intellij.ide.startup.impl.StartupManagerImpl;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageAnnotators;
 import com.intellij.lang.LanguageBraceMatching;
-import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.impl.java.stubs.JavaLiteralExpressionElementType;
-import com.intellij.psi.impl.java.stubs.JavaStubElementTypes;
-import com.intellij.psi.impl.source.tree.JavaElementType;
-import com.intellij.psi.tree.IElementType;
-import java.util.function.Supplier;
-import manifold.ij.extensions.ManJavaLiteralExpressionElementType;
 import manifold.ij.extensions.ManifoldPsiClassAnnotator;
 import manifold.ij.template.ManTemplateBraceMatcher;
 import manifold.ij.template.ManTemplateLanguage;
-import manifold.util.ReflectUtil;
 
 public class ManProjectComponent implements ProjectComponent
 {
