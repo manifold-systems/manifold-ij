@@ -18,6 +18,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
+import manifold.ij.core.ManProject;
 import manifold.preprocessor.PreprocessorParser;
 import manifold.preprocessor.TokenType;
 import manifold.preprocessor.Tokenizer;
@@ -61,6 +62,12 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
   @Override
   public Info doAnnotate( PsiFile file )
   {
+    if( !ManProject.isManifoldInUse( file ) )
+    {
+      // Manifold jars are not used in the project
+      return new Info();
+    }
+
     Info info = new Info();
     String source = file.getText();
     PreprocessorParser parser = new PreprocessorParser( source, t -> addDirective( t, info ) );
@@ -85,6 +92,12 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
   @Override
   public void apply( @NotNull PsiFile file, Info info, @NotNull AnnotationHolder holder )
   {
+    if( !ManProject.isManifoldInUse( file ) )
+    {
+      // Manifold jars are not used in the project
+      return;
+    }
+
     info.getDirectives().forEach( d -> {
       Annotation annotation = holder.createAnnotation( HighlightSeverity.INFORMATION, TextRange.create( d[0], d[1] ), null );
       annotation.setEnforcedTextAttributes( _directiveKeyword );

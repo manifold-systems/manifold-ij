@@ -1,5 +1,6 @@
 package manifold.ij.core;
 
+import com.intellij.diagnostic.LoadingState;
 import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.psi.impl.java.stubs.JavaLiteralExpressionElementType;
 import com.intellij.psi.impl.java.stubs.JavaStubElementTypes;
@@ -13,8 +14,22 @@ public class ManApplicationComponent
 {
   public ManApplicationComponent()
   {
-    overrideJavaStringLiterals();
-    replaceJavaExpressionParser();
+    // Turn off LoadingState while overriding Java parser stuff, otherwise it nags
+
+    //noinspection UnstableApiUsage
+    Object check = ReflectUtil.field( LoadingState.class, "CHECK_LOADING_PHASE" ).getStatic();
+    //noinspection UnstableApiUsage
+    ReflectUtil.field( LoadingState.class, "CHECK_LOADING_PHASE" ).setStatic( false );
+    try
+    {
+      overrideJavaStringLiterals();
+      replaceJavaExpressionParser();
+    }
+    finally
+    {
+      //noinspection UnstableApiUsage
+      ReflectUtil.field( LoadingState.class, "CHECK_LOADING_PHASE" ).setStatic( check );
+    }
   }
 
   /**

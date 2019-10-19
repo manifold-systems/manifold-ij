@@ -10,35 +10,35 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiJavaToken;
 import com.intellij.psi.PsiPolyadicExpression;
-import com.intellij.psi.PsiResolveHelper;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.TypeConversionUtil;
+import manifold.ij.core.ManProject;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ManHighlightVisitor extends HighlightVisitorImpl
 {
-  private final PsiResolveHelper _resolveHelper;
 //  private static final Logger LOG = Logger.getInstance( "#manifold.ij.extensions.ManHighlightVisitor" );
-
-  protected ManHighlightVisitor( @NotNull PsiResolveHelper resolveHelper )
-  {
-    super( resolveHelper );
-    _resolveHelper = resolveHelper;
-  }
 
   @NotNull
   @Override
   public ManHighlightVisitor clone()
   {
-    return new ManHighlightVisitor(_resolveHelper);
+    return new ManHighlightVisitor();
   }
 
   @Override
   public void visitPolyadicExpression( PsiPolyadicExpression expression )
   {
+    if( !ManProject.isManifoldInUse( expression ) )
+    {
+      // Manifold jars are not used in the project
+      super.visitPolyadicExpression( expression );
+      return;
+    }
+
     visitExpression( expression );
     Object myHolder = ReflectUtil.field( this, "myHolder" ).get();
     if( !(boolean)ReflectUtil.method( myHolder, "hasErrorResults" ).invoke() )
