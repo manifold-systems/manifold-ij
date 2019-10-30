@@ -206,6 +206,58 @@ public class ResourceToManifoldUtil
     return result;
   }
 
+  // Handle cases like XML files where IntelliJ overlays the file with a fake DTD e.g., Foo.xml is masked by a Foo.xml.dtd
+  // which is not a physical file, therefore element.getContainingFile().getVirtualFile() is either null or "light" and
+  // does not provide any means to get the actual Foo.xml file, so we are stuck with finding Foo.xml using this method,
+  // which finds usages of the fake dtd element, which are the actual XML file elements. From there we get the actual file.
+  private static VirtualFile findFileByLocalUsagesOfElem( PsiElement element )
+  {
+    if( element.getContainingFile() != null && element.getContainingFile().isPhysical() )
+    {
+      return null;
+    }
+
+    Query<PsiReference> search = ReferencesSearch.search( element, GlobalSearchScope.projectScope( element.getProject() ) );
+    Collection<PsiReference> psiReferences = ResourceToManifoldUtil.searchForElement( search );
+    if( !psiReferences.isEmpty() )
+    {
+      PsiFile containingFile = psiReferences.iterator().next().getElement().getContainingFile();
+      return containingFile == null ? null : containingFile.getVirtualFile();
+    }
+    return null;
+  }
+
+  public static PsiElement findPhysicalElementFor( PsiElement element )
+  {
+    if( element.getContainingFile() != null && element.getContainingFile().isPhysical() )
+    {
+      return element;
+    }
+
+    // element is not physical e.g., for XML intellij creates a shadow psi tree with a fake DTD/XSD
+
+    // Find references to this non-physical element with the hope that a local reference will be the physical element underlying it
+
+    Query<PsiReference> search = ReferencesSearch.search( element, GlobalSearchScope.projectScope( element.getProject() ) );
+    Collection<PsiReference> psiReferences = ResourceToManifoldUtil.searchForElement( search );
+    PsiElement physicalElem = null;
+    if( !psiReferences.isEmpty() )
+    {
+      for( PsiReference ref: psiReferences )
+      {
+        if( physicalElem == null )
+        {
+          physicalElem = ref.getElement();
+        }
+        else if( ref.getElement().getTextOffset() < physicalElem.getTextOffset() )
+        {
+          physicalElem = ref.getElement();
+        }
+      }
+    }
+    return physicalElem;
+  }
+
   @NotNull
   public static Collection<PsiReference> searchForElement( Query<PsiReference> search )
   {
@@ -234,6 +286,10 @@ public class ResourceToManifoldUtil
     else
     {
       VirtualFile virtualFile = containingFile.getVirtualFile();
+      if( virtualFile == null )
+      {
+        virtualFile = findFileByLocalUsagesOfElem( element );
+      }
       file = virtualFile == null ? null : FileUtil.toIFile( manProject, virtualFile );
     }
     return file;
