@@ -117,6 +117,9 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
       return ManGotoDeclarationHandler.find( (PsiModifierListOwner)elem );
     }
 
+    // Ensure the element is "real" e.g., intellij has a "shadow" dtd tree for XML, we must use the physical XML elements
+    elem = ResourceToManifoldUtil.findPhysicalElementFor( elem );
+
     PsiElement[] element = new PsiElement[]{elem};
     _findJavaElements( element );
 

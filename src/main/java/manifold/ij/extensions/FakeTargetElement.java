@@ -14,7 +14,6 @@ import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.impl.PsiElementBase;
 import com.intellij.psi.meta.PsiMetaData;
 import com.intellij.psi.meta.PsiMetaOwner;
-import com.intellij.util.ArrayUtil;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -247,13 +246,6 @@ class FakeTargetElement extends PsiElementBase implements PsiMetaOwner, PsiMetaD
   public void init( PsiElement element )
   {
 
-  }
-
-  @NotNull
-  @Override
-  public Object[] getDependences()
-  {
-    return ArrayUtil.EMPTY_OBJECT_ARRAY;
   }
 
   @Override
