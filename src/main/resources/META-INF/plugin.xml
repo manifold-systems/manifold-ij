@@ -186,54 +186,27 @@ by the core framework. Each project represents a separate <strong>dependency</st
 
   <change-notes>
     <![CDATA[
-<h2>New Features!</h3>
+<h2>New Features:</h2>
 <p/>
-<h3><a href="#operator-overloading" id="operator-overloading"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#operator-overloading">Operator Overloading</a></a></h3>
-<p>Implement <em>operator</em> methods on any type to directly support arithmetic, relational, and unit operators.</p>
-<pre><code class="java">// BigDecimal expressions
-if (bigDec1 &gt; bigDec2) {
-  BigDecimal result = bigDec1 + bigDec2;
-  ...
-}
-// Implemnet operators for any type
-MyType value = myType1 + myType2;
-</code></pre>
-<h3><a href="#unit-expressions" id="unit-expressions"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions">Unit Expressions</a></a></h3>
-<p>Unit or <em>binding</em> operations are unique to the Manifold framework. They provide a powerfully concise syntax and can be
-applied to a wide range of applications.</p>
-<pre><code class="java">import static manifold.science.util.UnitConstants.*; // kg, m, s, ft, etc
+<h3><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-xml">XML Manifold</a></h3>
+<p>Comprehensive support for XML, interchangeable with JSON and YAML.</p>
+<pre><code class="java">// Type-safely use an XML file in your resource directory
+import com.example.config.MyXmlConfig;
 ...
-Length distance = 100 mph * 3 hr;
-Force f = 5.2 kg m/s/s; // same as 5.2 N
-Mass infant = 9 lb + 8.71 oz;
-</code></pre>
-<h3><a href="#ranges" id="ranges"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-collections#ranges">Ranges</a></a></h3>
-<p>Easily work with the <code>Range</code> API using <a href="(https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions)">unit expressions</a>.
-Simply import the <code>RangeFun</code> constants to create ranges.</p>
-<pre><code class="java">// imports the `to`, `step`, and other &quot;binding&quot; constants
-import static manifold.collections.api.range.RangeFun.*;
+// Load data from the resource file
+MyXmlConfig config = MyXmlConfig.fromSource();
+// Access elements/attributes type-safely
+var linesOfBusiness = config.getEnvironment().getLinesOfBusiness();
 ...
-for (int i: 1 to 5) {
-  out.println(i);
-}
-
-for (Mass m: 0kg to 10kg step 22r unit g) {
-  out.println(m);
-}
 </code></pre>
-<h3><a href="#science" id="science"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">Science</a></a></h3>
-<p>Use the <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">manifold-science</a>
-framework to type-safely incorporate units and precise measurements into your applications.</p>
-<pre><code class="java">import static manifold.science.util.UnitConstants.*; // kg, m, s, ft, etc.
-...
-Velocity rate = 65mph;
-Time time = 1min + 3.7sec;
-Length distance = rate * time;
-</code></pre>
-<h3>Bug Fixes:</h3>
-<ul>
-<li><a href="https://github.com/manifold-systems/manifold/issues/127">Issue #127:&nbsp;</a>IntelliJ plugin: Project <i>without</i> Manifold dependency never finishes inspections in editor</li>
-</ul>
+<h3><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">Time dimension improvements</a></h3>
+<p>Implements <code>java.time.TemporalAmount</code>, supports plus/minus operations with <code>Temporal</code> values such as <code>LocalDateTime</code>.</p>
+<p/>
+<h2>Bug Fixes:<h2>
+<p/>
+<h3><a href="https://github.com/manifold-systems/manifold/issues/132">#132</a>: operator overloading issue</h3>
+<h3><a href="https://github.com/manifold-systems/manifold/issues/124">#124</a>: remove manifold-strings dependency from Template Manifold</h3>
+<h3>Other minor issues</h3>
     ]]>
   </change-notes>
 
