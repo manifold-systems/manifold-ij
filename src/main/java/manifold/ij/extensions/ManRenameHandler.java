@@ -1,5 +1,9 @@
 package manifold.ij.extensions;
 
+import com.intellij.codeInsight.lookup.LookupManager;
+import com.intellij.lang.LanguageRefactoringSupport;
+import com.intellij.lang.refactoring.RefactoringSupportProvider;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
@@ -7,27 +11,58 @@ import com.intellij.openapi.editor.ScrollType;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiPlainTextFile;
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtil;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.refactoring.actions.BaseRefactoringAction;
 import com.intellij.refactoring.rename.PsiElementRenameHandler;
 import com.intellij.refactoring.rename.RenamePsiElementProcessor;
 import com.intellij.refactoring.rename.inplace.InplaceRefactoring;
-import com.intellij.refactoring.rename.inplace.MemberInplaceRenameHandler;
+import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
 import java.util.HashSet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 
 /**
- * This RenameHandler exists only to work around a bug in IJ where rename substitution is not working properly
- * with the rename processor in dialog mode.
  */
-public class ManRenameHandler extends MemberInplaceRenameHandler
+public class ManRenameHandler extends VariableInplaceRenameHandler
 {
+  protected boolean isAvailable(@Nullable PsiElement element,
+                                @NotNull Editor editor,
+                                @NotNull PsiFile file) {
+    PsiElement nameSuggestionContext = file.findElementAt(editor.getCaretModel().getOffset());
+
+    if( nameSuggestionContext == null )
+    {
+      return false;
+    }
+
+    if (element == null && LookupManager.getActiveLookup(editor) != null) {
+      element = PsiTreeUtil.getParentOfType(nameSuggestionContext, PsiNamedElement.class);
+    }
+    final RefactoringSupportProvider
+      supportProvider = element == null ? null : LanguageRefactoringSupport.INSTANCE.forContext(element);
+    boolean langRefactorSupport = editor.getSettings().isVariableInplaceRenameEnabled()
+                && supportProvider != null
+                && element instanceof PsiNameIdentifierOwner
+                && supportProvider.isMemberInplaceRenameAvailable( element, nameSuggestionContext );
+    if( langRefactorSupport )
+    {
+      return true;
+    }
+
+    RenamePsiElementProcessor processor = RenamePsiElementProcessor.forElement( nameSuggestionContext );
+    return processor instanceof RenameResourceElementProcessor;
+  }
+
   @Override
   public InplaceRefactoring doRename( @NotNull PsiElement elementToRename, Editor editor, DataContext dataContext )
   {
+    final PsiFile file = CommonDataKeys.PSI_FILE.getData(dataContext);
+
     RenamePsiElementProcessor processor = RenamePsiElementProcessor.forElement( elementToRename );
     PsiElement actualElem = processor.substituteElementToRename( elementToRename, editor );
     return super.doRename( actualElem, editor, dataContext );
@@ -85,5 +120,12 @@ public class ManRenameHandler extends MemberInplaceRenameHandler
       elemAt = RenameResourceElementProcessor.getTerminalTarget( elemAt, new HashSet<>() );
     }
     return elemAt;
+  }
+
+  @Override
+  public String toString()
+  {
+    // Displayed in chooser dialog when multiple rename handlers are available
+    return "Rename item and Java references to it (Manifold)";
   }
 }

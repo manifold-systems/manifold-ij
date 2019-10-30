@@ -78,10 +78,11 @@ public class ManProjectComponent implements ProjectComponent
 
   private void registerAnnotatorWithAllLanguages()
   {
-    for( Language lang: Language.getRegisteredLanguages() )
-    {
-      LanguageAnnotators.INSTANCE.addExplicitExtension( lang, new ManifoldPsiClassAnnotator() );
-    }
-    LanguageBraceMatching.INSTANCE.addExplicitExtension( ManTemplateLanguage.INSTANCE, new PairedBraceMatcherAdapter( new ManTemplateBraceMatcher(), ManTemplateLanguage.INSTANCE ) );
+    // effectively adds annotator to ALL languages
+    LanguageAnnotators.INSTANCE.addExplicitExtension( Language.ANY, new ManifoldPsiClassAnnotator() );
+
+    // add brace matcher to templates
+    LanguageBraceMatching.INSTANCE.addExplicitExtension( ManTemplateLanguage.INSTANCE,
+      new PairedBraceMatcherAdapter( new ManTemplateBraceMatcher(), ManTemplateLanguage.INSTANCE ) );
   }
 }
