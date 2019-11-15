@@ -91,14 +91,18 @@ public class ManExpressionParser extends ExpressionParser {
   //Manifold: added lhs param to distinguish between declaration part and non-declaration part e.g., X y = z, X y is decl, z is non-decl.
   public PsiBuilder.Marker parseAssignment(final PsiBuilder builder, boolean lhs) {
 
+    final PsiBuilder.Marker left;
     if( lhs )
     {
-      // unary expr is the actual target call for the lhs of decl, this change
+      // unary expr may be the actual target call for the lhs of decl, this change
       // allows binding expressions to parse (see parseBinary())
-      return parseUnary( builder );
+      left = parseUnary( builder );
+    }
+    else
+    {
+      left = parseConditional( builder );
     }
 
-    final PsiBuilder.Marker left = parseConditional(builder);
     if (left == null) return null;
 
     final IElementType tokenType = getGtTokenType( builder );
