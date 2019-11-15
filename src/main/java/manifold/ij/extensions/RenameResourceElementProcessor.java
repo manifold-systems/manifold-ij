@@ -35,8 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import manifold.api.util.ManIdentifierUtil;
 import manifold.ij.core.ManProject;
-import manifold.api.util.JsonUtil;
 import manifold.api.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -317,7 +317,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
     }
 
     String name = ((PsiNamedElement)element).getName();
-    String newBaseName = JsonUtil.makeIdentifier( name );
+    String newBaseName = ManIdentifierUtil.makeIdentifier( name );
 
     //## find a way to add this as part of the overall rename Undo?
 

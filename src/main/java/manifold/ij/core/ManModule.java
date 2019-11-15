@@ -27,12 +27,12 @@ import manifold.api.host.Dependency;
 import manifold.api.type.ITypeManifold;
 import manifold.api.type.ResourceFileTypeManifold;
 import manifold.api.type.TypeName;
+import manifold.api.util.ManIdentifierUtil;
 import manifold.exceptions.CheckedExceptionSuppressor;
 import manifold.ext.IExtensionClassProducer;
 import manifold.ij.fs.IjFile;
 import manifold.internal.host.SimpleModule;
 import manifold.strings.StringLiteralTemplateProcessor;
-import manifold.api.util.JsonUtil;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -328,7 +328,7 @@ public class ManModule extends SimpleModule
       if( file.isDescendantOf( src ) )
       {
         String fqn = src.relativePath( file.getParent() );
-        String baseName = JsonUtil.makeIdentifier( file.getBaseName() );
+        String baseName = ManIdentifierUtil.makeIdentifier( file.getBaseName() );
         fqn = fqn.length() == 0 ? baseName : fqn.replace( '/', '.' ) + '.' + baseName;
         for( ITypeManifold sp : getTypeManifolds() )
         {
