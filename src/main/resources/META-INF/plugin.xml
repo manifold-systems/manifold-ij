@@ -186,27 +186,29 @@ by the core framework. Each project represents a separate <strong>dependency</st
 
   <change-notes>
     <![CDATA[
-<h2>New Features:</h2>
+<h3>New Features:</h3>
 <p/>
-<h3><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-xml">XML Manifold</a></h3>
-<p>Comprehensive support for XML, interchangeable with JSON and YAML.</p>
-<pre><code class="java">// Type-safely use an XML file in your resource directory
-import com.example.config.MyXmlConfig;
+<h4><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-csv">CSV Manifold</a></h4>
+<p>Comprehensive support for CSV, interchangeable with JSON, XML, and YAML.</p>
+<pre><code class="java">// Type-safely use a CSV file in your resource directory, no code gen
+import com.example.MyCsvData; // from resource file: com/example/MyCsvData.csv
+import com.example.MyCsvData.MyCsvDataItem;
 ...
 // Load data from the resource file
-MyXmlConfig config = MyXmlConfig.fromSource();
-// Access elements/attributes type-safely
-var linesOfBusiness = config.getEnvironment().getLinesOfBusiness();
+MyCsvData dataItems = MyCsvData.fromSource();
+// Access rows of data type-safely
+for (MyCsvData.MyCsvDataItem item: dataItems) {
+  String name = item.getLastName();
+  LocalDateTime startDate = item.getStartDate();
+  ...
+}
 ...
 </code></pre>
-<h3><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">Time dimension improvements</a></h3>
-<p>Implements <code>java.time.TemporalAmount</code>, supports plus/minus operations with <code>Temporal</code> values such as <code>LocalDateTime</code>.</p>
 <p/>
-<h2>Bug Fixes:<h2>
+<h3>Bug Fixes:<h3>
 <p/>
-<h3><a href="https://github.com/manifold-systems/manifold/issues/132">#132</a>: operator overloading issue</h3>
-<h3><a href="https://github.com/manifold-systems/manifold/issues/124">#124</a>: remove manifold-strings dependency from Template Manifold</h3>
-<h3>Other minor issues</h3>
+<h4><a href="https://github.com/manifold-systems/manifold/issues/139">#139</a>: Unexpected token error in IntelliJ</h4>
+<h4>Other minor issues</h4>
     ]]>
   </change-notes>
 
