@@ -175,9 +175,13 @@ public class ManLibraryChecker
       for( URL url: urls )
       {
         String name = new File( url.toURI() ).getName();
-        if( name.contains( "manifold" ) )
+        if( name.contains( "manifold-" ) && !name.contains( "manifold-ij-" ) )
         {
-          return getVersionFromJarName( name );
+          String version = getVersionFromJarName( name );
+          if( !version.isEmpty() && Character.isDigit( version.charAt( 0 ) ) )
+          {
+            return version;
+          }
         }
       }
     }
