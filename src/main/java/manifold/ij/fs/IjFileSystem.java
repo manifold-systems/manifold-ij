@@ -16,8 +16,9 @@ import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.jar.JarFile;
-import manifold.api.fs.FileFactory;
 import manifold.api.fs.IDirectory;
 import manifold.api.fs.IFile;
 import manifold.api.fs.IFileSystem;
@@ -36,7 +37,7 @@ public class IjFileSystem extends BaseService implements IFileSystem
   private final Map<File, IDirectory> _cachedDirInfo;
   private final IDirectoryResourceExtractor _dirExtractor;
   private final IFileResourceExtractor _fileExtractor;
-  private final FileFactory _fileFactory;
+  private final ReentrantLock _lock;
 
 
   public IjFileSystem( ManProject project )
@@ -45,7 +46,7 @@ public class IjFileSystem extends BaseService implements IFileSystem
     _cachedDirInfo = Maps.newHashMap();
     _dirExtractor = new IDirectoryResourceExtractor();
     _fileExtractor = new IFileResourceExtractor();
-    _fileFactory = new FileFactory( this );
+    _lock = new ReentrantLock();
   }
 
   public ManProject getProject()
@@ -60,9 +61,9 @@ public class IjFileSystem extends BaseService implements IFileSystem
   }
 
   @Override
-  public FileFactory getFileFactory()
+  public Lock getLock()
   {
-    return _fileFactory;
+    return _lock;
   }
 
   @Override

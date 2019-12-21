@@ -5,8 +5,8 @@
 package manifold.ij.extensions;
 
 import com.intellij.ide.highlighter.JavaFileType;
+import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;
@@ -372,8 +372,10 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
   private PsiJavaFile createDummyJavaFile( String type, PsiManager manager, final String text )
   {
-    final FileType fileType = JavaFileType.INSTANCE;
-    return (PsiJavaFile)PsiFileFactory.getInstance( manager.getProject() ).createFileFromText( type + '.' + JavaFileType.INSTANCE.getDefaultExtension(), fileType, text );
+    // note, calling version of PsiFileFactory#createFileFromText that takes file content of any size, which is vital
+    // for large generated files e.g., graphql files like github.graphql
+    return (PsiJavaFile)PsiFileFactory.getInstance( manager.getProject() )
+      .createFileFromText( type + '.' + JavaFileType.INSTANCE.getDefaultExtension(), JavaLanguage.INSTANCE, text, false, true, true );
   }
 
   @Override
