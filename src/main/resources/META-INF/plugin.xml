@@ -4,7 +4,7 @@
   <description>
     <![CDATA[
 <h2><a href="#what-is-manifold" id="what-is-manifold">What is Manifold?</a></h2>
-<p><a href="http://manifold.systems">Manifold</a> plugs into Java to supplement it with game-changing features, from Type-safe
+<p><a href="http://manifold.systems">Manifold</a> plugs into Java to supplement it with powerful features, from Type-safe
 Metaprogramming, Extension Methods, Operator Overloading, and Unit Expressions to an integrated Template Engine and a
 Preprocessor. All fully supported in IntelliJ IDEA. Simply add Manifold to your project and begin taking advantage of
 it.</p>
@@ -186,28 +186,9 @@ by the core framework. Each project represents a separate <strong>dependency</st
 
   <change-notes>
     <![CDATA[
-<h3>New Features:</h3>
-<p/>
-<h4><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-csv">CSV Manifold</a></h4>
-<p>Comprehensive support for CSV, interchangeable with JSON, XML, and YAML.</p>
-<pre><code class="java">// Type-safely use a CSV file in your resource directory, no code gen
-import com.example.MyCsvData; // from resource file: com/example/MyCsvData.csv
-import com.example.MyCsvData.MyCsvDataItem;
-...
-// Load data from the resource file
-MyCsvData dataItems = MyCsvData.fromSource();
-// Access rows of data type-safely
-for (MyCsvData.MyCsvDataItem item: dataItems) {
-  String name = item.getLastName();
-  LocalDateTime startDate = item.getStartDate();
-  ...
-}
-...
-</code></pre>
-<p/>
 <h3>Bug Fixes:<h3>
 <p/>
-<h4><a href="https://github.com/manifold-systems/manifold/issues/139">#139</a>: Unexpected token error in IntelliJ</h4>
+<h4><a href="https://github.com/manifold-systems/manifold/issues/149">#149</a>: Support very large GraphQL schemas</h4>
 <h4>Other minor issues</h4>
     ]]>
   </change-notes>
