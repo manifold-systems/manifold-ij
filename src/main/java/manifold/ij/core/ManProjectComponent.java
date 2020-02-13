@@ -42,7 +42,11 @@ public class ManProjectComponent implements ProjectComponent
   @Override
   public void projectClosed()
   {
-    ManProject.manProjectFrom( _project ).projectClosed();
+    ManProject manProject = ManProject.manProjectFrom( _project );
+    if( manProject != null )
+    {
+      manProject.projectClosed();
+    }
   }
 
   @Override

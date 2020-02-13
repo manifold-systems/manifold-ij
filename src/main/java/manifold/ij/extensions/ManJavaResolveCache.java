@@ -2,6 +2,8 @@ package manifold.ij.extensions;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.RecursionGuard;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.openapi.util.Ref;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.JavaTokenType;
@@ -22,20 +24,28 @@ import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.ResolveState;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
+import com.intellij.psi.impl.source.PsiImmediateClassType;
 import com.intellij.psi.impl.source.resolve.JavaResolveCache;
+import com.intellij.psi.impl.source.resolve.graphInference.PsiPolyExpressionUtil;
 import com.intellij.psi.impl.source.tree.ChildRole;
 import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
+import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.scope.ElementClassHint;
 import com.intellij.psi.scope.NameHint;
 import com.intellij.psi.scope.PsiScopeProcessor;
 import com.intellij.psi.scope.util.PsiScopesUtil;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTypesUtil;
+import com.intellij.psi.util.TypeConversionUtil;
+import com.intellij.util.ConcurrencyUtil;
 import com.intellij.util.Function;
+import com.intellij.util.containers.ContainerUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import manifold.ext.api.Jailbreak;
 import manifold.ij.core.ManProject;
 import manifold.internal.javac.AbstractBinder.Node;
 import org.jetbrains.annotations.NotNull;
@@ -79,7 +89,46 @@ public class ManJavaResolveCache extends JavaResolveCache
       }
     }
 
-    return super.getType( expr, f );
+    return _getType( expr, f );
+    //return super.getType( expr, f );
+  }
+
+  // this is a copy of super's getType() so we can suppress the error, see commented out section:
+  @Nullable
+  private <T extends PsiExpression> PsiType _getType(@NotNull T expr, @NotNull Function<? super T, ? extends PsiType> f) {
+    @Jailbreak JavaResolveCache thiz = this;
+    ConcurrentMap<PsiExpression, PsiType> map = thiz.myCalculatedTypes.get();
+    if (map == null) map = ConcurrencyUtil.cacheOrGet(thiz.myCalculatedTypes, ContainerUtil.createConcurrentWeakKeySoftValueMap());
+
+    final boolean prohibitCaching = MethodCandidateInfo.isOverloadCheck() && PsiPolyExpressionUtil.isPolyExpression(expr);
+    PsiType type = prohibitCaching ? null : map.get(expr);
+    if (type == null) {
+      RecursionGuard.StackStamp dStackStamp = RecursionManager.markStack();
+      type = f.fun(expr);
+      if (prohibitCaching || !dStackStamp.mayCacheNow()) {
+        return type;
+      }
+
+      if (type == null) type = TypeConversionUtil.NULL_TYPE;
+      PsiType alreadyCached = map.put(expr, type);
+
+//## NOTE: commenting out this to suppress the error because it happens with manifold
+//      if (alreadyCached != null && !type.equals(alreadyCached)) {
+//        reportUnstableType(expr, type, alreadyCached);
+//      }
+
+      if (type instanceof PsiClassReferenceType) {
+        // convert reference-based class type to the PsiImmediateClassType, since the reference may become invalid
+        PsiClassType.ClassResolveResult result = ((PsiClassReferenceType)type).resolveGenerics();
+        PsiClass psiClass = result.getElement();
+        type = psiClass == null
+               ? type // for type with unresolved reference, leave it in the cache
+               // for clients still might be able to retrieve its getCanonicalText() from the reference text
+               : new PsiImmediateClassType(psiClass, result.getSubstitutor(), ((PsiClassReferenceType)type).getLanguageLevel(), type.getAnnotationProvider());
+      }
+    }
+
+    return type == TypeConversionUtil.NULL_TYPE ? null : type;
   }
 
   static boolean isBindingExpression( final PsiExpression expr )
