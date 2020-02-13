@@ -176,13 +176,13 @@ by the core framework. Each project represents a separate <strong>dependency</st
     ]]>
   </description>
   <version>This value is patched by the build script</version>
-  <vendor email="admin@manifold.systems" url="http://manifold.systems">manifold.systems</vendor>
+  <vendor email="admin@manifold.systems" url="http://manifold.systems">Manifold</vendor>
   <!-- please see http://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
   <idea-version since-build="This value is patched by the build script"/>
 
   <depends>com.intellij.modules.java</depends>
 
-  <product-descriptor code="PMANIFOLD" release-date="20190625" release-version="20191"/>
+  <product-descriptor code="PMANIFOLD" release-date="20200212" release-version="20201"/>
 
   <change-notes>
     <![CDATA[

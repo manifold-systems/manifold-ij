@@ -13,7 +13,7 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
-import com.intellij.util.FileContentUtil;
+import com.intellij.util.FileContentUtilCore;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -56,7 +56,7 @@ public class ManPreprocessorDocumentListener implements DocumentListener
           PsiDocumentManager.getInstance( _project ).commitDocument( event.getDocument() );
           ApplicationManager.getApplication().runReadAction( () -> {
             VirtualFile vfile = FileDocumentManager.getInstance().getFile( event.getDocument() );
-            FileContentUtil.reparseFiles( vfile );
+            FileContentUtilCore.reparseFiles( vfile );
           } );
         } );
       }

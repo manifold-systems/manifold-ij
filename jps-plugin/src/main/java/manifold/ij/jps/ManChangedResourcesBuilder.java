@@ -14,13 +14,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.builders.BuildOutputConsumer;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
 import org.jetbrains.jps.builders.impl.BuildOutputConsumerImpl;
 import org.jetbrains.jps.builders.java.JavaBuilderUtil;
 import org.jetbrains.jps.builders.java.ResourceRootDescriptor;
 import org.jetbrains.jps.builders.storage.BuildDataCorruptedException;
+import org.jetbrains.jps.incremental.BuildListener;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.FSOperations;
 import org.jetbrains.jps.incremental.ProjectBuildException;
@@ -46,17 +46,19 @@ import org.jetbrains.jps.model.module.JpsModuleSourceRoot;
  * --- foreach module call javac
  * - buildFinished()
  */
-public class ManChangedResourcesBuilder extends ResourcesBuilder
+public class ManChangedResourcesBuilder extends ResourcesBuilder implements BuildListener
 {
   private List<File> _tempMainClasses;
   private Map<File, Data> _fileToData;
+  private Map<String, BuildOutputConsumerImpl> _outputDirToOc;
 
   @Override
   public void buildStarted( CompileContext context )
   {
     super.buildStarted( context );
     _tempMainClasses = new ArrayList<>();
-     _fileToData = new ConcurrentHashMap<>();
+    _fileToData = new ConcurrentHashMap<>();
+    _outputDirToOc = new HashMap<>();
   }
 
   public void buildFinished( CompileContext context )
@@ -64,11 +66,15 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
     if( !_tempMainClasses.isEmpty() )
     {
       deleteTempMainSourceClasses( context );
-
-      registerClasses();
-
-      IjResourceIncrementalCompileDriver.INSTANCES.set( null );
     }
+
+    registerClasses();
+
+    IjResourceIncrementalCompileDriver.INSTANCES.set( null );
+
+    //!! Do not clear changed resource files list, it is needed in ManFileFragmentBuilder (java sources must be mapped
+    // in a ModuleLevelBuilder, not this ResourceBuilder)
+    // IjChangedResourceFiles.clear();
   }
 
   private void deleteTempMainSourceClasses( CompileContext context )
@@ -96,6 +102,9 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
                      @NotNull BuildOutputConsumer outputConsumer, @NotNull CompileContext context ) throws ProjectBuildException
   {
     boolean incremental = JavaBuilderUtil.isCompileJavaIncrementally( context );
+    System.setProperty( "manifold.compiler.incremental", String.valueOf( incremental ) );
+
+    addOutputConsumer( (BuildOutputConsumerImpl)outputConsumer, target.getOutputDir() );
 
     try
     {
@@ -128,20 +137,28 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
       } );
 
       //
-      // With an incremental build this JPS plugin tells Manifold about changed resource files.
-      // With a rebuild Manifold tells this JPS plugin about resource files it compiles indirectly via reference.
+      // With an *incremental build* this JPS plugin tells Manifold about changed resource files via
+      // IjChangedResourceFiles#getChangedFiles().
       //
-      // Both types of builds, incremental and rebuild, are still responsible for registering
-      // resource files as source files for the class files they correspond to, see registerClasses().
+      // Note regardless of incremental or full build, Manifold tells this JPS plugin about all resource files it
+      // compiles via IjChangedResourceFiles#getTypesToFile(), which this JPS plugin uses in registerClasses() to map
+      // .class files corresponding with a resource file.
       //
-      if( !incremental || !changedFiles.isEmpty() )
+      // Note also ManFileFragmentBuilder also uses IjChangedResourceFiles#getTypesToFile() in its registerClasses()
+      // to map .class files corresponding with fragments within a .java source file. This is necessary so that JSP can
+      // delete the .class files on subsequent incremental build to enable recompilation of the fragments.
+      //
+
+      if( incremental && !changedFiles.isEmpty() )
       {
-        _tempMainClasses = makeTempMainClasses( context, target );
-        if( !_tempMainClasses.isEmpty() )
+        List<File> tempMainClasses = makeTempMainClasses( context, target );
+        if( !tempMainClasses.isEmpty() )
         {
-          IjResourceIncrementalCompileDriver driver = getDrivers().get( _tempMainClasses.iterator().next().getAbsolutePath() );
+          IjResourceIncrementalCompileDriver driver = getDrivers().get( tempMainClasses.iterator().next().getAbsolutePath() );
           driver.getChangedFiles().addAll( changedFiles );
+          IjChangedResourceFiles.getChangedFiles().addAll( changedFiles ); // aggregated list
         }
+        _tempMainClasses.addAll( tempMainClasses );
       }
 
       context.checkCanceled();
@@ -159,73 +176,55 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
     }
   }
 
+  private void addOutputConsumer( BuildOutputConsumerImpl outputConsumer, File outputDir )
+  {
+    _outputDirToOc.put( outputDir.getAbsolutePath(), outputConsumer );
+  }
+
   static class Data
   {
     BuildOutputConsumerImpl _oc;
     ResourcesTarget _target;
 
-    public Data( BuildOutputConsumerImpl oc, ResourcesTarget target )
+    Data( BuildOutputConsumerImpl oc, ResourcesTarget target )
     {
       _oc = oc;
       _target = target;
     }
   }
 
-  @Nullable
-  private File useOutputFile( File file, ResourceRootDescriptor sourceRoot, File outputDir )
-  {
-    String relativePath = FileUtil.getRelativePath( sourceRoot.getRootFile(), file );
-    if( relativePath != null && outputDir != null )
-    {
-      File copiedFile = new File( outputDir, relativePath );
-      if( copiedFile.isFile() )
-      {
-        file = copiedFile;
-      }
-    }
-    return file;
-  }
-
   private void registerClasses()
   {
-    if( getDrivers().isEmpty() )
-    {
-      return;
-    }
-
     Set<BuildOutputConsumerImpl> ocs = new LinkedHashSet<>();
-    for( IjResourceIncrementalCompileDriver driver: getDrivers().values() )
+    Map<File, Set<String>> typesToFile = IjChangedResourceFiles.getTypesToFile();
+    for( Map.Entry<File, Set<String>> entry : typesToFile.entrySet() )
     {
-      Map<File, Set<String>> typesToFile = driver.getTypesToFile();
-      for( Map.Entry<File, Set<String>> entry : typesToFile.entrySet() )
+      Set<String> types = entry.getValue();
+      for( String fqn : types )
       {
-        Set<String> types = entry.getValue();
-        for( String fqn : types )
+        try
         {
-          try
+          File resourceFile = entry.getKey();
+          Data data = _fileToData.get( resourceFile );
+          if( data != null )
           {
-            File resourceFile = entry.getKey();
-            Data data = _fileToData.get( resourceFile );
-            if( data != null )
+            File classFile = findClassFile( fqn, data._target.getOutputDir() );
+            if( classFile != null )
             {
-              File classFile = findClassFile( fqn, data._target.getOutputDir() );
-              if( classFile != null )
-              {
-                data._oc.registerOutputFile( classFile, Collections.singleton( resourceFile.getPath() ) );
-                ocs.add( data._oc );
-              }
+              data._oc.registerOutputFile( classFile, Collections.singleton( resourceFile.getPath() ) );
+              ocs.add( data._oc );
             }
           }
-          catch( IOException e )
-          {
-            throw new RuntimeException( e );
-          }
+        }
+        catch( IOException e )
+        {
+          throw new RuntimeException( e );
         }
       }
     }
 
     // Send FileGeneratedEvent for the changed class files (for hot swap debugging)
-    ocs.forEach( BuildOutputConsumerImpl::fireFileGeneratedEvent );
+    ocs.forEach( oc -> oc.fireFileGeneratedEvent() );
   }
 
   private File findClassFile( String fqn, File outputPath )
@@ -269,6 +268,12 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder
 
       index++;
       File tempMainClass = new File( sourceRoot, manifold_temp_main_ + index + ".java" );
+      if( tempMainClass.isFile() )
+      {
+        // already there
+        continue;
+      }
+
       tempMainClass.deleteOnExit(); // in case the compiler exits abnormally
       try
       {

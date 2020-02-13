@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +32,13 @@ public class ManFileFragmentBuilder extends ModuleLevelBuilder
   ManFileFragmentBuilder()
   {
     super( BuilderCategory.CLASS_POST_PROCESSOR );
+  }
+
+  @NotNull
+  @Override
+  public List<String> getCompilableFileExtensions()
+  {
+    return Collections.singletonList( "java" );
   }
 
   @Override
@@ -95,7 +103,6 @@ public class ManFileFragmentBuilder extends ModuleLevelBuilder
   public void buildFinished( CompileContext context )
   {
     registerClasses();
-    IjFileFragmentIncrementalCompileDriver.removeInstance();
   }
 
   static class Data
@@ -112,7 +119,7 @@ public class ManFileFragmentBuilder extends ModuleLevelBuilder
 
   private void registerClasses()
   {
-    Map<File, Set<String>> typesToFile = IjFileFragmentIncrementalCompileDriver.getInstance().getTypesToFile();
+    Map<File, Set<String>> typesToFile = IjChangedResourceFiles.getTypesToFile();
     for( Map.Entry<File, Set<String>> entry: typesToFile.entrySet() )
     {
       Set<String> types = entry.getValue();

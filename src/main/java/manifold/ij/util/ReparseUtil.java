@@ -10,6 +10,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiInvalidElementAccessException;
 import com.intellij.util.FileContentUtil;
+import com.intellij.util.FileContentUtilCore;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -55,7 +56,7 @@ public class ReparseUtil
   {
     ApplicationManager.getApplication().invokeLater(
       () -> ApplicationManager.getApplication().runReadAction(
-        () -> FileContentUtil.reparseFiles( file ) ) );
+        () -> FileContentUtilCore.reparseFiles( file ) ) );
   }
 
   private static Collection<? extends VirtualFile> getOpenJavaFiles( Project project )

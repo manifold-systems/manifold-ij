@@ -227,7 +227,7 @@ public class ManTypeFinder extends PsiElementFinder
   @Override
   public boolean processPackageDirectories(@NotNull PsiPackage psiPackage,
                                            @NotNull final GlobalSearchScope scope,
-                                           @NotNull final Processor<PsiDirectory> consumer,
+                                           @NotNull final Processor<? super PsiDirectory> consumer,
                                            boolean includeLibrarySources)
   {
     if( !ManProject.isManifoldInUse( _project ) )

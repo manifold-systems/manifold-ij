@@ -30,6 +30,13 @@ interface PsiFileFragment extends ASTNode, PsiElement
   {
     if( !getText().contains( "[>" ) )
     {
+      // not a fragment
+      return;
+    }
+
+    if( getText().contains( "IntellijIdeaRulezzz" ) )
+    {
+      // from completion, ignore this change
       return;
     }
 
