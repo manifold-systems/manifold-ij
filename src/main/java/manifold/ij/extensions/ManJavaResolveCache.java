@@ -39,6 +39,7 @@ import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.util.ConcurrencyUtil;
 import com.intellij.util.Function;
+import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.messages.MessageBus;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -94,23 +95,29 @@ public class ManJavaResolveCache extends JavaResolveCache
 
   // this is a copy of super's getType() so we can suppress the error, see commented out section:
   @Nullable
-  private <T extends PsiExpression> PsiType _getType(@NotNull T expr, @NotNull Function<? super T, ? extends PsiType> f) {
+  public <T extends PsiExpression> PsiType _getType(@NotNull T expr, @NotNull Function<? super T, ? extends PsiType> f) {
+    final boolean isOverloadCheck = MethodCandidateInfo.isOverloadCheck();
+    final boolean polyExpression = PsiPolyExpressionUtil.isPolyExpression(expr);
+
     @Jailbreak JavaResolveCache thiz = this;
     ConcurrentMap<PsiExpression, PsiType> map = thiz.myCalculatedTypes.get();
     if (map == null) map = ConcurrencyUtil.cacheOrGet(thiz.myCalculatedTypes, ContainerUtil.createConcurrentWeakKeySoftValueMap());
 
-    final boolean prohibitCaching = MethodCandidateInfo.isOverloadCheck() && PsiPolyExpressionUtil.isPolyExpression(expr);
-    PsiType type = prohibitCaching ? null : map.get(expr);
+    PsiType type = isOverloadCheck && polyExpression ? null : map.get(expr);
     if (type == null) {
       RecursionGuard.StackStamp dStackStamp = RecursionManager.markStack();
       type = f.fun(expr);
-      if (prohibitCaching || !dStackStamp.mayCacheNow()) {
+      if (!dStackStamp.mayCacheNow()) {
+        return type;
+      }
+
+      //cache standalone expression types as they do not depend on the context
+      if (isOverloadCheck && polyExpression) {
         return type;
       }
 
       if (type == null) type = TypeConversionUtil.NULL_TYPE;
       PsiType alreadyCached = map.put(expr, type);
-
 //## NOTE: commenting out this to suppress the error because it happens with manifold
 //      if (alreadyCached != null && !type.equals(alreadyCached)) {
 //        reportUnstableType(expr, type, alreadyCached);
