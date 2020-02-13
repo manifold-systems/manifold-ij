@@ -188,8 +188,13 @@ by the core framework. Each project represents a separate <strong>dependency</st
     <![CDATA[
 <h3>Bug Fixes:<h3>
 <p/>
-<h4><a href="https://github.com/manifold-systems/manifold/issues/149">#149</a>: Support very large GraphQL schemas</h4>
-<h4>Other minor issues</h4>
+<h4>
+<a href="https://github.com/manifold-systems/manifold/issues/156">#156</a>: For an incremental build only recompile resources that have changed, don't recompile incidental references. As such prevent projected manifold types corresponding with unchanged resources from regenerating and loading as source, instead allow them to load from .class target files that should already be compiled.  Note commits were also made in the Manifold IJ plugin to effect this change (IJ is where incremental builds happen).
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/155">#155</a>: Prevent duplicate generated inner type names where an inner type may otherwise shadow another inner type in a given nesting of types.
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/140">#140</a>: Improve user experience with fragments (IntelliJ plugin); editing an embedded fragment no longer causes code usage to have errors.
+</h4>
     ]]>
   </change-notes>
 
