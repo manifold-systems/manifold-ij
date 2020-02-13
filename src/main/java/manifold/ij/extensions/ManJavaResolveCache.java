@@ -90,52 +90,7 @@ public class ManJavaResolveCache extends JavaResolveCache
       }
     }
 
-    return _getType( expr, f );
-    //return super.getType( expr, f );
-  }
-
-  // this is a copy of super's getType() so we can suppress the error, see commented out section:
-  @Nullable
-  public <T extends PsiExpression> PsiType _getType(@NotNull T expr, @NotNull Function<? super T, ? extends PsiType> f) {
-    final boolean isOverloadCheck = MethodCandidateInfo.isOverloadCheck();
-    final boolean polyExpression = PsiPolyExpressionUtil.isPolyExpression(expr);
-
-    @Jailbreak JavaResolveCache thiz = this;
-    ConcurrentMap<PsiExpression, PsiType> map = thiz.myCalculatedTypes.get();
-    if (map == null) map = ConcurrencyUtil.cacheOrGet(thiz.myCalculatedTypes, ContainerUtil.createConcurrentWeakKeySoftValueMap());
-
-    PsiType type = isOverloadCheck && polyExpression ? null : map.get(expr);
-    if (type == null) {
-      RecursionGuard.StackStamp dStackStamp = RecursionManager.markStack();
-      type = f.fun(expr);
-      if (!dStackStamp.mayCacheNow()) {
-        return type;
-      }
-
-      //cache standalone expression types as they do not depend on the context
-      if (isOverloadCheck && polyExpression) {
-        return type;
-      }
-
-      if (type == null) type = TypeConversionUtil.NULL_TYPE;
-      PsiType alreadyCached = map.put(expr, type);
-//## NOTE: commenting out this to suppress the error because it happens with manifold
-//      if (alreadyCached != null && !type.equals(alreadyCached)) {
-//        reportUnstableType(expr, type, alreadyCached);
-//      }
-
-      if (type instanceof PsiClassReferenceType) {
-        // convert reference-based class type to the PsiImmediateClassType, since the reference may become invalid
-        PsiClassType.ClassResolveResult result = ((PsiClassReferenceType)type).resolveGenerics();
-        PsiClass psiClass = result.getElement();
-        type = psiClass == null
-               ? type // for type with unresolved reference, leave it in the cache
-               // for clients still might be able to retrieve its getCanonicalText() from the reference text
-               : new PsiImmediateClassType(psiClass, result.getSubstitutor(), ((PsiClassReferenceType)type).getLanguageLevel(), type.getAnnotationProvider());
-      }
-    }
-
-    return type == TypeConversionUtil.NULL_TYPE ? null : type;
+    return super.getType( expr, f );
   }
 
   static boolean isBindingExpression( final PsiExpression expr )
