@@ -135,7 +135,6 @@ String content = abc.example.UserSample.render(users);
 Manifold in your development cycle. The plugin provides comprehensive support for IntelliJ features including code
 completion, navigation, usage searching, refactoring, incremental compilation, hotswap debugging, full-featured
 template editing, integrated preprocessor, and more.</p>
-<p><img src="http://manifold.systems/images/ManifoldPlugin.png" alt="manifold ij plugin" width="60%" height="60%"/></p>
 <blockquote>
   <p>Note the Manifold Plugin for IntelliJ IDEA is <strong>free</strong> for use with IntelliJ IDEA <strong>Community Edition</strong> which like
   the Manifold project is free and open source. The plugin is also commercially available on a trial basis via the
@@ -189,6 +188,8 @@ by the core framework. Each project represents a separate <strong>dependency</st
 <h3>Bug Fixes:<h3>
 <p/>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/157">#157</a>: GraphQL fragments referenced in a query are bundled with it in the request.
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/156">#156</a>: For an incremental build only recompile resources that have changed, don't recompile incidental references. As such prevent projected manifold types corresponding with unchanged resources from regenerating and loading as source, instead allow them to load from .class target files that should already be compiled.  Note commits were also made in the Manifold IJ plugin to effect this change (IJ is where incremental builds happen).
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/155">#155</a>: Prevent duplicate generated inner type names where an inner type may otherwise shadow another inner type in a given nesting of types.
