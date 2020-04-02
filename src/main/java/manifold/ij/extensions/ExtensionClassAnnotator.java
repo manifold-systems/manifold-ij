@@ -29,6 +29,8 @@ import com.intellij.psi.impl.source.PsiMethodImpl;
 import com.intellij.psi.impl.source.tree.java.ReferenceListElement;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.ClassUtil;
+import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.TypeConversionUtil;
 import java.lang.reflect.Modifier;
 import java.util.List;
@@ -119,7 +121,9 @@ public class ExtensionClassAnnotator implements Annotator
             .findClass( extendedClassName, GlobalSearchScope.allScope( element.getProject() ) );
           if( extendClassSym != null &&
               !isStructuralInterface( extendClassSym ) && // an extended class could be made a structural interface which results in Object as @This param, ignore this
-              !isAssignableFromRaw( element.getProject(), extendClassSym, param.getType() ) )
+              !isAssignableFromRaw( element.getProject(), extendClassSym, param.getType() ) &&
+              (ManifoldPsiClassAnnotator.getContainingClass( extendClassSym ) == null || !isEnclosing( extendClassSym, param )) // handle inner class extensions
+            )
           {
             TextRange range = new TextRange( param.getTextRange().getStartOffset(),
                                              param.getTextRange().getEndOffset() );
@@ -154,6 +158,15 @@ public class ExtensionClassAnnotator implements Annotator
         holder.createWarningAnnotation( range, ExtIssueMsg.MSG_MUST_NOT_BE_PRIVATE.get( psiMethod.getName() ) );
       }
     }
+  }
+
+  private boolean isEnclosing( PsiClass topLevelExtendedClass, PsiParameter thisParam )
+  {
+    PsiClass paramClass = PsiTypesUtil.getPsiClass( thisParam.getType() );
+    return paramClass != null &&
+           (PsiTreeUtil.isAncestor( topLevelExtendedClass, paramClass, true ) ||
+            topLevelExtendedClass instanceof ManifoldPsiClass && PsiTreeUtil.isAncestor(
+              ((ManifoldPsiClass)topLevelExtendedClass).getDelegate(), paramClass, true ));
   }
 
   private boolean isAssignableFromRaw( Project project, PsiClass extendClassSym, PsiType type )
