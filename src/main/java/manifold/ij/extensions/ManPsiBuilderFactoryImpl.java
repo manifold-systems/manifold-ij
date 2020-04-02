@@ -79,7 +79,14 @@ public class ManPsiBuilderFactoryImpl extends PsiBuilderFactoryImpl
     if( lexer instanceof ManJavaLexer )
     {
       // For preprocessor
-      ((ManJavaLexer)lexer).setChameleon( chameleon );
+      try
+      {
+        ((ManJavaLexer)lexer).setChameleon( chameleon );
+      }
+      catch( Exception ignore )
+      {
+        // this can happen in the debugger when it evaluates expressions
+      }
     }
     
     return new ManPsiBuilderImpl( project, parserDefinition, lexer, chameleon, seq );
