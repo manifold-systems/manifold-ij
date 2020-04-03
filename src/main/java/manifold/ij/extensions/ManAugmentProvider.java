@@ -167,7 +167,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
           for( String extension : extensionClassNames )
           {
             PsiClass extPsiClass = ManifoldPsiClassCache.getPsiClass( manModule, extension );
-            PsiClass extClass = findExtClass( extPsiClass, fqn );
+            PsiClass extClass = findExtClass( extPsiClass, extension );
             addMethods( psiClass, augFeatures, manModule, extClass );
           }
         }
