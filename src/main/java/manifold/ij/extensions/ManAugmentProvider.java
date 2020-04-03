@@ -121,6 +121,11 @@ public class ManAugmentProvider extends PsiAugmentProvider
   private void addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, Module module )
   {
     ManModule manModule = ManProject.getModule( module );
+    if( manModule == null )
+    {
+      return;
+    }
+    
     for( ITypeManifold tm : manModule.getTypeManifolds() )
     {
       if( tm.getContributorKind() == Supplemental )
@@ -141,7 +146,14 @@ public class ManAugmentProvider extends PsiAugmentProvider
             if( psiJavaFile != null )
             {
               PsiClass[] classes = psiJavaFile.getClasses();
-              addMethods( psiClass, augFeatures, manModule, classes );
+              if( classes.length > 0 )
+              {
+                String topLevelFqn = ManifoldPsiClassCache.findTopLevelFqn( tm, fqn );
+                String innerSuffix = fqn.substring( topLevelFqn.length() );
+
+                PsiClass extClass = findExtClass( classes[0], classes[0].getQualifiedName() + innerSuffix );
+                addMethods( psiClass, augFeatures, manModule, extClass );
+              }
             }
           }
         }
@@ -155,51 +167,75 @@ public class ManAugmentProvider extends PsiAugmentProvider
           for( String extension : extensionClassNames )
           {
             PsiClass extPsiClass = ManifoldPsiClassCache.getPsiClass( manModule, extension );
-            addMethods( psiClass, augFeatures, manModule, new PsiClass[]{extPsiClass} );
+            PsiClass extClass = findExtClass( extPsiClass, extension );
+            addMethods( psiClass, augFeatures, manModule, extClass );
           }
         }
       }
     }
   }
 
-  private void addMethods( PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, ManModule manModule, PsiClass[] classes )
+  private PsiClass findExtClass( PsiClass topLevel, String fqn )
   {
-    if( classes.length > 0 )
+    String name = topLevel.getQualifiedName();
+    if( name == null || name.equals( fqn ) )
     {
-      addInterfaceExtensions( psiClass, classes[0] );
+      return topLevel;
+    }
 
-      SrcClass srcExtClass = new StubBuilder().make( classes[0].getQualifiedName(), manModule );
-      if( srcExtClass == null )
+    // Handle inner class extensions
+    for( PsiClass inner : topLevel.getInnerClasses() )
+    {
+      PsiClass extClass = findExtClass( inner, fqn );
+      if( extClass != null )
       {
-        return;
+        return extClass;
       }
+    }
 
-      SrcClass scratchClass = new SrcClass( psiClass.getQualifiedName(), psiClass.isInterface() ? SrcClass.Kind.Interface : SrcClass.Kind.Class );
-      for( PsiTypeParameter tv : psiClass.getTypeParameters() )
+    return null;
+  }
+
+  private void addMethods( PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, ManModule manModule, PsiClass extClass )
+  {
+    if( extClass == null )
+    {
+      return;
+    }
+
+    addInterfaceExtensions( psiClass, extClass );
+
+    SrcClass srcExtClass = new StubBuilder().make( extClass.getQualifiedName(), manModule );
+    if( srcExtClass == null )
+    {
+      return;
+    }
+
+    SrcClass scratchClass = new SrcClass( psiClass.getQualifiedName(), psiClass.isInterface() ? SrcClass.Kind.Interface : SrcClass.Kind.Class );
+    for( PsiTypeParameter tv : psiClass.getTypeParameters() )
+    {
+      scratchClass.addTypeVar( new SrcType( StubBuilder.makeTypeVar( tv ) ) );
+    }
+    for( AbstractSrcMethod m : srcExtClass.getMethods() )
+    {
+      SrcMethod srcMethod = addExtensionMethod( scratchClass, m, psiClass );
+      if( srcMethod != null )
       {
-        scratchClass.addTypeVar( new SrcType( StubBuilder.makeTypeVar( tv ) ) );
-      }
-      for( AbstractSrcMethod m : srcExtClass.getMethods() )
-      {
-        SrcMethod srcMethod = addExtensionMethod( scratchClass, m, psiClass );
-        if( srcMethod != null )
+        StringBuilder key = new StringBuilder();
+        srcMethod.render( key, 0 );
+        PsiMethod existingMethod = augFeatures.get( key.toString() );
+        if( existingMethod != null )
         {
-          StringBuilder key = new StringBuilder();
-          srcMethod.render( key, 0 );
-          PsiMethod existingMethod = augFeatures.get( key.toString() );
-          if( existingMethod != null )
+          // already added from another module root, the method has multiple module refs e.g., ManStringExt
+          ((ManLightMethodBuilder)existingMethod).withAdditionalModule( manModule );
+        }
+        else
+        {
+          PsiMethod extMethod = makePsiMethod( srcMethod, psiClass );
+          if( extMethod != null )
           {
-            // already added from another module root, the method has multiple module refs e.g., ManStringExt
-            ((ManLightMethodBuilder)existingMethod).withAdditionalModule( manModule );
-          }
-          else
-          {
-            PsiMethod extMethod = makePsiMethod( srcMethod, psiClass );
-            if( extMethod != null )
-            {
-              PsiMethod plantedMethod = plantMethodInPsiClass( manModule, extMethod, psiClass, classes[0] );
-              augFeatures.put( key.toString(), plantedMethod );
-            }
+            PsiMethod plantedMethod = plantMethodInPsiClass( manModule, extMethod, psiClass, extClass );
+            augFeatures.put( key.toString(), plantedMethod );
           }
         }
       }
