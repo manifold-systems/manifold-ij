@@ -185,16 +185,16 @@ by the core framework. Each project represents a separate <strong>dependency</st
 
   <change-notes>
     <![CDATA[
-<h3>Bug Fixes:<h3>
+<h3>Fixes & Features:<h3>
 <p/>
 <h4>
-<a href="https://github.com/manifold-systems/manifold/issues/157">#157</a>: GraphQL fragments referenced in a query are bundled with it in the request.
+<a href="https://github.com/manifold-systems/manifold/issues/159">#159</a>: Support extensions on inner classes
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/156">#156</a>: For an incremental build only recompile resources that have changed, don't recompile incidental references. As such prevent projected manifold types corresponding with unchanged resources from regenerating and loading as source, instead allow them to load from .class target files that should already be compiled.  Note commits were also made in the Manifold IJ plugin to effect this change (IJ is where incremental builds happen).
+<a href="https://github.com/manifold-systems/manifold/issues/169">#169</a>: Fix break statement where a label does not resolve
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/155">#155</a>: Prevent duplicate generated inner type names where an inner type may otherwise shadow another inner type in a given nesting of types.
+<a href="https://github.com/manifold-systems/manifold/issues/170">#170</a>: Fix debugger expression evaluation
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/140">#140</a>: Improve user experience with fragments (IntelliJ plugin); editing an embedded fragment no longer causes code usage to have errors.
+Lots of minor fixes and improvements.
 </h4>
     ]]>
   </change-notes>

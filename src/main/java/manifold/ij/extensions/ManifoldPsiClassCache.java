@@ -295,7 +295,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
           throw new ConflictingTypeManifoldsException( fqn, found, tm );
         }
         found = tm;
-        result = tm.contribute( null, topLevelFqn, result, issues );
+        result = tm.contribute( null, topLevelFqn, false, result, issues );
       }
 
       ManModule actualModule = (ManModule)found.getModule();
@@ -311,7 +311,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     return _fqnPsiCache.getNode( fqn );
   }
 
-  private String findTopLevelFqn( ITypeManifold tm, String fqn )
+  public static String findTopLevelFqn( ITypeManifold tm, String fqn )
   {
     if( tm.isTopLevelType( fqn ) )
     {
