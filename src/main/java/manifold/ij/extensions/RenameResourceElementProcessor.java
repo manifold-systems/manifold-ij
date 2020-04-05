@@ -19,6 +19,7 @@ import com.intellij.psi.PsiPlainTextFile;
 import com.intellij.psi.PsiPolyVariantReference;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.refactoring.listeners.RefactoringElementListener;
 import com.intellij.refactoring.rename.RenamePsiElementProcessor;
@@ -217,14 +218,14 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
 
   @NotNull
   @Override
-  public Collection<PsiReference> findReferences( @NotNull PsiElement element )
+  public Collection<PsiReference> findReferences( @NotNull PsiElement element, @NotNull SearchScope scope, boolean commentsAndStrings )
   {
     if( !ManProject.isManifoldInUse( element ) )
     {
-      return super.findReferences( element );
+      return super.findReferences( element, scope, commentsAndStrings );
     }
 
-    Collection<PsiReference> references = super.findReferences( element );
+    Collection<PsiReference> references = super.findReferences( element, scope, commentsAndStrings );
 
     if( element instanceof JsonProperty )
     {

@@ -21,6 +21,7 @@ import com.intellij.psi.SmartPointerManager;
 import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.impl.light.AbstractLightClass;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.refactoring.listeners.RefactoringElementListener;
 import com.intellij.refactoring.rename.RenameDialog;
@@ -203,14 +204,14 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 
   @NotNull
   @Override
-  public Collection<PsiReference> findReferences( @NotNull PsiElement element )
+  public Collection<PsiReference> findReferences( @NotNull PsiElement element, @NotNull SearchScope scope, boolean commentsAndStrings )
   {
     if( !ManProject.isManifoldInUse( element ) )
     {
       return Collections.emptySet();
     }
 
-    Collection<PsiReference> references = super.findReferences( element );
+    Collection<PsiReference> references = super.findReferences( element, scope, commentsAndStrings );
 
     // Store refs to manifold types
     storeTypeManifoldReferences( element );
