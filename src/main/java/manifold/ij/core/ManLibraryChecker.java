@@ -261,7 +261,13 @@ public class ManLibraryChecker
             continue;
           }
 
-          File file = new File( new URL( path.getUrl() ).getFile() );
+          canonicalPath = canonicalPath.replace( '/', File.separatorChar );
+          File file = new File( canonicalPath );
+          if( !file.isFile() )
+          {
+            file = new File( new URL( path.getUrl() ).getFile() );
+          }
+
           try
           {
             Manifest manifest = new JarFile( file.getAbsoluteFile() ).getManifest();
