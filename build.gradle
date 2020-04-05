@@ -98,11 +98,11 @@ intellij {
   version getIjVersion() // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
   if( version.contains( "EAP" ) || Double.parseDouble( version.substring(0, version.lastIndexOf('.'))) >= 2019.2 )
   {
-    plugins = ['java', 'com.intellij.lang.jsgraphql:2.3.0'] //include PsiViewer & GraphQL JS in sandbox
+    plugins = ['java', 'com.intellij.lang.jsgraphql:2.4.0'] //include PsiViewer & GraphQL JS in sandbox
   }
   else
   {
-    plugins = ['com.intellij.lang.jsgraphql:2.3.0'] //include PsiViewer & GraphQL JS in sandbox
+    plugins = ['com.intellij.lang.jsgraphql:2.4.0'] //include PsiViewer & GraphQL JS in sandbox
   }
 }
 
