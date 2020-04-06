@@ -188,11 +188,15 @@ by the core framework. Each project represents a separate <strong>dependency</st
 <h3>Fixes & Features:<h3>
 <p/>
 <h4>
-<a href="https://github.com/manifold-systems/manifold/issues/159">#159</a>: Support extensions on inner classes
+<a href="https://github.com/manifold-systems/manifold/issues/121">#121</a>: IJ Plugin bug: Fix case to detect Manifold dependency when Manifold jar is located on a different drive than IJ working dir
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/169">#169</a>: Fix break statement where a label does not resolve
+<a href="https://github.com/manifold-systems/manifold/issues/159">#159</a>: Extension Manifold feature: Support extensions on inner classes (<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#inner-classes">docs</a>)
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/170">#170</a>: Fix debugger expression evaluation
+<a href="https://github.com/manifold-systems/manifold/issues/161">#161</a>: IJ Plugin bug: Fix a general Rename Refactor bug that is exposed by renaming a GraphQL union type
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/169">#169</a>: IJ Plugin bug: Fix break statement where a label does not resolve
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/170">#170</a>: IJ Plugin bug: Fix debugger expression evaluation
 <br>
 Lots of minor fixes and improvements.
 </h4>

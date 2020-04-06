@@ -436,6 +436,7 @@ public class ResourceToManifoldUtil
 
   private static List<PsiModifierListOwner> findJavaElementsFor( PsiClass psiClass, IFile file, PsiElement element )
   {
+    psiClass.putUserData( KEY_FEATURE_PATH, null );
     return findJavaElementsFor( psiClass, file, element, new FeaturePath( psiClass ) );
   }
 
@@ -443,7 +444,7 @@ public class ResourceToManifoldUtil
   {
     List<PsiModifierListOwner> result = new ArrayList<>();
 
-    if( isJavaElementFor( psiClass, file, psiClass, element ) )
+    if( isJavaElementFor( psiClass, file, psiClass, element ) && psiClass.getUserData( KEY_FEATURE_PATH ) == null )
     {
       result.add( psiClass );
       psiClass.putUserData( KEY_FEATURE_PATH, FeaturePath.make( parent, FeaturePath.FeatureType.Class, 0, 1 ) );
@@ -460,6 +461,7 @@ public class ResourceToManifoldUtil
         method.putUserData( KEY_FEATURE_PATH, FeaturePath.make( parent, FeaturePath.FeatureType.Method, i, methods.length ) );
       }
     }
+
     PsiField[] fields = psiClass.getFields();
     for( int i = 0; i < fields.length; i++ )
     {
@@ -471,6 +473,7 @@ public class ResourceToManifoldUtil
         field.putUserData( KEY_FEATURE_PATH, FeaturePath.make( parent, FeaturePath.FeatureType.Field, i, fields.length ) );
       }
     }
+
     PsiClass[] inners = psiClass.getInnerClasses();
     for( int i = 0; i < inners.length; i++ )
     {
@@ -483,6 +486,7 @@ public class ResourceToManifoldUtil
       }
       result.addAll( findJavaElementsFor( inner, file, element, new FeaturePath( parent, FeaturePath.FeatureType.Class, i, inners.length ) ) );
     }
+
     return result;
   }
 
