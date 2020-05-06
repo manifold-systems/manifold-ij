@@ -188,17 +188,21 @@ by the core framework. Each project represents a separate <strong>dependency</st
 <h3>Fixes & Features:<h3>
 <p/>
 <h4>
-<a href="https://github.com/manifold-systems/manifold/issues/121">#121</a>: IJ Plugin bug: Fix case to detect Manifold dependency when Manifold jar is located on a different drive than IJ working dir
+<a href="https://github.com/manifold-systems/manifold/issues/165">#165</a>: IJ Plugin: Fix license issue with Community Edition, Manifold is once again free for CE (exclusive to plugin release 2020.1.9)
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/159">#159</a>: Extension Manifold feature: Support extensions on inner classes (<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#inner-classes">docs</a>)
+<a href="https://github.com/manifold-systems/manifold/issues/172">#172</a>: Core: Fix build case involving Gradle 6+
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/161">#161</a>: IJ Plugin bug: Fix a general Rename Refactor bug that is exposed by renaming a GraphQL union type
+<a href="https://github.com/manifold-systems/manifold/issues/173">#173</a>: Core: Support concurrency while statically initializing JavacPlugin
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/169">#169</a>: IJ Plugin bug: Fix break statement where a label does not resolve
+<a href="https://github.com/manifold-systems/manifold/issues/174">#174</a>: GraphQL: Handle additional URL parameters on Executor (via Requester) using withParam(name, value)
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/170">#170</a>: IJ Plugin bug: Fix debugger expression evaluation
+<a href="https://github.com/manifold-systems/manifold/issues/175">#175</a>: GraphQL & REST: Support proxy servers in GraphQL and REST endpoints
 <br>
-Lots of minor fixes and improvements.
+<a href="https://github.com/manifold-systems/manifold/issues/176">#176</a>: Core: Improve support for Programming Languages as type manifolds (ongoing)
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/177">#177</a>: Core: Provide a javac command line argument to specify Manifold types/files to statically compile
+<br>
+Other minor fixes and improvements.
 </h4>
     ]]>
   </change-notes>
