@@ -1,6 +1,5 @@
 package manifold.ij.extensions;
 
-import com.intellij.codeInsight.daemon.impl.AnnotationHolderImpl;
 import com.intellij.lang.annotation.Annotation;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
@@ -18,6 +17,8 @@ import java.util.Locale;
 import java.util.Set;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
+
+import com.intellij.util.SmartList;
 import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,7 +54,10 @@ public class ManifoldPsiClassAnnotator implements Annotator
     {
       String message = PsiErrorClassUtil.getErrorFrom( psiClass ).getMessage();
       String tooltip = makeTooltip( message );
-      holder.createAnnotation( HighlightSeverity.ERROR, new TextRange( 0, containingFile.getTextLength() ), message, tooltip );
+      holder.newAnnotation( HighlightSeverity.ERROR, message )
+        .range( new TextRange( 0, containingFile.getTextLength() ) )
+        .tooltip( tooltip )
+        .create();
       return;
     }
 
@@ -98,15 +102,24 @@ public class ManifoldPsiClassAnnotator implements Annotator
     switch( issue.getKind() )
     {
       case ERROR:
-        holder.createAnnotation( HighlightSeverity.ERROR, range, message, tooltip );
+        holder.newAnnotation( HighlightSeverity.ERROR, message )
+          .range( range )
+          .tooltip( tooltip )
+          .create();
         break;
       case WARNING:
       case MANDATORY_WARNING:
-        holder.createAnnotation( HighlightSeverity.WARNING, range, message, tooltip );
+        holder.newAnnotation( HighlightSeverity.WARNING, message )
+          .range( range )
+          .tooltip( tooltip )
+          .create();
         break;
       case NOTE:
       case OTHER:
-        holder.createAnnotation( HighlightSeverity.INFORMATION, range, message, tooltip );
+        holder.newAnnotation( HighlightSeverity.INFORMATION, message )
+          .range( range )
+          .tooltip( tooltip )
+          .create();
         break;
     }
     return true;
@@ -128,7 +141,7 @@ public class ManifoldPsiClassAnnotator implements Annotator
 
     String message = makeMessage( issue );
     String tooltip = makeTooltip( message );
-    if( hasAnnotation( (AnnotationHolderImpl)holder, deepestElement ) )
+    if( hasAnnotation( (SmartList<Annotation>)holder, deepestElement ) )
     {
       //## todo: this is a "temporary" fix since IJ 2018.3, for some reason it calls this annotator twice with the same holder
       return false;
@@ -136,21 +149,30 @@ public class ManifoldPsiClassAnnotator implements Annotator
     switch( issue.getKind() )
     {
       case ERROR:
-        holder.createAnnotation( HighlightSeverity.ERROR, deepestElement.getTextRange(), message, tooltip );
+        holder.newAnnotation( HighlightSeverity.ERROR, message )
+          .range( deepestElement.getTextRange() )
+          .tooltip( tooltip )
+          .create();
         break;
       case WARNING:
       case MANDATORY_WARNING:
-        holder.createAnnotation( HighlightSeverity.WARNING, deepestElement.getTextRange(), message, tooltip );
+        holder.newAnnotation( HighlightSeverity.WARNING, message )
+          .range( deepestElement.getTextRange() )
+          .tooltip( tooltip )
+          .create();
         break;
       case NOTE:
       case OTHER:
-        holder.createAnnotation( HighlightSeverity.INFORMATION, deepestElement.getTextRange(), message, tooltip );
+        holder.newAnnotation( HighlightSeverity.INFORMATION, message )
+          .range( deepestElement.getTextRange() )
+          .tooltip( tooltip )
+          .create();
         break;
     }
     return true;
   }
 
-  private boolean hasAnnotation( AnnotationHolderImpl holder, PsiElement deepestElement )
+  private boolean hasAnnotation( SmartList<Annotation> holder, PsiElement deepestElement )
   {
     TextRange textRange = deepestElement.getTextRange();
     for( Annotation annotation: holder )

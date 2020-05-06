@@ -181,24 +181,28 @@ by the core framework. Each project represents a separate <strong>dependency</st
 
   <depends>com.intellij.modules.java</depends>
 
-  <product-descriptor code="PMANIFOLD" release-date="20200212" release-version="20201"/>
+  <product-descriptor code="PMANIFOLD" optional="true" release-date="20200212" release-version="20201"/>
 
   <change-notes>
     <![CDATA[
 <h3>Fixes & Features:<h3>
 <p/>
 <h4>
-<a href="https://github.com/manifold-systems/manifold/issues/121">#121</a>: IJ Plugin bug: Fix case to detect Manifold dependency when Manifold jar is located on a different drive than IJ working dir
+<a href="https://github.com/manifold-systems/manifold/issues/165">#165</a>: IJ Plugin: Fix license issue with Community Edition, Manifold is once again free for CE
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/159">#159</a>: Extension Manifold feature: Support extensions on inner classes (<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#inner-classes">docs</a>)
+<a href="https://github.com/manifold-systems/manifold/issues/172">#172</a>: Core: Fix build case involving Gradle 6+
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/161">#161</a>: IJ Plugin bug: Fix a general Rename Refactor bug that is exposed by renaming a GraphQL union type
+<a href="https://github.com/manifold-systems/manifold/issues/173">#173</a>: Core: Support concurrency while statically initializing JavacPlugin
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/169">#169</a>: IJ Plugin bug: Fix break statement where a label does not resolve
+<a href="https://github.com/manifold-systems/manifold/issues/174">#174</a>: GraphQL: Handle additional URL parameters on Executor (via Requester) using withParam(name, value)
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/170">#170</a>: IJ Plugin bug: Fix debugger expression evaluation
+<a href="https://github.com/manifold-systems/manifold/issues/175">#175</a>: GraphQL & REST: Support proxy servers in GraphQL and REST endpoints
 <br>
-Lots of minor fixes and improvements.
+<a href="https://github.com/manifold-systems/manifold/issues/176">#176</a>: Core: Improve support for Programming Languages as type manifolds (ongoing)
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/177">#177</a>: Core: Provide a javac command line argument to specify Manifold types/files to statically compile
+<br>
+Other minor fixes and improvements.
 </h4>
     ]]>
   </change-notes>
@@ -217,24 +221,13 @@ Lots of minor fixes and improvements.
     </group>
   </actions>
 
-  <application-components>
-    <component>
-      <implementation-class>manifold.ij.core.ManApplicationComponent</implementation-class>
-    </component>
-  </application-components>
-
-  <project-components>
-    <component>
-      <implementation-class>manifold.ij.core.ManProjectComponent</implementation-class>
-    </component>
-  </project-components>
-
   <extensions defaultExtensionNs="com.intellij">
     <repositoryLibrary name="Manifold">
       <groupId>systems.manfold</groupId>
       <artifactId>manifold-all</artifactId>
     </repositoryLibrary>
 
+    <ApplicationLoadListener implementation="manifold.ij.core.ManApplicationLoadListener"/>
 
     <!-- Manifold Core extensions -->
 
@@ -306,7 +299,7 @@ Lots of minor fixes and improvements.
 
     <!-- Manifold Template extensions -->
 
-    <fileTypeFactory implementation="manifold.ij.template.ManTemplateFileTypeFactory"/>
+    <fileType name="ManTL" language="ManTL" extensions="mtl" implementationClass="manifold.ij.template.ManTemplateFileType"/>
     <lang.parserDefinition language="ManTemplateJava" implementationClass="manifold.ij.template.psi.ManTemplateJavaParserDefinition"/>
     <lang.treePatcher language="ManTemplateJava" implementationClass="manifold.ij.template.ManTreePatcher"/>
     <lang.parserDefinition language="ManTL" implementationClass="manifold.ij.template.psi.ManTemplateParserDefinition"/>

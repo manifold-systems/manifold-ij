@@ -44,7 +44,8 @@ import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.tree.ChildRoleBase;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.ui.RowIcon;
+import com.intellij.ui.IconManager;
+import com.intellij.ui.icons.RowIcon;
 import com.intellij.util.CharTable;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.PlatformIcons;
@@ -332,7 +333,8 @@ public class LightLocalVarImpl extends CompositePsiElement implements PsiLocalVa
 
   @Override
   public Icon getElementIcon( final int flags) {
-    final RowIcon baseIcon = ElementPresentationUtil.createLayeredIcon( PlatformIcons.VARIABLE_ICON, this, false);
+    RowIcon baseIcon = IconManager.getInstance().createLayeredIcon( this, PlatformIcons.VARIABLE_ICON,
+      ElementPresentationUtil.getFlags( this, false ) );
     return ElementPresentationUtil.addVisibilityIcon(this, flags, baseIcon);
   }
 

@@ -95,7 +95,7 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
       dataLang = dataFileType instanceof LanguageFileType ? ((LanguageFileType)dataFileType).getLanguage() : PlainTextLanguage.INSTANCE;
     }
 
-    Language substituteLang = LanguageSubstitutors.INSTANCE.substituteLanguage( dataLang, vfile, manager.getProject() );
+    Language substituteLang = LanguageSubstitutors.getInstance().substituteLanguage( dataLang, vfile, manager.getProject() );
 
     // only use a substituted language if it's templateable
     if( TemplateDataLanguageMappings.getTemplateableLanguages().contains( substituteLang ) )

@@ -243,10 +243,16 @@ public class ManProject
         _manInUse = false;
         ApplicationManager.getApplication().invokeLater( () ->
           MessageUtil.showWarning( _ijProject, MessageUtil.Placement.CENTER,
-            "Your copy of the <b>Manifold</b> plugin is not licensed or your license has expired.<br>" +
-            "For uninterrupted use of the plugin please visit the " +
-            "<a href=\"https://plugins.jetbrains.com/plugin/10057-manifold\">JetBrains Marketplace</a> to<br>" +
-            "directly create or update your Manifold plugin subscription." ) );
+            "Your copy of the <b>Manifold</b> plugin is not licensed or your license has<br>" +
+            "expired.<br>" +
+            "<br>" +
+            "To continue using the plugin please visit the <a href=\"https://plugins.jetbrains.com/plugin/10057-manifold\">JetBrains Marketplace</a> to<br>" +
+            "directly create or update your Manifold plugin subscription.<br>" +
+            "<br>" +
+            "Contact <a href=\"https://www.jetbrains.com/support/sales/#department=american&tab=email-sales\">JetBrains Sales</a> regarding student discounts and other offers.<br>" +
+            "<br>" +
+            "Visit <a href=\"http://manifold.systems\">http://manifold.systems</a> to learn more about the Manifold plugin<br>" +
+            "for IntelliJ IDEA.<br>" ) );
       }
     }
   }

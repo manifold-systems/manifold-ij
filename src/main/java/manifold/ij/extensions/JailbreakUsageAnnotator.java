@@ -54,8 +54,9 @@ public class JailbreakUsageAnnotator implements Annotator
 
     if( ((PsiAssignmentExpression)element).getOperationTokenType() != JavaTokenType.EQ )
     {
-      holder.createAnnotation( HighlightSeverity.ERROR, ((PsiAssignmentExpression)element).getOperationSign().getTextRange(),
-        ExtIssueMsg.MSG_COMPOUND_OP_NOT_ALLOWED_REFLECTION.get() );
+      holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_COMPOUND_OP_NOT_ALLOWED_REFLECTION.get() )
+        .range( ((PsiAssignmentExpression)element).getOperationSign().getTextRange() )
+        .create();
     }
   }
 
@@ -79,8 +80,9 @@ public class JailbreakUsageAnnotator implements Annotator
       return;
     }
 
-    holder.createAnnotation( HighlightSeverity.ERROR, ((PsiPostfixExpression)element).getOperationSign().getTextRange(),
-      ExtIssueMsg.MSG_INCREMENT_OP_NOT_ALLOWED_REFLECTION.get() );
+    holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_INCREMENT_OP_NOT_ALLOWED_REFLECTION.get() )
+      .range( ((PsiPostfixExpression)element).getOperationSign().getTextRange() )
+      .create();
   }
 
   private void prohibitPrefixAssignmentUse( PsiElement element, AnnotationHolder holder )
@@ -106,8 +108,9 @@ public class JailbreakUsageAnnotator implements Annotator
     IElementType op = ((PsiPrefixExpression)element).getOperationTokenType();
     if( op == JavaTokenType.PLUSPLUS || op == JavaTokenType.MINUSMINUS )
     {
-      holder.createAnnotation( HighlightSeverity.ERROR, ((PsiPrefixExpression)element).getOperationSign().getTextRange(),
-        ExtIssueMsg.MSG_INCREMENT_OP_NOT_ALLOWED_REFLECTION.get() );
+      holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_INCREMENT_OP_NOT_ALLOWED_REFLECTION.get() )
+        .range( ((PsiPrefixExpression)element).getOperationSign().getTextRange() )
+        .create();
     }
   }
 

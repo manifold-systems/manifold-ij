@@ -1,8 +1,9 @@
 package manifold.ij.extensions;
 
-import com.intellij.codeInsight.daemon.JavaErrorMessages;
+import com.intellij.codeInsight.daemon.JavaErrorBundle;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
+import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.util.TextRange;
@@ -49,7 +50,10 @@ public class ExtensionMethodCallSiteAnnotator implements Annotator
             {
               TextRange textRange = methodElem.getTextRange();
               TextRange range = new TextRange( textRange.getStartOffset(), textRange.getEndOffset() );
-              holder.createErrorAnnotation( range, JavaErrorMessages.message( "cannot.resolve.method", methodExpression.getReferenceName() ) );
+              holder.newAnnotation( HighlightSeverity.ERROR,
+                JavaErrorBundle.message( "cannot.resolve.method", methodExpression.getReferenceName() ) )
+                .range( range )
+                .create();
             }
           }
         }

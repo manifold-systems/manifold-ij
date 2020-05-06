@@ -1,6 +1,6 @@
 package manifold.ij.template.psi;
 
-import com.intellij.codeInsight.daemon.JavaErrorMessages;
+import com.intellij.codeInsight.daemon.JavaErrorBundle;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.lang.java.parser.ReferenceParser;
@@ -56,7 +56,7 @@ public class DirectiveParser
          builder.getTokenType() != JavaTokenType.EXTENDS_KEYWORD)
         || directiveName == null )
     {
-      builder.error( JavaErrorMessages.message( "expected.identifier" ) );
+      builder.error( JavaErrorBundle.message( "expected.identifier" ) );
       builder.advanceLexer();
       return;
     }
@@ -117,7 +117,7 @@ public class DirectiveParser
     if( type == null )
     {
       PsiBuilder.Marker error = builder.mark();
-      error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
+      error.error( JavaErrorBundle.message( "expected.identifier.or.type" ) );
     }
   }
 
@@ -147,7 +147,7 @@ public class DirectiveParser
     String directiveName = builder.getTokenText();
     if( tokenType != JavaTokenType.IDENTIFIER )
     {
-      builder.error( JavaErrorMessages.message( "expected.identifier" ) );
+      builder.error( JavaErrorBundle.message( "expected.identifier" ) );
       return;
     }
 
@@ -165,7 +165,7 @@ public class DirectiveParser
     if( type == null )
     {
       PsiBuilder.Marker error = builder.mark();
-      error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
+      error.error( JavaErrorBundle.message( "expected.identifier.or.type" ) );
     }
     if( builder.getTokenType() == JavaTokenType.LPARENTH )
     {
@@ -180,7 +180,7 @@ public class DirectiveParser
     if( type == null )
     {
       PsiBuilder.Marker error = builder.mark();
-      error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
+      error.error( JavaErrorBundle.message( "expected.identifier.or.type" ) );
     }
     if( builder.getTokenType() == JavaTokenType.LPARENTH )
     {
@@ -204,7 +204,7 @@ public class DirectiveParser
     if( _javaParser.getReferenceParser().parseJavaCodeReference( builder, true, true, false, false ) == null )
     {
       PsiBuilder.Marker error = builder.mark();
-      error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
+      error.error( JavaErrorBundle.message( "expected.identifier.or.type" ) );
     }
     done( extendsClause, JavaElementType.EXTENDS_LIST );
   }
@@ -255,7 +255,7 @@ public class DirectiveParser
       if( !allowEmpty )
       {
         PsiBuilder.Marker error = builder.mark();
-        error.error( JavaErrorMessages.message( "expected.identifier.or.type" ) );
+        error.error( JavaErrorBundle.message( "expected.identifier.or.type" ) );
       }
       localVariableDecl.drop();
       declStatement.drop();
@@ -264,7 +264,7 @@ public class DirectiveParser
 
     if( !expect( builder, JavaTokenType.IDENTIFIER ) )
     {
-      builder.error( JavaErrorMessages.message( "expected.identifier" ) );
+      builder.error( JavaErrorBundle.message( "expected.identifier" ) );
       localVariableDecl.drop();
       declStatement.drop();
       return;
@@ -302,7 +302,7 @@ public class DirectiveParser
     return type;
   }
 
-  private boolean eatBrackets( PsiBuilder builder, @Nullable @PropertyKey(resourceBundle = JavaErrorMessages.BUNDLE) String errorKey )
+  private boolean eatBrackets( PsiBuilder builder, @Nullable @PropertyKey(resourceBundle = JavaErrorBundle.BUNDLE) String errorKey )
   {
     IElementType tokenType = builder.getTokenType();
     if( tokenType != JavaTokenType.LBRACKET && tokenType != JavaTokenType.AT )
@@ -337,7 +337,7 @@ public class DirectiveParser
 
     if( errorKey != null )
     {
-      marker.error( JavaErrorMessages.message( errorKey ) );
+      marker.error( JavaErrorBundle.message( errorKey ) );
     }
     else
     {
@@ -347,7 +347,7 @@ public class DirectiveParser
     boolean paired = count % 2 == 0;
     if( !paired )
     {
-      error( builder, JavaErrorMessages.message( "expected.rbracket" ) );
+      error( builder, JavaErrorBundle.message( "expected.rbracket" ) );
     }
     return paired;
   }

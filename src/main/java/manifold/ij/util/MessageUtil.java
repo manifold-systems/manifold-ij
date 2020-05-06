@@ -7,14 +7,16 @@ import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.wm.WindowManager;
-import com.intellij.openapi.wm.ex.WindowManagerEx;
 import com.intellij.ui.awt.RelativePoint;
 import org.jetbrains.annotations.NotNull;
+
+import javax.swing.*;
 
 public final class MessageUtil
 {
   private static final Logger log = Logger.getInstance( MessageUtil.class );
 
+  @SuppressWarnings( "unused" )
   public static void showInfo( final Project project, final String format, final Object... args )
   {
     showMessage( project, MessageType.INFO, format, args );
@@ -34,17 +36,20 @@ public final class MessageUtil
     showMessage( project, MessageType.ERROR, format, args );
   }
 
+  @SuppressWarnings( "unused" )
   public static void showError( Project project, Throwable t )
   {
     showError( project, t.getMessage() );
   }
 
+  @SuppressWarnings( "unused" )
   public static void showCriticalError( final Project project, final String format, final Object... args )
   {
     showMessage( project, MessageType.ERROR, format, args );
     log.error( String.format( format, args ) );
   }
 
+  @SuppressWarnings( "unused" )
   public static void showCriticalError( Project project, Throwable t )
   {
     showError( project, t.getMessage() );
@@ -84,22 +89,29 @@ public final class MessageUtil
   @NotNull
   private static RelativePoint getPosition( Project project, Placement placement )
   {
+    // the project frame
+    JFrame frame = WindowManager.getInstance().getFrame( project );
+    if( frame == null )
+    {
+      // the "welcome" frame
+      frame = WindowManager.getInstance().findVisibleFrame();
+    }
+
     switch( placement )
     {
       case CENTER:
-        return RelativePoint.getCenterOf( ((WindowManagerEx)WindowManager.getInstance()).getFrame( project ).getLayeredPane() );
+        return RelativePoint.getCenterOf( frame.getLayeredPane() );
       case SOUTH:
-        return RelativePoint.getSouthOf( ((WindowManagerEx)WindowManager.getInstance()).getFrame( project ).getLayeredPane() );
-      case NORTH_EAST:
-        return RelativePoint.getNorthEastOf( ((WindowManagerEx)WindowManager.getInstance()).getFrame( project ).getLayeredPane() );
-      case NORTH_WEST:
-        return RelativePoint.getNorthWestOf( ((WindowManagerEx)WindowManager.getInstance()).getFrame( project ).getLayeredPane() );
+        return RelativePoint.getSouthOf( frame.getLayeredPane() );
       case SOUTH_EAST:
-        return RelativePoint.getSouthEastOf( ((WindowManagerEx)WindowManager.getInstance()).getFrame( project ).getLayeredPane() );
+        return RelativePoint.getSouthEastOf( frame.getLayeredPane() );
       case SOUTH_WEST:
-        return RelativePoint.getSouthWestOf( ((WindowManagerEx)WindowManager.getInstance()).getFrame( project ).getLayeredPane() );
+        return RelativePoint.getSouthWestOf( frame.getLayeredPane() );
+      case NORTH_WEST:
+        return RelativePoint.getNorthWestOf( frame.getLayeredPane() );
+      case NORTH_EAST:
       default:
-        return RelativePoint.getNorthEastOf( ((WindowManagerEx)WindowManager.getInstance()).getFrame( project ).getLayeredPane() );
+        return RelativePoint.getNorthEastOf( frame.getLayeredPane() );
     }
   }
 }

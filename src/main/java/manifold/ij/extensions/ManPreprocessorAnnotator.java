@@ -1,6 +1,5 @@
 package manifold.ij.extensions;
 
-import com.intellij.lang.annotation.Annotation;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.lang.annotation.HighlightSeverity;
@@ -99,26 +98,31 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
     }
 
     info.getDirectives().forEach( d -> {
-      Annotation annotation = holder.createAnnotation( HighlightSeverity.INFORMATION, TextRange.create( d[0], d[1] ), null );
-      annotation.setEnforcedTextAttributes( _directiveKeyword );
+      holder.newAnnotation( HighlightSeverity.INFORMATION, "" )
+        .range( TextRange.create( d[0], d[1] ) )
+        .enforcedTextAttributes( _directiveKeyword )
+        .create();
       PsiElement comment = file.findElementAt( d[0] + 1 );
       if( comment instanceof PsiComment )
       {
         if( comment.getText().startsWith( "#" + TokenType.Error.getDirective() ) )
         {
-          holder.createAnnotation( HighlightSeverity.ERROR, TextRange.create( d[0], d[1] ), null );
+          holder.newAnnotation( HighlightSeverity.ERROR, "" ).range( TextRange.create( d[0], d[1] ) ).create();
         }
         else if( comment.getText().startsWith( "#" + TokenType.Warning.getDirective() ) )
         {
-          holder.createAnnotation( HighlightSeverity.WARNING, TextRange.create( d[0], d[1] ), null );
+          holder.newAnnotation( HighlightSeverity.WARNING, "" ).range( TextRange.create( d[0], d[1] ) ).create();
         }
-        Annotation unseen = holder.createInfoAnnotation( comment, null );
-        unseen.setEnforcedTextAttributes( _notCompiled );
+        holder.newAnnotation( HighlightSeverity.INFORMATION, "" )
+          .range( comment )
+          .enforcedTextAttributes( _notCompiled )
+          .create();
       }
     } );
     info.getIssues().forEach(
-      issue -> holder.createAnnotation( HighlightSeverity.ERROR,
-        TextRange.create( issue.getSecond(), issue.getSecond()+1 ), issue.getFirst() ) );
+      issue -> holder.newAnnotation( HighlightSeverity.ERROR, issue.getFirst() )
+        .range( TextRange.create( issue.getSecond(), issue.getSecond() + 1 ) )
+        .create() );
   }
 
   private void addDirective( Tokenizer tokenizer, Info info )

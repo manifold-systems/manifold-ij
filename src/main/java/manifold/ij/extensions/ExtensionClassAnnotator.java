@@ -2,6 +2,7 @@ package manifold.ij.extensions;
 
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
+import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
@@ -112,7 +113,9 @@ public class ExtensionClassAnnotator implements Annotator
         {
           TextRange range = new TextRange( param.getTextRange().getStartOffset(),
                                            param.getTextRange().getEndOffset() );
-          holder.createErrorAnnotation( range, ExtIssueMsg.MSG_THIS_FIRST.get() );
+          holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_THIS_FIRST.get() )
+            .range( range )
+            .create();
         }
 
         if( param.getType() instanceof PsiPrimitiveType || !getRawTypeName( param ).equals( extendedClassName ) )
@@ -127,7 +130,9 @@ public class ExtensionClassAnnotator implements Annotator
           {
             TextRange range = new TextRange( param.getTextRange().getStartOffset(),
                                              param.getTextRange().getEndOffset() );
-            holder.createErrorAnnotation( range, ExtIssueMsg.MSG_EXPECTING_TYPE_FOR_THIS.get( extendedClassName ) );
+            holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_EXPECTING_TYPE_FOR_THIS.get( extendedClassName ) )
+              .range( range )
+              .create();
           }
         }
       }
@@ -201,7 +206,9 @@ public class ExtensionClassAnnotator implements Annotator
         {
           TextRange range = new TextRange( element.getTextRange().getStartOffset(),
                                            element.getTextRange().getEndOffset() );
-          holder.createErrorAnnotation( range, ExtIssueMsg.MSG_ONLY_STRUCTURAL_INTERFACE_ALLOWED_HERE.get( iface.getName() ) );
+          holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_ONLY_STRUCTURAL_INTERFACE_ALLOWED_HERE.get( iface.getName() ) )
+            .range( range )
+            .create();
         }
       }
     }
@@ -226,7 +233,9 @@ public class ExtensionClassAnnotator implements Annotator
     {
       TextRange range = new TextRange( element.getTextRange().getStartOffset(),
                                        element.getTextRange().getEndOffset() );
-      holder.createErrorAnnotation( range, ExtIssueMsg.MSG_EXPECTING_EXTENSIONS_ROOT_PACKAGE.get( getPackageRoot( packageName ) ) );
+      holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_EXPECTING_EXTENSIONS_ROOT_PACKAGE.get( getPackageRoot( packageName ) ) )
+        .range( range )
+        .create();
     }
     else
     {
@@ -237,7 +246,9 @@ public class ExtensionClassAnnotator implements Annotator
       {
         TextRange range = new TextRange( element.getTextRange().getStartOffset(),
                                          element.getTextRange().getEndOffset() );
-        holder.createErrorAnnotation( range, ExtIssueMsg.MSG_EXPECTING_EXTENDED_CLASS_NAME.get( getPackageRoot( extendedClassName ) ) );
+        holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_EXPECTING_EXTENDED_CLASS_NAME.get( getPackageRoot( extendedClassName ) ) )
+          .range( range )
+          .create();
       }
     }
   }
@@ -383,7 +394,9 @@ public class ExtensionClassAnnotator implements Annotator
         TextRange range = new TextRange( annotation.getTextRange().getStartOffset(),
                                          annotation.getTextRange().getEndOffset() );
         //noinspection ConstantConditions
-        holder.createErrorAnnotation( range, ExtIssueMsg.MSG_NOT_IN_EXTENSION_CLASS.get( ClassUtil.extractClassName( annotation.getQualifiedName() ) ) );
+        holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_NOT_IN_EXTENSION_CLASS.get( ClassUtil.extractClassName( annotation.getQualifiedName() ) ) )
+          .range( range )
+          .create();
       }
     }
   }

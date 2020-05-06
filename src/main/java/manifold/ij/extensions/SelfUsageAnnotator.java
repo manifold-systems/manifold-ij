@@ -104,8 +104,9 @@ public class SelfUsageAnnotator implements Annotator
         return;
       }
     }
-    holder.createAnnotation( HighlightSeverity.ERROR, psiAnno.getTextRange(),
-      ExtIssueMsg.MSG_SELF_NOT_ALLOWED_HERE.get() );
+    holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_SELF_NOT_ALLOWED_HERE.get() )
+      .range( psiAnno.getTextRange() )
+      .create();
   }
 
   private PsiModifierList getInModifierList( PsiElement parent )
@@ -223,8 +224,10 @@ public class SelfUsageAnnotator implements Annotator
            ? !type.isAssignableFrom( TypeConversionUtil.erasure( classType ) )
            : !type.isAssignableFrom( classType )) )
       {
-        holder.createAnnotation( HighlightSeverity.ERROR, psiAnno.getTextRange(),
-          ExtIssueMsg.MSG_SELF_NOT_ON_CORRECT_TYPE.get( type.getPresentableText(), classType.getPresentableText() ) );
+        holder.newAnnotation( HighlightSeverity.ERROR,
+            ExtIssueMsg.MSG_SELF_NOT_ON_CORRECT_TYPE.get( type.getPresentableText(), classType.getPresentableText() ) )
+          .range( psiAnno.getTextRange() )
+          .create();
       }
     }
   }

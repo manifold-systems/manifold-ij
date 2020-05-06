@@ -1,13 +1,13 @@
 package manifold.ij.extensions;
 
 import com.intellij.codeInsight.completion.CompletionContext;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaResolveResult;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiExpressionList;
-import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiMember;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiNewExpression;
@@ -24,11 +24,10 @@ import org.jetbrains.annotations.Nullable;
 
 public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
 {
-  public ManPsiResolveHelperImpl( PsiManager manager )
+  public ManPsiResolveHelperImpl( Project project )
   {
-    super( manager );
+    super( project );
   }
-
 
   @Override
   public boolean isAccessible( @NotNull PsiMember member,

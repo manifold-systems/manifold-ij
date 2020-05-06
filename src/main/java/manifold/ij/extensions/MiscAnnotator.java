@@ -43,14 +43,18 @@ public class MiscAnnotator implements Annotator
         if( isExtensionMethod( psiMethod ) )
         {
           // Method ref not allowed on an extension method
-          holder.createAnnotation( HighlightSeverity.ERROR, element.getTextRange(),
-            ExtIssueMsg.MSG_EXTENSION_METHOD_REF_NOT_SUPPORTED.get( psiMethod.getName() ) );
+          holder.newAnnotation( HighlightSeverity.ERROR,
+              ExtIssueMsg.MSG_EXTENSION_METHOD_REF_NOT_SUPPORTED.get( psiMethod.getName() ) )
+            .range( element.getTextRange() )
+            .create();
         }
         else if( isStructuralInterfaceMethod( psiMethod ) )
         {
           // Method ref not allowed on a structural interface method
-          holder.createAnnotation( HighlightSeverity.ERROR, element.getTextRange(),
-            ExtIssueMsg.MSG_STRUCTURAL_METHOD_REF_NOT_SUPPORTED.get( psiMethod.getName() ) );
+          holder.newAnnotation( HighlightSeverity.ERROR,
+              ExtIssueMsg.MSG_STRUCTURAL_METHOD_REF_NOT_SUPPORTED.get( psiMethod.getName() ) )
+            .range( element.getTextRange() )
+            .create();
         }
       }
     }

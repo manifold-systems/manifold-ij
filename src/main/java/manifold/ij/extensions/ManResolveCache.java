@@ -1,5 +1,6 @@
 package manifold.ij.extensions;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
@@ -22,7 +23,6 @@ import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.util.ClassUtil;
-import com.intellij.util.messages.MessageBus;
 import java.util.Map;
 import manifold.ext.api.Jailbreak;
 import manifold.ext.api.Self;
@@ -36,9 +36,9 @@ import org.jetbrains.annotations.NotNull;
 
 public class ManResolveCache extends ResolveCache
 {
-  public ManResolveCache( @NotNull MessageBus messageBus )
+  public ManResolveCache( @NotNull Project project )
   {
-    super( messageBus );
+    super( project );
   }
 
   @NotNull

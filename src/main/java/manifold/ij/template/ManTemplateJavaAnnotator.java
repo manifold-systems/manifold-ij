@@ -1,7 +1,6 @@
 package manifold.ij.template;
 
 import com.intellij.ide.highlighter.JavaHighlightingColors;
-import com.intellij.lang.annotation.Annotation;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
@@ -73,9 +72,10 @@ public class ManTemplateJavaAnnotator implements Annotator
       {
         int startOffset = element.getTextRange().getStartOffset() + element.getText().indexOf( DirectiveParser.IMPORT );
         TextRange range = new TextRange( startOffset, startOffset + DirectiveParser.IMPORT.length() );
-        holder.createAnnotation( HighlightSeverity.ERROR, range,
-          "Illegal placement of 'import' directive, must precede others",
-          "Illegal placement of <code>import</code> directive, must precede others." );
+        holder.newAnnotation( HighlightSeverity.ERROR, "Illegal placement of 'import' directive, must precede others" )
+          .range( range )
+          .tooltip( "Illegal placement of <code>import</code> directive, must precede others." )
+          .create();
       }
     }
   }
@@ -88,9 +88,10 @@ public class ManTemplateJavaAnnotator implements Annotator
       {
         int startOffset = element.getTextRange().getStartOffset() + element.getText().indexOf( DirectiveParser.EXTENDS );
         TextRange range = new TextRange( startOffset, startOffset + DirectiveParser.EXTENDS.length() );
-        holder.createAnnotation( HighlightSeverity.ERROR, range,
-          "Illegal placement of 'extends' directive, must follow 'import' directives and precede others",
-          "Illegal placement of <code>extends</code> directive, must follow <code>import</code> directives and precede others." );
+        holder.newAnnotation( HighlightSeverity.ERROR, "Illegal placement of 'extends' directive, must follow 'import' directives and precede others" )
+          .range( range )
+          .tooltip( "Illegal placement of <code>extends</code> directive, must follow <code>import</code> directives and precede others." )
+          .create();
       }
       else
       {
@@ -103,9 +104,10 @@ public class ManTemplateJavaAnnotator implements Annotator
           {
             int startOffset = refs[0].getTextOffset();
             TextRange range = new TextRange( startOffset, startOffset + refs[0].getTextLength() );
-            holder.createAnnotation( HighlightSeverity.ERROR, range,
-              "Extended class '${extendedClass.getName()}' does not inherit from 'manifold.templates.runtime.BaseTemplate'",
-              "Extended class <code>${extendedClass.getName()}</code> does not inherit from <code>manifold.templates.runtime.BaseTemplate</code>" );
+            holder.newAnnotation( HighlightSeverity.ERROR, "Extended class '${extendedClass.getName()}' does not inherit from 'manifold.templates.runtime.BaseTemplate'" )
+              .range( range )
+              .tooltip( "Extended class <code>${extendedClass.getName()}</code> does not inherit from <code>manifold.templates.runtime.BaseTemplate</code>" )
+              .create();
           }
         }
       }
@@ -123,9 +125,10 @@ public class ManTemplateJavaAnnotator implements Annotator
       {
         int startOffset = element.getTextRange().getStartOffset() + element.getText().indexOf( DirectiveParser.PARAMS );
         TextRange range = new TextRange( startOffset, startOffset + DirectiveParser.PARAMS.length() );
-        holder.createAnnotation( HighlightSeverity.ERROR, range,
-          "Illegal placement of 'params' directive, must follow 'import' and 'extends' directives and precede others",
-          "Illegal placement of <code>params</code> directive, must follow <code>import</code> and <code>extends</code> directives and precede others." );
+        holder.newAnnotation( HighlightSeverity.ERROR, "Illegal placement of 'params' directive, must follow 'import' and 'extends' directives and precede others" )
+          .range( range )
+          .tooltip( "Illegal placement of <code>params</code> directive, must follow <code>import</code> and <code>extends</code> directives and precede others." )
+          .create();
       }
     }
   }
@@ -134,8 +137,10 @@ public class ManTemplateJavaAnnotator implements Annotator
   {
     if( element instanceof PsiIdentifier && isInManTLFile( element ) && isDirectiveKeyword( element ) )
     {
-      Annotation annotation = holder.createInfoAnnotation( element.getTextRange(), null );
-      annotation.setTextAttributes( JavaHighlightingColors.KEYWORD );
+      holder.newAnnotation( HighlightSeverity.INFORMATION, "" )
+        .range( element.getTextRange() )
+        .textAttributes( JavaHighlightingColors.KEYWORD )
+        .create();
     }
   }
 

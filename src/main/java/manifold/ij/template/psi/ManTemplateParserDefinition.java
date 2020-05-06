@@ -1,6 +1,5 @@
 package manifold.ij.template.psi;
 
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.ParserDefinition;
 import com.intellij.lang.PsiParser;
@@ -81,7 +80,7 @@ public class ManTemplateParserDefinition implements ParserDefinition
   }
 
   @Override
-  public SpaceRequirements spaceExistanceTypeBetweenTokens( ASTNode left, ASTNode right )
+  public SpaceRequirements spaceExistenceTypeBetweenTokens( ASTNode left, ASTNode right )
   {
     return SpaceRequirements.MAY;
   }

@@ -1,6 +1,6 @@
 package manifold.ij.util;
 
-import com.intellij.CommonBundle;
+import com.intellij.AbstractBundle;
 import java.util.ResourceBundle;
 import org.jetbrains.annotations.PropertyKey;
 
@@ -12,6 +12,6 @@ public class ManBundle
 
   public static String message( @PropertyKey(resourceBundle = BUNDLE) String key, Object... params )
   {
-    return CommonBundle.message( ResourceBundle.getBundle( BUNDLE ), key, params );
+    return AbstractBundle.message( ResourceBundle.getBundle( BUNDLE ), key, params );
   }
 }

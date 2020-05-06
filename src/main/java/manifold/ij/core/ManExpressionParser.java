@@ -1,6 +1,6 @@
 package manifold.ij.core;
 
-import com.intellij.codeInsight.daemon.JavaErrorMessages;
+import com.intellij.core.JavaPsiBundle;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.WhitespacesBinders;
 import com.intellij.lang.java.parser.ExpressionParser;
@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.PropertyKey;
 
-import static com.intellij.codeInsight.daemon.JavaErrorMessages.BUNDLE;
+import static com.intellij.codeInsight.daemon.JavaErrorBundle.BUNDLE;
 import static com.intellij.lang.PsiBuilderUtil.*;
 import static com.intellij.lang.PsiBuilderUtil.advance;
 import static com.intellij.lang.java.parser.JavaParserUtil.*;
@@ -106,13 +106,13 @@ public class ManExpressionParser extends ExpressionParser {
     if (left == null) return null;
 
     final IElementType tokenType = getGtTokenType( builder );
-    if( tokenType != null && ASSIGNMENT_OPS.contains( tokenType ) ) {
+    if( ASSIGNMENT_OPS.contains( tokenType ) ) {
       final PsiBuilder.Marker assignment = left.precede();
       advanceGtToken( builder, tokenType );
 
       final PsiBuilder.Marker right = parse( builder );
       if (right == null) {
-        error( builder, JavaErrorMessages.message( "expected.expression" ) );
+        error( builder, JavaPsiBundle.message( "expected.expression" ) );
       }
 
       assignment.done( JavaElementType.ASSIGNMENT_EXPRESSION );
@@ -133,13 +133,13 @@ public class ManExpressionParser extends ExpressionParser {
 
     final PsiBuilder.Marker truePart = parse(builder);
     if (truePart == null) {
-      error(builder, JavaErrorMessages.message("expected.expression"));
+      error(builder, JavaPsiBundle.message("expected.expression"));
       ternary.done(JavaElementType.CONDITIONAL_EXPRESSION);
       return ternary;
     }
 
     if (builder.getTokenType() != JavaTokenType.COLON) {
-      error(builder, JavaErrorMessages.message("expected.colon"));
+      error(builder, JavaPsiBundle.message("expected.colon"));
       ternary.done(JavaElementType.CONDITIONAL_EXPRESSION);
       return ternary;
     }
@@ -147,7 +147,7 @@ public class ManExpressionParser extends ExpressionParser {
 
     final PsiBuilder.Marker falsePart = parseConditional(builder);
     if (falsePart == null) {
-      error(builder, JavaErrorMessages.message("expected.expression"));
+      error(builder, JavaPsiBundle.message("expected.expression"));
       ternary.done(JavaElementType.CONDITIONAL_EXPRESSION);
       return ternary;
     }
@@ -244,7 +244,7 @@ public class ManExpressionParser extends ExpressionParser {
         // save
         result = result.precede();
         if (right == null) {
-          error(builder, JavaErrorMessages.message("expected.expression"));
+          error(builder, JavaPsiBundle.message("expected.expression"));
         }
         result.done(operandCount > 2 ? JavaElementType.POLYADIC_EXPRESSION : BINARY_EXPRESSION);
         if (right == null) break;
@@ -275,12 +275,12 @@ public class ManExpressionParser extends ExpressionParser {
 
       final PsiBuilder.Marker inner = parse(builder);
       if (inner == null) {
-        error(builder, JavaErrorMessages.message("expected.expression"));
+        error(builder, JavaPsiBundle.message("expected.expression"));
       }
 
       if (!expect(builder, JavaTokenType.RPARENTH)) {
         if (inner != null) {
-          error(builder, JavaErrorMessages.message("expected.rparen"));
+          error(builder, JavaPsiBundle.message("expected.rparen"));
         }
       }
 
@@ -350,7 +350,7 @@ public class ManExpressionParser extends ExpressionParser {
 
       final PsiBuilder.Marker right = parseExpression(builder, toParse);
       if (right == null) {
-        error(builder, JavaErrorMessages.message( toParse == ExprType.TYPE ? "expected.type" : "expected.expression"));
+        error(builder, JavaPsiBundle.message( toParse == ExprType.TYPE ? "expected.type" : "expected.expression"));
         expression.done(toCreate);
         return expression;
       }
@@ -372,7 +372,7 @@ public class ManExpressionParser extends ExpressionParser {
 
       final PsiBuilder.Marker operand = parseUnary(builder);
       if (operand == null) {
-        error(builder, JavaErrorMessages.message("expected.expression"));
+        error(builder, JavaPsiBundle.message("expected.expression"));
       }
 
       unary.done(JavaElementType.PREFIX_EXPRESSION);
@@ -401,7 +401,7 @@ public class ManExpressionParser extends ExpressionParser {
           return parsePostfix(builder);
         }
         else {
-          error(builder, JavaErrorMessages.message("expected.expression"));
+          error(builder, JavaPsiBundle.message("expected.expression"));
         }
       }
 
@@ -458,7 +458,7 @@ public class ManExpressionParser extends ExpressionParser {
 
         if (dotTokenType == JavaTokenType.CLASS_KEYWORD && exprType(expr) == JavaElementType.REFERENCE_EXPRESSION) {
           if ( breakPoint == BreakPoint.P1 && builder.getCurrentOffset() == breakOffset) {
-            error(builder, JavaErrorMessages.message("expected.identifier"));
+            error(builder, JavaPsiBundle.message("expected.identifier"));
             drop(startMarker, dotPos);
             return expr;
           }
@@ -525,7 +525,7 @@ public class ManExpressionParser extends ExpressionParser {
             dotPos.rollbackTo();
             builder.advanceLexer();
             myParser.getReferenceParser().parseReferenceParameterList(builder, false, false);
-            error(builder, JavaErrorMessages.message("expected.identifier"));
+            error(builder, JavaPsiBundle.message("expected.identifier"));
             refExpr.done(JavaElementType.REFERENCE_EXPRESSION);
             startMarker.drop();
             return refExpr;
@@ -574,14 +574,14 @@ public class ManExpressionParser extends ExpressionParser {
 
           final PsiBuilder.Marker index = parse(builder);
           if (index == null) {
-            error(builder, JavaErrorMessages.message("expected.expression"));
+            error(builder, JavaPsiBundle.message("expected.expression"));
             arrayAccess.done(JavaElementType.ARRAY_ACCESS_EXPRESSION);
             startMarker.drop();
             return arrayAccess;
           }
 
           if (builder.getTokenType() != JavaTokenType.RBRACKET) {
-            error(builder, JavaErrorMessages.message("expected.rbracket"));
+            error(builder, JavaPsiBundle.message("expected.rbracket"));
             arrayAccess.done(JavaElementType.ARRAY_ACCESS_EXPRESSION);
             startMarker.drop();
             return arrayAccess;
@@ -634,12 +634,12 @@ public class ManExpressionParser extends ExpressionParser {
 
       final PsiBuilder.Marker inner = parse(builder);
       if (inner == null) {
-        error(builder, JavaErrorMessages.message("expected.expression"));
+        error(builder, JavaPsiBundle.message("expected.expression"));
       }
 
       if (!expect(builder, JavaTokenType.RPARENTH)) {
         if (inner != null) {
-          error(builder, JavaErrorMessages.message("expected.rparen"));
+          error(builder, JavaPsiBundle.message("expected.rparen"));
         }
       }
 
@@ -753,7 +753,7 @@ public class ManExpressionParser extends ExpressionParser {
       }
 
       if (builder.getTokenType() == null) {
-        error(builder, JavaErrorMessages.message("expected.rbrace"));
+        error(builder, JavaPsiBundle.message("expected.rbrace"));
         break;
       }
 
@@ -763,10 +763,10 @@ public class ManExpressionParser extends ExpressionParser {
             advance(builder, 2);
             break;
           }
-          builder.error(JavaErrorMessages.message(missingElementKey));
+          builder.error(JavaPsiBundle.message(missingElementKey));
         }
         else if (builder.getTokenType() != JavaTokenType.RBRACE) {
-          error(builder, JavaErrorMessages.message("expected.rbrace"));
+          error(builder, JavaPsiBundle.message("expected.rbrace"));
           break;
         }
       }
@@ -775,7 +775,7 @@ public class ManExpressionParser extends ExpressionParser {
 
       IElementType tokenType = builder.getTokenType();
       if (!expect(builder, JavaTokenType.COMMA) && tokenType != JavaTokenType.RBRACE) {
-        error(builder, JavaErrorMessages.message("expected.comma"));
+        error(builder, JavaPsiBundle.message("expected.comma"));
       }
     }
 
@@ -797,7 +797,7 @@ public class ManExpressionParser extends ExpressionParser {
       rollbackTo(anno);
       refOrType = myParser.getReferenceParser().parseJavaCodeReference(builder, true, true, true, true);
       if (refOrType == null) {
-        error(builder, JavaErrorMessages.message("expected.identifier"));
+        error(builder, JavaPsiBundle.message("expected.identifier"));
         newExpr.done(JavaElementType.NEW_EXPRESSION);
         return newExpr;
       }
@@ -807,7 +807,7 @@ public class ManExpressionParser extends ExpressionParser {
       builder.advanceLexer();
     }
     else {
-      error(builder, JavaErrorMessages.message("expected.identifier"));
+      error(builder, JavaPsiBundle.message("expected.identifier"));
       newExpr.done(JavaElementType.NEW_EXPRESSION);
       return newExpr;
     }
@@ -827,7 +827,7 @@ public class ManExpressionParser extends ExpressionParser {
 
     if (builder.getTokenType() != JavaTokenType.LBRACKET) {
       rollbackTo(anno);
-      error(builder, JavaErrorMessages.message(refOrType == null ? "expected.lbracket" : "expected.lparen.or.lbracket"));
+      error(builder, JavaPsiBundle.message(refOrType == null ? "expected.lbracket" : "expected.lparen.or.lbracket"));
       newExpr.done(JavaElementType.NEW_EXPRESSION);
       return newExpr;
     }
@@ -862,7 +862,7 @@ public class ManExpressionParser extends ExpressionParser {
         parseArrayInitializer(builder);
       }
       else {
-        error(builder, JavaErrorMessages.message("expected.array.initializer"));
+        error(builder, JavaPsiBundle.message("expected.array.initializer"));
       }
     }
 
@@ -924,7 +924,7 @@ public class ManExpressionParser extends ExpressionParser {
     myParser.getReferenceParser().parseReferenceParameterList(builder, false, false);
 
     if (!expect(builder, JavaTokenType.IDENTIFIER) && !expect(builder, JavaTokenType.NEW_KEYWORD)) {
-      error(builder, JavaErrorMessages.message("expected.identifier"));
+      error(builder, JavaPsiBundle.message("expected.identifier"));
     }
 
     start.done(JavaElementType.METHOD_REF_EXPRESSION);
@@ -1005,7 +1005,7 @@ public class ManExpressionParser extends ExpressionParser {
     }
 
     if (body == null) {
-      builder.error(JavaErrorMessages.message("expected.lbrace"));
+      builder.error(JavaPsiBundle.message("expected.lbrace"));
     }
 
     start.done(JavaElementType.LAMBDA_EXPRESSION);
@@ -1030,7 +1030,7 @@ public class ManExpressionParser extends ExpressionParser {
         }
         else {
           hasError = true;
-          error(builder, JavaErrorMessages.message("expected.comma.or.rparen"));
+          error(builder, JavaPsiBundle.message("expected.comma.or.rparen"));
           emptyExpression(builder);
         }
       }
@@ -1039,7 +1039,7 @@ public class ManExpressionParser extends ExpressionParser {
       final PsiBuilder.Marker arg = parse(builder);
       if (arg == null) {
         if (!hasError) {
-          error(builder, JavaErrorMessages.message("expected.expression"));
+          error(builder, JavaPsiBundle.message("expected.expression"));
           emptyExpression(builder);
         }
         if (!ARGS_LIST_CONTINUE.contains(builder.getTokenType())) break;

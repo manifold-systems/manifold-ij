@@ -8,7 +8,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ex.ApplicationManagerEx;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.io.FileUtilRt;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -27,7 +27,7 @@ public class IjFile extends IjResource implements IFile
   IjFile( IjFileSystem fs, VirtualFile file )
   {
     super( fs, file );
-    if( file != null && file.isCharsetSet() )
+    if( file.isCharsetSet() )
     {
       charset = file.getCharset();
     }
@@ -98,7 +98,7 @@ public class IjFile extends IjResource implements IFile
   {
     return _virtualFile != null
            ? _virtualFile.getExtension() == null ? "" : _virtualFile.getExtension()
-           : FileUtil.getExtension( _path );
+           : FileUtilRt.getExtension( _path );
   }
 
   @Override
@@ -116,7 +116,7 @@ public class IjFile extends IjResource implements IFile
     }
   }
 
-  protected VirtualFile create( final VirtualFile virtualFile, final String name ) throws IOException
+  protected VirtualFile create( final VirtualFile virtualFile, final String name )
   {
     final VirtualFile[] result = new VirtualFile[1];
     ApplicationManager.getApplication().runWriteAction( new Runnable()

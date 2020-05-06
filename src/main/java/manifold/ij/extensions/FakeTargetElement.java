@@ -42,6 +42,7 @@ class FakeTargetElement extends PsiElementBase implements PsiMetaOwner, PsiMetaD
     return _kind;
   }
 
+  @NotNull
   @Override
   public Language getLanguage()
   {
@@ -60,6 +61,7 @@ class FakeTargetElement extends PsiElementBase implements PsiMetaOwner, PsiMetaD
     return _file;
   }
 
+  @NotNull
   @Override
   public PsiElement[] getChildren()
   {
@@ -90,6 +92,7 @@ class FakeTargetElement extends PsiElementBase implements PsiMetaOwner, PsiMetaD
     return _iLength;
   }
 
+  @NotNull
   @Override
   public char[] textToCharArray()
   {
@@ -145,25 +148,25 @@ class FakeTargetElement extends PsiElementBase implements PsiMetaOwner, PsiMetaD
   }
 
   @Override
-  public void checkAdd( PsiElement element ) throws IncorrectOperationException
+  public void checkAdd( @NotNull PsiElement element ) throws IncorrectOperationException
   {
     throw new IncorrectOperationException( getClass().getName() );
   }
 
   @Override
-  public PsiElement add( PsiElement element ) throws IncorrectOperationException
+  public PsiElement add( @NotNull PsiElement element ) throws IncorrectOperationException
   {
     throw new IncorrectOperationException( getClass().getName() );
   }
 
   @Override
-  public PsiElement addBefore( PsiElement element, PsiElement anchor ) throws IncorrectOperationException
+  public PsiElement addBefore( @NotNull PsiElement element, PsiElement anchor ) throws IncorrectOperationException
   {
     throw new IncorrectOperationException( getClass().getName() );
   }
 
   @Override
-  public PsiElement addAfter( PsiElement element, PsiElement anchor ) throws IncorrectOperationException
+  public PsiElement addAfter( @NotNull PsiElement element, PsiElement anchor ) throws IncorrectOperationException
   {
     throw new IncorrectOperationException( getClass().getName() );
   }
@@ -181,7 +184,7 @@ class FakeTargetElement extends PsiElementBase implements PsiMetaOwner, PsiMetaD
   }
 
   @Override
-  public PsiElement replace( PsiElement newElement ) throws IncorrectOperationException
+  public PsiElement replace( @NotNull PsiElement newElement ) throws IncorrectOperationException
   {
     throw new IncorrectOperationException( getClass().getName() );
   }
@@ -249,7 +252,7 @@ class FakeTargetElement extends PsiElementBase implements PsiMetaOwner, PsiMetaD
   }
 
   @Override
-  public void accept( PsiElementVisitor visitor )
+  public void accept( @NotNull PsiElementVisitor visitor )
   {
   }
 
@@ -259,14 +262,11 @@ class FakeTargetElement extends PsiElementBase implements PsiMetaOwner, PsiMetaD
     return null;
   }
 
+  @NotNull
   @Override
   public PsiElement getNavigationElement()
   {
     return this;
-  }
-
-  public void setNavigationElement( PsiElement navigationElement )
-  {
   }
 
   @Override

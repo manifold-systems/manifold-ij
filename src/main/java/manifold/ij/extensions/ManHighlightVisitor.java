@@ -1,6 +1,6 @@
 package manifold.ij.extensions;
 
-import com.intellij.codeInsight.daemon.JavaErrorMessages;
+import com.intellij.codeInsight.daemon.JavaErrorBundle;
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType;
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightVisitorImpl;
@@ -71,7 +71,7 @@ public class ManHighlightVisitor extends HighlightVisitorImpl
         }
         PsiJavaToken token = expression.getTokenBeforeOperand( operand );
         assert token != null : expression;
-        String message = JavaErrorMessages.message( "binary.operator.not.applicable", token.getText(),
+        String message = JavaErrorBundle.message( "binary.operator.not.applicable", token.getText(),
           JavaHighlightUtil.formatType( lType ),
           JavaHighlightUtil.formatType( rType ) );
         return HighlightInfo.newHighlightInfo( HighlightInfoType.ERROR ).range( expression ).descriptionAndTooltip( message ).create();
