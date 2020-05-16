@@ -188,19 +188,11 @@ by the core framework. Each project represents a separate <strong>dependency</st
 <h3>Fixes & Features:<h3>
 <p/>
 <h4>
-<a href="https://github.com/manifold-systems/manifold/issues/165">#165</a>: IJ Plugin: Fix license issue with Community Edition, Manifold is once again free for CE (exclusive to plugin release 2020.1.9)
+<a href="https://github.com/manifold-systems/manifold/issues/153">#153</a>: Fix some compiler warnings which were not reported correctly when compiled with Lombok
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/172">#172</a>: Core: Fix build case involving Gradle 6+
+<a href="https://github.com/manifold-systems/manifold/issues/179">#179</a>: Manifold String Templates no longer transitively inherited through manifold-graphql and other modules
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/173">#173</a>: Core: Support concurrency while statically initializing JavacPlugin
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/174">#174</a>: GraphQL: Handle additional URL parameters on Executor (via Requester) using withParam(name, value)
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/175">#175</a>: GraphQL & REST: Support proxy servers in GraphQL and REST endpoints
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/176">#176</a>: Core: Improve support for Programming Languages as type manifolds (ongoing)
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/177">#177</a>: Core: Provide a javac command line argument to specify Manifold types/files to statically compile
+<a href="https://github.com/manifold-systems/manifold/issues/180">#180</a>: Make GraphQL query interfaces more receptive to building higher level APIs
 <br>
 Other minor fixes and improvements.
 </h4>

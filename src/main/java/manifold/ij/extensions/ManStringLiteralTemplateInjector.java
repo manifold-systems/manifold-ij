@@ -18,7 +18,7 @@ import manifold.ij.core.ManProject;
 import manifold.ij.util.ComputeUtil;
 import manifold.internal.javac.JavacPlugin;
 import manifold.strings.StringLiteralTemplateParser;
-import manifold.strings.api.DisableStringLiteralTemplates;
+import manifold.api.DisableStringLiteralTemplates;
 import org.jetbrains.annotations.NotNull;
 
 public class ManStringLiteralTemplateInjector implements LanguageInjector
