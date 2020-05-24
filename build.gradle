@@ -88,7 +88,7 @@ String getIjVersion() {
 
 intellij {
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2017.3.4'
-  alternativeIdePath = 'C:\\Program Files\\Android\\Android Studio'
+  //alternativeIdePath = 'C:\\Program Files\\Android\\Android Studio'
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2018.3.4'
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA 192.5281.24'
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA 2019.2.2'
