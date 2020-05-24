@@ -12,7 +12,7 @@ import com.intellij.psi.PsiPrefixExpression;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.tree.IElementType;
 import manifold.ExtIssueMsg;
-import manifold.ext.api.Jailbreak;
+import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 

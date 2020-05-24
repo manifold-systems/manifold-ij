@@ -38,7 +38,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import manifold.api.util.ManIdentifierUtil;
 import manifold.ij.core.ManProject;
-import manifold.api.util.Pair;
+import manifold.rt.api.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -234,19 +234,19 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
     }
 
     // Store refs to manifold types
-    storeTypeManifoldReferences( element );
+    storeTypeManifoldReferences( scope, element );
 
     return references;
   }
 
-  private void storeTypeManifoldReferences( @NotNull PsiElement elem )
+  private void storeTypeManifoldReferences( SearchScope searchScope, @NotNull PsiElement elem )
   {
     PsiElement[] element = new PsiElement[]{elem};
     List<PsiElement> javaElems = findJavaElements( element );
-    _javaUsages = findJavaUsages( element[0], javaElems );
+    _javaUsages = findJavaUsages( searchScope, element[0], javaElems );
   }
 
-  private static Map<Pair<FeaturePath, PsiElement>, List<UsageInfo>> findJavaUsages( PsiElement element, List<PsiElement> javaElems )
+  private static Map<Pair<FeaturePath, PsiElement>, List<UsageInfo>> findJavaUsages( SearchScope searchScope, PsiElement element, List<PsiElement> javaElems )
   {
     if( !(element instanceof PsiNamedElement) || javaElems.isEmpty() )
     {
@@ -261,7 +261,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
         continue;
       }
 
-      List<UsageInfo> usages = findUsages( javaElem, element );
+      List<UsageInfo> usages = findUsages( searchScope, javaElem );
       if( !usages.isEmpty() )
       {
         FeaturePath path = javaElem.getUserData( KEY_FEATURE_PATH );
@@ -272,7 +272,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
     return allUsages;
   }
 
-  private static List<UsageInfo> findUsages( PsiElement element, PsiElement ctx )
+  private static List<UsageInfo> findUsages( SearchScope searchScope, PsiElement element )
   {
 //    Module mod = ModuleUtilCore.findModuleForPsiElement( element );
 //    if( mod == null )
@@ -280,13 +280,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
 //      return Collections.emptyList();
 //    }
 
-    Module module = ModuleUtilCore.findModuleForPsiElement( ctx );
-    if( module == null )
-    {
-      return Collections.emptyList();
-    }
-
-    Query<PsiReference> search = ReferencesSearch.search( element, GlobalSearchScope.moduleScope( module ) );
+    Query<PsiReference> search = ReferencesSearch.search( element, searchScope );
     List<UsageInfo> usages = new ArrayList<>();
     for( PsiReference ref : ResourceToManifoldUtil.searchForElement( search ) )
     {

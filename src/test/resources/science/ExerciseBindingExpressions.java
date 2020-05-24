@@ -3,7 +3,7 @@ package science;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import manifold.ext.api.ComparableUsing;
+import manifold.ext.rt.api.ComparableUsing;
 import manifold.science.measures.Length;
 import manifold.science.util.Rational;
 

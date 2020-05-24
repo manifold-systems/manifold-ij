@@ -7,7 +7,7 @@ import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
 import com.intellij.psi.tree.IElementType;
 import java.util.HashMap;
 import java.util.Map;
-import manifold.api.util.Pair;
+import manifold.rt.api.util.Pair;
 import manifold.internal.javac.AbstractBinder;
 import org.jetbrains.annotations.NotNull;
 

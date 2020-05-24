@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import ext.jailbreak.stuff.Leaf;
 import ext.jailbreak.stuff.Sample;
-import manifold.ext.api.Jailbreak;
+import manifold.ext.rt.api.Jailbreak;
 import manifold.util.ReflectUtil;
 
 public class ExerciseJailbreak extends ext.jailbreak.stuff.Base

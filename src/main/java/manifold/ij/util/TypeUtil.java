@@ -252,13 +252,13 @@ public class TypeUtil
 //
 //  public static boolean isStructuralInterface( PsiClass toType )
 //  {
-//    return toType.getModifierList().findAnnotation( "manifold.ext.api.Structural" ) != null;
+//    return toType.getModifierList().findAnnotation( "manifold.ext.rt.api.Structural" ) != null;
 //  }
 //
 //  public static boolean isStructuralInterface( PsiType toType )
 //  {
 //    PsiClass psiClass = type( toType );
-//    return psiClass != null && psiClass.getModifierList().findAnnotation( "manifold.ext.api.Structural" ) != null;
+//    return psiClass != null && psiClass.getModifierList().findAnnotation( "manifold.ext.rt.api.Structural" ) != null;
 //  }
 //
 //  private static PsiClass type( PsiType psiType )

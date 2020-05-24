@@ -26,8 +26,8 @@ import com.intellij.psi.util.TypeConversionUtil;
 import java.util.ArrayList;
 import java.util.List;
 import manifold.ExtIssueMsg;
-import manifold.ext.api.Self;
-import manifold.ext.api.This;
+import manifold.ext.rt.api.Self;
+import manifold.ext.rt.api.This;
 import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 

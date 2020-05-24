@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import manifold.ext.api.Self;
+import manifold.ext.rt.api.Self;
 
 public class ExerciseSelfWithError
 {

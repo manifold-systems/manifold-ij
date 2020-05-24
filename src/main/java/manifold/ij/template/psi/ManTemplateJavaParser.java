@@ -14,7 +14,7 @@ import com.intellij.psi.impl.source.resolve.FileContextUtil;
 import com.intellij.psi.tree.IElementType;
 import java.util.Collections;
 import java.util.List;
-import manifold.ext.api.Jailbreak;
+import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.ManExpressionParser;
 import manifold.ij.template.IManTemplateOffsets;
 import org.jetbrains.annotations.NotNull;

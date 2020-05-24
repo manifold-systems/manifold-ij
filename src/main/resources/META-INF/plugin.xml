@@ -266,6 +266,7 @@ Other minor fixes and improvements.
     <findUsagesHandlerFactory implementation="manifold.ij.extensions.ManifoldFindUsagesHandlerFactory" order="first"/>
     <lang.findUsagesProvider language="TEXT" implementationClass="manifold.ij.extensions.TextFindUsagesProvider"/>
     <renameHandler implementation="manifold.ij.extensions.ManRenameHandler" order="first"/>
+<!--    <useScopeEnlarger implementation="manifold.ij.extensions.ManUseScopeEnlarger" order="first"/>-->
     <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameResourceElementProcessor" order="first"/>
     <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameExtensionMethodProcessor" order="first"/>
     <nameSuggestionProvider implementation="manifold.ij.extensions.ManNameSuggestionProvider" order="first"/>

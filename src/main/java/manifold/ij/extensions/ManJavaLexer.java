@@ -15,7 +15,7 @@ import com.intellij.util.text.CharArrayUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import manifold.ext.api.Jailbreak;
+import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.util.ReparseUtil;
 import manifold.preprocessor.PreprocessorParser;
 import manifold.preprocessor.definitions.Definitions;
