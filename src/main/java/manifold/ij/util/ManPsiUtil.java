@@ -2,7 +2,7 @@ package manifold.ij.util;
 
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
-import manifold.ext.api.Structural;
+import manifold.ext.rt.api.Structural;
 
 public class ManPsiUtil
 {

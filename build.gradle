@@ -61,6 +61,7 @@ dependencies {
   compile group: 'systems.manifold', name: 'manifold-strings', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-exceptions', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-preprocessor', version: manifoldVersion
+  compile group: 'systems.manifold', name: 'manifold-xml-rt', version: manifoldVersion
 
   testCompile group: 'junit', name: 'junit', version: '4.12'
 

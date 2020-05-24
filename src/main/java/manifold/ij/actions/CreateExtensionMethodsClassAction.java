@@ -182,8 +182,8 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
     String text =
       "package " + pkg.getQualifiedName() + ";\n" +
       "\n" +
-      "import manifold.ext.api.Extension;\n" +
-      "import manifold.ext.api.This;\n" +
+      "import manifold.ext.rt.api.Extension;\n" +
+      "import manifold.ext.rt.api.This;\n" +
       "import " + fqnExtended + ";\n" +
       "\n" +
       "@Extension\n" +

@@ -22,7 +22,7 @@ import manifold.ij.core.ManProject;
 import manifold.preprocessor.PreprocessorParser;
 import manifold.preprocessor.TokenType;
 import manifold.preprocessor.Tokenizer;
-import manifold.api.util.Pair;
+import manifold.rt.api.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
