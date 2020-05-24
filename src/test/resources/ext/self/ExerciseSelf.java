@@ -1,6 +1,6 @@
 package ext.self;
 
-import manifold.ext.api.Self;
+import manifold.ext.rt.api.Self;
 
 import java.lang.reflect.Array;
 import java.util.*;

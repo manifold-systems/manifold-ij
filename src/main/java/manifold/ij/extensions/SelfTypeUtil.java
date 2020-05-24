@@ -22,7 +22,7 @@ import com.intellij.psi.impl.source.PsiImmediateClassType;
 import com.intellij.refactoring.util.RefactoringChangeUtil;
 import com.intellij.util.ArrayUtil;
 import java.util.Arrays;
-import manifold.ext.api.Self;
+import manifold.ext.rt.api.Self;
 import org.jetbrains.annotations.NotNull;
 
 public class SelfTypeUtil

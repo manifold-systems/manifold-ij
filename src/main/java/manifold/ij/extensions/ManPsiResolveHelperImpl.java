@@ -17,7 +17,7 @@ import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.impl.source.resolve.PsiResolveHelperImpl;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
-import manifold.ext.api.Jailbreak;
+import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

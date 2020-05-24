@@ -61,6 +61,7 @@ dependencies {
   compile group: 'systems.manifold', name: 'manifold-strings', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-exceptions', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-preprocessor', version: manifoldVersion
+  compile group: 'systems.manifold', name: 'manifold-xml-rt', version: manifoldVersion
 
   testCompile group: 'junit', name: 'junit', version: '4.12'
 
@@ -87,7 +88,7 @@ String getIjVersion() {
 
 intellij {
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2017.3.4'
-  //alternativeIdePath = 'C:\\Program Files\\Android\\Android Studio'
+  alternativeIdePath = 'C:\\Program Files\\Android\\Android Studio'
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2018.3.4'
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA 192.5281.24'
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA 2019.2.2'

@@ -1,7 +1,7 @@
 package extensions.ext.sample.Foo;
 
-import manifold.ext.api.Extension;
-import manifold.ext.api.This;
+import manifold.ext.rt.api.Extension;
+import manifold.ext.rt.api.This;
 import ext.sample.Foo;
 
 @Extension

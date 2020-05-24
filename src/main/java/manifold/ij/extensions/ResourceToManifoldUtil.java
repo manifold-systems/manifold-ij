@@ -1,6 +1,7 @@
 package manifold.ij.extensions;
 
 import com.intellij.ide.DataManager;
+import com.intellij.json.psi.JsonProperty;
 import com.intellij.navigation.NavigationItem;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
@@ -200,6 +201,11 @@ public class ResourceToManifoldUtil
       : GlobalSearchScope.moduleScope( moduleForPsiElement ) );
     for( PsiReference ref: searchForElement( search ) )
     {
+      if( ref.getElement() instanceof JsonProperty )
+      {
+        //## hack: IJ's json parser considers all properties having the same name as the same reference, which is total crap
+        continue;
+      }
       result.addAll( findJavaElementsFor( ref.getElement(), visited ) );
     }
 

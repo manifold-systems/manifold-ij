@@ -1,6 +1,6 @@
 package ext.jailbreak;
 
-import manifold.ext.api.Jailbreak;
+import manifold.ext.rt.api.Jailbreak;
 
 public class ExerciseJailbreakWithError extends ext.jailbreak.stuff.Base
 {
