@@ -186,11 +186,15 @@ by the core framework. Each project represents a separate <strong>dependency</st
   <change-notes>
     <![CDATA[
 <h3>Fixes & Features:<h3>
-<p/>
-<h4>
-<a href="https://github.com/manifold-systems/manifold/issues/153">#153</a>: Fix some compiler warnings which were not reported correctly when compiled with Lombok
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/179">#179</a>: Manifold String Templates no longer transitively inherited through manifold-graphql and other modules
+<h4>
+Manifold supports <b>Android Studio</b>!
+<br>
+Manifold supports <b>Kotlin</b>!
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/181">#181</a>: Separate Manifold into compile-time and runtime dependencies, toward support for Android
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/186">#186</a>: Modify GraphQL and JSON APIs to work better with other JVM languages such as Kotlin
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/180">#180</a>: Make GraphQL query interfaces more receptive to building higher level APIs
 <br>
