@@ -204,14 +204,10 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
     }
     visited.add( target );
 
-    PsiReference reference = target.getReference();
-    if( reference != null )
+    PsiElement ref = ManGotoDeclarationHandler.resolveRef( target );
+    if( ref != null )
     {
-      PsiElement ref = reference.resolve();
-      if( ref != null )
-      {
-        return getTerminalTarget( ref, visited );
-      }
+      return getTerminalTarget( ref, visited );
     }
     return target;
   }

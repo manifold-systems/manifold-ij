@@ -21,9 +21,7 @@ import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.PsiModificationTrackerImpl;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.util.containers.ContainerUtil;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,7 +56,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
   private final ManProject _project;
   private Set<Project> _addedListeners;
   private final ThreadLocal<Set<String>> _shortCircuit;
-  private Map<ManModule, ConcurrentHashMap<String, PsiClass>> _filePathToPsiPerModule;
+  private ConcurrentHashMap<String, PsiClass> _filePathToPsi;
   private final Map<ManModule, FqnCache<ManifoldPsiClass>> _fqnPsiCachePerModule;
 
   public ManifoldPsiClassCache( ManProject project )
@@ -66,7 +64,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     _project = project;
     _addedListeners = new ConcurrentHashSet<>();
     _shortCircuit = ThreadLocal.withInitial( () -> new ConcurrentHashSet<>() );
-    _filePathToPsiPerModule = new ConcurrentWeakHashMap<>();
+    _filePathToPsi = new ConcurrentHashMap<>();
     _fqnPsiCachePerModule = new ConcurrentWeakHashMap<>();
   }
 
@@ -114,7 +112,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
   {
     if( file instanceof IFileFragment )
     {
-      SmartPsiElementPointer container = (SmartPsiElementPointer)((IFileFragment)file).getContainer();
+      SmartPsiElementPointer<?> container = (SmartPsiElementPointer<?>)((IFileFragment)file).getContainer();
       if( container == null )
       {
         return true;
@@ -127,10 +125,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
           return true;
         }
         FragmentProcessor.Fragment fragment = FragmentProcessor.instance().parseFragment( 0, elem.getText(), ((PsiFileFragment)elem).getStyle() );
-        if( fragment == null || !fragment.getName().equals( file.getBaseName() ) || !fragment.getExt().equalsIgnoreCase( file.getExtension() ) )
-        {
-          return true;
-        }
+        return fragment == null || !fragment.getName().equals( file.getBaseName() ) || !fragment.getExt().equalsIgnoreCase( file.getExtension() );
       }
     }
     return false;
@@ -332,10 +327,12 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     ManifoldPsiClass psiFacadeClass = new ManifoldPsiClass( delegate, actualModule, files, fqn, issues );
     FqnCache<ManifoldPsiClass> fqnPsiCache = _fqnPsiCachePerModule.computeIfAbsent( actualModule, key -> new FqnCache<>() );
     fqnPsiCache.add( fqn, psiFacadeClass );
-    for( IFile file : files )
+    if( psiFacadeClass.getContainingClass() == null ) // associate only top-level class with file
     {
-      ConcurrentHashMap<String, PsiClass> filePathToPsi = _filePathToPsiPerModule.computeIfAbsent( actualModule, key -> new ConcurrentHashMap<>() );
-      filePathToPsi.put( file.getPath().getPathString(), psiFacadeClass );
+      for( IFile file : files )
+      {
+        _filePathToPsi.put( file.getPath().getPathString(), psiFacadeClass );
+      }
     }
     for( PsiClass inner: delegate.getInnerClasses() )
     {
@@ -386,9 +383,9 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     {
       throw new IllegalStateException();
     }
-    FqnCache<ManifoldPsiClass> fqnPsiCache =
-      _fqnPsiCachePerModule.computeIfAbsent( (ManModule) request.module, key -> new FqnCache<>() );
 
+    ManModule module = (ManModule)request.module;
+    FqnCache<ManifoldPsiClass> fqnPsiCache = _fqnPsiCachePerModule.computeIfAbsent( module, key -> new FqnCache<>() );
     for( String type : request.types )
     {
       //removeDependentTypes( type, map, module );
@@ -397,22 +394,48 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     if( request.file != null )
     {
       String pathString = request.file.getPath().getPathString();
-      ConcurrentHashMap<String, PsiClass> filePathToPsi = _filePathToPsiPerModule.get( request.module );
-      PsiClass removedFacade = filePathToPsi == null ? null : filePathToPsi.remove( pathString );
-      if( removedFacade != null )
+      if( _filePathToPsi.containsKey( pathString ) )
       {
-        ApplicationManager.getApplication().invokeLater( () ->
-          ApplicationManager.getApplication().runWriteAction( () ->
-            ((PsiModificationTrackerImpl)removedFacade.getManager().getModificationTracker()).incCounter() ) );
-        fqnPsiCache.remove( removedFacade.getQualifiedName() );
+        PsiClass facade = _filePathToPsi.get( pathString );
+        if( removeFromCache( module, module, facade ) )
+        {
+          _filePathToPsi.remove( pathString );
+          ApplicationManager.getApplication().invokeLater( () ->
+            ApplicationManager.getApplication().runWriteAction( () ->
+              ((PsiModificationTrackerImpl)facade.getManager().getModificationTracker()).incCounter() ) );
+        }
       }
     }
+  }
+
+  public boolean removeFromCache( ManModule module, ManModule start, PsiClass removedFacade )
+  {
+    FqnCache<ManifoldPsiClass> fqnPsiCache =
+      _fqnPsiCachePerModule.computeIfAbsent( module, key -> new FqnCache<>() );
+
+    if( fqnPsiCache.remove( removedFacade.getQualifiedName() ) )
+    {
+      return true;
+    }
+
+    for( Dependency d: module.getDependencies() )
+    {
+      if( module == start || d.isExported() )
+      {
+        if( removeFromCache( (ManModule) d.getModule(), start, removedFacade ) )
+        {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   @Override
   public void refreshed()
   {
-    _filePathToPsiPerModule = new ConcurrentHashMap<>();
+    _filePathToPsi = new ConcurrentHashMap<>();
     _fqnPsiCachePerModule.clear();
   }
 

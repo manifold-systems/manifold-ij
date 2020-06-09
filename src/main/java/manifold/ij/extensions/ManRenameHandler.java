@@ -9,11 +9,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.ScrollType;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiNameIdentifierOwner;
-import com.intellij.psi.PsiNamedElement;
-import com.intellij.psi.PsiPlainTextFile;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtil;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.refactoring.actions.BaseRefactoringAction;
@@ -21,7 +17,12 @@ import com.intellij.refactoring.rename.PsiElementRenameHandler;
 import com.intellij.refactoring.rename.RenamePsiElementProcessor;
 import com.intellij.refactoring.rename.inplace.InplaceRefactoring;
 import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
+
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
+
+import manifold.api.type.SourcePosition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,6 +50,18 @@ public class ManRenameHandler extends VariableInplaceRenameHandler
                 && supportProvider != null
                 && element instanceof PsiNameIdentifierOwner
                 && supportProvider.isMemberInplaceRenameAvailable( element, nameSuggestionContext );
+
+    if( element instanceof PsiModifierListOwner )
+    {
+      PsiAnnotation sourcePosAnnotation = Arrays.stream( ((PsiModifierListOwner) element).getAnnotations() )
+        .filter( anno -> Objects.equals( anno.getQualifiedName(), SourcePosition.class.getName() ) )
+        .findFirst().orElse( null );
+      if( sourcePosAnnotation == null )
+      {
+        return false;
+      }
+    }
+
     if( langRefactorSupport )
     {
       return true;
@@ -126,6 +139,6 @@ public class ManRenameHandler extends VariableInplaceRenameHandler
   public String toString()
   {
     // Displayed in chooser dialog when multiple rename handlers are available
-    return "Rename item and Java references to it (Manifold)";
+    return "Rename item and code usages (Manifold)";
   }
 }

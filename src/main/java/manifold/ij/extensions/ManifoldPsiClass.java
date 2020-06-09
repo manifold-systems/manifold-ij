@@ -13,7 +13,6 @@ import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.Navigatable;
 import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiComment;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
@@ -65,7 +64,10 @@ public class ManifoldPsiClass extends LightClass
         file.putUserData( ModuleUtil.KEY_MODULE, manModule.getIjModule() );
       }
     }
-    delegate.getContainingFile().putUserData( KEY_MANIFOLD_PSI_CLASS, this );
+    if( getContainingClass() == null )
+    {
+      delegate.getContainingFile().putUserData( KEY_MANIFOLD_PSI_CLASS, this );
+    }
     reassignFragmentContainer();
   }
 
