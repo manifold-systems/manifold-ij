@@ -49,18 +49,29 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     PsiElement parent = sourceElement.getParent();
     if( parent != null )
     {
-      PsiReference ref = parent.getReference();
-      if( ref != null )
+      PsiElement resolve = resolveRef( parent );
+      if( resolve instanceof PsiModifierListOwner )
       {
-        PsiElement resolve = ref.resolve();
-        if( resolve instanceof PsiModifierListOwner )
-        {
-          PsiElement target = find( (PsiModifierListOwner)resolve );
-          if( target != null )
-          {
-            return target;
-          }
-        }
+        return find( (PsiModifierListOwner)resolve );
+      }
+    }
+    return null;
+  }
+
+  public static PsiElement resolveRef( PsiElement target )
+  {
+    PsiReference ref = target.getReference();
+    if( ref != null )
+    {
+      return ref.resolve();
+    }
+
+    for( PsiReference r: target.getReferences() )
+    {
+      PsiElement resolve = r.resolve();
+      if( resolve != null )
+      {
+        return resolve;
       }
     }
     return null;
