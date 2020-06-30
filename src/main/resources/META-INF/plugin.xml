@@ -186,15 +186,20 @@ by the core framework. Each project represents a separate <strong>dependency</st
   <change-notes>
     <![CDATA[
 <h3>Fixes & Features:<h3>
-<br>
 <h4>
 Manifold supports <b>Android Studio</b>!
 <br>
 Manifold supports <b>Kotlin</b>!
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/181">#181</a>: Separate Manifold into compile-time and runtime dependencies, toward support for Android
+<a href="https://github.com/manifold-systems/manifold/issues/181">#181</a>: Core: Separate Manifold into compile-time and runtime dependencies, toward support for Android
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/186">#186</a>: Modify GraphQL and JSON APIs to work better with other JVM languages such as Kotlin
+<a href="https://github.com/manifold-systems/manifold/issues/186">#186</a>: GraphQL & JSON: Modify GraphQL and JSON APIs to work better with other JVM languages such as Kotlin
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/192">#192</a>: Plugin: Fix project context menu behavior when multiple items are selected
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/193">#193</a>: Core: Remove runtime requirement for manifold-rt for projects not using extensions
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/194">#194</a>: Core: Enable comprehensive Java/Manifold interop with Manifold-enabled languages in a Java 9+ modular build
 <br>
 Other minor fixes and improvements.
 </h4>
