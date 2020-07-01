@@ -65,25 +65,33 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
     boolean enabled;
     final DataContext dataContext = e.getDataContext();
 
-    final IdeView view = LangDataKeys.IDE_VIEW.getData( dataContext );
-    if( view == null )
+    Object[] data = LangDataKeys.SELECTED_ITEMS.getData( dataContext );
+    if( data == null || data.length != 1 )
     {
       enabled = false;
     }
     else
     {
-      final Project project = PlatformDataKeys.PROJECT.getData( dataContext );
-
-      final PsiDirectory dir = view.getOrChooseDirectory();
-      if( dir == null || project == null )
+      final IdeView view = LangDataKeys.IDE_VIEW.getData( dataContext );
+      if( view == null )
       {
         enabled = false;
       }
       else
       {
-        PsiPackage pkg = JavaDirectoryService.getInstance().getPackage( dir );
-        ProjectFileIndex projectFileIndex = ProjectRootManager.getInstance( project ).getFileIndex();
-        enabled = pkg != null && projectFileIndex.isUnderSourceRootOfType( dir.getVirtualFile(), JavaModuleSourceRootTypes.SOURCES );
+        final Project project = PlatformDataKeys.PROJECT.getData( dataContext );
+
+        final PsiDirectory dir = view.getOrChooseDirectory();
+        if( dir == null || project == null )
+        {
+          enabled = false;
+        }
+        else
+        {
+          PsiPackage pkg = JavaDirectoryService.getInstance().getPackage( dir );
+          ProjectFileIndex projectFileIndex = ProjectRootManager.getInstance( project ).getFileIndex();
+          enabled = pkg != null && projectFileIndex.isUnderSourceRootOfType( dir.getVirtualFile(), JavaModuleSourceRootTypes.SOURCES );
+        }
       }
     }
     e.getPresentation().setEnabled( enabled );
