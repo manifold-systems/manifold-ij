@@ -118,6 +118,17 @@ public class ManModule extends SimpleModule
     return super.findTypeManifoldsFor( fqn, predicate );
   }
 
+  //## hack: exclude the Gosu type manifold to prevent interference with Studio's Gosu support, and also because Gosu
+  //## would need to mirror the modules etc. which would be a PITA and not useful since the Gosu plugin for IJ already
+  //## does everything we need.
+  @Override
+  public List<String> getExcludedTypeManifolds()
+  {
+    List<String> excludedTypeManifolds = new ArrayList<>( super.getExcludedTypeManifolds() );
+    excludedTypeManifolds.add( "gw.lang.init.GosuTypeManifold" );
+    return excludedTypeManifolds;
+  }
+
   /**
    * Find type manifolds for an FQN starting with this module and then searching its dependencies (search *down*).
    * Note searching for type manifolds for an FQN amounts to *resolving* the FQN from the context of THIS module.
