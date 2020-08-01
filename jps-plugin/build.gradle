@@ -22,3 +22,8 @@ dependencies {
 
   manifoldAll group: 'systems.manifold', name: 'manifold-all', version: manifoldVersion
 }
+
+afterEvaluate {
+  // don't run the JPS plugin
+  project.tasks.remove( project.getTasks().runIde )
+}

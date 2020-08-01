@@ -1,5 +1,6 @@
 package manifold.ij.template;
 
+import com.intellij.lang.InjectableLanguage;
 import com.intellij.lang.Language;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
@@ -7,7 +8,7 @@ import com.intellij.openapi.fileTypes.FileTypes;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.vfs.VirtualFile;
 
-public class ManTemplateLanguage extends Language
+public class ManTemplateLanguage extends Language implements InjectableLanguage
 {
   public static final ManTemplateLanguage INSTANCE = new ManTemplateLanguage();
 

@@ -1,5 +1,6 @@
 package manifold.ij.extensions;
 
+import com.intellij.lang.jvm.annotation.JvmAnnotationConstantValue;
 import com.intellij.psi.EmptySubstitutor;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
@@ -98,7 +99,15 @@ public class SelfTypeUtil
     {
       if( hasSelfAnnotationDirectly( classType ) )
       {
-        return makeSelfTypeDirectly( classType );
+        PsiType newType = makeSelfTypeDirectly( classType );
+        if( newType instanceof PsiArrayType && selfIsComponentType( classType ))
+        {
+//          while( newType instanceof PsiArrayType )
+//          {
+            newType = ((PsiArrayType)newType).getComponentType();
+//          }
+        }
+        return newType;
       }
 
       if( hasSelfAnnotation( classType ) )
@@ -115,6 +124,13 @@ public class SelfTypeUtil
         for( PsiType typeParam: classType.getParameters() )
         {
           PsiType newType = typeParam.accept( this );
+          if( newType instanceof PsiArrayType && selfIsComponentType( classType ) )
+          {
+//            while( newType instanceof PsiArrayType )
+//            {
+              newType = ((PsiArrayType)newType).getComponentType();
+//            }
+          }
           PsiTypeParameter typeVar = psiClass.getTypeParameters()[i];
           substitutor = substitutor.put( typeVar, newType );
           i++;
@@ -127,13 +143,13 @@ public class SelfTypeUtil
 
     private PsiType makeSelfTypeDirectly( PsiClassType classType )
     {
-      PsiClassType replacedType = (PsiClassType)_self.annotate( getMergedProviderMinusSelf( classType, _self ) );
+      return _self.annotate( getMergedProviderMinusSelf( classType, _self ) );
 // no need to derive type from @Self declared type, since only the *exact* enclosing class is allowed e.g., @Self Foo<T>  *not* @Self Foo<String>
 //      if( classType.getParameterCount() > 0 )
 //      {
 //        replacedType = deriveParameterizedTypeFromAncestry( (PsiClassType)_self, classType );
 //      }
-      return replacedType;
+//      return replacedType;
     }
 
     private PsiClassType deriveParameterizedTypeFromAncestry( PsiClassType subType, PsiClassType superType )
@@ -243,6 +259,28 @@ public class SelfTypeUtil
     return false;
   }
 
+  private boolean selfIsComponentTypeDirectly( PsiType type )
+  {
+    if( type == null )
+    {
+      return false;
+    }
+
+    for( PsiAnnotation anno: type.getAnnotations() )
+    {
+      if( Self.class.getTypeName().equals( anno.getQualifiedName() ) )
+      {
+        if( !anno.getAttributes().isEmpty() )
+        {
+          JvmAnnotationConstantValue value = (JvmAnnotationConstantValue) anno.getAttributes().get( 0 ).getAttributeValue();
+          return value != null && (boolean)value.getConstantValue();
+        }
+        break;
+      }
+    }
+    return false;
+  }
+
   boolean hasSelfAnnotation( PsiType type )
   {
     if( type instanceof PsiPrimitiveType )
@@ -286,6 +324,51 @@ public class SelfTypeUtil
     if( type instanceof PsiCapturedWildcardType )
     {
       return hasSelfAnnotation( ((PsiCapturedWildcardType)type).getWildcard() );
+    }
+
+    return false;
+  }
+
+  boolean selfIsComponentType( PsiType type )
+  {
+    if( type instanceof PsiPrimitiveType )
+    {
+      return false;
+    }
+
+    if( selfIsComponentTypeDirectly( type ) )
+    {
+      return true;
+    }
+
+    if( type instanceof PsiClassType )
+    {
+      for( PsiType typeArg: ((PsiClassType)type).getParameters() )
+      {
+        if( selfIsComponentType( typeArg ) )
+        {
+          return true;
+        }
+      }
+    }
+    else if( type instanceof PsiArrayType )
+    {
+      if( selfIsComponentType( ((PsiArrayType)type).getComponentType() ) )
+      {
+        return true;
+      }
+    }
+    else if( type instanceof PsiWildcardType )
+    {
+      PsiType bound = ((PsiWildcardType)type).getBound();
+      if( bound != null && selfIsComponentType( bound ) )
+      {
+        return true;
+      }
+    }
+    else if( type instanceof PsiCapturedWildcardType )
+    {
+      return selfIsComponentType( ((PsiCapturedWildcardType)type).getWildcard() );
     }
 
     return false;

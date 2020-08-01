@@ -26,13 +26,7 @@ import com.intellij.psi.augment.PsiAugmentProvider;
 import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.util.IncorrectOperationException;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import manifold.api.fs.IFile;
 import manifold.api.gen.AbstractSrcMethod;
@@ -43,6 +37,7 @@ import manifold.api.gen.SrcParameter;
 import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
+import manifold.rt.api.Array;
 import manifold.api.type.ITypeManifold;
 import manifold.api.type.SourcePosition;
 import manifold.ext.IExtensionClassProducer;
@@ -103,10 +98,16 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return Collections.emptyList();
     }
 
+    String name = ((PsiClass) element).getName();
+    if( name != null && name.equals( "__Array__") )
+    {
+      className = Array.class.getTypeName();
+    }
+
     addMethods( className, psiClass, augFeatures );
 
     //noinspection unchecked
-    return new ArrayList( augFeatures.values() );
+    return new ArrayList<>( (Collection<? extends E>) augFeatures.values() );
   }
 
   private void addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures )
@@ -216,7 +217,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     {
       scratchClass.addTypeVar( new SrcType( StubBuilder.makeTypeVar( tv ) ) );
     }
-    for( AbstractSrcMethod m : srcExtClass.getMethods() )
+    for( AbstractSrcMethod<?> m : srcExtClass.getMethods() )
     {
       SrcMethod srcMethod = addExtensionMethod( scratchClass, m, psiClass );
       if( srcMethod != null )
@@ -254,7 +255,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     psiClass.putUserData( KEY_MAN_INTERFACE_EXTENSIONS, ifaceExtensions );
   }
 
-  private PsiMethod makePsiMethod( AbstractSrcMethod method, PsiClass psiClass )
+  private PsiMethod makePsiMethod( AbstractSrcMethod<?> method, PsiClass psiClass )
   {
     PsiElementFactory elementFactory = JavaPsiFacade.getInstance( psiClass.getProject() ).getElementFactory();
     StringBuilder sb = new StringBuilder();
@@ -380,7 +381,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     }
   }
 
-  private SrcMethod addExtensionMethod( SrcClass srcClass, AbstractSrcMethod method, PsiClass extendedType )
+  private SrcMethod addExtensionMethod( SrcClass srcClass, AbstractSrcMethod<?> method, PsiClass extendedType )
   {
     if( !isExtensionMethod( method, extendedType.getQualifiedName() ) )
     {
@@ -413,7 +414,6 @@ public class ManAugmentProvider extends PsiAugmentProvider
     String name = method.getSimpleName();
     srcMethod.name( name );
 
-    @SuppressWarnings("unchecked")
     List<SrcType> typeParams = method.getTypeVariables();
 
     // extension method must reflect extended type's type vars before its own
@@ -428,7 +428,6 @@ public class ManAugmentProvider extends PsiAugmentProvider
       }
     }
 
-    @SuppressWarnings("unchecked")
     List<SrcParameter> params = method.getParameters();
     for( int i = isInstanceExtensionMethod ? 1 : 0; i < params.size(); i++ )
     {
@@ -452,7 +451,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     return srcMethod;
   }
 
-  private void copyAnnotations( AbstractSrcMethod method, SrcMethod srcMethod )
+  private void copyAnnotations( AbstractSrcMethod<?> method, SrcMethod srcMethod )
   {
     for( Object anno : method.getAnnotations() )
     {
@@ -464,7 +463,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     }
   }
 
-  private boolean isExtensionMethod( AbstractSrcMethod method, String extendedType )
+  private boolean isExtensionMethod( AbstractSrcMethod<?> method, String extendedType )
   {
     if( !Modifier.isStatic( (int)method.getModifiers() ) || Modifier.isPrivate( (int)method.getModifiers() ) )
     {
@@ -479,7 +478,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     return hasThisAnnotation( method, extendedType );
   }
 
-  private boolean isInstanceExtensionMethod( AbstractSrcMethod method, String extendedType )
+  private boolean isInstanceExtensionMethod( AbstractSrcMethod<?> method, String extendedType )
   {
     if( !Modifier.isStatic( (int)method.getModifiers() ) || Modifier.isPrivate( (int)method.getModifiers() ) )
     {
@@ -489,18 +488,23 @@ public class ManAugmentProvider extends PsiAugmentProvider
     return hasThisAnnotation( method, extendedType );
   }
 
-  private boolean hasThisAnnotation( AbstractSrcMethod method, String extendedType )
+  private boolean hasThisAnnotation( AbstractSrcMethod<?> method, String extendedType )
   {
-    List params = method.getParameters();
+    List<SrcParameter> params = method.getParameters();
     if( params.size() == 0 )
     {
       return false;
     }
-    SrcParameter param = (SrcParameter)params.get( 0 );
+    SrcParameter param = params.get( 0 );
     if( !param.hasAnnotation( This.class ) )
     {
       return false;
     }
-    return param.getType().getName().equals( extendedType );
+    return param.getType().getName().equals( extendedType ) || isArrayExtension( param, extendedType );
+  }
+
+  private boolean isArrayExtension( SrcParameter param, String extendedType )
+  {
+    return extendedType.endsWith( ".__Array__" ) && param.getType().getName().equals( Object.class.getTypeName() );
   }
 }

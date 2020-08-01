@@ -1,5 +1,6 @@
 package manifold.ij.extensions;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
@@ -22,8 +23,11 @@ import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.util.ClassUtil;
-import com.intellij.util.messages.MessageBus;
 import java.util.Map;
+
+import com.intellij.util.IdempotenceChecker;
+import com.intellij.util.messages.MessageBus;
+import manifold.api.util.BytecodeOptions;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ext.rt.api.Self;
 import manifold.ij.core.ManModule;
@@ -32,13 +36,23 @@ import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethod;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManPsiElementFactory;
+import manifold.util.ReflectUtil;
+import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ManResolveCache extends ResolveCache
 {
   public ManResolveCache( @NotNull MessageBus messageBus )
   {
     super( messageBus );
+
+    if( !BytecodeOptions.JDWP_ENABLED.get() )
+    {
+      // stop the IdempotenceChecker from alarming users, turn it off when not debugging
+      // (need to spend time fixing some of these though, hence keeping it on in debugger)
+      ReflectUtil.field( IdempotenceChecker.class, "LOG" ).setStatic( new IgnoreLogger() );
+    }
   }
 
   @NotNull
@@ -293,4 +307,52 @@ public class ManResolveCache extends ResolveCache
     return modifierList != null && modifierList.hasModifierProperty( PsiModifier.STATIC );
   }
 
+  private static class IgnoreLogger extends Logger
+  {
+    @Override
+    public boolean isDebugEnabled()
+    {
+      return false;
+    }
+
+    @Override
+    public void debug( String message )
+    {
+    }
+
+    @Override
+    public void debug( @Nullable Throwable t )
+    {
+    }
+
+    @Override
+    public void debug( String message, @Nullable Throwable t )
+    {
+    }
+
+    @Override
+    public void info( String message )
+    {
+    }
+
+    @Override
+    public void info( String message, @Nullable Throwable t )
+    {
+    }
+
+    @Override
+    public void warn( String message, @Nullable Throwable t )
+    {
+    }
+
+    @Override
+    public void error( String message, @Nullable Throwable t, @NotNull String... details )
+    {
+    }
+
+    @Override
+    public void setLevel( Level level )
+    {
+    }
+  }
 }

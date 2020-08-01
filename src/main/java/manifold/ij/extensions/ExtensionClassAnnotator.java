@@ -2,7 +2,6 @@ package manifold.ij.extensions;
 
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
-import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
@@ -45,6 +44,7 @@ import manifold.ext.rt.api.This;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
+import manifold.rt.api.Array;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -120,11 +120,19 @@ public class ExtensionClassAnnotator implements Annotator
         {
           PsiClass extendClassSym = JavaPsiFacade.getInstance( element.getProject() )
             .findClass( extendedClassName, GlobalSearchScope.allScope( element.getProject() ) );
-          if( extendClassSym != null &&
+          if( extendedClassName.equals( Array.class.getTypeName() ) )
+          {
+            if( !(param.getType() instanceof PsiClassType) || !((PsiClassType)param.getType()).getName().equals( Object.class.getSimpleName() ) )
+            {
+              TextRange range = new TextRange( param.getTextRange().getStartOffset(),
+                param.getTextRange().getEndOffset() );
+              holder.createErrorAnnotation( range, ExtIssueMsg.MSG_EXPECTING_OBJECT_FOR_THIS.get() );
+            }
+          }
+          else if( extendClassSym != null &&
               !isStructuralInterface( extendClassSym ) && // an extended class could be made a structural interface which results in Object as @This param, ignore this
               !isAssignableFromRaw( element.getProject(), extendClassSym, param.getType() ) &&
-              (ManifoldPsiClassAnnotator.getContainingClass( extendClassSym ) == null || !isEnclosing( extendClassSym, param )) // handle inner class extensions
-            )
+              (ManifoldPsiClassAnnotator.getContainingClass( extendClassSym ) == null || !isEnclosing( extendClassSym, param )) ) // handle inner class extensions
           {
             TextRange range = new TextRange( param.getTextRange().getStartOffset(),
                                              param.getTextRange().getEndOffset() );
@@ -170,11 +178,11 @@ public class ExtensionClassAnnotator implements Annotator
               ((ManifoldPsiClass)topLevelExtendedClass).getDelegate(), paramClass, true ));
   }
 
-  private boolean isAssignableFromRaw( Project project, PsiClass extendClassSym, PsiType type )
+  private boolean isAssignableFromRaw( Project project, PsiClass extendedClassSym, PsiType thisParamType )
   {
-    PsiType extendedType = JavaPsiFacade.getInstance( project ).getElementFactory().createType( extendClassSym );
+    PsiType extendedType = JavaPsiFacade.getInstance( project ).getElementFactory().createType( extendedClassSym );
     extendedType = TypeConversionUtil.erasure( extendedType );
-    return extendedType.isAssignableFrom( TypeConversionUtil.erasure( type ) );
+    return TypeConversionUtil.erasure( thisParamType ).isAssignableFrom( extendedType );
   }
 
   @NotNull
