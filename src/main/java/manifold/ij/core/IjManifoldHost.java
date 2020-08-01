@@ -2,6 +2,10 @@ package manifold.ij.core;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElementFactory;
+import com.intellij.psi.util.PsiUtil;
 import manifold.api.fs.IFileFragment;
 import manifold.api.fs.IFileSystem;
 import manifold.api.host.IModule;
@@ -61,6 +65,15 @@ public class IjManifoldHost extends AbstractManifoldHost
   @Override
   public void createdType( IFileFragment iFile, String[] strings )
   {
+  }
+
+  @Override
+  public String getArrayTypeName()
+  {
+    Project project = _project.getNativeProject();
+    PsiElementFactory factory = JavaPsiFacade.getElementFactory( project );
+    PsiClass arrayClass = factory.getArrayClass( PsiUtil.getLanguageLevel( project ) );
+    return arrayClass.getQualifiedName();
   }
 
   private ManProject getManProject( Object ctx )

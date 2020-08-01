@@ -4,15 +4,50 @@
   <description>
     <![CDATA[
 <h2><a href="#what-is-manifold" id="what-is-manifold">What is Manifold?</a></h2>
-<p><a href="http://manifold.systems">Manifold</a> plugs into Java to supplement it with powerful features, from Type-safe
-Metaprogramming, Extension Methods, Operator Overloading, and Unit Expressions to an integrated Template Engine and a
-Preprocessor. All fully supported in IntelliJ IDEA. Simply add Manifold to your project and begin taking advantage of
-it.</p>
+<p>Manifold plugins into Java to supplement it with powerful features, including:</p>
+<ul>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold"><em>Type-safe</em> Meta-programming</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extension Methods</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#operator-overloading">Operator Overloading</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions">Unit Expressions</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">A <em>Java</em> Template Engine</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">A Preprocessor</a></li>
+  <li>...and more</li>
+</ul>
+<p>All fully supported in <strong>Java 8 - 14</strong> with comprehensive IDE support in <strong>IntelliJ IDEA</strong> and <strong>Android Studio</strong>.
+Simply add Manifold to your existing project and begin taking advantage of it.</p>
+<blockquote>
+  <p><em><strong>New!</strong></em></p>
+  <ul>
+    <li>Manifold supports <strong>Android Studio</strong>! <a href="http://manifold.systems/android.html">Learn more</a>.</li>
+    <li>Manifold supports <strong>Kotlin</strong>! <a href="http://manifold.systems/kotlin.html">Learn more</a>.</li>
+  </ul>
+</blockquote>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
 <h3><a href="#meta-programming" id="meta-programming"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold">Meta-programming</a></a></h3>
-<p>Use the framework to gain direct, type-safe access to <i>any</i> type of metadata, such as <strong>GraphQL</strong>, <strong>JSON Schema</strong>
-and <strong>YAML</strong>. Remove the code gen step in your build process. <a href="http://manifold.systems/images/graphql.mp4">&nbsp;<strong>▶</strong>&nbsp;Check&nbsp;it&nbsp;out!</a></p>
-<pre><code class="java">// Use your User.json schema file directly as a type, no code gen!
+<p>Use the framework to gain direct, type-safe access to <em>any</em> type of resource, such as
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-graphql"><strong>GraphQL</strong></a>,
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-json"><strong>JSON</strong></a>,
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-xml"><strong>XML</strong></a>,
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-yaml"><strong>YAML</strong></a>,
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-csv"><strong>CSV</strong></a>, and even
+other languages such as <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-js"><strong>JavaScript</strong></a>.
+Remove the code gen step in your build process. <a href="http://manifold.systems/images/graphql.mp4">&nbsp;<strong>▶</strong>&nbsp;Check&nbsp;it&nbsp;out!</a></p>
+<p><strong>GraphQL:</strong> Use types defined in .graphql files <em>directly</em>, no code gen steps! Make GraphQL changes and immediately use
+them with code completion.</p>
+<pre><code class="java">var query = MovieQuery.builder(Action).build();
+var result = query.request(&quot;http://com.example/graphql&quot;).post();
+var actionMovies = result.getMovies();
+for (var movie : actionMovies) {
+  out.println(
+    &quot;Title: &quot; + movie.getTitle() + &quot;\n&quot; +
+    &quot;Genre: &quot; + movie.getGenre() + &quot;\n&quot; +
+    &quot;Year: &quot; + movie.getReleaseDate().getYear() + &quot;\n&quot;);
+}
+</code></pre>
+<p><strong>JSON:</strong> Use .json schema files directly and type-safely, no code gen steps! Find usages of .json properties in your
+Java code.</p>
+<pre><code class="java">// From User.json
 User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&quot;)
   .withGender(male)
   .withDob(LocalDate.of(1987, 6, 15))
@@ -20,7 +55,7 @@ User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&q
 User.request(&quot;http://api.example.com/users&quot;).postOne(user);
 </code></pre>
 <h3><a href="#extension-methods" id="extension-methods"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extension Methods</a></a></h3>
-<p>Add your own methods to existing Java classes, even <code>String</code>, <code>List</code>, and <code>File</code>. Eliminate boilerplate code.
+<p>Add your own methods to existing Java classes, even <em>String</em>, <em>List</em>, and <em>File</em>. Eliminate boilerplate code.
 <a href="http://manifold.systems/images/ExtensionMethod.mp4">&nbsp;<strong>▶</strong>&nbsp;Check&nbsp;it&nbsp;out!</a></p>
 <pre><code class="java">String greeting = &quot;hello&quot;;
 greeting.myMethod(); // Add your own methods to String!
@@ -32,7 +67,7 @@ if (bigDec1 &gt; bigDec2) {
   BigDecimal result = bigDec1 + bigDec2;
   ...
 }
-// Implemnet operators for any type
+// Implement operators for any type
 MyType value = myType1 + myType2;
 </code></pre>
 <h3><a href="#unit-expressions" id="unit-expressions"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions">Unit Expressions</a></a></h3>
@@ -45,8 +80,8 @@ Force f = 5.2 kg m/s/s; // same as 5.2 N
 Mass infant = 9 lb + 8.71 oz;
 </code></pre>
 <h3><a href="#ranges" id="ranges"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-collections#ranges">Ranges</a></a></h3>
-<p>Easily work with the <code>Range</code> API using <a href="(https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions)">unit expressions</a>.
-Simply import the <code>RangeFun</code> constants to create ranges.</p>
+<p>Easily work with the <em>Range</em> API using <a href="(https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions)">unit expressions</a>.
+Simply import the <em>RangeFun</em> constants to create ranges.</p>
 <pre><code class="java">// imports the `to`, `step`, and other &quot;binding&quot; constants
 import static manifold.collections.api.range.RangeFun.*;
 ...
@@ -68,7 +103,7 @@ Time time = 1min + 3.7sec;
 Length distance = rate * time;
 </code></pre>
 <h3><a href="#preprocessor" id="preprocessor"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">Preprocessor</a></a></h3>
-<p>Use familiar directives such as <code>#define</code> and <code>#if</code> to conditionally compile your Java projects. The preprocessor offers
+<p>Use familiar directives such as <strong>#define</strong> and <strong>#if</strong> to conditionally compile your Java projects. The preprocessor offers
 a simple and convenient way to support multiple build targets with a single codebase. <a href="http://manifold.systems/images/preprocessor.mp4">&nbsp;<strong>▶</strong>&nbsp;Check&nbsp;it&nbsp;out!</a></p>
 <pre><code class="java">#if JAVA_8_OR_LATER
   @Override
@@ -95,7 +130,7 @@ foo.privateField = value;
 </code></pre>
 <h3><a href="#checked-exception-handling" id="checked-exception-handling"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-exceptions">Checked Exception Handling</a></a></h3>
 <p>You now have an option to make checked exceptions behave like unchecked exceptions!  No more unintended exception
-swallowing, no more boilerplate <code>try</code>/<code>catch</code>/<code>wrap</code>/<code>rethrow</code> nonsense.</p>
+swallowing. No more <em>try</em>/<em>catch</em>/<em>wrap</em>/<em>rethrow</em> boilerplate!</p>
 <pre><code class="java">List&lt;String&gt; strings = ...;
 List&lt;URL&gt; urls = list
   .map(URL::new) // No need to handle the MalformedURLException!
@@ -109,13 +144,13 @@ String result = &quot;The hour is $hour&quot;; // Yes!!!
 // Use expressions with '${}'
 result = &quot;It is ${hour &gt; 12 ? hour-12 : hour} o'clock&quot;;
 </code></pre>
-<h3><a href="#template-files-with-mantl" id="template-files-with-mantl"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">Template Files with <em>ManTL</em></a></a></h3>
+<h3><a href="#a-java-template-engine" id="a-java-template-engine"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">A <em>Java</em> Template Engine</a></a></h3>
 <p>Author template files with the full expressive power of Java, use your templates directly in your code as types.
 Supports type-safe inclusion of other templates, shared layouts, and more. <a href="http://manifold.systems/images/mantl.mp4">&nbsp;<strong>▶</strong>&nbsp;Check&nbsp;it&nbsp;out!</a></p>
 <pre><code class="java">List&lt;User&gt; users = ...;
 String content = abc.example.UserSample.render(users);
 </code></pre>
-<p>A template file <code>abc/example/UserSample.html.mtl</code></p>
+<p>A template file <em>abc/example/UserSample.html.mtl</em></p>
 <pre><code class="html">&lt;%@ import java.util.List %&gt;
 &lt;%@ import com.example.User %&gt;
 &lt;%@ params(List&lt;User&gt; users) %&gt;
@@ -130,37 +165,34 @@ String content = abc.example.UserSample.render(users);
 &lt;/body&gt;
 &lt;/html&gt;
 </code></pre>
-<h3><a href="#intellij" id="intellij"><a href="http://manifold.systems/docs.html#ide--intellij-idea">IntelliJ</a></a></h3>
-<p>Use the <a href="https://plugins.jetbrains.com/plugin/10057-manifold">Manifold IntelliJ IDEA plugin</a> to fully leverage
-Manifold in your development cycle. The plugin provides comprehensive support for IntelliJ features including code
+<h3><a href="#ide-support" id="ide-support"><a href="http://manifold.systems/docs.html#ide--intellij-idea">IDE Support</a></a></h3>
+<p>Use the <a href="https://plugins.jetbrains.com/plugin/10057-manifold">Manifold plugin</a> to fully leverage
+Manifold with <strong>IntelliJ IDEA</strong> and <strong>Android Studio</strong>. The plugin provides comprehensive support for Manifold including code
 completion, navigation, usage searching, refactoring, incremental compilation, hotswap debugging, full-featured
 template editing, integrated preprocessor, and more.</p>
-<blockquote>
-  <p>Note the Manifold Plugin for IntelliJ IDEA is <strong>free</strong> for use with IntelliJ IDEA <strong>Community Edition</strong> which like
-  the Manifold project is free and open source. The plugin is also commercially available on a trial basis via the
-  JetBrains Marketplace for use with IntelliJ IDEA <strong>Ultimate Edition</strong>.</p>
-</blockquote>
+<p><img src="http://manifold.systems/images/ManifoldPlugin.png" alt="manifold ij plugin" width="60%" height="60%"/></p>
 <h3><a href="#projects" id="projects"><a href="http://manifold.systems/projects.html">Projects</a></a></h3>
 <p>The Manifold project consists of the core Manifold framework and a collection of sub-projects implementing SPIs provided
-by the core framework. Each project represents a separate <strong>dependency</strong> you can easily add to your project:</p>
+by the core framework. Each project consists of one or more <strong>dependencies</strong> you can easily add to your project:</p>
 <p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold">Manifold : <em>Core</em></a><br></p>
+<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Manifold : <em>Java Extensions</em></a><br></p>
 <p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-graphql">Manifold : <em>GraphQL</em></a><br>
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-json">Manifold : <em>JSON</em></a><br>
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-xml">Manifold : <em>XML</em></a><br>
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-yaml">Manifold : <em>YAML</em></a><br>
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-csv">Manifold : <em>CSV</em></a><br>
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-properties">Manifold : <em>Properties</em></a><br>
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-image">Manifold : <em>Image</em></a><br>
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-darkj">Manifold : <em>Dark Java</em></a><br>
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-js">Manifold : <em>JavaScript</em></a><br></p>
-<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Manifold : <em>Java Extension</em></a><br></p>
-<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">Manifold : <em>Templates (ManTL)</em></a><br></p>
+<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">Manifold : <em>Java Templates</em></a><br></p>
 <p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-strings">Manifold : <em>String Interpolation</em></a><br>
-<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-exceptions">Manifold : <em>[Un]checked Exceptions</em></a><br></p>
+<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-exceptions">Manifold : <em>(Un)checked Exceptions</em></a><br></p>
 <p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">Manifold : <em>Preprocessor</em></a><br></p>
 <p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">Manifold : <em>Science</em></a><br></p>
 <p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-collections">Manifold : <em>Collections</em></a><br>
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-io">Manifold : <em>I/0</em></a><br>
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-text">Manifold : <em>Text</em></a><br></p>
-<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-all">Manifold : <em>All&nbsp;&nbsp;(Über jar)</em></a><br></p>
 <blockquote>
   <p>Experiment with sample projects:<br></p>
   <ul>
@@ -168,9 +200,13 @@ by the core framework. Each project represents a separate <strong>dependency</st
     <li><a href="https://github.com/manifold-systems/manifold-sample-graphql-app">Manifold : <em>Sample GraphQL App</em></a><br></li>
     <li><a href="https://github.com/manifold-systems/manifold-sample-rest-api">Manifold : <em>Sample REST API App</em></a><br></li>
     <li><a href="https://github.com/manifold-systems/manifold-sample-web-app">Manifold : <em>Sample Web App</em></a></li>
+    <li><a href="https://github.com/manifold-systems/manifold-simple-gradle-project">Manifold : <em>Gradle Example Project</em></a></li>
+    <li><a href="https://github.com/manifold-systems/manifold-sample-kotlin-app">Manifold : <em>Sample Kotlin App</em></a></li>
   </ul>
 </blockquote>
-<br>
+<h3><a href="#forum" id="forum"><a href="https://join.slack.com/t/manifold-group/shared_invite/zt-e0bq8xtu-93ASQa~a8qe0KDhOoD6Bgg">Forum</a></a></h3>
+<p>Join our <a href="https://join.slack.com/t/manifold-group/shared_invite/zt-e0bq8xtu-93ASQa~a8qe0KDhOoD6Bgg">Slack Group</a> to start
+a discussion, ask questions, provide feedback, etc. Someone is usually there to help.</p>
 <h3><a href="#learn-more" id="learn-more"><a href="http://manifold.systems/docs.html">Learn More</a></a></h3>
     ]]>
   </description>

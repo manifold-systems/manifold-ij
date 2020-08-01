@@ -1,20 +1,13 @@
 package manifold.ij.extensions;
 
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiModifier;
-import com.intellij.psi.PsiModifierList;
-import com.intellij.psi.PsiModifierListOwner;
-import com.intellij.psi.PsiNameValuePair;
-import com.intellij.psi.PsiParameter;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeParameter;
+import com.intellij.psi.*;
+import com.intellij.psi.impl.compiled.ClsClassImpl;
 import com.intellij.psi.search.GlobalSearchScope;
-import java.lang.reflect.Modifier;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.*;
+import java.util.Arrays;
+
 import manifold.api.gen.SrcAnnotated;
 import manifold.api.gen.SrcAnnotationExpression;
 import manifold.api.gen.SrcArgument;
@@ -26,6 +19,7 @@ import manifold.api.gen.SrcRawExpression;
 import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
+import manifold.ext.rt.api.Extension;
 import manifold.ij.core.ManModule;
 import manifold.ij.util.ComputeUtil;
 
@@ -96,11 +90,63 @@ public class StubBuilder
         srcType.addTypeParam( makeSrcType( typeParam ) );
       }
     }
+    else if( type instanceof PsiWildcardType )
+    {
+      srcType = new SrcType( "?" );
+      PsiType bound = ((PsiWildcardType)type).getBound();
+      if( bound != null )
+      {
+        srcType.setSuperOrExtends( ((PsiWildcardType)type).isExtends() ? "extends" : "super" );
+        srcType.addBound( makeSrcType( bound ) );
+      }
+      return srcType;
+    }
     else
     {
       srcType = new SrcType( type.getCanonicalText() );
     }
     addAnnotations( srcType, type.getAnnotations() );
+    return srcType;
+  }
+
+  private SrcType makeSrcType( AnnotatedType type )
+  {
+    SrcType srcType;
+    AnnotatedElement rawType = null;
+    if( type instanceof AnnotatedParameterizedType )
+    {
+      AnnotatedParameterizedType annoType = (AnnotatedParameterizedType)type;
+      rawType = (AnnotatedElement)((ParameterizedType)annoType.getType()).getRawType();
+      srcType = new SrcType( ((Class<?>)rawType).getTypeName() );
+      for( AnnotatedType typeParam : annoType.getAnnotatedActualTypeArguments() )
+      {
+        srcType.addTypeParam( makeSrcType( typeParam ) );
+      }
+    }
+    else if( type instanceof AnnotatedWildcardType )
+    {
+      srcType = new SrcType( "?" );
+      AnnotatedType[] bounds = ((AnnotatedWildcardType)type).getAnnotatedUpperBounds();
+      boolean upper = true;
+      if( bounds.length == 0 )
+      {
+        upper = false;
+        bounds = ((AnnotatedWildcardType)type).getAnnotatedLowerBounds();
+      }
+      if( bounds.length > 0 )
+      {
+        srcType.setSuperOrExtends( upper ? "extends" : "super" );
+        srcType.addBound( makeSrcType( bounds[0] ) );
+      }
+      return srcType;
+    }
+    else
+    {
+      srcType = new SrcType( type.getType().getTypeName() );
+      rawType = (AnnotatedElement)type;
+    }
+
+    addAnnotations( srcType, rawType.getAnnotations() );
     return srcType;
   }
 
@@ -212,19 +258,55 @@ public class StubBuilder
     srcMethod.modifiers( getModifiers( method.getModifierList() ) );
     String name = method.getName();
     srcMethod.name( name );
+    PsiClass containingClass = method.getContainingClass();
+    boolean isExtensionClass = containingClass instanceof ClsClassImpl && containingClass.getAnnotation( Extension.class.getTypeName() ) != null;
     if( !method.isConstructor() )
     {
-      srcMethod.returns( makeSrcType( method.getReturnType() ) );
+      SrcType returnType;
+      if( isExtensionClass )
+      {
+        //todo: remove this after IJ fixes https://youtrack.jetbrains.com/issue/IDEA-247069
+        returnType = makeReturnTypeFromClass( method, srcMethod, containingClass );
+      }
+      else
+      {
+        returnType = makeSrcType( method.getReturnType() );
+      }
+      srcMethod.returns( returnType );
     }
     for( PsiTypeParameter typeVar : method.getTypeParameters() )
     {
       srcMethod.addTypeVar( new SrcType( makeTypeVar( typeVar ) ) );
     }
-    for( PsiParameter param : method.getParameterList().getParameters() )
+    if( isExtensionClass ) //## todo: kill this whole if( isExtensions ) block after IJ fixes https://youtrack.jetbrains.com/issue/IDEA-247069
     {
-      SrcParameter srcParam = new SrcParameter( param.getName(), makeSrcType( param.getType() ) );
-      addAnnotations( srcParam, param );
-      srcMethod.addParam( srcParam );
+      PsiParameter[] parameters = method.getParameterList().getParameters();
+      Method m = findRawMethod( method, containingClass );
+      for( int iParam = 0; iParam < parameters.length; iParam++ )
+      {
+        PsiParameter psiParam = parameters[iParam];
+        try
+        {
+          SrcParameter srcParam = new SrcParameter( psiParam.getName(), makeSrcType( m.getAnnotatedParameterTypes()[iParam] ) );
+          addAnnotations( srcParam, psiParam );
+          srcMethod.addParam( srcParam );
+        }
+        catch( Exception e )
+        {
+          SrcParameter srcParam = new SrcParameter( psiParam.getName(), makeSrcType( psiParam.getType() ) );
+          addAnnotations( srcParam, psiParam );
+          srcMethod.addParam( srcParam );
+        }
+      }
+    }
+    else
+    {
+      for( PsiParameter param : method.getParameterList().getParameters() )
+      {
+        SrcParameter srcParam = new SrcParameter( param.getName(), makeSrcType( param.getType() ) );
+        addAnnotations( srcParam, param );
+        srcMethod.addParam( srcParam );
+      }
     }
     for( PsiClassType throwType : method.getThrowsList().getReferencedTypes() )
     {
@@ -237,12 +319,67 @@ public class StubBuilder
     srcClass.addMethod( srcMethod );
   }
 
+  private Method findRawMethod( PsiMethod method, PsiClass containingClass )
+  {
+    try
+    {
+      Class<?> cls = Class.forName( containingClass.getQualifiedName() );
+      return cls.getDeclaredMethod( method.getName(), Arrays.stream( method.getParameters() )
+        .map( e -> getRawClass( (PsiParameter)e ) ).toArray( i -> new Class<?>[i] ) );
+    }
+    catch( Throwable t )
+    {
+      return null;
+    }
+  }
+
+  private Class<?> getRawClass( PsiParameter e )
+  {
+    try
+    {
+      PsiType type = e.getType();
+      String typeName = type.getCanonicalText();
+      if( type instanceof PsiPrimitiveType )
+      {
+        return Class.class.jailbreak().getPrimitiveClass( typeName );
+      }
+      int iLt = typeName.indexOf( '<' );
+      if( iLt > 0 )
+      {
+        typeName = typeName.substring( 0, iLt );
+      }
+      return Class.forName( typeName );
+    }
+    catch( Exception ex )
+    {
+      return null;
+    }
+  }
+
+  private SrcType makeReturnTypeFromClass( PsiMethod method, SrcMethod srcMethod, PsiClass containingClass )
+  {
+    try
+    {
+      Method m = findRawMethod( method, containingClass );
+      return makeSrcType( m.getAnnotatedReturnType() );
+    }
+    catch( Exception e )
+    {
+      return makeSrcType( method.getReturnType() );
+    }
+  }
+
   private void addAnnotations( SrcAnnotated<?> srcAnnotated, PsiModifierListOwner annotated )
   {
     addAnnotations( srcAnnotated, annotated.getModifierList().getAnnotations() );
   }
   private void addAnnotations( SrcAnnotated<?> srcAnnotated, PsiAnnotation[] annotations )
   {
+    if( annotations == null )
+    {
+      return;
+    }
+
     for( PsiAnnotation psiAnno : annotations )
     {
       SrcAnnotationExpression annoExpr = new SrcAnnotationExpression( psiAnno.getQualifiedName() );
@@ -251,6 +388,26 @@ public class StubBuilder
         Object realValue = ComputeUtil.computeLiteralValue( value );
         SrcRawExpression expr = realValue == null ? new SrcRawExpression( null ) : new SrcRawExpression( realValue.getClass(), realValue );
         SrcArgument srcArg = new SrcArgument( expr ).name( value.getName() );
+        annoExpr.addArgument( srcArg );
+      }
+      srcAnnotated.addAnnotation( annoExpr );
+    }
+  }
+  private void addAnnotations( SrcAnnotated<?> srcAnnotated, Annotation[] annotations )
+  {
+    if( annotations == null )
+    {
+      return;
+    }
+
+    for( Annotation anno : annotations )
+    {
+      SrcAnnotationExpression annoExpr = new SrcAnnotationExpression( anno.annotationType() );
+      for( Method m: anno.annotationType().getDeclaredMethods() )
+      {
+        Object realValue = m.invoke( anno );
+        SrcRawExpression expr = realValue == null ? new SrcRawExpression( null ) : new SrcRawExpression( realValue.getClass(), realValue );
+        SrcArgument srcArg = new SrcArgument( expr ).name( m.getName() );
         annoExpr.addArgument( srcArg );
       }
       srcAnnotated.addAnnotation( annoExpr );

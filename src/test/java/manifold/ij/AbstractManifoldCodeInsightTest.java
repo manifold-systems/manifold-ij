@@ -1,8 +1,6 @@
 package manifold.ij;
 
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleType;
-import com.intellij.openapi.module.ModuleTypeId;
 import com.intellij.openapi.module.StdModuleTypes;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.JavaSdk;
@@ -18,6 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import manifold.internal.runtime.UrlClassLoaderWrapper;
@@ -148,7 +147,7 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
     }
 
     @Override
-    protected Module createModule( @NotNull Project project, @NotNull String moduleFilePath )
+    protected Module createModule( @NotNull Project project, @NotNull Path moduleFilePath )
     {
       Module module = super.createModule( project, moduleFilePath );
 //      for( String jarFileName : getLibs() )
@@ -167,7 +166,7 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
      */
     @Nullable
     @Override
-    public VirtualFile createSourcesRoot( @NotNull Module module )
+    public VirtualFile createSourceRoot( @NotNull Module module, String srcPath )
     {
       VirtualFile srcRoot = VirtualFileManager.getInstance().refreshAndFindFileByUrl( "file://" + myFixture.getTempDirFixture().getTempDirPath() );
       assert srcRoot != null;
@@ -176,6 +175,15 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
       registerSourceRoot( module.getProject(), srcRoot );
       return srcRoot;
     }
+//
+//    protected VirtualFile createSourceRoot(@NotNull Module module, String srcPath) {
+//      VirtualFile dummyRoot = VirtualFileManager.getInstance().findFileByUrl("temp:///");
+//      assert dummyRoot != null;
+//      dummyRoot.refresh(false, false);
+//      VirtualFile srcRoot = doCreateSourceRoot(dummyRoot, srcPath);
+//      registerSourceRoot(module.getProject(), srcRoot);
+//      return srcRoot;
+//    }
 
     private void cleanSourceRoot( @NotNull VirtualFile contentRoot )
     {

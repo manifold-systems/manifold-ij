@@ -350,7 +350,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 
     _addedListeners.add( ijProject );
     project.getFileModificationManager().getManRefresher().addTypeSystemListenerAsWeakRef( this );
-    PsiManager.getInstance( ijProject ).addPsiTreeChangeListener( new PsiTreeChangeHandler() );
+    PsiManager.getInstance( ijProject ).addPsiTreeChangeListener( new PsiTreeChangeHandler(), ijProject );
   }
 
   private PsiClass createPsiClass( ManModule module, String fqn, String source )
