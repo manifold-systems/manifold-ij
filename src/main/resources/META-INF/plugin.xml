@@ -223,6 +223,10 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:<h3>
 <h4>
+Support for <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#extending-arrays">Array Extensions</a>.
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/205">#205</a>: Improve support for @Self, Fix check for already bootstrapped class
+<br>
 Manifold supports <b>Android Studio</b>!
 <br>
 Manifold supports <b>Kotlin</b>!
