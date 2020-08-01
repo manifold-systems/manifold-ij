@@ -1,9 +1,12 @@
 package manifold.ij.template;
 
+import com.intellij.injected.editor.VirtualFileWindow;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageParserDefinitions;
+import com.intellij.lang.LanguageUtil;
 import com.intellij.lang.ParserDefinition;
 import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.fileTypes.LanguageFileType;
 import com.intellij.openapi.fileTypes.PlainTextLanguage;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -12,15 +15,21 @@ import com.intellij.psi.MultiplePsiFilesPerDocumentFileViewProvider;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.source.PsiFileImpl;
+import com.intellij.psi.impl.source.tree.injected.Place;
 import com.intellij.psi.templateLanguages.TemplateDataElementType;
 import com.intellij.psi.templateLanguages.TemplateDataLanguageMappings;
 import com.intellij.psi.templateLanguages.TemplateLanguageFileViewProvider;
+import com.intellij.psi.tree.IElementType;
 import com.intellij.util.containers.ContainerUtil;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import static manifold.ij.template.psi.ManTemplateTokenType.CONTENT;
 import static manifold.ij.template.psi.ManTemplateTokenType.STMT;
 
@@ -88,6 +97,12 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
   @NotNull
   private static Language getTemplateDataLanguage( PsiManager manager, VirtualFile vfile )
   {
+    Language languageFromFragment = getLanguageFromFragment( vfile );
+    if( languageFromFragment != null )
+    {
+      return languageFromFragment;
+    }
+
     Language dataLang = TemplateDataLanguageMappings.getInstance( manager.getProject() ).getMapping( vfile );
     if( dataLang == null )
     {
@@ -104,6 +119,40 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
     }
 
     return dataLang;
+  }
+
+  @Nullable
+  private static Language getLanguageFromFragment( VirtualFile vfile )
+  {
+    if( vfile instanceof VirtualFileWindow )
+    {
+      // embedded template as a fragment
+
+      VirtualFileWindow fileWindow = (VirtualFileWindow)vfile;
+      String text = ((Place) ReflectUtil.method( fileWindow.getDocumentWindow(), "getShreds" ).invoke()).get( 0 ).getHost().getText();
+      int start = text.indexOf( "[>" );
+      if( start >= 0 )
+      {
+        String fragmentName = text.substring( start + 2 );
+        int end = fragmentName.indexOf( "<]" );
+        if( end > 0 )
+        {
+          fragmentName = fragmentName.substring( 0, end );
+          int lastDot = fragmentName.lastIndexOf( '.' );
+          if( lastDot > 0 )
+          {
+            fragmentName = fragmentName.substring( 0, lastDot );
+            FileType fileTypeByExtension = FileTypeManager.getInstance().getFileTypeByFileName( fragmentName );
+            Language fileTypeLanguage = LanguageUtil.getFileTypeLanguage( fileTypeByExtension );
+            if( fileTypeLanguage != null )
+            {
+              return fileTypeLanguage;
+            }
+          }
+        }
+      }
+    }
+    return null;
   }
 
   @NotNull
@@ -133,6 +182,23 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
   {
     return new ManTemplateFileViewProvider( getManager(), virtualFile, false, _baseLang, _contentLang );
   }
+
+//  @Override
+//  public IElementType getContentElementType( @NotNull Language lang )
+//  {
+//    if( lang.is( ManTemplateJavaLanguage.INSTANCE ) )
+//    {
+//      return getTemplateJavaElementType( getBaseLanguage() );
+//    }
+//    else if( lang.is( getTemplateDataLanguage() ) )
+//    {
+//      return getTemplateDataElementType( getBaseLanguage() );
+//    }
+//    else
+//    {
+//      return null;
+//    }
+//  }
 
   @Override
   protected PsiFile createFile( @NotNull Language lang )
