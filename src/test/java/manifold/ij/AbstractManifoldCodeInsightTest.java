@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import manifold.internal.runtime.UrlClassLoaderWrapper;
 import manifold.rt.api.util.PathUtil;
+import manifold.util.JreUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -146,8 +147,8 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
              : _sdk;
     }
 
-    @Override
-    protected Module createModule( @NotNull Project project, @NotNull Path moduleFilePath )
+    //@Override
+    protected Module createModule( @NotNull Project project, @NotNull String moduleFilePath )
     {
       Module module = super.createModule( project, moduleFilePath );
 //      for( String jarFileName : getLibs() )
@@ -159,6 +160,18 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
       PsiTestUtil.addLibrary( module, findToolsJar() );
       return module;
     }
+//    protected Module createModule( @NotNull Project project, @NotNull Path moduleFilePath )
+//    {
+//      Module module = super.createModule( project, moduleFilePath );
+////      for( String jarFileName : getLibs() )
+////      {
+////        PsiTestUtil.addLibrary( module, getPath_LibRoot() + File.separatorChar + jarFileName );
+////      }
+//      PsiTestUtil.addLibrary( module, getPathToLatestManifoldAll() );
+//      PsiTestUtil.addLibrary( module, getPathToLatestManifoldEp() );
+//      PsiTestUtil.addLibrary( module, findToolsJar() );
+//      return module;
+//    }
 
     /**
      * Override to handle real files, not "temp:" files (we use real files, not fake in-memory files,
