@@ -43,6 +43,7 @@ import manifold.ij.core.ManLibraryChecker;
 import manifold.ij.core.ManProject;
 import manifold.ij.extensions.StubBuilder;
 import manifold.ij.util.ManBundle;
+import manifold.rt.api.Array;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 
@@ -179,6 +180,13 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
       throw new IncorrectOperationException( ManBundle.message( "error.new.artifact.nopackage" ) );
     }
 
+    boolean isArrayExtension = Array.class.getTypeName().equals( fqnExtended );
+    if( isArrayExtension )
+    {
+      // Array extensions should use Object as @This param type
+      fqnExtended = Object.class.getTypeName();
+    }
+
     PsiClass psiExtended = JavaPsiFacade.getInstance( project ).findClass( fqnExtended, GlobalSearchScope.projectScope( project ) );
     if( psiExtended != null &&
         FileIndexUtil.isJavaSourceFile( project, psiExtended.getContainingFile().getVirtualFile() ) &&
@@ -192,7 +200,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
       "\n" +
       "import manifold.ext.rt.api.Extension;\n" +
       "import manifold.ext.rt.api.This;\n" +
-      "import " + fqnExtended + ";\n" +
+      (isArrayExtension ? "" : "import " + fqnExtended + ";\n") +
       "\n" +
       "@Extension\n" +
       "public class " + className + " {\n" +
