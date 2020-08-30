@@ -3,11 +3,13 @@ package manifold.ij.extensions;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.editor.markup.EffectType;
 import com.intellij.openapi.editor.markup.TextAttributes;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiComment;
 import com.intellij.psi.PsiElement;
@@ -67,14 +69,16 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
       return new Info();
     }
 
-    Info info = new Info();
-    String source = file.getText();
-    PreprocessorParser parser = new PreprocessorParser( source, t -> addDirective( t, info ) );
-    parser.parseFile( (message, pos) -> {
-      int errorPos = ensureErrorPosNotOnNewLine( source, pos );
-      info.addToIssues( message, errorPos );
+    return ApplicationManager.getApplication().runReadAction( (Computable<Info>) () -> {
+      Info info = new Info();
+      String source = file.getText();
+      PreprocessorParser parser = new PreprocessorParser( source, t -> addDirective( t, info ) );
+      parser.parseFile( ( message, pos ) -> {
+        int errorPos = ensureErrorPosNotOnNewLine( source, pos );
+        info.addToIssues( message, errorPos );
+      } );
+      return info;
     } );
-    return info;
   }
 
   private int ensureErrorPosNotOnNewLine( String source, int pos )
