@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.LanguageLevelProjectExtension;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
@@ -147,9 +148,11 @@ public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeI
              : _sdk;
     }
 
-    //@Override
-    protected Module createModule( @NotNull Project project, @NotNull String moduleFilePath )
+    @NotNull
+    @Override
+    public Module createMainModule( @NotNull Project project )
     {
+      String moduleFilePath = FileUtil.join( FileUtil.getTempDirectory(), TEST_MODULE_NAME + ".iml" );
       Module module = super.createModule( project, moduleFilePath );
 //      for( String jarFileName : getLibs() )
 //      {
