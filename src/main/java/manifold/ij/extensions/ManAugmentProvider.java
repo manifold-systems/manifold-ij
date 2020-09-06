@@ -39,7 +39,7 @@ import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
 import manifold.rt.api.Array;
 import manifold.api.type.ITypeManifold;
-import manifold.api.type.SourcePosition;
+import manifold.rt.api.SourcePosition;
 import manifold.ext.IExtensionClassProducer;
 import manifold.ext.rt.api.Extension;
 import manifold.ext.rt.api.This;

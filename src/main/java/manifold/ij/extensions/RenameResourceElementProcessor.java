@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import manifold.api.util.ManIdentifierUtil;
+import manifold.rt.api.util.ManIdentifierUtil;
 import manifold.ij.core.ManProject;
 import manifold.rt.api.util.Pair;
 import org.jetbrains.annotations.NotNull;

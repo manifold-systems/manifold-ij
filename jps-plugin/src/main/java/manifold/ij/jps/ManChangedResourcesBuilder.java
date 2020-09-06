@@ -285,7 +285,7 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder implements Buil
           "//!! Temporary generated file to facilitate incremental compilation of Manifold resources\n" +
           "package _temp_;\n" +
           "\n" +
-          "import manifold.api.type.IncrementalCompile;\n" +
+          "import manifold.rt.api.IncrementalCompile;\n" +
           "\n" +
           addResourceRoots( resourceRoots ) +
           "@IncrementalCompile( driverClass = \"manifold.ij.jps.IjResourceIncrementalCompileDriver\",\n" +
