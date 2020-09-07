@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import manifold.api.darkj.DarkJavaTypeManifold;
-import manifold.api.type.SourcePosition;
+import manifold.rt.api.SourcePosition;
 import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.Nullable;
 

@@ -4,6 +4,7 @@ import com.intellij.AppTopics;
 import com.intellij.ProjectTopics;
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor;
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightVisitorImpl;
+import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilerPaths;
@@ -31,16 +32,7 @@ import com.intellij.util.messages.MessageBusConnection;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -653,12 +645,15 @@ public class ManProject
     List<VirtualFile> sourceFolders = getSourceRoots( ijModule );
     VirtualFile outputPath = CompilerPaths.getModuleOutputDirectory( ijModule, false );
     return createModule( ijModule, getInitialClasspaths( ijModule ),
-      sourceFolders.stream().map( this::toDirectory ).collect( Collectors.toList() ),
+      sourceFolders.stream().map( this::toDirectory ).collect( Collectors.toCollection( () -> new LinkedHashSet<>() ) ),
       outputPath == null ? null : getFileSystem().getIDirectory( outputPath ) );
   }
 
-  private ManModule createModule( Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePaths, IDirectory outputPath )
+  private ManModule createModule( Module ijModule, Set<IDirectory> classpath, Set<IDirectory> sourcePaths, IDirectory outputPath )
   {
+    // Expand path to include processorPath (type manifolds can be listed there exclusively)
+    classpath = addProcessorPath( ijModule, classpath );
+
     // Maybe expand paths to include Class-Path attribute from Manifest...
     classpath = addFromManifestClassPath( classpath );
     sourcePaths = addFromManifestClassPath( sourcePaths );
@@ -667,10 +662,29 @@ public class ManProject
     List<IDirectory> sourceRoots = new ArrayList<>( sourcePaths );
     scanPaths( classpath, sourceRoots );
 
-    return new ManModule( this, ijModule, classpath, sourceRoots, Collections.singletonList( outputPath ), getExcludedFolders( ijModule ) );
+    return new ManModule( this, ijModule, new ArrayList<>( classpath ), sourceRoots, Collections.singletonList( outputPath ), getExcludedFolders( ijModule ) );
   }
 
-  private static void scanPaths( List<IDirectory> paths, List<IDirectory> roots )
+  private Set<IDirectory> addProcessorPath( Module ijModule, Set<IDirectory> classpath )
+  {
+    String processorPath = CompilerConfiguration.getInstance( _ijProject ).getAnnotationProcessingConfiguration( ijModule ).getProcessorPath();
+    if( !processorPath.isEmpty() )
+    {
+      for( StringTokenizer tokenizer = new StringTokenizer( processorPath, File.pathSeparator ); tokenizer.hasMoreTokens(); )
+      {
+        String path = tokenizer.nextToken();
+        File file = new File( path );
+        if( file.exists() )
+        {
+          IDirectory dir = getFileSystem().getIDirectory( file );
+          classpath.add( dir );
+        }
+      }
+    }
+    return classpath;
+  }
+
+  private static void scanPaths( Set<IDirectory> paths, List<IDirectory> roots )
   {
     //noinspection Convert2streamapi
     for( IDirectory root: paths )
@@ -712,14 +726,14 @@ public class ManProject
    *
    * @see java.util.jar.Attributes.Name#CLASS_PATH
    */
-  private List<IDirectory> addFromManifestClassPath( List<IDirectory> classpath )
+  private Set<IDirectory> addFromManifestClassPath( Set<IDirectory> classpath )
   {
     if( classpath == null )
     {
       return null;
     }
 
-    ArrayList<IDirectory> newClasspath = new ArrayList<>();
+    LinkedHashSet<IDirectory> newClasspath = new LinkedHashSet<>();
     for( IDirectory root: classpath )
     {
       //add the root JAR itself first, preserving ordering
@@ -756,10 +770,7 @@ public class ManProject
               }
               File dirOrJar = new File( url.toURI() );
               IDirectory idir = getFileSystem().getIDirectory( dirOrJar );
-              if( !newClasspath.contains( idir ) )
-              {
-                newClasspath.add( idir );
-              }
+              newClasspath.add( idir );
             }
           }
         }
@@ -808,10 +819,10 @@ public class ManProject
     return getFileSystem().getIDirectory( file );
   }
 
-  private static List<IDirectory> getInitialClasspaths( Module ijModule )
+  private static Set<IDirectory> getInitialClasspaths( Module ijModule )
   {
     List<String> paths = getDirectClassPaths( ijModule );
-    List<IDirectory> dirs = new ArrayList<>();
+    Set<IDirectory> dirs = new LinkedHashSet<>();
     for( String path: paths )
     {
       dirs.add( manProjectFrom( ijModule ).getFileSystem().getIDirectory( new File( path ) ) );

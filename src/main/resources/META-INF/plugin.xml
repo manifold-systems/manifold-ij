@@ -223,6 +223,20 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:<h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/208">#208</a>: `withBearerAuthorization` does not populate correct Authorization header value
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/209">#209</a>: Patched classes via --patch-module are ignored
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/212">#212</a>: Ensure annotator runs in read action
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/213">#213</a>: Line numbers are wrong for javac reported errors following preprocessor directives
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/214">#214</a>: manifold-graphql needs to make its manifold-strings dependency `optional`
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/215">#215</a>: Runtime bootstrap should not open compiler jdk module (Java 9+)
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/216">#216</a>: Manifold dependencies declared with `provided` or `compileOnly` should instead be used exclusively in the `processorPath`
+<br>
 Support for <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#extending-arrays">Array Extensions</a>.
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/205">#205</a>: Improve support for @Self, Fix check for already bootstrapped class

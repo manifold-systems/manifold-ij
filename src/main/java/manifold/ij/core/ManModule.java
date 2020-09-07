@@ -27,7 +27,7 @@ import manifold.api.host.Dependency;
 import manifold.api.type.ITypeManifold;
 import manifold.api.type.ResourceFileTypeManifold;
 import manifold.api.type.TypeName;
-import manifold.api.util.ManIdentifierUtil;
+import manifold.rt.api.util.ManIdentifierUtil;
 import manifold.exceptions.CheckedExceptionSuppressor;
 import manifold.ext.IExtensionClassProducer;
 import manifold.ij.fs.IjFile;
@@ -64,11 +64,21 @@ public class ManModule extends SimpleModule
         return result.stream().map( ManProject::getModule ).collect( Collectors.toList() );
       } );
     _isStringsEnabled = LocklessLazyVar.make(
-      () -> null != JavaPsiFacade.getInstance( getProject().getNativeProject() )
-        .findClass( StringLiteralTemplateProcessor.class.getTypeName(), GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( _ijModule ) ) );
+      () -> null != findClass( StringLiteralTemplateProcessor.class.getTypeName() ) );
     _isExceptionsEnabled = LocklessLazyVar.make(
-      () -> null != JavaPsiFacade.getInstance( getProject().getNativeProject() )
-        .findClass( CheckedExceptionSuppressor.class.getTypeName(), GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( _ijModule ) ) );
+      () -> null != findClass( CheckedExceptionSuppressor.class.getTypeName() ) );
+  }
+
+  private Class<?> findClass( String fqn )
+  {
+    try
+    {
+      return Class.forName( fqn, false, _typeManifoldClassLoader );
+    }
+    catch( ClassNotFoundException cnfe )
+    {
+      return null;
+    }
   }
 
   @Override

@@ -22,7 +22,7 @@ import com.intellij.psi.impl.source.tree.java.PsiLiteralExpressionImpl;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.tree.IElementType;
 import manifold.api.fs.IFileFragment;
-import manifold.api.type.FragmentValue;
+import manifold.rt.api.FragmentValue;
 import org.jetbrains.annotations.NotNull;
 
 /**

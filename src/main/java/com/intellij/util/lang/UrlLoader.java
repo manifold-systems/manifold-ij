@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
-import manifold.api.host.NoBootstrap;
+import manifold.rt.api.NoBootstrap;
 import org.jetbrains.annotations.NotNull;
 import sun.net.www.ParseUtil;
 
