@@ -68,6 +68,7 @@ public final class MessageUtil
     popupFactory.createHtmlTextBalloonBuilder( message, messageType, new PluginManagerMain.MyHyperlinkListener() )
       .setCloseButtonEnabled( true )
       .setShowCallout( false )
+      .setHideOnClickOutside( false )
       .setDialogMode( true )
       .createBalloon()
       .show( getPosition( project, placement ), Balloon.Position.atRight );

@@ -232,19 +232,15 @@ public class ManProject
           !CheckLicense.isLicensed() &&
           !ApplicationManager.getApplication().isUnitTestMode() )
       {
-        _manInUse = false;
+        // let the plugin be free on Ultimate, but nag about it a little bit
+        //_manInUse = false;
+
         ApplicationManager.getApplication().invokeLater( () ->
           MessageUtil.showWarning( _ijProject, MessageUtil.Placement.CENTER,
-            "Your copy of the <b>Manifold</b> plugin is not licensed or your license has<br>" +
-            "expired.<br>" +
+            "Your copy of the <b>Manifold</b> plugin is not licensed or your license has expired.<br>" +
             "<br>" +
-            "To continue using the plugin please visit the <a href=\"https://plugins.jetbrains.com/plugin/10057-manifold\">JetBrains Marketplace</a> to<br>" +
-            "directly create or update your Manifold plugin subscription.<br>" +
-            "<br>" +
-            "Contact <a href=\"https://www.jetbrains.com/support/sales/#department=american&tab=email-sales\">JetBrains Sales</a> regarding student discounts and other offers.<br>" +
-            "<br>" +
-            "Visit <a href=\"http://manifold.systems\">http://manifold.systems</a> to learn more about the Manifold plugin<br>" +
-            "for IntelliJ IDEA.<br>" ) );
+            "Please configure your plugin license or trial period using the menu command:<br><br>" +
+            "&nbsp;&nbsp;&nbsp;<b>Help | Register...</b><br><br>" ) );
       }
     }
   }
