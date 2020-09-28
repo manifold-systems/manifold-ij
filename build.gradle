@@ -114,7 +114,7 @@ runIde {
 
 patchPluginXml {
   sinceBuild '201.0'
-  untilBuild '999.*'
+  untilBuild '202.*'
 }
 
 publishPlugin {
