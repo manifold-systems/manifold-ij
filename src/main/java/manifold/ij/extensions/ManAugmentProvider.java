@@ -417,15 +417,12 @@ public class ManAugmentProvider extends PsiAugmentProvider
     List<SrcType> typeParams = method.getTypeVariables();
 
     // extension method must reflect extended type's type vars before its own
-    PsiTypeParameterList typeParameterList = extendedType.getTypeParameterList();
-    if( typeParameterList != null )
+    PsiTypeParameterList typeParameterList = getTypeParameterList( extendedType );
+    int extendedTypeVarCount = typeParameterList == null ? 0 : typeParameterList.getTypeParameters().length;
+    for( int i = isInstanceExtensionMethod ? extendedTypeVarCount : 0; i < typeParams.size(); i++ )
     {
-      int extendedTypeVarCount = typeParameterList.getTypeParameters().length;
-      for( int i = isInstanceExtensionMethod ? extendedTypeVarCount : 0; i < typeParams.size(); i++ )
-      {
-        SrcType typeVar = typeParams.get( i );
-        srcMethod.addTypeVar( typeVar );
-      }
+      SrcType typeVar = typeParams.get( i );
+      srcMethod.addTypeVar( typeVar );
     }
 
     List<SrcParameter> params = method.getParameters();
@@ -449,6 +446,18 @@ public class ManAugmentProvider extends PsiAugmentProvider
 
     //srcClass.addMethod( srcMethod );
     return srcMethod;
+  }
+
+  private PsiTypeParameterList getTypeParameterList( PsiClass extendedType )
+  {
+    String name = extendedType.getName();
+    if( name != null && name.equals( "__Array__" ) )
+    {
+      // ignore type variable on IJ's internal array type,
+      // it must behave as the Java compiler's array type, which is not generic
+      return null;
+    }
+    return extendedType.getTypeParameterList();
   }
 
   private void copyAnnotations( AbstractSrcMethod<?> method, SrcMethod srcMethod )

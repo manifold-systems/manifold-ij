@@ -4,7 +4,7 @@
   <description>
     <![CDATA[
 <h2><a href="#what-is-manifold" id="what-is-manifold">What is Manifold?</a></h2>
-<p>Manifold plugins into Java to supplement it with powerful features, including:</p>
+<p>Manifold plugs into Java to supplement it with powerful features, including:</p>
 <ul>
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold"><em>Type-safe</em> Meta-programming</a></li>
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extension Methods</a></li>
