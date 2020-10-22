@@ -1,6 +1,5 @@
 package manifold.ij.core;
 
-import com.intellij.ide.plugins.cl.PluginClassLoader;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -12,7 +11,6 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,6 +20,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import manifold.ij.template.psi.ManTemplateFile;
 import manifold.ij.util.MessageUtil;
+import manifold.util.ReflectUtil;
 
 public class ManLibraryChecker
 {
@@ -194,16 +193,38 @@ public class ManLibraryChecker
   private List<URL> getUrls()
   {
     ClassLoader cl = getClass().getClassLoader();
-    if( cl instanceof PluginClassLoader )
+    ReflectUtil.LiveMethodRef getURLs = getURLsMethod( cl );
+    if( getURLs != null )
     {
-      return ((PluginClassLoader)cl).getUrls();
-    }
-    if( cl instanceof URLClassLoader )
-    {
-      // no plugin classloader for tests
-      return Arrays.asList( ((URLClassLoader)cl).getURLs() );
+      Object urls = getURLs.invoke();
+      //noinspection unchecked
+      return urls.getClass().isArray()
+        ? Arrays.asList( (URL[])urls )
+        : (List<URL>)urls;
     }
     throw new IllegalStateException();
+  }
+
+  private static ReflectUtil.LiveMethodRef getURLsMethod( Object receiver )
+  {
+    ReflectUtil.LiveMethodRef getURLs = ReflectUtil.WithNull.methodWithReturn( receiver, "getURLs|getUrls", URL[].class );
+    if( getURLs == null )
+    {
+      getURLs = ReflectUtil.WithNull.methodWithReturn( receiver, "getURLs|getUrls", List.class );
+      if( getURLs == null && receiver instanceof ClassLoader )
+      {
+        ReflectUtil.LiveFieldRef ucpField = ReflectUtil.WithNull.field( receiver, "ucp" );
+        if( ucpField != null )
+        {
+          Object ucp = ucpField.get();
+          if( ucp != null )
+          {
+            getURLs = getURLsMethod( ucp );
+          }
+        }
+      }
+    }
+    return getURLs;
   }
 
   private String getVersionFromJarName( String fileName )

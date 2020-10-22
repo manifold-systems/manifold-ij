@@ -51,7 +51,17 @@ class BuildPropertiesFilePersistenceListener implements FileDocumentManagerListe
 
   private boolean isBuildProperties( Document document )
   {
-    PsiFile psiFile = PsiDocumentManager.getInstance( _ijProject ).getPsiFile( document );
+    PsiFile psiFile;
+    try
+    {
+      psiFile = PsiDocumentManager.getInstance( _ijProject ).getPsiFile( document );
+    }
+    catch( NullPointerException npe )
+    {
+      // NPE can happen for some reason due to "Recursive file view provider creation"
+      return false;
+    }
+
     if( psiFile != null )
     {
       VirtualFile vfile = FileDocumentManager.getInstance().getFile( document );
