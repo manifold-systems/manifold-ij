@@ -1,5 +1,6 @@
 package manifold.ij.core;
 
+import com.intellij.ide.plugins.cl.PluginClassLoader;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -193,6 +194,11 @@ public class ManLibraryChecker
   private List<URL> getUrls()
   {
     ClassLoader cl = getClass().getClassLoader();
+    if( cl instanceof PluginClassLoader )
+    {
+      return ((PluginClassLoader)cl).getUrls();
+    }
+
     ReflectUtil.LiveMethodRef getURLs = getURLsMethod( cl );
     if( getURLs != null )
     {
