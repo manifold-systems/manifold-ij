@@ -4,6 +4,11 @@ configurations {
   manifoldAll
 }
 
+// Java 8 is required for JPS, otherwise an IJ project use a Java 8 compiler
+// will fail to load Java 11 compiled JPS classes
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
 intellij {
 //  type = 'JPS'
   version defaultIjVersion // e.g.,'2018.2.4'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
