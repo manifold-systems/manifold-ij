@@ -63,22 +63,13 @@ public class ManModule extends SimpleModule
         ModuleUtilCore.collectModulesDependsOn( getIjModule(), result );
         return result.stream().map( ManProject::getModule ).collect( Collectors.toList() );
       } );
-    _isStringsEnabled = LocklessLazyVar.make(
-      () -> null != findClass( StringLiteralTemplateProcessor.class.getTypeName() ) );
-    _isExceptionsEnabled = LocklessLazyVar.make(
-      () -> null != findClass( CheckedExceptionSuppressor.class.getTypeName() ) );
+    _isStringsEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-strings" ) || hasJar( "manifold-all" ) );
+    _isExceptionsEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-exceptions" ) || hasJar( "manifold-all" ) );
   }
 
-  private Class<?> findClass( String fqn )
+  private boolean hasJar( String jarName )
   {
-    try
-    {
-      return Class.forName( fqn, false, _typeManifoldClassLoader );
-    }
-    catch( ClassNotFoundException cnfe )
-    {
-      return null;
-    }
+    return Arrays.stream( _typeManifoldClassLoader.getURLs() ).anyMatch( url -> url.toString().contains( jarName ) );
   }
 
   @Override
