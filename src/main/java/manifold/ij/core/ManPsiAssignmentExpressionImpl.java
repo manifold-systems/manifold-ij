@@ -2,52 +2,46 @@ package manifold.ij.core;
 
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
-import com.intellij.psi.impl.source.tree.ChildRole;
-import com.intellij.psi.impl.source.tree.JavaElementType;
-import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
-import com.intellij.psi.impl.source.tree.java.PsiJavaTokenImpl;
+import com.intellij.psi.impl.source.resolve.JavaResolveCache;
+import com.intellij.psi.impl.source.tree.java.PsiAssignmentExpressionImpl;
 import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.util.PsiUtil;
+import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.util.IncorrectOperationException;
 import manifold.ij.extensions.ManJavaResolveCache;
 import org.jetbrains.annotations.NotNull;
 
-// Supports binding expressions and binary operator overloading
-public class ManPsiBinaryExpressionImpl extends PsiBinaryExpressionImpl implements IManOperatorOverloadReference
+// For operator overloading of compound assignment operators +=, *=, etc.
+public class ManPsiAssignmentExpressionImpl extends PsiAssignmentExpressionImpl implements IManOperatorOverloadReference
 {
-  public ManPsiBinaryExpressionImpl()
+  public ManPsiAssignmentExpressionImpl()
   {
-    this( JavaElementType.BINARY_EXPRESSION );
+    super();
   }
 
-  protected ManPsiBinaryExpressionImpl( @NotNull IElementType elementType )
-  {
-    super( elementType );
-  }
-
+  // Handle compound equality operator overloading +=, *=, etc.
   @Override
-  @NotNull
-  public PsiJavaToken getOperationSign()
+  public PsiType getType()
   {
-    PsiJavaToken child = (PsiJavaToken)findChildByRoleAsPsiElement( ChildRole.OPERATION_SIGN );
-    if( child == null )
+    PsiExpression lExpression = PsiUtil.deparenthesizeExpression( getLExpression() );
+    if( !(lExpression instanceof PsiReferenceExpression || lExpression instanceof PsiArrayAccessExpression) )
     {
-      // pose as multiplication to get by
-      child = new PsiJavaTokenImpl( JavaTokenType.ASTERISK, "*" );
+      return null;
     }
-    return child;
+    return JavaResolveCache.getInstance( getProject() ).getType( this, e -> lExpression.getType() );
   }
 
   @Override
   public boolean isOverloaded()
   {
-    if( getROperand() == null )
+    if( getRExpression() == null )
     {
       return false;
     }
     PsiMethod method = ManJavaResolveCache.getBinaryOperatorMethod(
       getOperationSign(),
-      getLOperand().getType(),
-      getROperand().getType(), this );
+      getLExpression().getType(),
+      getRExpression().getType(), this );
     return method != null;
   }
 
@@ -70,14 +64,14 @@ public class ManPsiBinaryExpressionImpl extends PsiBinaryExpressionImpl implemen
 
   @Override
   public PsiElement resolve() {
-    if( getROperand() == null )
+    if( getRExpression() == null )
     {
       return null;
     }
     PsiMethod method = ManJavaResolveCache.getBinaryOperatorMethod(
       getOperationSign(),
-      getLOperand().getType(),
-      getROperand().getType(), this );
+      getLExpression().getType(),
+      getRExpression().getType(), this );
     return method;
   }
 

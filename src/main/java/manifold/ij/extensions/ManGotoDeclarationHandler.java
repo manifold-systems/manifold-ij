@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import manifold.api.darkj.DarkJavaTypeManifold;
+import manifold.ij.core.IManOperatorOverloadReference;
 import manifold.rt.api.SourcePosition;
 import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +53,12 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
       PsiElement resolve = resolveRef( parent );
       if( resolve instanceof PsiModifierListOwner )
       {
-        return find( (PsiModifierListOwner)resolve );
+        PsiElement answer = find( (PsiModifierListOwner)resolve );
+        if( answer == null )
+        {
+          answer = resolve;
+        }
+        return answer;
       }
     }
     return null;
@@ -83,10 +89,10 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     if( file != null )
     {
       ManifoldPsiClass facade = resolve instanceof ManifoldPsiClass ? (ManifoldPsiClass)resolve : file.getUserData( ManifoldPsiClass.KEY_MANIFOLD_PSI_CLASS );
-      PsiElement annotations = find( resolve, facade );
-      if( annotations != null )
+      PsiElement target = find( resolve, facade );
+      if( target != null )
       {
-        return annotations;
+        return target;
       }
     }
     return null;
