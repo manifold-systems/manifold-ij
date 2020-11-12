@@ -3,28 +3,11 @@ package manifold.ij.extensions;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Ref;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.JavaTokenType;
-import com.intellij.psi.PsiBinaryExpression;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiEnumConstant;
-import com.intellij.psi.PsiExpression;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiJavaToken;
-import com.intellij.psi.PsiMember;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiParenthesizedExpression;
-import com.intellij.psi.PsiPrimitiveType;
-import com.intellij.psi.PsiSubstitutor;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeParameter;
-import com.intellij.psi.ResolveState;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.impl.source.resolve.JavaResolveCache;
 import com.intellij.psi.impl.source.tree.ChildRole;
-import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
+import com.intellij.psi.impl.source.tree.CompositeElement;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.scope.ElementClassHint;
 import com.intellij.psi.scope.NameHint;
@@ -33,9 +16,11 @@ import com.intellij.psi.scope.util.PsiScopesUtil;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.util.Function;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
 import manifold.ij.core.ManProject;
 import manifold.internal.javac.AbstractBinder.Node;
 import org.jetbrains.annotations.NotNull;
@@ -46,6 +31,8 @@ public class ManJavaResolveCache extends JavaResolveCache
   // public static final Key<CachedBindingPsiType> KEY_BINARY_EXPR_TYPE = new Key<>( "KEY_BINARY_EXPR_TYPE" );
   private static final String COMPARE_TO = "compareTo";
   private static final String COMPARE_TO_USING = "compareToUsing";
+  public static final String INDEXED_GET = "get";
+  public static final String INDEXED_SET = "set";
   private static Map<IElementType, String> BINARY_OP_TO_NAME = new HashMap<IElementType, String>()
   {{
     put( JavaTokenType.PLUS, "plus" );
@@ -53,6 +40,13 @@ public class ManJavaResolveCache extends JavaResolveCache
     put( JavaTokenType.ASTERISK, "times" );
     put( JavaTokenType.DIV, "div" );
     put( JavaTokenType.PERC, "rem" );
+    put( JavaTokenType.PLUSEQ, "plus" );
+    put( JavaTokenType.MINUSEQ, "minus" );
+    put( JavaTokenType.ASTERISKEQ, "times" );
+    put( JavaTokenType.DIVEQ, "div" );
+    put( JavaTokenType.PERCEQ, "rem" );
+    put( JavaTokenType.PLUSPLUS, "inc" );
+    put( JavaTokenType.MINUSMINUS, "dec" );
     // note ==, !=, >, >=, <, <=  are covered via IComparableWith**
   }};
 
@@ -70,9 +64,10 @@ public class ManJavaResolveCache extends JavaResolveCache
       return super.getType( expr, f );
     }
 
-    if( expr instanceof PsiBinaryExpression )
+    if( expr instanceof PsiBinaryExpression ||
+      expr instanceof PsiAssignmentExpression )
     {
-      PsiType type = getTypeForOverloadedBinaryOperator( (PsiBinaryExpression)expr );
+      PsiType type = getTypeForOverloadedBinaryOperator( expr );
       if( type != null )
       {
         return type;
@@ -89,14 +84,14 @@ public class ManJavaResolveCache extends JavaResolveCache
       return false;
     }
 
-    PsiElement opChild = getOpChild( (PsiBinaryExpressionImpl)expr );
+    PsiElement opChild = getOpChild( (CompositeElement)expr );
     IElementType op = opChild == null ? null : ((PsiJavaToken)opChild).getTokenType();
     return op == null;
   }
 
-  static PsiType getTypeForOverloadedBinaryOperator( final PsiBinaryExpression expr )
+  static PsiType getTypeForOverloadedBinaryOperator( final PsiExpression expr )
   {
-    PsiElement opChild = getOpChild( (PsiBinaryExpressionImpl)expr );
+    PsiElement opChild = getOpChild( (CompositeElement)expr );
     IElementType op = opChild == null ? null : ((PsiJavaToken)opChild).getTokenType();
     String opName = op == null ? null : BINARY_OP_TO_NAME.get( op );
     if( opName == null )
@@ -110,7 +105,7 @@ public class ManJavaResolveCache extends JavaResolveCache
           return null;
         }
         //return CachedBindingPsiType.getOrCreate( expr )._type;
-        PsiBinaryExpression newExpr = new IjBinder( expr ).bind( getBindingOperands( expr, new ArrayList<>() ) );
+        PsiBinaryExpression newExpr = new IjBinder( (PsiBinaryExpression)expr ).bind( getBindingOperands( expr, new ArrayList<>() ) );
         return newExpr == null ? null : newExpr.getType();
       }
       if( isComparableOperator( op ) )
@@ -123,20 +118,25 @@ public class ManJavaResolveCache extends JavaResolveCache
       }
     }
 
-    PsiType left = expr.getLOperand().getType();
+    PsiType left = expr instanceof PsiBinaryExpression
+      ? ((PsiBinaryExpression)expr).getLOperand().getType()
+      : ((PsiAssignmentExpression)expr).getLExpression().getType();
     if( left == null )
     {
       return null;
     }
 
-    PsiExpression rOperand = expr.getROperand();
+    PsiExpression rOperand = expr instanceof PsiBinaryExpression
+      ? ((PsiBinaryExpression)expr).getROperand()
+      : ((PsiAssignmentExpression)expr).getRExpression();
     if( rOperand == null )
     {
       return null;
     }
 
     PsiType right = rOperand.getType();
-    if( right == null || left instanceof PsiPrimitiveType && right instanceof PsiPrimitiveType )
+    if( right == null ||
+      left instanceof PsiPrimitiveType && right instanceof PsiPrimitiveType )
     {
       return null;
     }
@@ -147,7 +147,7 @@ public class ManJavaResolveCache extends JavaResolveCache
       type = getBinaryType( opName, right, left, expr );
     }
     else if( type == null && opName.equals( COMPARE_TO_USING ) &&
-             !(left instanceof PsiPrimitiveType) && isRelationalOperator( op ) )
+      !(left instanceof PsiPrimitiveType) && isRelationalOperator( op ) )
     {
       // Support > >= < <= on any Comparable implementor
       type = getBinaryType( COMPARE_TO, left, right, expr );
@@ -161,7 +161,7 @@ public class ManJavaResolveCache extends JavaResolveCache
 
   private static boolean isParentBindingExpr( PsiElement expr )
   {
-    if( expr instanceof PsiBinaryExpression && getOpChild( (PsiBinaryExpressionImpl)expr ) == null )
+    if( expr instanceof PsiBinaryExpression && getOpChild( (CompositeElement)expr ) == null )
     {
       return true;
     }
@@ -173,14 +173,14 @@ public class ManJavaResolveCache extends JavaResolveCache
   }
 
   @Nullable
-  static PsiType getBinaryType( IElementType op, PsiType left, PsiType right, PsiBinaryExpression context )
+  static PsiType getBinaryType( IElementType op, PsiType left, PsiType right, PsiExpression context )
   {
     String opName = BINARY_OP_TO_NAME.get( op );
     return getBinaryType( opName, left, right, context );
   }
 
   @Nullable
-  static PsiType getBinaryType( String opName, PsiType left, PsiType right, PsiBinaryExpression context )
+  public static PsiType getBinaryType( String opName, PsiType left, PsiType right, PsiExpression context )
   {
     PsiClass psiClassLeft = PsiTypesUtil.getPsiClass( left );
     if( psiClassLeft == null )
@@ -197,7 +197,7 @@ public class ManJavaResolveCache extends JavaResolveCache
     }
 
     // also look for default interface methods
-    for( PsiType iface: left.getSuperTypes() )
+    for( PsiType iface : left.getSuperTypes() )
     {
       PsiClass psiIface = PsiTypesUtil.getPsiClass( iface );
       if( psiIface != null && psiIface.isInterface() )
@@ -217,7 +217,65 @@ public class ManJavaResolveCache extends JavaResolveCache
   }
 
   @Nullable
-  private static PsiType getGenericBinaryOperationReturnType( String opName, PsiType left, PsiType right, PsiBinaryExpression context )
+  public static PsiMethod getBinaryOperatorMethod( PsiJavaToken op, PsiType left, PsiType right, PsiExpression context )
+  {
+    String opName = BINARY_OP_TO_NAME.get( op.getTokenType() );
+    if( opName == null && isComparableOperator( op.getTokenType() ) )
+    {
+      opName = COMPARE_TO_USING;
+    }
+
+    PsiMethod method = getBinaryOperatorMethod( opName, left, right, context );
+
+    if( method == null && COMPARE_TO_USING.equals( opName ) &&
+      !(left instanceof PsiPrimitiveType) && isRelationalOperator( op.getTokenType() ) )
+    {
+      // Support > >= < <= on any Comparable implementor
+      method = getBinaryOperatorMethod( COMPARE_TO, left, right, context );
+    }
+
+    return method;
+  }
+
+  @Nullable
+  public static PsiMethod getBinaryOperatorMethod( String opName, PsiType left, PsiType right, PsiExpression context )
+  {
+    PsiClass psiClassLeft = PsiTypesUtil.getPsiClass( left );
+    if( psiClassLeft == null )
+    {
+      return null;
+    }
+
+    PsiMethod[] members = psiClassLeft.getAllMethods();
+
+    PsiMethod method = getBinaryOperatorMethod( opName, left, right, members, context );
+    if( method != null )
+    {
+      return method;
+    }
+
+    // also look for default interface methods
+    for( PsiType iface : left.getSuperTypes() )
+    {
+      PsiClass psiIface = PsiTypesUtil.getPsiClass( iface );
+      if( psiIface != null && psiIface.isInterface() )
+      {
+        if( iface instanceof PsiClassType )
+        {
+          method = getBinaryOperatorMethod( opName, iface, right, psiIface.getAllMethods(), context );
+          if( method != null )
+          {
+            return method;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  @Nullable
+  private static PsiType getGenericBinaryOperationReturnType( String opName, PsiType left, PsiType right, PsiExpression context )
   {
     int paramCount = opName.equals( COMPARE_TO_USING ) ? 2 : 1;
     PsiMethodCallExpressionImpl testExpr = (PsiMethodCallExpressionImpl)JavaPsiFacade.getInstance( context.getProject() )
@@ -233,10 +291,10 @@ public class ManJavaResolveCache extends JavaResolveCache
   }
 
   @Nullable
-  private static PsiType getBinaryOperationReturnType( String opName, PsiType left, PsiType right, PsiMethod[] members, PsiBinaryExpression context )
+  private static PsiType getBinaryOperationReturnType( String opName, PsiType left, PsiType right, PsiMethod[] members, PsiExpression context )
   {
-    int paramCount = opName.equals( COMPARE_TO_USING ) ? 2 : 1;
-    for( PsiMethod m: members )
+    int paramCount = opName.equals( COMPARE_TO_USING ) || opName.equals( INDEXED_SET ) ? 2 : 1;
+    for( PsiMethod m : members )
     {
       if( m.getParameterList().getParametersCount() != paramCount )
       {
@@ -290,11 +348,68 @@ public class ManJavaResolveCache extends JavaResolveCache
     return null;
   }
 
+  @Nullable
+  private static PsiMethod getBinaryOperatorMethod( String opName, PsiType left, PsiType right, PsiMethod[] members, PsiExpression context )
+  {
+    if( opName == null )
+    {
+      return null;
+    }
+    int paramCount = right == null ? 0 : opName.equals( COMPARE_TO_USING ) || opName.equals( INDEXED_SET ) ? 2 : 1;
+    for( PsiMethod m : members )
+    {
+      if( m.getParameterList().getParametersCount() != paramCount )
+      {
+        continue;
+      }
+
+      if( opName.equals( m.getName() ) )
+      {
+        PsiType paramType = right == null ? null : m.getParameterList().getParameters()[0].getType();
+        PsiType parameterizedParam;
+        PsiSubstitutor substitutor = null;
+        if( left instanceof PsiClassType && paramType != null )
+        {
+          substitutor = getMemberSubstitutor( left, m );
+          parameterizedParam = substitutor.substitute( paramType );
+
+          // If the parameter is a type variable, use the parser facade to get the return type, but this is quite slow...
+          //todo: researching a way to avoid using the parser facade and use substitutors etc.
+          if( parameterizedParam instanceof PsiClassReferenceType )
+          {
+            PsiClass paramRef = ((PsiClassReferenceType)parameterizedParam).resolve();
+            if( paramRef instanceof PsiTypeParameter )
+            {
+              return m;
+            }
+          }
+//
+//          PsiSubstitutor castSub = TypeConversionUtil.getSuperClassSubstitutor(plainClass, (PsiClassType)castType);
+//          PsiType typeAfterCast = toRaw(castSub.substitute(method.getReturnType()));
+//
+//          TypeConversionUtil.getSuperClassSubstitutor(
+//            ((ClsTypeParameterImpl)((PsiClassReferenceType)paramType).resolve()).getExtendsListTypes()[0].resolveGenerics().getElement(), (PsiClassType)right );
+//
+//          JavaGenericsUtil.isRawToGeneric( ((ClsTypeParameterImpl)((PsiClassReferenceType)paramType).resolve()).getExtendsListTypes()[0], (PsiClassType)right )
+        }
+        else
+        {
+          parameterizedParam = paramType;
+        }
+        if( right == null || parameterizedParam.isAssignableFrom( right ) )
+        {
+          return m;
+        }
+      }
+    }
+    return null;
+  }
+
   private static ArrayList<Node<PsiExpression, IElementType>> getBindingOperands( @NotNull PsiExpression tree, ArrayList<Node<PsiExpression, IElementType>> operands )
   {
     if( tree instanceof PsiBinaryExpression )
     {
-      PsiElement opChild = getOpChild( (PsiBinaryExpressionImpl)tree );
+      PsiElement opChild = getOpChild( (CompositeElement)tree );
 
       if( opChild == null )
       {
@@ -330,7 +445,7 @@ public class ManJavaResolveCache extends JavaResolveCache
     return operands;
   }
 
-  private static PsiElement getOpChild( PsiBinaryExpressionImpl tree )
+  private static PsiElement getOpChild( CompositeElement tree )
   {
     return tree.findChildByRoleAsPsiElement( ChildRole.OPERATION_SIGN );
   }
@@ -338,31 +453,31 @@ public class ManJavaResolveCache extends JavaResolveCache
   private static boolean isComparableOperator( IElementType tag )
   {
     return tag == JavaTokenType.EQEQ ||
-           tag == JavaTokenType.NE ||
-           tag == JavaTokenType.LT ||
-           tag == JavaTokenType.LE ||
-           tag == JavaTokenType.GT ||
-           tag == JavaTokenType.GE;
+      tag == JavaTokenType.NE ||
+      tag == JavaTokenType.LT ||
+      tag == JavaTokenType.LE ||
+      tag == JavaTokenType.GT ||
+      tag == JavaTokenType.GE;
   }
 
   private static boolean isRelationalOperator( IElementType tag )
   {
     return tag == JavaTokenType.NE ||
-           tag == JavaTokenType.LT ||
-           tag == JavaTokenType.LE ||
-           tag == JavaTokenType.GT ||
-           tag == JavaTokenType.GE;
+      tag == JavaTokenType.LT ||
+      tag == JavaTokenType.LE ||
+      tag == JavaTokenType.GT ||
+      tag == JavaTokenType.GE;
   }
 
   static boolean isCommutative( IElementType tag )
   {
     return tag == JavaTokenType.PLUS ||
-           tag == JavaTokenType.ASTERISK ||
-           tag == JavaTokenType.OR ||
-           tag == JavaTokenType.XOR ||
-           tag == JavaTokenType.AND ||
-           tag == JavaTokenType.EQEQ ||
-           tag == JavaTokenType.NE;
+      tag == JavaTokenType.ASTERISK ||
+      tag == JavaTokenType.OR ||
+      tag == JavaTokenType.XOR ||
+      tag == JavaTokenType.AND ||
+      tag == JavaTokenType.EQEQ ||
+      tag == JavaTokenType.NE;
   }
 
   public static PsiSubstitutor getMemberSubstitutor( @Nullable PsiType qualifierType, @NotNull final PsiMember member )
@@ -390,8 +505,8 @@ public class ManJavaResolveCache extends JavaResolveCache
       public boolean shouldProcess( @NotNull DeclarationKind kind )
       {
         return member instanceof PsiEnumConstant ? kind == DeclarationKind.ENUM_CONST :
-               member instanceof PsiField ? kind == DeclarationKind.FIELD :
-               kind == DeclarationKind.METHOD;
+          member instanceof PsiField ? kind == DeclarationKind.FIELD :
+            kind == DeclarationKind.METHOD;
       }
 
       @Override

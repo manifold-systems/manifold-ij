@@ -26,6 +26,8 @@ import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeCastExpression;
 import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.PsiWildcardType;
+import com.intellij.psi.impl.source.tree.java.PsiArrayAccessExpressionImpl;
+import com.intellij.psi.impl.source.tree.java.PsiAssignmentExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiLocalVariableImpl;
 import com.intellij.psi.infos.MethodCandidateInfo;
@@ -35,6 +37,7 @@ import java.util.List;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.ij.core.ManPsiPostfixExpressionImpl;
 import manifold.ij.core.ManPsiPrefixExpressionImpl;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.util.ManPsiUtil;
@@ -144,6 +147,32 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if( filterPrefixExprCannotBeApplied( hi, elem, firstElem ) ||
+        filterPostfixExprCannotBeApplied( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterIncompatibleTypesWithCompoundAssignmentOperatorOverload( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterOperatorCannotBeAppliedToWithCompoundAssignmentOperatorOverload( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+
+    // handle indexed operator overloading
+    if( filterArratTypeExpected( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+    if( filterVariableExpected( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+
     //##
     //## structural interface extensions cannot be added to the psiClass, so for now we suppress "incompatible type
     //## errors" or similar involving a structural interface extension :(
@@ -214,7 +243,72 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return firstElem instanceof PsiJavaToken && ((PsiJavaToken)firstElem).getTokenType() == JavaTokenType.MINUS &&
            elem instanceof ManPsiPrefixExpressionImpl &&
            hi.getDescription().contains( "Operator '-' cannot be applied to" ) &&
-           ((ManPsiPrefixExpressionImpl)elem).getTypeForOverloadedOperator() != null;
+           ((ManPsiPrefixExpressionImpl)elem).getTypeForUnaryMinusOverload() != null;
+  }
+
+  // allow unary inc/dec operator overload
+  private boolean filterPrefixExprCannotBeApplied( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    return elem instanceof ManPsiPrefixExpressionImpl &&
+           (hi.getDescription().contains( "Operator '-' cannot be applied to" ) ||
+            hi.getDescription().contains( "Operator '--' cannot be applied to" ) ||
+            hi.getDescription().contains( "Operator '++' cannot be applied to" )) &&
+           ((ManPsiPrefixExpressionImpl)elem).isOverloaded();
+  }
+  private boolean filterPostfixExprCannotBeApplied( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    return isInOverloadPostfixExpr( elem ) &&
+           (hi.getDescription().contains( "Operator '-' cannot be applied to" ) ||
+            hi.getDescription().contains( "Operator '--' cannot be applied to" ) ||
+            hi.getDescription().contains( "Operator '++' cannot be applied to" ));
+  }
+
+  private boolean isInOverloadPostfixExpr( PsiElement elem )
+  {
+    if( elem == null )
+    {
+      return false;
+    }
+    if( elem instanceof ManPsiPostfixExpressionImpl )
+    {
+      return ((ManPsiPostfixExpressionImpl)elem).isOverloaded();
+    }
+    return isInOverloadPostfixExpr( elem.getParent() );
+  }
+
+  // allow compound assignment operator overloading
+  private boolean filterIncompatibleTypesWithCompoundAssignmentOperatorOverload( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    return elem.getParent() instanceof PsiAssignmentExpressionImpl &&
+           hi.getDescription().contains( "Incompatible types" ) &&
+           ManJavaResolveCache.getTypeForOverloadedBinaryOperator( (PsiExpression)elem.getParent() ) != null;
+  }
+  private boolean filterOperatorCannotBeAppliedToWithCompoundAssignmentOperatorOverload( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    return firstElem.getParent() instanceof PsiAssignmentExpressionImpl &&
+           hi.getDescription().contains( "' cannot be applied to " ) &&  // eg. "Operator '+' cannot be applied to 'java.math.BigDecimal'"
+           ManJavaResolveCache.getTypeForOverloadedBinaryOperator( (PsiExpression)firstElem.getParent() ) != null;
+  }
+
+  // support indexed operator overloading
+  private boolean filterArratTypeExpected( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    PsiArrayAccessExpressionImpl arrayAccess;
+    return elem.getParent() instanceof PsiArrayAccessExpressionImpl &&
+      (arrayAccess = (PsiArrayAccessExpressionImpl)elem.getParent()) != null &&
+      hi.getDescription().startsWith( "Array type expected" ) &&
+      ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_GET,
+        arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
+  }
+  private boolean filterVariableExpected( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    PsiArrayAccessExpressionImpl arrayAccess;
+    return elem.getParent() instanceof PsiArrayAccessExpressionImpl &&
+      (arrayAccess = (PsiArrayAccessExpressionImpl)elem.getParent()) != null &&
+      hi.getDescription().startsWith( "Variable expected" ) &&
+      arrayAccess.getIndexExpression() != null &&
+      ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_SET,
+        arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
   }
 
   private boolean filterUnclosedComment( HighlightInfo hi, PsiElement firstElem )

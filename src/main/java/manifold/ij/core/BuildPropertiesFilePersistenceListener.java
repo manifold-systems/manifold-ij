@@ -56,9 +56,11 @@ class BuildPropertiesFilePersistenceListener implements FileDocumentManagerListe
     {
       psiFile = PsiDocumentManager.getInstance( _ijProject ).getPsiFile( document );
     }
-    catch( NullPointerException npe )
+    catch( Exception npe )
     {
-      // NPE can happen for some reason due to "Recursive file view provider creation"
+      // NPE and other exceptions can happen as a result of calling getPsiFile():
+      // - for some reason due to "Recursive file view provider creation"
+      // - "Light files should have PSI only in one project"
       return false;
     }
 

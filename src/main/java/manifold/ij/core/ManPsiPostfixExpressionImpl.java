@@ -3,52 +3,26 @@ package manifold.ij.core;
 import com.intellij.openapi.util.NlsSafe;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
-import com.intellij.psi.impl.source.tree.ChildRole;
-import com.intellij.psi.impl.source.tree.JavaElementType;
-import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
-import com.intellij.psi.impl.source.tree.java.PsiJavaTokenImpl;
-import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.impl.source.tree.java.PsiPostfixExpressionImpl;
 import com.intellij.util.IncorrectOperationException;
 import manifold.ij.extensions.ManJavaResolveCache;
 import org.jetbrains.annotations.NotNull;
 
-// Supports binding expressions and binary operator overloading
-public class ManPsiBinaryExpressionImpl extends PsiBinaryExpressionImpl implements IManOperatorOverloadReference
+// handle inc/dec postfix operator overloading
+public class ManPsiPostfixExpressionImpl extends PsiPostfixExpressionImpl implements IManOperatorOverloadReference
 {
-  public ManPsiBinaryExpressionImpl()
+  public ManPsiPostfixExpressionImpl()
   {
-    this( JavaElementType.BINARY_EXPRESSION );
-  }
-
-  protected ManPsiBinaryExpressionImpl( @NotNull IElementType elementType )
-  {
-    super( elementType );
-  }
-
-  @Override
-  @NotNull
-  public PsiJavaToken getOperationSign()
-  {
-    PsiJavaToken child = (PsiJavaToken)findChildByRoleAsPsiElement( ChildRole.OPERATION_SIGN );
-    if( child == null )
-    {
-      // pose as multiplication to get by
-      child = new PsiJavaTokenImpl( JavaTokenType.ASTERISK, "*" );
-    }
-    return child;
+    super();
   }
 
   @Override
   public boolean isOverloaded()
   {
-    if( getROperand() == null )
-    {
-      return false;
-    }
     PsiMethod method = ManJavaResolveCache.getBinaryOperatorMethod(
       getOperationSign(),
-      getLOperand().getType(),
-      getROperand().getType(), this );
+      getOperand().getType(),
+      null, this );
     return method != null;
   }
 
@@ -71,15 +45,12 @@ public class ManPsiBinaryExpressionImpl extends PsiBinaryExpressionImpl implemen
 
   @Override
   public PsiElement resolve() {
-    if( getROperand() == null )
+    if( isOverloaded() )
     {
-      return null;
+      PsiMethod method = ManJavaResolveCache.getBinaryOperatorMethod( getOperationSign(), getOperand().getType(), null, this );
+      return method;
     }
-    PsiMethod method = ManJavaResolveCache.getBinaryOperatorMethod(
-      getOperationSign(),
-      getLOperand().getType(),
-      getROperand().getType(), this );
-    return method;
+    return null;
   }
 
   @NotNull
@@ -111,5 +82,4 @@ public class ManPsiBinaryExpressionImpl extends PsiBinaryExpressionImpl implemen
   public boolean isSoft() {
     return false;
   }
-
 }
