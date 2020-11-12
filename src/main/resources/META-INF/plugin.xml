@@ -223,6 +223,8 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:<h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/126">#126</a>: - Implement additional operator overloading for index/subscript operator, compound assignment operators, and increment/decrement operators
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/223">#223</a>: IntelliJ plugin: account for IntelliJ's internal Array type as a pseudo generic type
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/222">#222</a>: Compiler: Fatal error processing with Manifold type processor: manifold.ext.ExtensionManifold on type: _temp_._Manifold_Temp_Main_
