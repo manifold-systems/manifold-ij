@@ -1,6 +1,7 @@
 package manifold.ij.extensions;
 
 import com.intellij.codeInsight.daemon.ImplicitUsageProvider;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
@@ -43,9 +44,23 @@ public class ManStringLiteralTemplateUsageProvider implements ImplicitUsageProvi
       PsiFile containingFile = elem.getContainingFile();
       if( containingFile instanceof PsiJavaFile )
       {
-        return !ReferencesSearch.search( namedElement, new LocalSearchScope( containingFile ) )
-                    //!! keep casting as is here for backward compatibility with 2017.x.x IJ
-          .forEach( (Processor)e -> isInStringLiteral( ((PsiReference)e).getElement() ) );
+        try
+        {
+          boolean result = !ReferencesSearch.search( namedElement,
+            new LocalSearchScope( containingFile ) )
+            .forEach( (Processor)e ->
+              // keep looking while _not_ in a string literal,
+              // if found in a string literal, stop the search
+              !isInStringLiteral( ((PsiReference)e).getElement() ) );
+          return result;
+        }
+        catch( Throwable t )
+        {
+          if( !(t instanceof ProcessCanceledException) )
+          {
+            System.out.println( t );
+          }
+        }
       }
     }
     return false;
