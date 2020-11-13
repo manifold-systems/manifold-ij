@@ -1,9 +1,9 @@
 package manifold.ij.template.psi;
 
-import com.intellij.psi.impl.source.tree.LeafPsiElement;
+import com.intellij.psi.templateLanguages.OuterLanguageElementImpl;
 import org.jetbrains.annotations.NotNull;
 
-public class ManTemplateTokenImpl extends LeafPsiElement implements ManTemplateToken
+public class ManTemplateTokenImpl extends OuterLanguageElementImpl implements ManTemplateToken
 {
   public ManTemplateTokenImpl( @NotNull ManTemplateTokenType type, CharSequence text )
   {
