@@ -223,6 +223,10 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:<h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/229">#229</a>: Add support for simpler Map creation using `mapOf` extension method with new `and` binder expressions
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/228">#228</a>: java.lang.IllegalArgumentException: URI has an authority component at startup
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/227">#227</a>: Fix warnings where a variable referenced exclusively in string interpolation was marked as "never used"
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/126">#126</a>: Implement additional operator overloading for index/subscript operator, compound assignment operators, and increment/decrement operators
