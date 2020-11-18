@@ -93,6 +93,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if( filterCastingStructuralInterfaceWarning( hi, file ) )
+    {
+      return false;
+    }
+
 
 
     if( hi.getSeverity() != HighlightSeverity.ERROR )
@@ -232,6 +237,22 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
         // a null operator indicates a biding expression
         PsiElement child = ((PsiBinaryExpressionImpl)firstElem).findChildByRoleAsPsiElement( OPERATION_SIGN );
         return child == null;
+      }
+    }
+    return false;
+  }
+
+  // Filter warning messages like "1 Xxx can be replaced with Xxx" where '1 Xxx' is a binding expression
+  private boolean filterCastingStructuralInterfaceWarning( HighlightInfo hi, PsiFile file )
+  {
+    if( hi != null )
+    {
+      String description = hi.getDescription();
+      if( description != null && description.startsWith( "Casting '" ) &&
+          description.endsWith( "will produce 'ClassCastException' for any non-null value" ) )
+      {
+        PsiTypeElement typeElem = findTypeElement( file.findElementAt( hi.getStartOffset() ) );
+        return isStructuralType( typeElem );
       }
     }
     return false;
@@ -655,7 +676,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       {
         return false;
       }
-      return ManPsiUtil.isStructuralInterface( psiClass );
+      return ExtensionClassAnnotator.isStructuralInterface( psiClass );
     }
     return false;
   }
