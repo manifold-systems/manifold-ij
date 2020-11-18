@@ -216,7 +216,7 @@ public class ExtensionClassAnnotator implements Annotator
     }
   }
 
-  private boolean isStructuralInterface( PsiClass iface )
+  public static boolean isStructuralInterface( PsiClass iface )
   {
     return iface.getModifierList().findAnnotation( Structural.class.getName() ) != null ||
            isInterfaceMadeStructuralByExtension( iface );
@@ -299,7 +299,7 @@ public class ExtensionClassAnnotator implements Annotator
     return packageName.substring( iExt + ExtensionManifold.EXTENSIONS_PACKAGE.length() + 1 );
   }
 
-  private boolean isInterfaceMadeStructuralByExtension( PsiClass psiExtentionInterface )
+  private static boolean isInterfaceMadeStructuralByExtension( PsiClass psiExtentionInterface )
   {
     Module module = ManProject.getIjModule( psiExtentionInterface );
     if( module != null )
@@ -323,7 +323,7 @@ public class ExtensionClassAnnotator implements Annotator
     return false;
   }
 
-  private boolean isInterfaceMadeStructuralByExtension( PsiClass psiInterface, ManModule module )
+  private static boolean isInterfaceMadeStructuralByExtension( PsiClass psiInterface, ManModule module )
   {
     final String fqn = psiInterface.getQualifiedName();
     ManModule manModule = ManProject.getModule( module.getIjModule() );

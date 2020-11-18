@@ -465,7 +465,8 @@ public class ManAugmentProvider extends PsiAugmentProvider
     for( Object anno : method.getAnnotations() )
     {
       SrcAnnotationExpression annoExpr = (SrcAnnotationExpression)anno;
-      if( annoExpr.getAnnotationType().equals( SourcePosition.class.getName() ) )
+      if( annoExpr.getAnnotationType().equals( SourcePosition.class.getName() ) ||
+          annoExpr.getAnnotationType().equals( SafeVarargs.class.getTypeName() ) ) // why aren't all annotations here?
       {
         srcMethod.addAnnotation( annoExpr );
       }

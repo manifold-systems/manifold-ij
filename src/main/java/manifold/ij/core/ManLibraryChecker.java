@@ -169,24 +169,35 @@ public class ManLibraryChecker
 
   private String getVersionFromPlugin()
   {
-    try
+    List<URL> urls = getUrls();
+    for( URL url: urls )
     {
-      List<URL> urls = getUrls();
-      for( URL url: urls )
+      String name = null;
+      try
       {
-        String name = new File( url.toURI() ).getName();
-        if( name.contains( "manifold-" ) && !name.contains( "manifold-ij-" ) )
+        File file = new File( url.toURI() );
+        name = file.getName();
+      }
+      catch( Throwable t )
+      {
+        String filepath = url.getFile();
+        if( filepath != null )
         {
-          String version = getVersionFromJarName( name );
-          if( !version.isEmpty() && Character.isDigit( version.charAt( 0 ) ) )
+          int iSlash = filepath.lastIndexOf( "/" );
+          if( iSlash > 0 && iSlash + 1 < filepath.length() )
           {
-            return version;
+            name = filepath.substring( iSlash + 1 );
           }
         }
       }
-    }
-    catch( URISyntaxException ignore )
-    {
+      if( name != null && name.contains( "manifold-" ) && !name.contains( "manifold-ij-" ) )
+      {
+        String version = getVersionFromJarName( name );
+        if( !version.isEmpty() && Character.isDigit( version.charAt( 0 ) ) )
+        {
+          return version;
+        }
+      }
     }
     return null;
   }
