@@ -90,6 +90,11 @@ public class StubBuilder
         srcType.addTypeParam( makeSrcType( typeParam ) );
       }
     }
+    else if( type instanceof PsiEllipsisType )
+    {
+      srcType = makeSrcType( ((PsiEllipsisType)type).getComponentType() );
+      srcType.setEllipsis( true );
+    }
     else if( type instanceof PsiWildcardType )
     {
       srcType = new SrcType( "?" );
