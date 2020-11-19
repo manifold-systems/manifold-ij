@@ -14,7 +14,7 @@
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">A Preprocessor</a></li>
   <li>...and more</li>
 </ul>
-<p>All fully supported in <strong>Java 8 - 14</strong> with comprehensive IDE support in <strong>IntelliJ IDEA</strong> and <strong>Android Studio</strong>.
+<p>All fully supported in <strong>Java 8 - 15</strong> with comprehensive IDE support in <strong>IntelliJ IDEA</strong> and <strong>Android Studio</strong>.
 Simply add Manifold to your existing project and begin taking advantage of it.</p>
 <blockquote>
   <p><em><strong>New!</strong></em></p>
@@ -223,6 +223,8 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:<h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/230">#230</a>: JEP 305 (''Pattern Matching for instanceof'') usage isn't recognised in IDEA with Manifold plugin enabled
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/229">#229</a>: Add support for simpler Map creation using `mapOf` extension method with new `and` binder expressions
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/228">#228</a>: java.lang.IllegalArgumentException: URI has an authority component at startup
