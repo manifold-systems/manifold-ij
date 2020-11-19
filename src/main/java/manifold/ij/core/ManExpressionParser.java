@@ -209,6 +209,25 @@ public class ManExpressionParser extends ExpressionParser {
     }
   }
 
+  @Nullable
+  private PsiBuilder.Marker parsePattern(final PsiBuilder builder) {
+    PsiBuilder.Marker pattern = builder.mark();
+    PsiBuilder.Marker patternVariable = builder.mark();
+    PsiBuilder.Marker type = myParser.getReferenceParser().parseType(builder, ReferenceParser.EAT_LAST_DOT | ReferenceParser.WILDCARD);
+    if (type == null) {
+      patternVariable.drop();
+      pattern.drop();
+      return null;
+    }
+    if (!expect(builder, JavaTokenType.IDENTIFIER)) {
+      patternVariable.drop();
+    } else {
+      patternVariable.done(JavaElementType.PATTERN_VARIABLE);
+    }
+    pattern.done(JavaElementType.TYPE_TEST_PATTERN);
+    return pattern;
+  }
+
   //Manifold: modify parseBinary() to handle binding expressions
   @Nullable
   private PsiBuilder.Marker parseBinary( final PsiBuilder builder, final ExprType type, final TokenSet ops) {
@@ -332,14 +351,14 @@ public class ManExpressionParser extends ExpressionParser {
     IElementType tokenType;
     while ((tokenType = getGtTokenType(builder)) != null) {
       final IElementType toCreate;
-      final ExprType toParse;
+      final boolean patternExpected; // Otherwise ExprType.SHIFT is expected
       if (RELATIONAL_OPS.contains(tokenType)) {
         toCreate = JavaElementType.BINARY_EXPRESSION;
-        toParse = ExprType.SHIFT;
+        patternExpected = false;
       }
       else if (tokenType == JavaTokenType.INSTANCEOF_KEYWORD) {
         toCreate = JavaElementType.INSTANCE_OF_EXPRESSION;
-        toParse = ExprType.TYPE;
+        patternExpected = true;
       }
       else {
         break;
@@ -348,9 +367,9 @@ public class ManExpressionParser extends ExpressionParser {
       final PsiBuilder.Marker expression = left.precede();
       advanceGtToken(builder, tokenType);
 
-      final PsiBuilder.Marker right = parseExpression(builder, toParse);
+      final PsiBuilder.Marker right = patternExpected ? parsePattern(builder) : parseExpression(builder, ExprType.SHIFT);
       if (right == null) {
-        error(builder, JavaPsiBundle.message( toParse == ExprType.TYPE ? "expected.type" : "expected.expression"));
+        error(builder, JavaPsiBundle.message(patternExpected ? "expected.type" : "expected.expression"));
         expression.done(toCreate);
         return expression;
       }
