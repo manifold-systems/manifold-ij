@@ -1,26 +1,24 @@
 package manifold.ij.extensions;
 
 import com.intellij.codeInsight.completion.CompletionContext;
+import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.JavaResolveResult;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiExpression;
-import com.intellij.psi.PsiExpressionList;
-import com.intellij.psi.PsiMember;
-import com.intellij.psi.PsiModifierList;
-import com.intellij.psi.PsiNewExpression;
-import com.intellij.psi.PsiReferenceExpression;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeElement;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.source.resolve.PsiResolveHelperImpl;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
+import com.intellij.psi.search.searches.SuperMethodsSearch;
+import com.intellij.psi.util.MethodSignatureBackedByPsiMethod;
+import manifold.ext.props.rt.api.propgen;
 import manifold.ext.rt.api.Jailbreak;
+import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.ij.psi.ManLightModifierListImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
 {
@@ -36,6 +34,14 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
                                @Nullable PsiClass accessObjectClass,
                                @Nullable PsiElement currentFileResolveScope )
   {
+    boolean isCompletionContext = place.getUserData( CompletionContext.COMPLETION_CONTEXT_KEY ) != null;
+
+    Boolean propertyAccessible = handleProperties( member, place, accessObjectClass, currentFileResolveScope, isCompletionContext );
+    if( propertyAccessible != null )
+    {
+      return propertyAccessible;
+    }
+
     boolean accessible = super.isAccessible( member, modifierList, place, accessObjectClass, currentFileResolveScope );
 
     if( !ManProject.isManifoldInUse( member ) )
@@ -68,7 +74,7 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
     if( !accessible )
     {
       // for code completion candidates members...
-      if( place.getUserData( CompletionContext.COMPLETION_CONTEXT_KEY ) != null )
+      if( isCompletionContext )
       {
         if( place.getContext() instanceof PsiReferenceExpression )
         {
@@ -91,6 +97,188 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
     return accessible;
   }
 
+  @Nullable
+  public Boolean handleProperties( @NotNull PsiMember member, @NotNull PsiElement place, @Nullable PsiClass accessObjectClass, @Nullable PsiElement currentFileResolveScope, boolean isCompletionContext )
+  {
+    ManModule module = ManProject.getModule( member );
+    if( module != null && !module.isPropertiesEnabled() )
+    {
+      // project/module not using properties
+      return null;
+    }
+
+    Boolean res = null;
+    if( isCompletionContext )
+    {
+      res = handleClsPropertyAccessCompletion( member, place, accessObjectClass, currentFileResolveScope );
+      if( res != null )
+      {
+        return res;
+      }
+
+      return handlePsiPropertyAccessCompletion( member, place, accessObjectClass, currentFileResolveScope );
+    }
+    else
+    {
+      res = handleClsPropertyAccess( member, place, accessObjectClass, currentFileResolveScope );
+      if( res != null )
+      {
+        return res;
+      }
+
+      return handlePsiPropertyAccess( member, place, accessObjectClass, currentFileResolveScope );
+    }
+  }
+
+  private Boolean handleClsPropertyAccess( PsiMember member, PsiElement place, PsiClass accessObjectClass,
+                                           PsiElement currentFileResolveScope )
+  {
+    if( !(member instanceof PsiField) )
+    {
+      // only care about prop field refs (getter/setter access in completion is handled above)
+      return null;
+    }
+
+    // all class files tag property fields and accessors with @propgen
+    PsiAnnotation propgenAnno = member.getAnnotation( propgen.class.getTypeName() );
+    if( propgenAnno == null )
+    {
+      // not a property
+      return null;
+    }
+
+
+    long flags = (long)((PsiLiteralValue)propgenAnno.findAttributeValue( "flags" )).getValue();
+    List<String> modifiers = new ArrayList<>();
+    for( ModifierMap modifier : ModifierMap.values() )
+    {
+      if( (flags & modifier.getMod()) != 0 )
+      {
+        modifiers.add( modifier.getName() );
+      }
+    }
+    ManLightModifierListImpl modifierList = new ManLightModifierListImpl(
+      place.getManager(), JavaLanguage.INSTANCE, modifiers.toArray( new String[0] ) );
+    return super.isAccessible( member, modifierList, place, accessObjectClass, currentFileResolveScope );
+  }
+
+  private Boolean handlePsiPropertyAccess( PsiMember member, PsiElement place, PsiClass accessObjectClass,
+                                           PsiElement currentFileResolveScope )
+  {
+    if( !(member instanceof PsiField) )
+    {
+      return null;
+    }
+
+    PsiModifierList modifierList1 = member.getModifierList();
+    if( modifierList1 != null && modifierList1.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) )
+    {
+      // properties are PUBLIC by default
+      return true;
+    }
+    return null;
+  }
+
+  private Boolean handleClsPropertyAccessCompletion( PsiMember member, PsiElement place, PsiClass accessObjectClass,
+                                                     PsiElement currentFileResolveScope )
+  {
+    // all class files tag property fields and accessors with @propgen
+
+    PsiAnnotation propgenAnno = member.getAnnotation( propgen.class.getTypeName() );
+    if( propgenAnno == null )
+    {
+      return null;
+    }
+
+    if( member instanceof PsiMethod )
+    {
+      // getters/setters should not be available in completion
+      return false;
+    }
+
+    if( !(member instanceof PsiField) )
+    {
+      return null;
+    }
+
+    long flags = (long)((PsiLiteralValue)propgenAnno.findAttributeValue( "flags" )).getValue();
+    List<String> modifiers = new ArrayList<>();
+    for( ModifierMap modifier : ModifierMap.values() )
+    {
+      if( (flags & modifier.getMod()) != 0 )
+      {
+        modifiers.add( modifier.getName() );
+      }
+    }
+    ManLightModifierListImpl modifierList = new ManLightModifierListImpl(
+      place.getManager(), JavaLanguage.INSTANCE, modifiers.toArray( new String[0] ) );
+    return super.isAccessible( member, modifierList, place, accessObjectClass, currentFileResolveScope );
+  }
+
+  private Boolean handlePsiPropertyAccessCompletion( PsiMember member, PsiElement place, PsiClass accessObjectClass,
+                                                     PsiElement currentFileResolveScope )
+  {
+    if( member instanceof PsiMethod )
+    {
+      if( isOrOverridesAccessor( (PsiMethod)member ) )
+      {
+        // getters/setters corresponding with properties should not be available in completion, use property identifier
+        return false;
+      }
+    }
+
+    if( !(member instanceof PsiField) )
+    {
+      return null;
+    }
+
+    PsiModifierList modifierList1 = member.getModifierList();
+    if( modifierList1 != null && modifierList1.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) )
+    {
+      // properties are PUBLIC by default
+      return true;
+    }
+    return null;
+  }
+
+  @Nullable
+  private boolean isOrOverridesAccessor( PsiMethod method )
+  {
+    if( isPropertyAccessor( method ) )
+    {
+      // getters/setters corresponding with properties should not be available in completion
+      return true;
+    }
+
+    // check if accessor override
+    if( isPotentialAccesor( method ) )
+    {
+      MethodSignatureBackedByPsiMethod match = SuperMethodsSearch.search( method, null, true, false ).findFirst();
+      if( match != null )
+      {
+        method = match.getMethod();
+        if( isOrOverridesAccessor( method ) )
+        {
+          // getters/setters corresponding with properties should not be available in completion
+          method.putCopyableUserData( ManPropertiesAugmentProvider.ACCESSOR_TAG, true ); // mark with tag to avoid super searching again
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private boolean isPotentialAccesor( PsiMethod m )
+  {
+    String name = m.getName();
+    return name.startsWith( "get" ) || name.startsWith( "is" ) || name.startsWith( "set" );
+  }
+
+  private boolean isPropertyAccessor( PsiMember member )
+  {
+    return member.getCopyableUserData( ManPropertiesAugmentProvider.ACCESSOR_TAG ) != null;
+  }
+
   @Override
   @NotNull
   public JavaResolveResult[] multiResolveConstructor( @NotNull PsiClassType type, @NotNull PsiExpressionList argumentList, @NotNull PsiElement place )
@@ -103,7 +291,7 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
       return results;
     }
 
-    for( JavaResolveResult result: results )
+    for( JavaResolveResult result : results )
     {
       if( result instanceof CandidateInfo )
       {

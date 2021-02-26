@@ -327,15 +327,18 @@ Other minor fixes and improvements.
     <java.shortNamesCache implementation="manifold.ij.extensions.ManShortNamesCache"/>
     <gotoDeclarationHandler implementation="manifold.ij.extensions.ManGotoDeclarationHandler"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManAugmentProvider"/>
+    <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManPropertiesAugmentProvider"/>
     <methodReferencesSearch implementation="manifold.ij.extensions.ExtensionMethodUsageSearcher"/>
     <lang.parserDefinition language="JAVA" implementationClass="manifold.ij.extensions.ManJavaParserDefinition" order="first"/>
     <externalAnnotator language="JAVA" implementationClass="manifold.ij.extensions.ManPreprocessorAnnotator" order="last"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionClassAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionMethodCallSiteAnnotator"/>
+    <annotator language="JAVA" implementationClass="manifold.ij.extensions.PropertiesAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.SelfUsageAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.JailbreakUsageAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.MiscAnnotator"/>
     <daemon.highlightInfoFilter implementation="manifold.ij.extensions.ManHighlightInfoFilter"/>
+    <daemon.highlightInfoFilter implementation="manifold.ij.extensions.ManPropertiesHighlightInfoFilter"/>
     <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameTypeManifoldFileProcessor" order="first"/>
     <moveFileHandler implementation="manifold.ij.extensions.MoveTypeManifoldFileProcessor" order="first"/>
     <findUsagesHandlerFactory implementation="manifold.ij.extensions.ManifoldFindUsagesHandlerFactory" order="first"/>

@@ -2,19 +2,7 @@ package manifold.ij.psi;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.java.JavaLanguage;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiElementFactory;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiIdentifier;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiModifier;
-import com.intellij.psi.PsiParameter;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeParameter;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.CheckUtil;
 import com.intellij.psi.impl.light.LightIdentifier;
 import com.intellij.psi.impl.light.LightMethodBuilder;
@@ -38,8 +26,13 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
 
   public ManLightMethodBuilderImpl( ManModule manModule, PsiManager manager, String name )
   {
+    this( manModule, manager, name, null );
+  }
+  public ManLightMethodBuilderImpl( ManModule manModule, PsiManager manager, String name, PsiModifierList modifierList )
+  {
     super( manager, JavaLanguage.INSTANCE, name,
-      new LightParameterListBuilder( manager, JavaLanguage.INSTANCE ), new ManLightModifierListImpl( manager, JavaLanguage.INSTANCE ) );
+      new LightParameterListBuilder( manager, JavaLanguage.INSTANCE ),
+      modifierList == null ? new ManLightModifierListImpl( manager, JavaLanguage.INSTANCE ) : modifierList );
     _module = manModule;
     _modules = new LinkedHashSet<>();
     _modules.add( manModule );

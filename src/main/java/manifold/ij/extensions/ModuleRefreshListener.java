@@ -11,6 +11,7 @@ import com.intellij.util.Function;
 
 import java.util.List;
 import manifold.ij.core.ManProject;
+import org.jetbrains.annotations.NotNull;
 
 public class ModuleRefreshListener implements ModuleListener
 {
@@ -31,6 +32,7 @@ public class ModuleRefreshListener implements ModuleListener
 
   @Override
   public void modulesRenamed( Project project, List<Module> modules, Function<Module, String> moduleStringFunction )
+//  public void modulesRenamed( Project project, @NotNull List<? extends Module> modules, @NotNull Function<? super Module, String> moduleStringFunction )
   {
     ManProject.manProjectFrom( project ).reset();
   }

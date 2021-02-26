@@ -1,11 +1,6 @@
 package manifold.ij.psi;
 
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiIdentifier;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.PsiModifier;
-import com.intellij.psi.PsiType;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.CheckUtil;
 import com.intellij.psi.impl.light.LightFieldBuilder;
 import com.intellij.psi.impl.light.LightIdentifier;
@@ -35,6 +30,13 @@ public class ManLightFieldBuilderImpl extends LightFieldBuilder implements ManLi
   public ManLightFieldBuilder withModifier( @PsiModifier.ModifierConstant String modifier )
   {
     ((LightModifierList)getModifierList()).addModifier( modifier );
+    return this;
+  }
+
+  @Override
+  public ManLightFieldBuilder withModifierList( LightModifierList modifierList )
+  {
+    setModifierList( modifierList );
     return this;
   }
 
