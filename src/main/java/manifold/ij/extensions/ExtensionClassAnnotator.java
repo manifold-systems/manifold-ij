@@ -227,8 +227,10 @@ public class ExtensionClassAnnotator implements Annotator
 
   public static boolean isStructuralInterface( PsiClass iface )
   {
-    return iface.getModifierList().findAnnotation( Structural.class.getName() ) != null ||
-           isInterfaceMadeStructuralByExtension( iface );
+    PsiModifierList modifierList = iface == null ? null : iface.getModifierList();
+    return modifierList != null &&
+      (modifierList.findAnnotation( Structural.class.getName() ) != null ||
+        isInterfaceMadeStructuralByExtension( iface ));
   }
 
   private void verifyPackage( PsiElement element, AnnotationHolder holder )
