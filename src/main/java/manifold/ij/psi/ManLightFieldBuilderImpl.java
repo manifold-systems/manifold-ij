@@ -53,6 +53,13 @@ public class ManLightFieldBuilderImpl extends LightFieldBuilder implements ManLi
     return _nameIdentifier;
   }
 
+  @Override
+  public PsiFile getContainingFile()
+  {
+    PsiClass psiClass = getContainingClass();
+    return psiClass == null ? null : psiClass.getContainingFile();
+  }
+
   public String toString()
   {
     return "ManifoldLightFieldBuilder: " + getName();
