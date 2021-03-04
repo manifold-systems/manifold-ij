@@ -9,7 +9,7 @@ import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.search.searches.SuperMethodsSearch;
 import com.intellij.psi.util.MethodSignatureBackedByPsiMethod;
-import manifold.ext.props.rt.api.propgen;
+import manifold.ext.props.rt.api.*;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
@@ -135,7 +135,6 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
   {
     if( !(member instanceof PsiField) )
     {
-      // only care about prop field refs (getter/setter access in completion is handled above)
       return null;
     }
 
@@ -143,7 +142,7 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
     PsiAnnotation propgenAnno = member.getAnnotation( propgen.class.getTypeName() );
     if( propgenAnno == null )
     {
-      // not a property
+      // not an explicit property
       return null;
     }
 
@@ -170,8 +169,31 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
       return null;
     }
 
-    PsiModifierList modifierList1 = member.getModifierList();
-    if( modifierList1 != null && modifierList1.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) )
+    PsiField field = (PsiField)member;
+
+    PropertyInference.VarTagInfo tag = field.getCopyableUserData( PropertyInference.VAR_TAG );
+    if( tag != null && tag.weakestAccess >= 0 )
+    {
+      List<String> modifiers = new ArrayList<>();
+      for( ModifierMap modifier : ModifierMap.values() )
+      {
+        if( (tag.weakestAccess & modifier.getMod()) != 0 )
+        {
+          modifiers.add( modifier.getName() );
+        }
+      }
+      ManLightModifierListImpl modifierList = new ManLightModifierListImpl(
+        place.getManager(), JavaLanguage.INSTANCE, modifiers.toArray( new String[0] ) );
+      return super.isAccessible( field, modifierList, place, accessObjectClass, currentFileResolveScope );
+    }
+    
+    if( !PropertyInference.isPropertyField( field ) )
+    {
+      return null;
+    }
+
+    PsiModifierList modifierList = field.getModifierList();
+    if( modifierList != null && modifierList.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) )
     {
       // properties are PUBLIC by default
       return true;

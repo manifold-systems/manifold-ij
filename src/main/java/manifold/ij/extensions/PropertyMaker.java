@@ -28,24 +28,33 @@ import static java.lang.reflect.Modifier.*;
 import static manifold.ext.props.PropIssueMsg.*;
 import static manifold.ij.extensions.ManPropertiesAugmentProvider.ACCESSOR_TAG;
 
-public class PropertyMaker
+class PropertyMaker
 {
   private final AnnotationHolder _holder;
   private final LinkedHashMap<String, PsiMember> _augFeatures;
   private final PsiField _field;
   private final PsiExtensibleClass _psiClass;
 
-  public PropertyMaker( PsiField field, PsiExtensibleClass psiClass, AnnotationHolder holder )
+  static void checkProperty( PsiField field, PsiExtensibleClass psiClass, AnnotationHolder holder )
+  {
+    new PropertyMaker( field, psiClass, holder ).generateOrCheck();
+  }
+  static void generateAccessors( PsiField field, PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
+  {
+    new PropertyMaker( field, psiClass, augFeatures ).generateOrCheck();
+  }
+
+  private PropertyMaker( PsiField field, PsiExtensibleClass psiClass, AnnotationHolder holder )
   {
     this( field, psiClass, holder, null );
   }
 
-  public PropertyMaker( PsiField field, PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
+  private PropertyMaker( PsiField field, PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
   {
     this( field, psiClass, null, augFeatures );
   }
 
-  public PropertyMaker( PsiField field, PsiExtensibleClass psiClass, AnnotationHolder holder, LinkedHashMap<String, PsiMember> augFeatures )
+  private PropertyMaker( PsiField field, PsiExtensibleClass psiClass, AnnotationHolder holder, LinkedHashMap<String, PsiMember> augFeatures )
   {
     _field = field;
     _psiClass = psiClass;
@@ -53,21 +62,12 @@ public class PropertyMaker
     _augFeatures = augFeatures;
   }
 
-  public static void checkProperty( PsiField field, PsiExtensibleClass psiClass, AnnotationHolder holder )
-  {
-    new PropertyMaker( field, psiClass, holder ).generateOrCheck();
-  }
-  public static void generateAccessors( PsiField field, PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
-  {
-    new PropertyMaker( field, psiClass, augFeatures ).generateOrCheck();
-  }
-
   private void generateOrCheck()
   {
-    PsiAnnotation var = _field.getAnnotation( manifold.ext.props.rt.api.var.class.getTypeName() );
-    PsiAnnotation val = _field.getAnnotation( manifold.ext.props.rt.api.val.class.getTypeName() );
-    PsiAnnotation get = _field.getAnnotation( manifold.ext.props.rt.api.get.class.getTypeName() );
-    PsiAnnotation set = _field.getAnnotation( manifold.ext.props.rt.api.set.class.getTypeName() );
+    PsiAnnotation var = _field.getAnnotation( var.class.getTypeName() );
+    PsiAnnotation val = _field.getAnnotation( val.class.getTypeName() );
+    PsiAnnotation get = _field.getAnnotation( get.class.getTypeName() );
+    PsiAnnotation set = _field.getAnnotation( set.class.getTypeName() );
 
     if( var == null && val == null && get == null && set == null )
     {
@@ -424,7 +424,7 @@ public class PropertyMaker
       : null;
   }
 
-  private int getAccess( PsiModifierList modifierList )
+  static int getAccess( PsiModifierList modifierList )
   {
     if( modifierList.hasModifierProperty( PsiModifier.PUBLIC ) ||
       modifierList.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) )

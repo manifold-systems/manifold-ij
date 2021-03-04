@@ -2,19 +2,19 @@ package manifold.ij.extensions;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
-import com.intellij.lang.java.JavaLanguage;
 import com.intellij.psi.*;
-import manifold.ext.props.rt.api.*;
+import manifold.ext.props.rt.api.get;
+import manifold.ext.props.rt.api.set;
+import manifold.ext.props.rt.api.val;
+import manifold.ext.props.rt.api.var;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
-import manifold.ij.psi.ManLightModifierListImpl;
+import manifold.rt.api.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
+import java.lang.annotation.Annotation;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 
 /**
@@ -65,11 +65,6 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-//    if( filterPackageAccessError( hi, firstElem ) )
-//    {
-//      return false;
-//    }
-
     if( filterAbstractError( hi, firstElem ) )
     {
       return false;
@@ -80,52 +75,13 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    //noinspection RedundantIfStatement
     if( filterCannotAssignToFinalError( hi, firstElem ) )
     {
       return false;
     }
 
-//    if( filterPrivateAccessError( hi, firstElem ) )
-//    {
-//      return false;
-//    }
-
     return true;
-  }
-
-  private boolean filterPrivateAccessError( HighlightInfo hi, PsiElement firstElem )
-  {
-    String msg = hi.getDescription();
-    if( !msg.contains( "' has private access" ) )
-    {
-      return false;
-    }
-
-    PsiField field = getPropFieldFromExpr( firstElem );
-    if( field == null )
-    {
-      return false;
-    }
-
-    PsiAnnotation propgenAnno = field.getAnnotation( propgen.class.getTypeName() );
-    if( propgenAnno == null )
-    {
-      return false;
-    }
-    long flags = (long)((PsiLiteralValue)propgenAnno.findAttributeValue( "flags" )).getValue();
-    List<String> modifiers = new ArrayList<>();
-    for( ModifierMap modifier : ModifierMap.values() )
-    {
-      if( (flags & modifier.getMod()) != 0 )
-      {
-        //noinspection MagicConstant
-        modifiers.add( modifier.getName() );
-      }
-    }
-    ManLightModifierListImpl modifierList = new ManLightModifierListImpl(
-      firstElem.getManager(), JavaLanguage.INSTANCE, modifiers.toArray( new String[0] ) );
-    PsiResolveHelper resolveHelper = JavaPsiFacade.getInstance( firstElem.getProject() ).getResolveHelper();
-    return resolveHelper.isAccessible( field, modifierList, firstElem, null, null );
   }
 
   private boolean filterCannotAssignToFinalError( HighlightInfo hi, PsiElement firstElem )
@@ -144,25 +100,6 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
 
     // 'final' applies to getter/setter *methods*, read-only properties declared as @val are "final"
     return !isReadOnly( field );
-  }
-
-  private boolean filterPackageAccessError( HighlightInfo hi, PsiElement firstElem )
-  {
-    String msg = hi.getDescription();
-    if( !(msg.startsWith( "'" + firstElem.getText() + "'" ) &&
-      msg.contains( "Cannot be accessed from outside package" )) )
-    {
-      return false;
-    }
-
-    PsiField field = getPropFieldFromExpr( firstElem );
-    if( field == null )
-    {
-      return false;
-    }
-
-    // properties default to PUBLIC access
-    return field.hasModifierProperty( PsiModifier.PACKAGE_LOCAL );
   }
 
   private boolean filterAbstractError( HighlightInfo hi, PsiElement firstElem )
@@ -228,6 +165,11 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean isPropField( PsiField field )
   {
+    if( field.getCopyableUserData( PropertyInference.VAR_TAG ) != null )
+    {
+      return true;
+    }
+
     for( Class<?> cls : Arrays.asList( var.class, val.class, get.class, set.class ) )
     {
       PsiAnnotation propAnno = field.getAnnotation( cls.getTypeName() );
@@ -241,34 +183,26 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean isVar( PsiField field )
   {
-    return field.hasAnnotation( var.class.getTypeName() );
+    return hasVarTag( field, var.class ) || field.hasAnnotation( var.class.getTypeName() );
   }
 
   private boolean isVal( PsiField field )
   {
-    return field.hasAnnotation( val.class.getTypeName() );
-  }
-
-  private boolean isReadWrite( PsiField field )
-  {
-    return field.hasAnnotation( var.class.getTypeName() ) ||
-      (field.hasAnnotation( get.class.getTypeName() ) &&
-        field.hasAnnotation( set.class.getTypeName() ));
+    return hasVarTag( field, val.class ) || field.hasAnnotation( val.class.getTypeName() );
   }
 
   private boolean isReadOnly( PsiField field )
   {
-    return field.hasAnnotation( val.class.getTypeName() ) ||
+    return isVal( field ) ||
       (field.hasAnnotation( get.class.getTypeName() ) &&
         !field.hasAnnotation( set.class.getTypeName() ) &&
-        !field.hasAnnotation( var.class.getTypeName() ));
+        !isVar( field ));
   }
 
-  private boolean isWriteOnly( PsiField field )
+  private boolean hasVarTag( PsiField field, Class<? extends Annotation> varClass )
   {
-    return field.hasAnnotation( set.class.getTypeName() ) &&
-      !field.hasAnnotation( get.class.getTypeName() ) &&
-      !field.hasAnnotation( val.class.getTypeName() );
+    PropertyInference.VarTagInfo tag = field.getCopyableUserData( PropertyInference.VAR_TAG );
+    return tag != null && tag.varClass == varClass;
   }
 
   private boolean filterIllegalReferenceTo_var( @NotNull HighlightInfo hi )

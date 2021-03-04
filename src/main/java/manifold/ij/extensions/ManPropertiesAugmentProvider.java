@@ -26,18 +26,22 @@ import java.util.*;
 import static manifold.ij.extensions.PropertyMaker.generateAccessors;
 
 /**
- *
+ * - Re-create non-backing property fields (from .class files compiled with declared properties).
+ * - Generate getter/setter methods (for source files with declared properties)
+ * - Create inferred property fields (for both .class and source files)
  */
 public class ManPropertiesAugmentProvider extends PsiAugmentProvider
 {
   public static final Key<Boolean> ACCESSOR_TAG = Key.create( "ACCESSOR_TAG" );
 
+  @SuppressWarnings( "deprecation" )
   @NotNull
   public <E extends PsiElement> List<E> getAugments( @NotNull PsiElement element, @NotNull Class<E> cls )
   {
     return getAugments( element, cls, null );
   }
 
+  @NotNull
   public <E extends PsiElement> List<E> getAugments( @NotNull PsiElement element, @NotNull Class<E> cls, String nameHint )
   {
     if( !ManProject.isManifoldInUse( element ) )
@@ -86,10 +90,37 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
     else if( PsiField.class.isAssignableFrom( cls ) )
     {
       recreateNonbackingPropertyFields( psiClass, augFeatures );
+      inferPropertyFieldsFromAccessors( psiClass, augFeatures );
     }
 
     //noinspection unchecked
     return new ArrayList<>( (Collection<? extends E>)augFeatures.values() );
+  }
+
+  private void inferPropertyFieldsFromAccessors( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
+  {
+    forceAncestryToAugment( psiClass );
+    PropertyInference.inferPropertyFields( psiClass, augFeatures );
+  }
+
+  private static final Key<Boolean> forceAncestryToAugment_TAG = Key.create( "forceAncestryToAugment_TAG" );
+  private void forceAncestryToAugment( PsiClass psiClass )
+  {
+    if( !(psiClass instanceof PsiExtensibleClass) || psiClass.getUserData( forceAncestryToAugment_TAG ) != null )
+    {
+      return;
+    }
+
+    psiClass.putUserData( forceAncestryToAugment_TAG, true );
+
+    PsiClass st = psiClass.getSuperClass();
+    forceAncestryToAugment( st );
+    for( PsiClass iface : psiClass.getInterfaces() )
+    {
+      forceAncestryToAugment( iface );
+    }
+    // force augments to load on fields
+    psiClass.getFields();
   }
 
   private void recreateNonbackingPropertyFields( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
@@ -108,7 +139,9 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
       PsiAnnotation propgenAnno = m.getAnnotation( propgen.class.getTypeName() );
       if( propgenAnno != null )
       {
+        //noinspection ConstantConditions
         String fieldName = (String)((PsiLiteralValue)propgenAnno.findAttributeValue( "name" )).getValue();
+        //noinspection ConstantConditions
         if( augFeatures.containsKey( fieldName ) ||
           clsClass.getOwnFields().stream()
             .anyMatch( f -> fieldName.equals( f.getName() ) ) )
@@ -130,7 +163,8 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
 
     ManPsiElementFactory factory = ManPsiElementFactory.instance();
     ManLightFieldBuilder propField = factory.createLightField( psiClass.getManager(), fieldName, type )
-      .withContainingClass( psiClass );
+      .withContainingClass( psiClass )
+      .withNavigationElement( m );
 
     //noinspection ConstantConditions
     long flags = (long)((PsiLiteralValue)propgenAnno.findAttributeValue( "flags" )).getValue();
@@ -139,7 +173,6 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
     {
       if( (flags & modifier.getMod()) != 0 )
       {
-        //noinspection MagicConstant
         modifiers.add( modifier.getName() );
       }
     }
@@ -156,8 +189,10 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
         List<JvmAnnotationAttributeValue> values = ((JvmAnnotationArrayValue)value).getValues();
         if( !values.isEmpty() )
         {
+          //noinspection ConstantConditions
           String anno = ((PsiNameValuePair)attr).getValue().getText();
           anno = anno.substring( 1, anno.length() - 1 );
+          //noinspection UnstableApiUsage
           String fqn = ((JvmNestedAnnotationValue)values.get( 0 )).getValue().getQualifiedName();
           modifierList.addRawAnnotation( fqn, anno );
         }
