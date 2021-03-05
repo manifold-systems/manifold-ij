@@ -471,13 +471,25 @@ class PropertyMaker
 
   private String getGetterName( @SuppressWarnings( "SameParameterValue" ) boolean isOk )
   {
-    return (isOk && PsiType.BOOLEAN.equals( _field.getType() )
-      ? "is"
-      : "get") + ManStringUtil.capitalize( _field.getName() );
+    String name = _field.getName();
+    if( isOk && PsiType.BOOLEAN.equals( _field.getType() ) )
+    {
+      if( startsWithIs( name ) )
+      {
+        return name;
+      }
+      return "is" + ManStringUtil.capitalize( name );
+    }
+    return "get" + ManStringUtil.capitalize( name );
   }
 
   private String getSetterName()
   {
     return "set" + ManStringUtil.capitalize( _field.getName() );
+  }
+
+  private boolean startsWithIs( String name )
+  {
+    return name.length() > 2 && name.startsWith( "is" ) && Character.isUpperCase( name.charAt( 2 ) );
   }
 }

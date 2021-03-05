@@ -171,22 +171,11 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
 
     PsiField field = (PsiField)member;
 
-    PropertyInference.VarTagInfo tag = field.getCopyableUserData( PropertyInference.VAR_TAG );
-    if( tag != null && tag.weakestAccess >= 0 )
+    if( isVarTagAccessible( field, place, accessObjectClass, currentFileResolveScope ) )
     {
-      List<String> modifiers = new ArrayList<>();
-      for( ModifierMap modifier : ModifierMap.values() )
-      {
-        if( (tag.weakestAccess & modifier.getMod()) != 0 )
-        {
-          modifiers.add( modifier.getName() );
-        }
-      }
-      ManLightModifierListImpl modifierList = new ManLightModifierListImpl(
-        place.getManager(), JavaLanguage.INSTANCE, modifiers.toArray( new String[0] ) );
-      return super.isAccessible( field, modifierList, place, accessObjectClass, currentFileResolveScope );
+      return true;
     }
-    
+
     if( !PropertyInference.isPropertyField( field ) )
     {
       return null;
@@ -254,6 +243,11 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
       return null;
     }
 
+    if( isVarTagAccessible( (PsiField)member, place, accessObjectClass, currentFileResolveScope ) )
+    {
+      return true;
+    }
+
     PsiModifierList modifierList1 = member.getModifierList();
     if( modifierList1 != null && modifierList1.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) )
     {
@@ -286,6 +280,26 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
           return true;
         }
       }
+    }
+    return false;
+  }
+
+  private boolean isVarTagAccessible( PsiField field, PsiElement place, PsiClass accessObjectClass, PsiElement currentFileResolveScope )
+  {
+    PropertyInference.VarTagInfo tag = field.getCopyableUserData( PropertyInference.VAR_TAG );
+    if( tag != null && tag.weakestAccess >= 0 )
+    {
+      List<String> modifiers = new ArrayList<>();
+      for( ModifierMap modifier : ModifierMap.values() )
+      {
+        if( (tag.weakestAccess & modifier.getMod()) != 0 )
+        {
+          modifiers.add( modifier.getName() );
+        }
+      }
+      ManLightModifierListImpl modifierList = new ManLightModifierListImpl(
+        place.getManager(), JavaLanguage.INSTANCE, modifiers.toArray( new String[0] ) );
+      return super.isAccessible( field, modifierList, place, accessObjectClass, currentFileResolveScope );
     }
     return false;
   }
