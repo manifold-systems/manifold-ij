@@ -390,12 +390,12 @@ class PropertyInference
           (!exField.getModifierList().hasModifierProperty( PsiModifier.PUBLIC ) || isPropertyField( exField ))) &&
         exField.getContainingClass() != null && !exField.getContainingClass().isInterface() )
       {
-        int weakest = weakest( PropertyMaker.getAccess( exField.getModifierList() ), getAccess( flags ) );
-
+        boolean publicDefault = exField.getCopyableUserData( VAR_TAG ) == null;
+        int weakest = weakest( PropertyMaker.getAccess( exField.getModifierList(), publicDefault ), getAccess( flags ) );
         if( exField.getContainingClass() == psiClass )
         {
           // make the existing field accessible according to the weakest of property methods
-          int declaredAccess = PropertyMaker.getAccess( exField.getModifierList() );
+          int declaredAccess = PropertyMaker.getAccess( exField.getModifierList(), publicDefault );
           addVarTag( exField, varClass, weakest, declaredAccess );
           return null; // don't create another one
         }
@@ -480,7 +480,8 @@ class PropertyInference
 
     private int getAccess()
     {
-      return PropertyMaker.getAccess( _m.getModifierList() );
+      // inferred prop fields are *not* public by default, since they are generated it's easier this way
+      return PropertyMaker.getAccess( _m.getModifierList(), false );
     }
 
     private boolean isStatic()

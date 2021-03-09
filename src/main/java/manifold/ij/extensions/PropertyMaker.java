@@ -485,8 +485,11 @@ class PropertyMaker
 
   static int getAccess( PsiModifierList modifierList )
   {
-    if( modifierList.hasModifierProperty( PsiModifier.PUBLIC ) ||
-      modifierList.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) )
+    return getAccess( modifierList, true );
+  }
+  static int getAccess( PsiModifierList modifierList, boolean publicDefault )
+  {
+    if( modifierList.hasModifierProperty( PsiModifier.PUBLIC ) )
     {
       return PUBLIC;
     }
@@ -494,7 +497,11 @@ class PropertyMaker
     {
       return PROTECTED;
     }
-    return PRIVATE;
+    if( modifierList.hasModifierProperty( PsiModifier.PRIVATE ) )
+    {
+      return PRIVATE;
+    }
+    return publicDefault ? PUBLIC : 0;
   }
 
   private boolean isOption( PropOption option, JvmAnnotationAttribute e )

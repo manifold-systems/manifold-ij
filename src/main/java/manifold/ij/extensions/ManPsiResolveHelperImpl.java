@@ -171,12 +171,15 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
 
     PsiField field = (PsiField)member;
 
-    if( isVarTagAccessible( field, place, accessObjectClass, currentFileResolveScope ) )
+    Boolean varTagAccessible = isVarTagAccessible( field, place, accessObjectClass, currentFileResolveScope );
+    if( varTagAccessible != null )
     {
-      return true;
+      return varTagAccessible;
     }
 
-    if( !PropertyInference.isPropertyField( field ) )
+    if( !PropertyInference.isPropertyField( field ) ||
+      // inferred props are not public by default
+      field.getCopyableUserData( PropertyInference.VAR_TAG ) != null )
     {
       return null;
     }
@@ -184,7 +187,7 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
     PsiModifierList modifierList = field.getModifierList();
     if( modifierList != null && modifierList.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) )
     {
-      // properties are PUBLIC by default
+      // explicitly declared properties are PUBLIC by default (inferred properties are not)
       return true;
     }
     return null;
@@ -243,15 +246,22 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
       return null;
     }
 
-    if( isVarTagAccessible( (PsiField)member, place, accessObjectClass, currentFileResolveScope ) )
+    Boolean varTagAccessible = isVarTagAccessible( (PsiField)member, place, accessObjectClass, currentFileResolveScope );
+    if( varTagAccessible != null )
     {
-      return true;
+      return varTagAccessible;
+    }
+
+    if( member.getCopyableUserData( PropertyInference.VAR_TAG ) != null )
+    {
+      // inferred props are not public by default
+      return null;
     }
 
     PsiModifierList modifierList1 = member.getModifierList();
     if( modifierList1 != null && modifierList1.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) )
     {
-      // properties are PUBLIC by default
+      // explicitly declared properties are PUBLIC by default (inferred properties are not)
       return true;
     }
     return null;
@@ -284,24 +294,18 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
     return false;
   }
 
-  private boolean isVarTagAccessible( PsiField field, PsiElement place, PsiClass accessObjectClass, PsiElement currentFileResolveScope )
+  private Boolean isVarTagAccessible( PsiField field, PsiElement place, PsiClass accessObjectClass, PsiElement currentFileResolveScope )
   {
     PropertyInference.VarTagInfo tag = field.getCopyableUserData( PropertyInference.VAR_TAG );
     if( tag != null && tag.weakestAccess >= 0 )
     {
-      List<String> modifiers = new ArrayList<>();
-      for( ModifierMap modifier : ModifierMap.values() )
-      {
-        if( (tag.weakestAccess & modifier.getMod()) != 0 )
-        {
-          modifiers.add( modifier.getName() );
-        }
-      }
+      List<String> modifiers = ModifierMap.fromBits( tag.weakestAccess );
       ManLightModifierListImpl modifierList = new ManLightModifierListImpl(
         place.getManager(), JavaLanguage.INSTANCE, modifiers.toArray( new String[0] ) );
+      // note, inferred properties respect the default package-protected behavior
       return super.isAccessible( field, modifierList, place, accessObjectClass, currentFileResolveScope );
     }
-    return false;
+    return null;
   }
 
   private boolean isPotentialAccesor( PsiMethod m )

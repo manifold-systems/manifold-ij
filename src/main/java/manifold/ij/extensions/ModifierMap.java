@@ -68,6 +68,10 @@ public enum ModifierMap
         list.add( value.getName() );
       }
     }
+    if( (bits & (Modifier.PRIVATE|Modifier.PROTECTED|Modifier.PUBLIC)) == 0 )
+    {
+      list.add( PACKAGE_LOCAL.getName() );
+    }
     return list;
   }
 }
