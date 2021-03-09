@@ -11,6 +11,7 @@ import manifold.ij.psi.ManLightModifierListImpl;
 import manifold.ij.psi.ManPsiElementFactory;
 import manifold.rt.api.util.ManStringUtil;
 import manifold.rt.api.util.Pair;
+import manifold.rt.api.util.ReservedWordMapping;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
@@ -509,7 +510,9 @@ class PropertyInference
             derived = prefix + derived;
           }
 
-          return new PropAttrs( prefix, ManStringUtil.uncapitalize( derived ), type, m );
+          String propName = ManStringUtil.uncapitalize( derived );
+          propName = ReservedWordMapping.getIdentifierForName( propName ); // avoid clashing with Java reserved words
+          return new PropAttrs( prefix, propName, type, m );
         }
         else if( first == '_' )
         {
@@ -526,7 +529,9 @@ class PropertyInference
               sb = new StringBuilder( prefix + ManStringUtil.capitalize( sb.toString() ) );
             }
 
-            return new PropAttrs( prefix, sb.toString(), type, m );
+            String propName = sb.toString();
+            propName = ReservedWordMapping.getIdentifierForName( propName ); // avoid clashing with Java reserved words
+            return new PropAttrs( prefix, propName, type, m );
           }
         }
       }

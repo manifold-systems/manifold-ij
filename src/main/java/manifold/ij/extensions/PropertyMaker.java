@@ -1,5 +1,6 @@
 package manifold.ij.extensions;
 
+import com.intellij.extapi.psi.StubBasedPsiElementBase;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.lang.java.JavaLanguage;
@@ -8,18 +9,27 @@ import com.intellij.lang.jvm.annotation.JvmAnnotationAttributeValue;
 import com.intellij.lang.jvm.annotation.JvmAnnotationEnumFieldValue;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.compiled.ClsModifierListImpl;
+import com.intellij.psi.impl.java.stubs.PsiModifierListStub;
+import com.intellij.psi.impl.java.stubs.impl.PsiModifierListStubImpl;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
+import com.intellij.psi.impl.source.PsiModifierListImpl;
+import com.intellij.psi.stubs.StubElement;
 import com.intellij.psi.util.TypeConversionUtil;
 import com.sun.tools.javac.code.Flags;
 import manifold.ext.props.PropIssueMsg;
 import manifold.ext.props.rt.api.*;
+import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManLightModifierListImpl;
 import manifold.ij.psi.ManPsiElementFactory;
 import manifold.rt.api.util.ManStringUtil;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -75,10 +85,13 @@ class PropertyMaker
       return;
     }
 
+    PsiModifierList modifiers = _field.getModifierList();
+
+    removeStaticModifierFromInterfacePropertyField( modifiers );
+
     boolean isAbstract = _field.getAnnotation( Abstract.class.getTypeName() ) != null;
     boolean isFinal = _field.getAnnotation( Final.class.getTypeName() ) != null;
 
-    PsiModifierList modifiers = _field.getModifierList();
     //noinspection ConstantConditions
     if( modifiers.hasModifierProperty( PsiModifier.ABSTRACT ) )
     {
@@ -226,6 +239,52 @@ class PropertyMaker
 //      tree.getModifiers().annotations = com.sun.tools.javac.util.List.from( annos );
 //    }
 
+  }
+
+  /**
+   * Remove STATIC modifier on interface properties so they show in code completion.
+   */
+  private void removeStaticModifierFromInterfacePropertyField( PsiModifierList modifiers )
+  {
+    if( _augFeatures == null )
+    {
+      // no need during error annotation
+      return;
+    }
+
+    PsiClass psiClass = _field.getContainingClass();
+    if( psiClass != null && psiClass.isInterface() )
+    {
+      if( modifiers instanceof PsiModifierListImpl && modifiers.hasModifierProperty( PsiModifier.STATIC ) )
+      {
+        //noinspection rawtypes
+        StubBasedPsiElementBase modifierList = (StubBasedPsiElementBase)_field.getModifierList();
+        PsiModifierListStub stub = modifierList == null ? null : (PsiModifierListStub)modifierList.getGreenStub();
+        if( stub != null )
+        {
+          ReflectUtil.LiveFieldRef myMask = ReflectUtil.field( stub, "myMask" );
+          myMask.set( (int)myMask.get() & ~STATIC );
+          ReflectUtil.field( modifiers, "myModifierCache" ).set( null );
+        }
+        else
+        {
+          ReflectUtil.LiveFieldRef modifiersField = ReflectUtil.field( ReflectUtil.field( modifiers, "myModifierCache" ).get(), "modifiers" );
+          if( modifiersField != null )
+          {
+            //noinspection unchecked
+            List<String> list = (List<String>)modifiersField.get();
+            List<String> newList = new ArrayList<>( list );
+            newList.remove( PsiModifier.STATIC );
+            modifiersField.set( newList );
+          }
+        }
+      }
+      else if( modifiers instanceof ClsModifierListImpl )
+      {
+        ReflectUtil.LiveFieldRef myMask = ReflectUtil.field( ((ClsModifierListImpl)modifiers).getStub(), "myMask" );
+        myMask.set( (int)myMask.get() & ~STATIC );
+      }
+    }
   }
 
   private ManLightMethodBuilder makeGetter( boolean propAbstract, boolean propFinal, PropOption propAccess )

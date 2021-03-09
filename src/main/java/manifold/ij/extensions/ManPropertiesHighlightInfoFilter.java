@@ -2,6 +2,7 @@ package manifold.ij.extensions;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
+import com.intellij.lang.java.JavaLanguage;
 import com.intellij.psi.*;
 import manifold.ext.props.rt.api.get;
 import manifold.ext.props.rt.api.set;
@@ -9,7 +10,6 @@ import manifold.ext.props.rt.api.val;
 import manifold.ext.props.rt.api.var;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
-import manifold.rt.api.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,6 +33,11 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
     if( !ManProject.isManifoldInUse( file ) )
     {
       // Manifold jars are not used in the project
+      return true;
+    }
+
+    if( !(file.getLanguage() instanceof JavaLanguage) )
+    {
       return true;
     }
 
