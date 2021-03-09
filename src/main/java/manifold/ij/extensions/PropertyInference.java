@@ -103,6 +103,7 @@ class PropertyInference
 
   private void handleVars( Map<String, Set<PropAttrs>> fromGetter, Map<String, Set<PropAttrs>> fromSetter )
   {
+    outer:
     for( Map.Entry<String, Set<PropAttrs>> entry : fromGetter.entrySet() )
     {
       String name = entry.getKey();
@@ -110,23 +111,60 @@ class PropertyInference
       Set<PropAttrs> setters = fromSetter.get( name );
       if( getters != null && !getters.isEmpty() && setters != null && !setters.isEmpty() )
       {
-        outer:
-        for( PropAttrs getAttr : getters )
+        for( Iterator<PropAttrs> getterIter = getters.iterator(); getterIter.hasNext(); )
         {
+          PropAttrs getAttr = getterIter.next();
           PsiType getType = getAttr._type;
-          for( PropAttrs setAttr : setters )
+          for( Iterator<PropAttrs> setterIter = setters.iterator(); setterIter.hasNext(); )
           {
+            PropAttrs setAttr = setterIter.next();
             PsiType setType = setAttr._type;
             if( setType.isAssignableFrom( getType ) &&
               getAttr._m.getModifierList().hasModifierProperty( PsiModifier.STATIC ) == setAttr._m.getModifierList().hasModifierProperty( PsiModifier.STATIC ) )
             {
               makeVar( getAttr, setAttr );
-              break outer;
+              getterIter.remove();
+              setterIter.remove();
+              continue outer;
+            }
+          }
+        }
+      }
+      // Handle isXxx() where isXxx is the property name and the getter method name
+      if( getters != null && !getters.isEmpty() && isIsProperty( name ) )
+      {
+        setters = fromSetter.get( ManStringUtil.uncapitalize( ManStringUtil.uncapitalize( name.substring( 2 ) ) ) );
+        if( setters != null && !setters.isEmpty() )
+        {
+          for( Iterator<PropAttrs> getterIter = getters.iterator(); getterIter.hasNext(); )
+          {
+            PropAttrs getAttr = getterIter.next();
+            if( getAttr._m.getName().equals( name ) ) // only when isXxx is the name of property and getter method
+            {
+              PsiType getType = getAttr._type;
+              for( Iterator<PropAttrs> setterIter = setters.iterator(); setterIter.hasNext(); )
+              {
+                PropAttrs setAttr = setterIter.next();
+                PsiType setType = setAttr._type;
+                if( getType.isAssignableFrom( setType ) &&
+                  getAttr._m.getModifierList().hasModifierProperty( PsiModifier.STATIC ) == setAttr._m.getModifierList().hasModifierProperty( PsiModifier.STATIC ) )
+                {
+                  makeVar( getAttr, setAttr );
+                  getterIter.remove();
+                  setterIter.remove();
+                  continue outer;
+                }
+              }
             }
           }
         }
       }
     }
+  }
+
+  private boolean isIsProperty( String name )
+  {
+    return name.length() > 2 && name.startsWith( "is" ) && Character.isUpperCase( name.charAt( 2 ) );
   }
 
   private void handleVals( Map<String, Set<PropAttrs>> fromGetter, Map<String, Set<PropAttrs>> fromSetter )
