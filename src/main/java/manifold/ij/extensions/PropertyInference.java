@@ -511,8 +511,10 @@ class PropertyInference
           }
 
           String propName = ManStringUtil.uncapitalize( derived );
-          propName = ReservedWordMapping.getIdentifierForName( propName ); // avoid clashing with Java reserved words
-          return new PropAttrs( prefix, propName, type, m );
+          if( propName.equals( ReservedWordMapping.getIdentifierForName( propName ) ) ) // avoid clashing with Java reserved words
+          {
+            return new PropAttrs( prefix, propName, type, m );
+          }
         }
         else if( first == '_' )
         {
@@ -530,8 +532,10 @@ class PropertyInference
             }
 
             String propName = sb.toString();
-            propName = ReservedWordMapping.getIdentifierForName( propName ); // avoid clashing with Java reserved words
-            return new PropAttrs( prefix, propName, type, m );
+            if( propName.equals( ReservedWordMapping.getIdentifierForName( propName ) ) ) // avoid clashing with Java reserved words
+            {
+              return new PropAttrs( prefix, propName, type, m );
+            }
           }
         }
       }
