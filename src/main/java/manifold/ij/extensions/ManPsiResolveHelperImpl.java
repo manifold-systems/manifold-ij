@@ -100,6 +100,12 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
   @Nullable
   public Boolean handleProperties( @NotNull PsiMember member, @NotNull PsiElement place, @Nullable PsiClass accessObjectClass, @Nullable PsiElement currentFileResolveScope, boolean isCompletionContext )
   {
+    if( !ManProject.isManifoldInUse( place ) )
+    {
+      // Manifold jars are not used in the project
+      return null;
+    }
+
     ManModule module = ManProject.getModule( member );
     if( module != null && !module.isPropertiesEnabled() )
     {
