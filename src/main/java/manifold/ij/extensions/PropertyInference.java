@@ -427,6 +427,31 @@ class PropertyInference
     return false;
   }
 
+  static boolean isReadOnlyProperty( PsiField field )
+  {
+    PropertyInference.VarTagInfo varTagInfo = field.getCopyableUserData( PropertyInference.VAR_TAG );
+    if( varTagInfo != null )
+    {
+      return varTagInfo.varClass == val.class;
+    }
+
+    return field.getAnnotation( val.class.getTypeName() ) != null ||
+      (field.getAnnotation( var.class.getTypeName() ) == null &&
+        field.getAnnotation( get.class.getTypeName() ) != null);
+  }
+
+  static boolean isWriteOnlyProperty( PsiField field )
+  {
+    PropertyInference.VarTagInfo varTagInfo = field.getCopyableUserData( PropertyInference.VAR_TAG );
+    if( varTagInfo != null )
+    {
+      return varTagInfo.varClass == set.class;
+    }
+
+    return field.getAnnotation( var.class.getTypeName() ) == null &&
+      field.getAnnotation( set.class.getTypeName() ) != null;
+  }
+
   private PsiField[] findExistingFieldInAncestry( String name, PsiClass c, PsiClass origin )
   {
     if( !(c instanceof PsiExtensibleClass) )

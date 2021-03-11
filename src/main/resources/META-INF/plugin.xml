@@ -356,6 +356,7 @@ Other minor fixes and improvements.
     <implicitUsageProvider implementation="manifold.ij.extensions.ManStringLiteralTemplateUsageProvider"/>
     <targetElementEvaluator language="TEXT" implementationClass="manifold.ij.extensions.ManTextElementEvaluator"/>
     <completion.contributor language="JAVA" implementationClass="manifold.ij.extensions.ManJavaCompletionContributor" order="first"/>
+    <iconProvider implementation="manifold.ij.extensions.PropertiesIconProvider"/>
     <highlightVisitor implementation="manifold.ij.extensions.ManHighlightVisitor"/>
 
     <applicationConfigurable instance="manifold.ij.extensions.ManConfigurable"/>
