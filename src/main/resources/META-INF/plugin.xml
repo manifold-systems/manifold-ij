@@ -18,10 +18,15 @@
 Simply add Manifold to your existing project and begin taking advantage of it.</p>
 <blockquote>
   <p><em><strong>New!</strong></em></p>
-  <ul>
-    <li>Manifold supports <strong>Android Studio</strong>! <a href="http://manifold.systems/android.html">Learn more</a>.</li>
-    <li>Manifold supports <strong>Kotlin</strong>! <a href="http://manifold.systems/kotlin.html">Learn more</a>.</li>
-  </ul>
+  <strong>Properties for Java!</strong>
+  <pre><code class="java">
+    <b>public class</b> Person {
+      <b>@var</b> String name; // no more boilerplate code!
+    }
+    person.name = "Daisy"; // setter is called
+    String customer = person.name; // getter is called
+  </code></pre>
+  <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-props">Learn more</a>.
 </blockquote>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
 <h3><a href="#meta-programming" id="meta-programming"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold">Meta-programming</a></a></h3>
@@ -221,9 +226,43 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
 
   <change-notes>
     <![CDATA[
-<h3>Fixes & Features:<h3>
+<h3>Preview:</h3>
+<blockquote>
+  <strong>Properties for Java!</strong>
+  <pre><code class="java">
+    <b>public class</b> Person {
+      <b>@var</b> String name; // no more boilerplate code!
+    }
+    person.name = "Daisy"; // setter is called
+    String customer = person.name; // getter is called
+  </code></pre>
+  <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-props">Learn more</a>.
+</blockquote>
+<h3>Fixes & Features:</h3>
 <h4>
-<a href="https://github.com/manifold-systems/manifold/issues/230">#230</a>: JEP 305 (''Pattern Matching for instanceof'') usage isn't recognised in IDEA with Manifold plugin enabled
+<a href="https://github.com/manifold-systems/manifold/issues/251">#251</a>: prevent "error: Xxx is not a repeatable annotation type" esp. jetbrains NotNull, Nullable
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/248">#248</a>: GraphQL: improve support for custom scalar types
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/243">#243</a>: GraphQL: provide type-safe access to result data from GqlRequestException
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/242">#242</a>: Properties language support for Java (@var, @val, @set)
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/241">#241</a>: GraphQL: add simple Config API to manage system-level configuration options, RemoveNullConstraintValues added
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/240">#240</a>: support structural interfaces dynamically without having `manifold-ext` dependency at runtime
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/239">#239</a>: don't insert bootstrap in interfaces
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/238">#238</a>: Support Java 16
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/237">#237</a>: issue a compiler warning when an extension method conflicts with an extended class or another extension
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/236">#236</a>: handle case where Gradle uses a DelegatingJavaFileManager
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/235">#235</a>: GraphQL: report the duplication error directly as an error in the .gql file
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/230">#230</a>: JEP 305 ('Pattern Matching for instanceof') IJ plugin support
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/229">#229</a>: Add support for simpler Map creation using `mapOf` extension method with new `and` binder expressions
 <br>
