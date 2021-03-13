@@ -32,7 +32,6 @@ public class ModuleRefreshListener implements ModuleListener
 
   @Override
   public void modulesRenamed( Project project, List<Module> modules, Function<Module, String> moduleStringFunction )
-//  public void modulesRenamed( Project project, @NotNull List<? extends Module> modules, @NotNull Function<? super Module, String> moduleStringFunction )
   {
     ManProject.manProjectFrom( project ).reset();
   }
