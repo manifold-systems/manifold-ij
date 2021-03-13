@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import manifold.api.darkj.DarkJavaTypeManifold;
-import manifold.ij.core.IManOperatorOverloadReference;
+import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.rt.api.SourcePosition;
 import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.Nullable;
@@ -57,6 +57,20 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
         if( answer == null )
         {
           answer = resolve;
+        }
+
+        // for properties (manifold-props)
+        if( answer instanceof ManLightFieldBuilder )
+        {
+          resolve = answer.getNavigationElement();
+          if( resolve instanceof PsiModifierListOwner )
+          {
+            answer = find( (PsiModifierListOwner)resolve );
+            if( answer == null )
+            {
+              answer = resolve;
+            }
+          }
         }
         return answer;
       }
