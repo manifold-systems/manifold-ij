@@ -20,6 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static manifold.ij.extensions.PropertyInference.*;
+
 public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
 {
   public ManPsiResolveHelperImpl( Project project )
@@ -273,17 +275,16 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
     return null;
   }
 
-  @Nullable
   private boolean isOrOverridesAccessor( PsiMethod method )
   {
-    if( isPropertyAccessor( method ) )
+    if( getPropertyFieldFrom( method ) != null )
     {
-      // getters/setters corresponding with properties should not be available in completion
+      // getters/setters corresponding with explicit properties should not be available in completion
       return true;
     }
 
     // check if accessor override
-    if( isPotentialAccesor( method ) )
+    if( isPotentialAccessor( method ) )
     {
       MethodSignatureBackedByPsiMethod match = SuperMethodsSearch.search( method, null, true, false ).findFirst();
       if( match != null )
@@ -292,7 +293,7 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
         if( isOrOverridesAccessor( method ) )
         {
           // getters/setters corresponding with properties should not be available in completion
-          method.putCopyableUserData( ManPropertiesAugmentProvider.ACCESSOR_TAG, true ); // mark with tag to avoid super searching again
+//          method.putCopyableUserData( PropertyInference.ACCESSOR_TAG, true ); // mark with tag to avoid super searching again
           return true;
         }
       }
@@ -314,15 +315,18 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
     return null;
   }
 
-  private boolean isPotentialAccesor( PsiMethod m )
+  private boolean isPotentialAccessor( PsiMethod m )
   {
     String name = m.getName();
-    return name.startsWith( "get" ) || name.startsWith( "is" ) || name.startsWith( "set" );
-  }
-
-  private boolean isPropertyAccessor( PsiMember member )
-  {
-    return member.getCopyableUserData( ManPropertiesAugmentProvider.ACCESSOR_TAG ) != null;
+    for( String prefix: new String[] {"get", "is", "set"} )
+    {
+      if( name.length() > prefix.length() && name.startsWith( prefix ) &&
+        !Character.isLowerCase( name.charAt( prefix.length() ) ) )
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

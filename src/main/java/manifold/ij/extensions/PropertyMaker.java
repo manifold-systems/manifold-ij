@@ -7,19 +7,17 @@ import com.intellij.lang.java.JavaLanguage;
 import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.lang.jvm.annotation.JvmAnnotationAttributeValue;
 import com.intellij.lang.jvm.annotation.JvmAnnotationEnumFieldValue;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.compiled.ClsModifierListImpl;
 import com.intellij.psi.impl.java.stubs.PsiModifierListStub;
-import com.intellij.psi.impl.java.stubs.impl.PsiModifierListStubImpl;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.impl.source.PsiModifierListImpl;
-import com.intellij.psi.stubs.StubElement;
 import com.intellij.psi.util.TypeConversionUtil;
 import com.sun.tools.javac.code.Flags;
 import manifold.ext.props.PropIssueMsg;
 import manifold.ext.props.rt.api.*;
-import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManLightModifierListImpl;
@@ -28,7 +26,6 @@ import manifold.rt.api.util.ManStringUtil;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,7 +33,6 @@ import java.util.Objects;
 
 import static java.lang.reflect.Modifier.*;
 import static manifold.ext.props.PropIssueMsg.*;
-import static manifold.ij.extensions.ManPropertiesAugmentProvider.*;
 
 class PropertyMaker
 {
@@ -83,6 +79,11 @@ class PropertyMaker
     {
       // not a property field
       return;
+    }
+
+    if( _augFeatures != null )
+    {
+      removeOldTags( _field );
     }
 
     PsiModifierList modifiers = _field.getModifierList();
@@ -241,6 +242,27 @@ class PropertyMaker
 
   }
 
+  // remove old tags that may stick around after changing a field
+  static void removeOldTags( PsiField field )
+  {
+    field.putCopyableUserData( PropertyInference.VAR_TAG, null );
+    removeAccessorTag( field, PropertyInference.GETTER_TAG );
+    removeAccessorTag( field, PropertyInference.SETTER_TAG );
+  }
+  static void removeAccessorTag( PsiField field, Key<SmartPsiElementPointer<PsiMethod>> tag )
+  {
+    SmartPsiElementPointer<PsiMethod> accessor = field.getCopyableUserData( tag );
+    field.putCopyableUserData( tag, null );
+    if( accessor != null )
+    {
+      PsiMethod method = accessor.getElement();
+      if( method != null )
+      {
+        method.putCopyableUserData( PropertyInference.FIELD_TAG, null );
+      }
+    }
+  }
+
   /**
    * Remove STATIC modifier on interface properties so they show in code completion.
    */
@@ -298,7 +320,7 @@ class PropertyMaker
       .withMethodReturnType( _field.getType() )
       .withContainingClass( _psiClass )
       .withNavigationElement( _field );
-    getter.putCopyableUserData( ACCESSOR_TAG, true );
+    getter.putCopyableUserData( PropertyInference.FIELD_TAG, SmartPointerManager.createPointer( _field ) );
 //    if( !propAbstract )
 //    {
 //      JCTree.JCReturn ret = psiClass.isInterface()
@@ -309,8 +331,8 @@ class PropertyMaker
     PsiMethod existingGetter = findExistingAccessor( getter );
     if( existingGetter != null )
     {
-      _field.putCopyableUserData( GETTER_TAG, SmartPointerManager.createPointer( existingGetter ) );
-      existingGetter.putCopyableUserData( ACCESSOR_TAG, true );
+      _field.putCopyableUserData( PropertyInference.GETTER_TAG, SmartPointerManager.createPointer( existingGetter ) );
+      existingGetter.putCopyableUserData( PropertyInference.FIELD_TAG, SmartPointerManager.createPointer( _field ) );
       return null;
     }
     else if( _psiClass.isInterface() && _field.getModifierList().hasExplicitModifier( PsiModifier.STATIC ) && !_field.hasInitializer() )
@@ -338,12 +360,12 @@ class PropertyMaker
       .withMethodReturnType( PsiType.VOID )
       .withContainingClass( _psiClass )
       .withNavigationElement( _field );
-    setter.putCopyableUserData( ACCESSOR_TAG, true );
+    setter.putCopyableUserData( PropertyInference.FIELD_TAG, SmartPointerManager.createPointer( _field ) );
     PsiMethod existingSetter = findExistingAccessor( setter );
     if( existingSetter != null )
     {
-      _field.putCopyableUserData( SETTER_TAG, SmartPointerManager.createPointer( existingSetter ) );
-      existingSetter.putCopyableUserData( ACCESSOR_TAG, true );
+      _field.putCopyableUserData( PropertyInference.SETTER_TAG, SmartPointerManager.createPointer( existingSetter ) );
+      existingSetter.putCopyableUserData( PropertyInference.FIELD_TAG, SmartPointerManager.createPointer( _field ) );
       return null;
     }
     else if( _psiClass.isInterface() && _field.getModifierList().hasExplicitModifier( PsiModifier.STATIC ) && !_field.hasInitializer() )

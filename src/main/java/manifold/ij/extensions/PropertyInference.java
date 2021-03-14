@@ -22,12 +22,13 @@ import java.util.function.Consumer;
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.reflect.Modifier.*;
 import static java.lang.reflect.Modifier.PRIVATE;
-import static manifold.ij.extensions.ManPropertiesAugmentProvider.GETTER_TAG;
-import static manifold.ij.extensions.ManPropertiesAugmentProvider.SETTER_TAG;
 
 class PropertyInference
 {
   static final Key<VarTagInfo> VAR_TAG = Key.create( "VAR_TAG" );
+  static final Key<SmartPsiElementPointer<PsiField>> FIELD_TAG = Key.create( "FIELD_TAG" );
+  static final Key<SmartPsiElementPointer<PsiMethod>> GETTER_TAG = Key.create( "GETTER_TAG" );
+  static final Key<SmartPsiElementPointer<PsiMethod>> SETTER_TAG = Key.create( "SETTER_TAG" );
 
   private final LinkedHashMap<String, PsiMember> _augFeatures;
 
@@ -457,7 +458,7 @@ class PropertyInference
     return isExplicitPropertyField( field );
   }
 
-  private static boolean isExplicitPropertyField( PsiField field )
+  static boolean isExplicitPropertyField( PsiField field )
   {
     for( Class<?> cls : Arrays.asList( var.class, val.class, get.class, set.class ) )
     {
@@ -579,6 +580,23 @@ class PropertyInference
         : acc2 != PRIVATE
         ? 0
         : PRIVATE;
+  }
+
+  static PsiField getPropertyFieldFrom( PsiMethod accessor )
+  {
+    SmartPsiElementPointer<PsiField> fieldPtr = accessor.getCopyableUserData( FIELD_TAG );
+    if( fieldPtr != null )
+    {
+      PsiField field = fieldPtr.getElement();
+      if( field != null )
+      {
+        if( isExplicitPropertyField( field ) )
+        {
+          return field;
+        }
+      }
+    }
+    return null;
   }
 
   private PropAttrs derivePropertyNameFromGetter( PsiMethod m )

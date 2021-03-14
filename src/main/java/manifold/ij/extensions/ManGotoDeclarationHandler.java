@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Objects;
 
 import com.intellij.psi.util.PsiUtil;
+import com.intellij.refactoring.util.RefactoringUtil;
 import manifold.api.darkj.DarkJavaTypeManifold;
 import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.rt.api.SourcePosition;
@@ -22,8 +23,8 @@ import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static manifold.ij.extensions.ManPropertiesAugmentProvider.GETTER_TAG;
-import static manifold.ij.extensions.ManPropertiesAugmentProvider.SETTER_TAG;
+import static manifold.ij.extensions.PropertyInference.GETTER_TAG;
+import static manifold.ij.extensions.PropertyInference.SETTER_TAG;
 
 
 /**
@@ -88,16 +89,20 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
           return resolve;
         }
 
+        PsiElement g = getter == null ? null : getter.getElement();
+        PsiElement s = setter == null ? null : setter.getElement();
         if( parent.getParent() instanceof PsiAssignmentExpression )
         {
-          answer = setter == null ? null : setter.getElement();
+          answer = s;
         }
         else
         {
-          answer = getter == null ? null : getter.getElement();
+          answer = g;
         }
 
-        if( answer == null )
+        PsiMethod enclMethod = RefactoringUtil.getEnclosingMethod( parent );
+        if( answer == null ||
+            g == enclMethod || s == enclMethod ) // prop ref in getter/setter goes direct to field
         {
           answer = resolve;
         }
