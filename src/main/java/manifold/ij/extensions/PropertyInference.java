@@ -12,10 +12,12 @@ import manifold.ij.psi.ManPsiElementFactory;
 import manifold.rt.api.util.ManStringUtil;
 import manifold.rt.api.util.Pair;
 import manifold.rt.api.util.ReservedWordMapping;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.reflect.Modifier.*;
@@ -24,6 +26,9 @@ import static java.lang.reflect.Modifier.PRIVATE;
 class PropertyInference
 {
   static final Key<VarTagInfo> VAR_TAG = Key.create( "VAR_TAG" );
+  static final Key<SmartPsiElementPointer<PsiField>> FIELD_TAG = Key.create( "FIELD_TAG" );
+  static final Key<SmartPsiElementPointer<PsiMethod>> GETTER_TAG = Key.create( "GETTER_TAG" );
+  static final Key<SmartPsiElementPointer<PsiMethod>> SETTER_TAG = Key.create( "SETTER_TAG" );
 
   private final LinkedHashMap<String, PsiMember> _augFeatures;
 
@@ -214,7 +219,8 @@ class PropertyInference
     int flags = weakest( getAttr.getAccess(), setAttr.getAccess() );
     flags |= (getAttr.isStatic() ? STATIC : 0);
 
-    Pair<Integer, PsiField> res = handleExistingField( fieldName, t, flags, psiClass, var.class );
+    Pair<Integer, PsiField> res = handleExistingField( fieldName, t, flags, psiClass, var.class,
+      exField -> addAccessors( exField, getAttr._m, setAttr._m ) );
     if( res == null )
     {
       // existing field found and, if local and compatible, changed access privilege in-place and added @var|val|set
@@ -226,7 +232,7 @@ class PropertyInference
     flags = res.getFirst() == MAX_VALUE ? flags : weakest( res.getFirst(), flags );
 
     ManLightFieldBuilder propField = makePropField( fieldName, psiClass, t, flags, getAttr );
-    addField( propField, var.class );
+    addField( propField, var.class, getAttr._m, setAttr._m );
   }
 
   private void makeVal( PropAttrs getAttr )
@@ -241,7 +247,8 @@ class PropertyInference
     int flags = getAttr.getAccess();
     flags |= (getAttr.isStatic() ? STATIC : 0);
 
-    Pair<Integer, PsiField> res = handleExistingField( fieldName, getAttr._type, flags, psiClass, val.class );
+    Pair<Integer, PsiField> res = handleExistingField( fieldName, getAttr._type, flags, psiClass, val.class,
+      exField -> addAccessors( exField, getAttr._m, null ));
     if( res == null )
     {
       // existing field found and, if local and compatible, changed access privilege in-place and added @var|val|set
@@ -256,11 +263,12 @@ class PropertyInference
     ManLightFieldBuilder propField = makePropField( fieldName, psiClass, getAttr._type, flags, getAttr );
 
     // if super's field is writable, make this one also writable to allow the setter to be used in assignments
+    PsiField exField = res.getSecond();
     Class<? extends Annotation> varClass =
-      res.getSecond() != null && isWritableProperty( res.getSecond() )
+      exField != null && isWritableProperty( exField )
         ? var.class
         : val.class;
-    addField( propField, varClass );
+    addField( propField, varClass, getAttr._m, exField != null ? getSmartPointer( exField, SETTER_TAG ) : null );
   }
 
   private void makeWo( PropAttrs setAttr )
@@ -275,7 +283,8 @@ class PropertyInference
     int flags = setAttr.getAccess();
     flags |= (setAttr.isStatic() ? STATIC : 0);
 
-    Pair<Integer, PsiField> res = handleExistingField( fieldName, setAttr._type, flags, psiClass, set.class );
+    Pair<Integer, PsiField> res = handleExistingField( fieldName, setAttr._type, flags, psiClass, set.class,
+      exField -> addAccessors( exField, null, setAttr._m ));
     if( res == null )
     {
       // existing field found and, if local and compatible, changed access privilege in-place and added @var|val|set
@@ -290,11 +299,32 @@ class PropertyInference
     ManLightFieldBuilder propField = makePropField( fieldName, psiClass, setAttr._type, flags, setAttr );
 
     // if super's field is writable, make this one also writable to allow the setter to be used in assignments
+    PsiField exField = res.getSecond();
     Class<? extends Annotation> varClass =
-      res.getSecond() != null && isReadableProperty( res.getSecond() )
+      exField != null && isReadableProperty( exField )
         ? var.class
         : set.class;
-    addField( propField, varClass );
+    addField( propField, varClass, exField != null ? getSmartPointer( exField, GETTER_TAG ) : null, setAttr._m );
+  }
+
+  @Nullable
+  private PsiMethod getSmartPointer( PsiField exField, Key<SmartPsiElementPointer<PsiMethod>> setterTag )
+  {
+    SmartPsiElementPointer<PsiMethod> ptr = exField.getCopyableUserData( setterTag );
+    return ptr == null ? null : ptr.getElement();
+  }
+
+  private void addAccessors( PsiField field, PsiMethod getter, PsiMethod setter )
+  {
+    if( getter != null )
+    {
+      field.putCopyableUserData( GETTER_TAG, SmartPointerManager.createPointer( getter ) );
+    }
+
+    if( setter != null )
+    {
+      field.putCopyableUserData( SETTER_TAG, SmartPointerManager.createPointer( setter ) );
+    }
   }
 
   public boolean isWritableProperty( PsiField exField )
@@ -341,10 +371,11 @@ class PropertyInference
       .withNavigationElement( accessor._m );
   }
 
-  private void addField( PsiField propField, Class<? extends Annotation> varClass )
+  private void addField( PsiField propField, Class<? extends Annotation> varClass, PsiMethod getter, PsiMethod setter )
   {
     addVarTag( propField, varClass, -1, -1 );
     _augFeatures.put( propField.getName(), propField );
+    addAccessors( propField, getter, setter );
   }
 
   private void addVarTag( PsiField propField, Class<? extends Annotation> varClass, int weakestAccess, int declaredAccess )
@@ -375,7 +406,8 @@ class PropertyInference
     return t2.isAssignableFrom( t1 ) ? t1 : t2;
   }
 
-  private Pair<Integer, PsiField> handleExistingField( String fieldName, PsiType t, int flags, PsiClass psiClass, Class<? extends Annotation> varClass )
+  private Pair<Integer, PsiField> handleExistingField( String fieldName, PsiType t, int flags, PsiClass psiClass,
+                                                       Class<? extends Annotation> varClass, Consumer<PsiField> cb )
   {
     PsiField[] existing = findExistingFieldInAncestry( fieldName, psiClass, psiClass );
     if( existing != null && existing.length > 0 )
@@ -394,9 +426,15 @@ class PropertyInference
         int weakest = weakest( PropertyMaker.getAccess( exField.getModifierList(), publicDefault ), getAccess( flags ) );
         if( exField.getContainingClass() == psiClass )
         {
+          if( isExplicitPropertyField( exField ) )
+          {
+            return null; // the field is already a property with @var or @val, etc.
+          }
+
           // make the existing field accessible according to the weakest of property methods
           int declaredAccess = PropertyMaker.getAccess( exField.getModifierList(), publicDefault );
           addVarTag( exField, varClass, weakest, declaredAccess );
+          cb.accept( exField );
           return null; // don't create another one
         }
         if( isPropertyField( exField ) )
@@ -413,9 +451,15 @@ class PropertyInference
   {
     if( field.getCopyableUserData( VAR_TAG ) != null )
     {
+      // inferred property
       return true;
     }
 
+    return isExplicitPropertyField( field );
+  }
+
+  static boolean isExplicitPropertyField( PsiField field )
+  {
     for( Class<?> cls : Arrays.asList( var.class, val.class, get.class, set.class ) )
     {
       PsiAnnotation propAnno = field.getAnnotation( cls.getTypeName() );
@@ -536,6 +580,23 @@ class PropertyInference
         : acc2 != PRIVATE
         ? 0
         : PRIVATE;
+  }
+
+  static PsiField getPropertyFieldFrom( PsiMethod accessor )
+  {
+    SmartPsiElementPointer<PsiField> fieldPtr = accessor.getCopyableUserData( FIELD_TAG );
+    if( fieldPtr != null )
+    {
+      PsiField field = fieldPtr.getElement();
+      if( field != null )
+      {
+        if( isExplicitPropertyField( field ) )
+        {
+          return field;
+        }
+      }
+    }
+    return null;
   }
 
   private PropAttrs derivePropertyNameFromGetter( PsiMethod m )

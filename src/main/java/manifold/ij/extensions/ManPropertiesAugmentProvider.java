@@ -32,8 +32,6 @@ import static manifold.ij.extensions.PropertyMaker.generateAccessors;
  */
 public class ManPropertiesAugmentProvider extends PsiAugmentProvider
 {
-  public static final Key<Boolean> ACCESSOR_TAG = Key.create( "ACCESSOR_TAG" );
-
   @SuppressWarnings( "deprecation" )
   @NotNull
   public <E extends PsiElement> List<E> getAugments( @NotNull PsiElement element, @NotNull Class<E> cls )
