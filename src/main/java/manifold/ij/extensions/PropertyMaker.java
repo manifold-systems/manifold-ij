@@ -36,7 +36,7 @@ import java.util.Objects;
 
 import static java.lang.reflect.Modifier.*;
 import static manifold.ext.props.PropIssueMsg.*;
-import static manifold.ij.extensions.ManPropertiesAugmentProvider.ACCESSOR_TAG;
+import static manifold.ij.extensions.ManPropertiesAugmentProvider.*;
 
 class PropertyMaker
 {
@@ -309,6 +309,7 @@ class PropertyMaker
     PsiMethod existingGetter = findExistingAccessor( getter );
     if( existingGetter != null )
     {
+      _field.putCopyableUserData( GETTER_TAG, SmartPointerManager.createPointer( existingGetter ) );
       existingGetter.putCopyableUserData( ACCESSOR_TAG, true );
       return null;
     }
@@ -341,6 +342,7 @@ class PropertyMaker
     PsiMethod existingSetter = findExistingAccessor( setter );
     if( existingSetter != null )
     {
+      _field.putCopyableUserData( SETTER_TAG, SmartPointerManager.createPointer( existingSetter ) );
       existingSetter.putCopyableUserData( ACCESSOR_TAG, true );
       return null;
     }

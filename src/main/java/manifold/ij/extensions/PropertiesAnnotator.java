@@ -171,11 +171,11 @@ public class PropertiesAnnotator implements Annotator
 
   private boolean isReadOnlyProperty( PsiField field, PsiClass topLevelClass )
   {
-    return isVal( field ) ||
+    return (isVal( field ) ||
       (field.hasAnnotation( get.class.getTypeName() ) &&
         !field.hasAnnotation( set.class.getTypeName() ) &&
-        !isVar( field ) &&
-        !keepRefToField( field, topLevelClass ));
+        !isVar( field ))) &&
+        (!hasVarTag( field, val.class ) || !keepRefToField( field, topLevelClass ));
   }
 
   private boolean isWriteOnlyProperty( PsiField field, @Nullable PsiClass topLevelClass )
@@ -184,7 +184,7 @@ public class PropertiesAnnotator implements Annotator
       !isVar( field ) &&
       !field.hasAnnotation( get.class.getTypeName() ) &&
       !isVal( field ) &&
-      !keepRefToField( field, topLevelClass );
+      (!hasVarTag( field, set.class ) || !keepRefToField( field, topLevelClass ));
   }
 
   /**
@@ -193,8 +193,7 @@ public class PropertiesAnnotator implements Annotator
    * author of the class wants to access stuff inside his implementation using property syntax, he should explicitly
    * declare properties.
    */
-  @SuppressWarnings( "BooleanMethodIsAlwaysInverted" )
-  private boolean keepRefToField( PsiField psiField, PsiClass psiClass )
+  static boolean keepRefToField( PsiField psiField, PsiClass psiClass )
   {
     PsiClass fieldsClass = psiField.getContainingClass();
     if( fieldsClass == null )

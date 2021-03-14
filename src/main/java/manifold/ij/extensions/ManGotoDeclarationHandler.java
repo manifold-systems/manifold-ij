@@ -5,28 +5,25 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiAnnotationMemberValue;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiLiteralExpression;
-import com.intellij.psi.PsiMember;
-import com.intellij.psi.PsiModifierList;
-import com.intellij.psi.PsiModifierListOwner;
-import com.intellij.psi.PsiReference;
-import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.*;
+
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+
+import com.intellij.psi.util.PsiUtil;
 import manifold.api.darkj.DarkJavaTypeManifold;
 import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.rt.api.SourcePosition;
 import manifold.ij.core.ManProject;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import static manifold.ij.extensions.ManPropertiesAugmentProvider.GETTER_TAG;
+import static manifold.ij.extensions.ManPropertiesAugmentProvider.SETTER_TAG;
 
 
 /**
@@ -53,6 +50,12 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
       PsiElement resolve = resolveRef( parent );
       if( resolve instanceof PsiModifierListOwner )
       {
+        PsiElement accessor = findPropertyTarget( parent, resolve );
+        if( accessor != null )
+        {
+          return accessor;
+        }
+
         PsiElement answer = find( (PsiModifierListOwner)resolve );
         if( answer == null )
         {
@@ -62,20 +65,65 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
         // for properties (manifold-props)
         if( answer instanceof ManLightFieldBuilder )
         {
-          resolve = answer.getNavigationElement();
-          if( resolve instanceof PsiModifierListOwner )
-          {
-            answer = find( (PsiModifierListOwner)resolve );
-            if( answer == null )
-            {
-              answer = resolve;
-            }
-          }
+          answer = findTypeManifoldPropertyTarget( answer );
+        }
+
+        return answer;
+      }
+    }
+    return null;
+  }
+
+  private PsiElement findPropertyTarget( PsiElement parent, PsiElement resolve )
+  {
+    if( resolve instanceof PsiField )
+    {
+      @Nullable SmartPsiElementPointer<PsiMethod> getter = resolve.getCopyableUserData( GETTER_TAG );
+      @Nullable SmartPsiElementPointer<PsiMethod> setter = resolve.getCopyableUserData( SETTER_TAG );
+      PsiElement answer;
+      if( getter != null || setter != null )
+      {
+        if( PropertiesAnnotator.keepRefToField( (PsiField)resolve, PsiUtil.getTopLevelClass( parent ) ) )
+        {
+          return resolve;
+        }
+
+        if( parent.getParent() instanceof PsiAssignmentExpression )
+        {
+          answer = setter == null ? null : setter.getElement();
+        }
+        else
+        {
+          answer = getter == null ? null : getter.getElement();
+        }
+
+        if( answer == null )
+        {
+          answer = resolve;
+        }
+        else
+        {
+          answer = findTypeManifoldPropertyTarget( answer );
         }
         return answer;
       }
     }
     return null;
+  }
+
+  @NotNull
+  private PsiElement findTypeManifoldPropertyTarget( PsiElement answer )
+  {
+    PsiElement resolve = answer.getNavigationElement();
+    if( resolve instanceof PsiModifierListOwner )
+    {
+      answer = find( (PsiModifierListOwner)resolve );
+      if( answer == null )
+      {
+        answer = resolve;
+      }
+    }
+    return answer;
   }
 
   public static PsiElement resolveRef( PsiElement target )
