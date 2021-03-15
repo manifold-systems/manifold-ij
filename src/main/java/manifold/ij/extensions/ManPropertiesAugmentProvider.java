@@ -23,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
+import static manifold.ij.extensions.PropertyInference.GETTER_TAG;
+import static manifold.ij.extensions.PropertyInference.SETTER_TAG;
 import static manifold.ij.extensions.PropertyMaker.generateAccessors;
 
 /**
@@ -139,30 +141,38 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
       {
         //noinspection ConstantConditions
         String fieldName = (String)((PsiLiteralValue)propgenAnno.findAttributeValue( "name" )).getValue();
-        //noinspection ConstantConditions
-        if( augFeatures.containsKey( fieldName ) ||
-          clsClass.getOwnFields().stream()
-            .anyMatch( f -> fieldName.equals( f.getName() ) ) )
+        if( fieldName != null )
         {
-          // prop field already exists
-          continue;
-        }
+          PsiMember field = augFeatures.get( fieldName );
+          if( !(field instanceof PsiField) )
+          {
+            field = clsClass.getOwnFields().stream()
+              .filter( f -> fieldName.equals( f.getName() ) )
+              .findFirst().orElse( null );
+          }
+          if( field instanceof PsiField )
+          {
+            // prop field already exists
+            addGetterSetterTag( (PsiField)field, m );
+            continue;
+          }
 
-        ManLightFieldBuilder propField = addPropField( psiClass, m, propgenAnno, fieldName );
-        augFeatures.put( fieldName, propField );
+          ManLightFieldBuilder propField = addPropField( psiClass, m, propgenAnno, fieldName );
+          augFeatures.put( fieldName, propField );
+        }
       }
     }
   }
 
-  private ManLightFieldBuilder addPropField( PsiExtensibleClass psiClass, PsiMethod m, PsiAnnotation propgenAnno, String fieldName )
+  private ManLightFieldBuilder addPropField( PsiExtensibleClass psiClass, PsiMethod accessor, PsiAnnotation propgenAnno, String fieldName )
   {
-    @NotNull PsiParameter[] parameters = m.getParameterList().getParameters();
-    PsiType type = parameters.length == 0 ? m.getReturnType() : parameters[0].getType();
+    @NotNull PsiParameter[] parameters = accessor.getParameterList().getParameters();
+    PsiType type = parameters.length == 0 ? accessor.getReturnType() : parameters[0].getType();
 
     ManPsiElementFactory factory = ManPsiElementFactory.instance();
     ManLightFieldBuilder propField = factory.createLightField( psiClass.getManager(), fieldName, type )
       .withContainingClass( psiClass )
-      .withNavigationElement( m );
+      .withNavigationElement( accessor );
 
     //noinspection ConstantConditions
     long flags = (long)((PsiLiteralValue)propgenAnno.findAttributeValue( "flags" )).getValue();
@@ -177,6 +187,8 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
     ManLightModifierListImpl modifierList = new ManLightModifierListImpl( psiClass.getManager(), JavaLanguage.INSTANCE,
       modifiers.toArray( new String[0] ) );
     propField.withModifierList( modifierList );
+
+    addGetterSetterTag( propField, accessor );
 
     // add the @var, @val, @get, @set, etc. annotations
     for( JvmAnnotationAttribute attr : propgenAnno.getAttributes() )
@@ -197,6 +209,12 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
       }
     }
     return propField;
+  }
+
+  private void addGetterSetterTag( PsiField propField, PsiMethod accessor )
+  {
+    propField.putCopyableUserData( accessor.getParameterList().getParametersCount() == 0 ? GETTER_TAG : SETTER_TAG,
+      SmartPointerManager.createPointer( accessor ) );
   }
 
   private void addMethods( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
