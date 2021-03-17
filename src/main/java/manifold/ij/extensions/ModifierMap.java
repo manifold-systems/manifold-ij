@@ -1,5 +1,6 @@
 package manifold.ij.extensions;
 
+import com.intellij.psi.PsiModifier;
 import com.sun.tools.javac.code.Flags;
 
 import java.lang.reflect.Modifier;
@@ -9,19 +10,19 @@ import java.util.List;
 
 public enum ModifierMap
 {
-  PUBLIC( "public", Modifier.PUBLIC ),
-  PROTECTED( "protected", Modifier.PROTECTED ),
-  PRIVATE( "private", Modifier.PRIVATE ),
-  PACKAGE_LOCAL( "packageLocal", 0 ),
-  STATIC( "static", Modifier.STATIC ),
-  ABSTRACT( "abstract", Modifier.ABSTRACT ),
-  FINAL( "final", Modifier.FINAL ),
-  NATIVE( "native", Modifier.NATIVE ),
-  SYNCHRONIZED( "synchronized", Modifier.SYNCHRONIZED ),
-  STRICTFP( "strictfp", Modifier.STRICT ),
-  TRANSIENT( "transient", Modifier.TRANSIENT ),
-  VOLATILE( "volatile", Modifier.VOLATILE ),
-  DEFAULT( "default", Flags.DEFAULT );
+  PUBLIC( PsiModifier.PUBLIC, Modifier.PUBLIC ),
+  PROTECTED( PsiModifier.PROTECTED, Modifier.PROTECTED ),
+  PRIVATE( PsiModifier.PRIVATE, Modifier.PRIVATE ),
+  PACKAGE_LOCAL( PsiModifier.PACKAGE_LOCAL, 0 ),
+  STATIC( PsiModifier.STATIC, Modifier.STATIC ),
+  ABSTRACT( PsiModifier.ABSTRACT, Modifier.ABSTRACT ),
+  FINAL( PsiModifier.FINAL, Modifier.FINAL ),
+  NATIVE( PsiModifier.NATIVE, Modifier.NATIVE ),
+  SYNCHRONIZED( PsiModifier.SYNCHRONIZED, Modifier.SYNCHRONIZED ),
+  STRICTFP( PsiModifier.STRICTFP, Modifier.STRICT ),
+  TRANSIENT( PsiModifier.TRANSIENT, Modifier.TRANSIENT ),
+  VOLATILE( PsiModifier.VOLATILE, Modifier.VOLATILE ),
+  DEFAULT( PsiModifier.DEFAULT, Flags.DEFAULT );
 
   private final String _name;
   private final long _mod;

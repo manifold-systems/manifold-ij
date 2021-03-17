@@ -417,10 +417,10 @@ class PropertyInference
       PsiField exField = existing[0];
       if( t.isAssignableFrom( exField.getType() ) &&
         (exField.getModifierList() == null
-          ? !Modifier.isStatic( flags )
-          : exField.getModifierList().hasExplicitModifier( PsiModifier.STATIC ) == Modifier.isStatic( flags ) &&
+          ? !isStatic( flags )
+          : exField.getModifierList().hasExplicitModifier( PsiModifier.STATIC ) == isStatic( flags ) &&
           (!exField.getModifierList().hasModifierProperty( PsiModifier.PUBLIC ) || isPropertyField( exField ))) &&
-        exField.getContainingClass() != null && !exField.getContainingClass().isInterface() )
+        exField.getContainingClass() != null && (!isStatic( flags ) || !exField.getContainingClass().isInterface()) )
       {
         boolean publicDefault = exField.getCopyableUserData( VAR_TAG ) == null;
         int weakest = weakest( PropertyMaker.getAccess( exField.getModifierList(), publicDefault ), getAccess( flags ) );
