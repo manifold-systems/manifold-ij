@@ -111,7 +111,7 @@ public class PropertiesAnnotator implements Annotator
       PsiElement resolve = ((PsiReferenceExpression)lhs).resolve();
       if( resolve instanceof PsiField )
       {
-        if( isReadOnlyProperty( (PsiField)resolve, PsiUtil.getTopLevelClass( element ) ) &&
+        if( isReadOnlyProperty( lhs, (PsiField)resolve, PsiUtil.getTopLevelClass( element ) ) &&
           (!inOwnConstructor( expr ) || ((PsiField)resolve).hasInitializer()) )
         {
           TextRange range = new TextRange( lhs.getTextRange().getStartOffset(),
@@ -138,7 +138,7 @@ public class PropertiesAnnotator implements Annotator
       PsiElement resolve = expr.resolve();
       if( resolve instanceof PsiField )
       {
-        if( isWriteOnlyProperty( (PsiField)resolve, PsiUtil.getTopLevelClass( element ) ) )
+        if( isWriteOnlyProperty( expr, (PsiField)resolve, PsiUtil.getTopLevelClass( element ) ) )
         {
           TextRange range = new TextRange( expr.getTextRange().getStartOffset(),
             expr.getTextRange().getEndOffset() );
@@ -158,22 +158,22 @@ public class PropertiesAnnotator implements Annotator
     return m != null && m.isConstructor() && m.getContainingClass() == psiClass;
   }
 
-  private boolean isReadOnlyProperty( PsiField field, PsiClass topLevelClass )
+  private boolean isReadOnlyProperty( PsiExpression place, PsiField field, PsiClass topLevelClass )
   {
     return (isVal( field ) ||
       (field.hasAnnotation( get.class.getTypeName() ) &&
         !field.hasAnnotation( set.class.getTypeName() ) &&
         !isVar( field ))) &&
-        (!hasVarTag( field, val.class ) || !keepRefToField( field, topLevelClass ));
+        (!hasVarTag( field, val.class ) || !keepRefToField( place, field, topLevelClass ));
   }
 
-  private boolean isWriteOnlyProperty( PsiField field, @Nullable PsiClass topLevelClass )
+  private boolean isWriteOnlyProperty( PsiExpression place, PsiField field, @Nullable PsiClass topLevelClass )
   {
     return (hasVarTag( field, set.class ) || field.hasAnnotation( set.class.getTypeName() )) &&
       !isVar( field ) &&
       !field.hasAnnotation( get.class.getTypeName() ) &&
       !isVal( field ) &&
-      (!hasVarTag( field, set.class ) || !keepRefToField( field, topLevelClass ));
+      (!hasVarTag( field, set.class ) || !keepRefToField( place, field, topLevelClass ));
   }
 
   /**
@@ -182,12 +182,17 @@ public class PropertiesAnnotator implements Annotator
    * author of the class wants to access stuff inside his implementation using property syntax, he should explicitly
    * declare properties.
    */
-  static boolean keepRefToField( PsiField psiField, PsiClass psiClass )
+  static boolean keepRefToField( PsiElement place, PsiField psiField, PsiClass psiClass )
   {
     PsiClass fieldsClass = psiField.getContainingClass();
     if( fieldsClass == null )
     {
       return false;
+    }
+
+    if( place instanceof  PsiExpression && ManPsiResolveHelperImpl.isJailbreakType( ((PsiExpression)place).getType() ) )
+    {
+      return true;
     }
 
     PropertyInference.VarTagInfo tag = psiField.getCopyableUserData( VAR_TAG );

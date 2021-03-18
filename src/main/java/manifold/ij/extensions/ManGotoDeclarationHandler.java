@@ -84,7 +84,7 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
       PsiElement answer;
       if( getter != null || setter != null )
       {
-        if( PropertiesAnnotator.keepRefToField( (PsiField)resolve, PsiUtil.getTopLevelClass( parent ) ) )
+        if( PropertiesAnnotator.keepRefToField( parent, (PsiField)resolve, PsiUtil.getTopLevelClass( parent ) ) )
         {
           return resolve;
         }
