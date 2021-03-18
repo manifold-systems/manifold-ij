@@ -194,7 +194,7 @@ public class PropertiesAnnotator implements Annotator
     {
       return true;
     }
-    
+
     PropertyInference.VarTagInfo tag = psiField.getCopyableUserData( VAR_TAG );
     if( tag == null )
     {

@@ -60,6 +60,34 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
     return ApplicationManager.getApplication().runReadAction( (Computable<List<E>>)() -> _getAugments( element, cls ) );
   }
 
+  @Override
+  protected @NotNull Set<String> transformModifiers( @NotNull PsiModifierList modifierList, @NotNull Set<String> modifiers )
+  {
+    if( !ManProject.isManifoldInUse( modifierList ) )
+    {
+      // Manifold jars are not used in the project
+      return modifiers;
+    }
+
+    ManModule module = ManProject.getModule( modifierList );
+    if( module != null && !module.isPropertiesEnabled() )
+    {
+      // project/module not using properties
+      return modifiers;
+    }
+
+    final PsiElement parent = modifierList.getParent();
+    if( parent instanceof PsiField && PropertyInference.isPropertyField( (PsiField)parent ) )
+    {
+      if( !modifierList.hasExplicitModifier( PsiModifier.STATIC ) )
+      {
+        modifiers = new HashSet<>( modifiers );
+        modifiers.remove( PsiModifier.STATIC );
+      }
+    }
+    return modifiers;
+  }
+
   private <E extends PsiElement> List<E> _getAugments( PsiElement element, Class<E> cls )
   {
     // Module is assigned to user-data via ManTypeFinder, which loads the psiClass (element)

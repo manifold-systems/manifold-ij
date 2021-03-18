@@ -88,8 +88,6 @@ class PropertyMaker
 
     PsiModifierList modifiers = _field.getModifierList();
 
-    removeStaticModifierFromInterfacePropertyField( modifiers );
-
     boolean isAbstract = _field.getAnnotation( Abstract.class.getTypeName() ) != null;
     boolean isFinal = _field.getAnnotation( Final.class.getTypeName() ) != null;
 
@@ -290,52 +288,6 @@ class PropertyMaker
       if( method != null )
       {
         method.putCopyableUserData( PropertyInference.FIELD_TAG, null );
-      }
-    }
-  }
-
-  /**
-   * Remove STATIC modifier on interface properties so they show in code completion.
-   */
-  private void removeStaticModifierFromInterfacePropertyField( PsiModifierList modifiers )
-  {
-    if( _augFeatures == null )
-    {
-      // no need during error annotation
-      return;
-    }
-
-    PsiClass psiClass = _field.getContainingClass();
-    if( psiClass != null && psiClass.isInterface() )
-    {
-      if( modifiers instanceof PsiModifierListImpl && modifiers.hasModifierProperty( PsiModifier.STATIC ) )
-      {
-        //noinspection rawtypes
-        StubBasedPsiElementBase modifierList = (StubBasedPsiElementBase)_field.getModifierList();
-        PsiModifierListStub stub = modifierList == null ? null : (PsiModifierListStub)modifierList.getGreenStub();
-        if( stub != null )
-        {
-          ReflectUtil.LiveFieldRef myMask = ReflectUtil.field( stub, "myMask" );
-          myMask.set( (int)myMask.get() & ~STATIC );
-          ReflectUtil.field( modifiers, "myModifierCache" ).set( null );
-        }
-        else
-        {
-          ReflectUtil.LiveFieldRef modifiersField = ReflectUtil.field( ReflectUtil.field( modifiers, "myModifierCache" ).get(), "modifiers" );
-          if( modifiersField != null )
-          {
-            //noinspection unchecked
-            List<String> list = (List<String>)modifiersField.get();
-            List<String> newList = new ArrayList<>( list );
-            newList.remove( PsiModifier.STATIC );
-            modifiersField.set( newList );
-          }
-        }
-      }
-      else if( modifiers instanceof ClsModifierListImpl )
-      {
-        ReflectUtil.LiveFieldRef myMask = ReflectUtil.field( ((ClsModifierListImpl)modifiers).getStub(), "myMask" );
-        myMask.set( (int)myMask.get() & ~STATIC );
       }
     }
   }

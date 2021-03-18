@@ -206,7 +206,7 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
       // explicitly declared properties are PUBLIC by default (inferred properties are not)
       return true;
     }
-    
+
     return null;
   }
 
