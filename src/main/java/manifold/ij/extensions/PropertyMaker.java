@@ -14,6 +14,9 @@ import com.intellij.psi.impl.compiled.ClsModifierListImpl;
 import com.intellij.psi.impl.java.stubs.PsiModifierListStub;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.impl.source.PsiModifierListImpl;
+import com.intellij.psi.util.MethodSignature;
+import com.intellij.psi.util.MethodSignatureUtil;
+import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.TypeConversionUtil;
 import com.sun.tools.javac.code.Flags;
 import manifold.ext.props.PropIssueMsg;
@@ -26,10 +29,7 @@ import manifold.rt.api.util.ManStringUtil;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static java.lang.reflect.Modifier.*;
 import static manifold.ext.props.PropIssueMsg.*;
@@ -135,10 +135,19 @@ class PropertyMaker
       boolean getFinal = isFinal || hasOption( args, PropOption.Final );
       PropOption getAccess = getAccess( args );
 
-      if( !_psiClass.isInterface() && isWeakerAccess( getAccess, getAccess( modifiers ) ) )
+      if( shouldCheck() && !_psiClass.isInterface() && isWeakerAccess( getAccess, getAccess( modifiers ) ) )
       {
-        reportError( get != null ? get : var, MSG_ACCESSOR_WEAKER.get( "get",
+        reportError( var != null ? var : val != null ? val : get, MSG_ACCESSOR_WEAKER.get( "get",
           PropOption.fromModifier( getAccess( modifiers ) ).name().toLowerCase() ) );
+      }
+
+      if( shouldCheck() && var == null && !isStatic( _field ) )
+      {
+        PsiMethod superWritable = getSuperWritable();
+        if( superWritable != null && !isStatic( superWritable ) )
+        {
+          reportError( val != null ? val : get, MSG_READONLY_CANNOT_OVERRIDE_WRITABLE.get( _field.getName(), _field.getName() ) );
+        }
       }
 
       if( getFinal && getAbstract )
@@ -157,11 +166,19 @@ class PropertyMaker
       else
       {
 //        PsiAnnotation anno = get == null ? val == null ? var : val : get;
-        generatedGetter = makeGetter( getAbstract, getFinal, getAccess );
+        generatedGetter = addGetter( getAbstract, getFinal, getAccess );
         if( generatedGetter == null )
         {
           shouldMakeProperty = true;
         }
+      }
+    }
+    else if( shouldCheck() )
+    {
+      PsiMethod existingGetter = findExistingAccessor( makeGetter( false, false, PropOption.Public ) );
+      if( existingGetter != null )
+      {
+        reportError( existingGetter, MSG_GETTER_DEFINED_FOR_WRITEONLY.get( existingGetter.getName(), _field.getName() ) );
       }
     }
 
@@ -172,16 +189,26 @@ class PropertyMaker
       boolean setFinal = isFinal || hasOption( args, PropOption.Final );
       PropOption setAccess = getAccess( args );
 
-      if( _field.hasInitializer() && setAbstract )
+      if( shouldCheck() && _field.hasInitializer() && setAbstract )
       {
         reportError( _field.getInitializer(),
           MSG_WRITABLE_ABSTRACT_PROPERTY_CANNOT_HAVE_INITIALIZER.get( _field.getName() ) );
       }
 
-      if( !_psiClass.isInterface() && isWeakerAccess( setAccess, getAccess( modifiers ) ) )
+      if( shouldCheck() && !_psiClass.isInterface() && isWeakerAccess( setAccess, getAccess( modifiers ) ) )
       {
-        reportError( set != null ? set : var, MSG_ACCESSOR_WEAKER.get( "set",
+        reportError( var != null ? var : set, MSG_ACCESSOR_WEAKER.get( "set",
           PropOption.fromModifier( getAccess( modifiers ) ).name().toLowerCase() ) );
+      }
+
+      if( shouldCheck() && var == null )
+      {
+        PsiMethod superReadable = getSuperReadable();
+        if( superReadable != null && !isStatic( superReadable ) )
+        {
+          reportError( val != null ? val : get, MSG_WRITEONLY_CANNOT_OVERRIDE_READABLE.get(
+            _field.getName(), _field.getName() ) );
+        }
       }
 
       if( setFinal && setAbstract )
@@ -199,13 +226,24 @@ class PropertyMaker
       }
       else
       {
-        generatedSetter = makeSetter( setAbstract, setFinal, setAccess );
+        generatedSetter = addSetter( setAbstract, setFinal, setAccess );
         if( generatedSetter == null )
         {
           shouldMakeProperty = true;
         }
       }
     }
+    else if( shouldCheck() )
+    {
+      PsiMethod existingSetter = findExistingAccessor( makeSetter( false, false, PropOption.Public ) );
+      if( existingSetter != null )
+      {
+        reportError( existingSetter, MSG_SETTER_DEFINED_FOR_READONLY.get(
+          existingSetter.getName(), _field.getName() ) );
+      }
+    }
+
+    verifyPropertyOverride( var, val, get, set );
 
     if( shouldMakeProperty )
     {
@@ -228,18 +266,11 @@ class PropertyMaker
         }
       }
     }
-//    else
-//    {
-//      // remove @var etc. to treat it as a raw field
-//
-//      ArrayList<JCTree.JCAnnotation> annos = new ArrayList<>( tree.getModifiers().getAnnotations() );
-//      annos.remove( var );
-//      annos.remove( val );
-//      annos.remove( get );
-//      annos.remove( set );
-//      tree.getModifiers().annotations = com.sun.tools.javac.util.List.from( annos );
-//    }
+  }
 
+  private boolean shouldCheck()
+  {
+    return _holder != null;
   }
 
   // remove old tags that may stick around after changing a field
@@ -309,6 +340,33 @@ class PropertyMaker
     }
   }
 
+  private ManLightMethodBuilder addGetter( boolean propAbstract, boolean propFinal, PropOption propAccess )
+  {
+    ManLightMethodBuilder getter = makeGetter( propAbstract, propFinal, propAccess );
+    getter.putCopyableUserData( PropertyInference.FIELD_TAG, SmartPointerManager.createPointer( _field ) );
+
+    PsiMethod existingGetter = findExistingAccessor( getter );
+    if( existingGetter != null )
+    {
+      _field.putCopyableUserData( PropertyInference.GETTER_TAG, SmartPointerManager.createPointer( existingGetter ) );
+      existingGetter.putCopyableUserData( PropertyInference.FIELD_TAG, SmartPointerManager.createPointer( _field ) );
+
+      verifyAccessor( propAbstract, propFinal, propAccess, existingGetter );
+
+      return null;
+    }
+    else if( shouldCheck() && _psiClass.isInterface() &&
+      _field.getModifierList() != null && _field.getModifierList().hasExplicitModifier( PsiModifier.STATIC ) &&
+      !_field.hasInitializer() )
+    {
+      // interface: static non-initialized property MUST provide user-defined getter
+      reportError( _field, MSG_MISSING_INTERFACE_STATIC_PROPERTY_ACCESSOR.get(
+        _psiClass.getName(), getGetterName( true ) + "() : " + _field.getType().getCanonicalText(), _field.getName() ) );
+    }
+
+    return getter;
+  }
+
   private ManLightMethodBuilder makeGetter( boolean propAbstract, boolean propFinal, PropOption propAccess )
   {
     //noinspection ConstantConditions
@@ -316,36 +374,36 @@ class PropertyMaker
       _field.getModifierList().hasExplicitModifier( PsiModifier.STATIC ), propAccess );
     ManPsiElementFactory factory = ManPsiElementFactory.instance();
     String methodName = getGetterName( true );
-    ManLightMethodBuilder getter = factory.createLightMethod( ManProject.getModule( _psiClass ), _psiClass.getManager(), methodName, modifierList )
+    return factory.createLightMethod( ManProject.getModule( _psiClass ), _psiClass.getManager(), methodName, modifierList )
       .withMethodReturnType( _field.getType() )
       .withContainingClass( _psiClass )
       .withNavigationElement( _field );
-    getter.putCopyableUserData( PropertyInference.FIELD_TAG, SmartPointerManager.createPointer( _field ) );
-//    if( !propAbstract )
-//    {
-//      JCTree.JCReturn ret = psiClass.isInterface()
-//        ? make.Return( propField.init )
-//        : make.Return( make.Ident( propField.name ).setPos( propField.pos ) );
-//      block = (JCTree.JCBlock)make.Block( 0, com.sun.tools.javac.util.List.of( ret ) ).setPos( propField.pos );
-//    }
-    PsiMethod existingGetter = findExistingAccessor( getter );
-    if( existingGetter != null )
+  }
+
+  private ManLightMethodBuilder addSetter( boolean propAbstract, boolean propFinal, PropOption propAccess )
+  {
+    ManLightMethodBuilder setter = makeSetter( propAbstract, propFinal, propAccess );
+    setter.putCopyableUserData( PropertyInference.FIELD_TAG, SmartPointerManager.createPointer( _field ) );
+
+    PsiMethod existingSetter = findExistingAccessor( setter );
+    if( existingSetter != null )
     {
-      _field.putCopyableUserData( PropertyInference.GETTER_TAG, SmartPointerManager.createPointer( existingGetter ) );
-      existingGetter.putCopyableUserData( PropertyInference.FIELD_TAG, SmartPointerManager.createPointer( _field ) );
+      _field.putCopyableUserData( PropertyInference.SETTER_TAG, SmartPointerManager.createPointer( existingSetter ) );
+      existingSetter.putCopyableUserData( PropertyInference.FIELD_TAG, SmartPointerManager.createPointer( _field ) );
+
+      verifyAccessor( propAbstract, propFinal, propAccess, existingSetter );
+
       return null;
     }
-    else if( _psiClass.isInterface() && _field.getModifierList().hasExplicitModifier( PsiModifier.STATIC ) && !_field.hasInitializer() )
+    else if( shouldCheck() && _psiClass.isInterface() &&
+      _field.getModifierList() != null && _field.getModifierList().hasExplicitModifier( PsiModifier.STATIC ) &&
+      !_field.hasInitializer() )
     {
-      // interface: static non-initialized property MUST provide user-defined getter
+      // interface: static non-initialized property MUST provide user-defined setter
       reportError( _field, MSG_MISSING_INTERFACE_STATIC_PROPERTY_ACCESSOR.get(
-        _psiClass.getName(), methodName + "() : " + _field.getType().getCanonicalText(), _field.getName() ) );
+        _psiClass.getName(), getSetterName() + "(" + _field.getType().getCanonicalText() + ")", _field.getName() ) );
     }
-//    else
-//    {
-//      addAnnotations( getter, getAnnotations( anno, "annos" ) );
-//    }
-    return getter;
+    return setter;
   }
 
   private ManLightMethodBuilder makeSetter( boolean propAbstract, boolean propFinal, PropOption propAccess )
@@ -355,31 +413,45 @@ class PropertyMaker
       _field.getModifierList().hasExplicitModifier( PsiModifier.STATIC ), propAccess );
     ManPsiElementFactory factory = ManPsiElementFactory.instance();
     String methodName = getSetterName();
-    ManLightMethodBuilder setter = factory.createLightMethod( ManProject.getModule( _psiClass ), _psiClass.getManager(), methodName, modifierList )
+    return factory.createLightMethod( ManProject.getModule( _psiClass ), _psiClass.getManager(), methodName, modifierList )
       .withParameter( "value", _field.getType() )
       .withMethodReturnType( PsiType.VOID )
       .withContainingClass( _psiClass )
       .withNavigationElement( _field );
-    setter.putCopyableUserData( PropertyInference.FIELD_TAG, SmartPointerManager.createPointer( _field ) );
-    PsiMethod existingSetter = findExistingAccessor( setter );
-    if( existingSetter != null )
+  }
+
+  private void verifyAccessor( boolean propAbstract, boolean propFinal, PropOption propAccess, PsiMethod existingAccessor )
+  {
+    if( !shouldCheck() )
     {
-      _field.putCopyableUserData( PropertyInference.SETTER_TAG, SmartPointerManager.createPointer( existingSetter ) );
-      existingSetter.putCopyableUserData( PropertyInference.FIELD_TAG, SmartPointerManager.createPointer( _field ) );
-      return null;
+      return;
     }
-    else if( _psiClass.isInterface() && _field.getModifierList().hasExplicitModifier( PsiModifier.STATIC ) && !_field.hasInitializer() )
+
+    if( propAbstract != existingAccessor.getModifierList().hasModifierProperty( PsiModifier.ABSTRACT ) )
     {
-      // interface: static non-initialized property MUST provide user-defined setter
-      reportError( _field, MSG_MISSING_INTERFACE_STATIC_PROPERTY_ACCESSOR.get(
-        _psiClass.getName(), methodName + "(" + _field.getType().getCanonicalText() + ")", _field.getName() ) );
+      if( !_psiClass.isInterface() )
+      {
+        reportError( _field, MSG_PROPERTY_METHOD_CONFLICT.get( _field.getName(), existingAccessor.getName(), "abstract" ) );
+      }
     }
-//    else
-//    {
-//      addAnnotations( setter, getAnnotations( anno, "annos" ) );
-//      addAnnotations( param, getAnnotations( anno, "param" ) );
-//    }
-    return setter;
+
+    if( propFinal != existingAccessor.getModifierList().hasModifierProperty( PsiModifier.FINAL ) )
+    {
+      reportError( _field, MSG_PROPERTY_METHOD_CONFLICT.get( _field.getName(), existingAccessor.getName(), "final" ) );
+    }
+
+    int accessModifier = propAccess == null
+      ? getAccess( _field.getModifierList() )
+      : propAccess.getModifier();
+
+    //noinspection MagicConstant
+    if( !existingAccessor.getModifierList().hasModifierProperty( ModifierMap.byValue( accessModifier ).getName() ) )
+    {
+      reportError( _field, MSG_PROPERTY_METHOD_CONFLICT.get( _field.getName(), existingAccessor.getName(),
+        PropOption.fromModifier( accessModifier ).name() ) );
+    }
+
+    checkStatic( existingAccessor );
   }
 
   private PsiMethod findExistingAccessor( PsiMethod accessor )
@@ -406,6 +478,175 @@ class PropertyMaker
         return m;
       }
     }
+    return null;
+  }
+
+  private PsiMethod checkStatic( PsiMethod accessor )
+  {
+    if( accessor == null )
+    {
+      return null;
+    }
+    PsiModifierList fieldMods = _field.getModifierList();
+    if( fieldMods == null )
+    {
+      return accessor;
+    }
+    boolean isPropStatic = fieldMods.hasExplicitModifier( PsiModifier.STATIC );
+    boolean isMethodStatic = accessor.getModifierList().hasExplicitModifier( PsiModifier.STATIC );
+    if( isPropStatic != isMethodStatic )
+    {
+      reportError( _field,
+        (isMethodStatic ? MSG_STATIC_MISMATCH : MSG_NONSTATIC_MISMATCH).get( accessor.getName(), _field.getName() ) );
+      accessor = null;
+    }
+    return accessor;
+  }
+
+  private void verifyPropertyOverride( PsiAnnotation var, PsiAnnotation val, PsiAnnotation get, PsiAnnotation set )
+  {
+    if( !shouldCheck() )
+    {
+      return;
+    }
+
+    boolean readableProperty = var != null || val != null || get != null;
+    boolean writableProperty = var != null || set != null;
+
+    boolean isOverride = _field.getAnnotation( override.class.getTypeName() ) != null;
+    if( isOverride )
+    {
+      if( isStatic( _field ) )
+      {
+        reportError( _field, PropIssueMsg.MSG_DOES_NOT_OVERRIDE_ANYTHING.get( _field.getName() ) );
+      }
+      else if( readableProperty )
+      {
+        PsiMethod superReadable = getSuperReadable();
+        if( superReadable == null )
+        {
+          if( !writableProperty )
+          {
+            reportError( _field, PropIssueMsg.MSG_DOES_NOT_OVERRIDE_ANYTHING.get( _field.getName() ) );
+          }
+          else
+          {
+            PsiMethod superWritable = getSuperWritable();
+            if( superWritable == null )
+            {
+              reportError( _field, PropIssueMsg.MSG_DOES_NOT_OVERRIDE_ANYTHING.get( _field.getName() ) );
+            }
+            else if( isStatic( superWritable ) )
+            {
+              reportError( _field, MSG_CANNOT_OVERRIDE_STATIC.get( _field.getName(), superWritable.getName() ) );
+            }
+          }
+        }
+        else if( isStatic( superReadable ) )
+        {
+          reportError( _field, MSG_CANNOT_OVERRIDE_STATIC.get( _field.getName(), superReadable.getName() ) );
+        }
+        else
+        {
+          //todo: using erasure here is ghetto, what is needed is to find the retType as seen by _psiClass e.g., like with javac's Types.memberType() method
+          PsiType retType = superReadable.getReturnType();
+          if( retType == null ||
+            !TypeConversionUtil.erasure( retType ).isAssignableFrom( TypeConversionUtil.erasure( _field.getType() ) ) )
+          {
+            reportError( _field.getTypeElement(), PropIssueMsg.MSG_PROPERTY_CLASH_RETURN.get( _field.getName(), _psiClass.getName(), superReadable.getContainingClass().getName() ) );
+          }
+        }
+      }
+      else if( writableProperty )
+      {
+        PsiMethod superWritable = getSuperWritable();
+        if( superWritable == null )
+        {
+          reportError( _field, PropIssueMsg.MSG_DOES_NOT_OVERRIDE_ANYTHING.get( _field.getName() ) );
+        }
+        else if( isStatic( superWritable ) )
+        {
+          reportError( _field, MSG_CANNOT_OVERRIDE_STATIC.get( _field.getName(), superWritable.getName() ) );
+        }
+      }
+    }
+    else if( !isStatic( _field ) )
+    {
+      if( readableProperty )
+      {
+        PsiMethod superReadable = getSuperReadable();
+        if( superReadable != null )
+        {
+          if( isStatic( superReadable ) )
+          {
+            reportError( _field, MSG_CANNOT_OVERRIDE_STATIC.get( _field.getName(), superReadable.getName() ) );
+          }
+          else
+          {
+            reportError( _field, PropIssueMsg.MSG_MISSING_OVERRIDE.get( _field.getName() ) );
+          }
+          return;
+        }
+      }
+
+      if( writableProperty )
+      {
+        PsiMethod superWritable = getSuperWritable();
+        if( superWritable != null )
+        {
+          if( isStatic( superWritable ) )
+          {
+            reportError( _field, MSG_CANNOT_OVERRIDE_STATIC.get( _field.getName(), superWritable.getName() ) );
+          }
+          else
+          {
+            reportError( _field, PropIssueMsg.MSG_MISSING_OVERRIDE.get( _field.getName() ) );
+          }
+        }
+      }
+    }
+  }
+
+  private boolean isStatic( PsiModifierListOwner elem )
+  {
+    return elem.getModifierList() != null && elem.getModifierList().hasModifierProperty( PsiModifier.STATIC );
+  }
+
+  private PsiMethod getSuperReadable()
+  {
+    ManLightMethodBuilder getter = makeGetter( false, false, PropOption.Public );
+    MethodSignature sig = MethodSignatureUtil.createMethodSignature( getter.getName(), getter.getParameterList(), getter.getTypeParameterList(), PsiSubstitutor.EMPTY );
+    return getSuperMethod( sig, _psiClass );
+  }
+
+  private PsiMethod getSuperWritable()
+  {
+    ManLightMethodBuilder setter = makeSetter( false, false, PropOption.Public );
+    MethodSignature sig = MethodSignatureUtil.createMethodSignature( setter.getName(), setter.getParameterList(), setter.getTypeParameterList(), PsiSubstitutor.EMPTY );
+    return getSuperMethod( sig, _psiClass );
+  }
+
+  private PsiMethod getSuperMethod( MethodSignature sig, PsiClass psiClass )
+  {
+    for( PsiClass iface : psiClass.getInterfaces() )
+    {
+      PsiMethod superSig = MethodSignatureUtil.findMethodInSuperClassBySignatureInDerived( _psiClass, iface, sig, true );
+      if( superSig != null && !superSig.getModifierList().hasModifierProperty( PsiModifier.STATIC ) )
+      {
+        return superSig;
+      }
+    }
+    PsiClass superClass = psiClass.getSuperClass();
+    if( superClass != null )
+    {
+      PsiMethod superSig = MethodSignatureUtil.findMethodInSuperClassBySignatureInDerived( _psiClass, superClass, sig, false );
+      if( superSig != null )
+      {
+        return superSig;
+      }
+      return getSuperMethod( sig, superClass );
+    }
+
     return null;
   }
 
@@ -455,7 +696,7 @@ class PropertyMaker
 
   private void reportIssue( PsiElement elem, HighlightSeverity severity, String msg )
   {
-    if( _holder == null )
+    if( !shouldCheck() )
     {
       return;
     }

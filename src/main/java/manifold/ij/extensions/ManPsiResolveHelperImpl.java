@@ -185,19 +185,28 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
       return varTagAccessible;
     }
 
-    if( !PropertyInference.isPropertyField( field ) ||
+    if( field.getCopyableUserData( PropertyInference.VAR_TAG ) != null )
+    {
       // inferred props are not public by default
-      field.getCopyableUserData( PropertyInference.VAR_TAG ) != null )
+      return null;
+    }
+
+    if( !PropertyInference.isPropertyField( field ) )
     {
       return null;
     }
 
     PsiModifierList modifierList = field.getModifierList();
-    if( modifierList != null && modifierList.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) )
+    if( modifierList != null &&
+      (modifierList.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) ||
+        (!modifierList.hasModifierProperty( PsiModifier.PUBLIC ) &&
+          !modifierList.hasModifierProperty( PsiModifier.PROTECTED ) &&
+          !modifierList.hasModifierProperty( PsiModifier.PRIVATE ))) )
     {
       // explicitly declared properties are PUBLIC by default (inferred properties are not)
       return true;
     }
+    
     return null;
   }
 
@@ -266,8 +275,16 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
       return null;
     }
 
-    PsiModifierList modifierList1 = member.getModifierList();
-    if( modifierList1 != null && modifierList1.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) )
+    if( !PropertyInference.isPropertyField( (PsiField)member ) )
+    {
+      return null;
+    }
+
+    PsiModifierList modifierList = member.getModifierList();
+    if( modifierList != null &&
+      !modifierList.hasModifierProperty( PsiModifier.PUBLIC ) &&
+      !modifierList.hasModifierProperty( PsiModifier.PROTECTED ) &&
+      !modifierList.hasModifierProperty( PsiModifier.PRIVATE ) )
     {
       // explicitly declared properties are PUBLIC by default (inferred properties are not)
       return true;
@@ -368,7 +385,7 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
     return results;
   }
 
-  private boolean isJailbreakType( PsiType type )
+  public static boolean isJailbreakType( PsiType type )
   {
     return type != null && type.findAnnotation( Jailbreak.class.getTypeName() ) != null;
   }
