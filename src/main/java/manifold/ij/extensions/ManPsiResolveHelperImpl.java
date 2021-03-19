@@ -9,7 +9,6 @@ import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.search.searches.SuperMethodsSearch;
 import com.intellij.psi.util.MethodSignatureBackedByPsiMethod;
-import com.sun.tools.javac.tree.JCTree;
 import manifold.ext.props.rt.api.*;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.ManModule;
