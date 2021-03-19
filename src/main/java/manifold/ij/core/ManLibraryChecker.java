@@ -74,7 +74,7 @@ public class ManLibraryChecker
             module.getTypeManifolds().stream()
               .noneMatch( tm -> tm.getClass().getSimpleName().equals( "TemplateManifold" ) ) )
         {
-          MessageUtil.showWarning( psiFile.getProject(), "The use of templates in Module '${module.getName()}' requires a dependency on <b>manifold-templates</b> or <b>manifold-all</b>" );
+          MessageUtil.showWarning( psiFile.getProject(), "The use of templates in Module '${module.getName()}' requires a dependency on <b>manifold-templates</b>" );
         }
       } );
   }

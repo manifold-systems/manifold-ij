@@ -9,6 +9,7 @@ import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.search.searches.SuperMethodsSearch;
 import com.intellij.psi.util.MethodSignatureBackedByPsiMethod;
+import com.sun.tools.javac.tree.JCTree;
 import manifold.ext.props.rt.api.*;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.ManModule;
@@ -17,6 +18,7 @@ import manifold.ij.psi.ManLightModifierListImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -197,16 +199,22 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
     }
 
     PsiModifierList modifierList = field.getModifierList();
-    if( modifierList != null &&
-      (modifierList.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) ||
-        (!modifierList.hasModifierProperty( PsiModifier.PUBLIC ) &&
-          !modifierList.hasModifierProperty( PsiModifier.PROTECTED ) &&
-          !modifierList.hasModifierProperty( PsiModifier.PRIVATE ))) )
+    if( modifierList != null )
     {
-      // explicitly declared properties are PUBLIC by default (inferred properties are not)
-      return true;
+      Boolean accessible = isGetSetAccessible( modifierList, member, place, accessObjectClass, currentFileResolveScope );
+      if( accessible != null )
+      {
+        return accessible;
+      }
+      if( modifierList.hasModifierProperty( PsiModifier.PACKAGE_LOCAL ) ||
+          (!modifierList.hasModifierProperty( PsiModifier.PUBLIC ) &&
+            !modifierList.hasModifierProperty( PsiModifier.PROTECTED ) &&
+            !modifierList.hasModifierProperty( PsiModifier.PRIVATE )) )
+      {
+        // explicitly declared properties are PUBLIC by default (inferred properties are not)
+        return true;
+      }
     }
-
     return null;
   }
 
@@ -288,6 +296,50 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
     {
       // explicitly declared properties are PUBLIC by default (inferred properties are not)
       return true;
+    }
+    return null;
+  }
+
+  private Boolean isGetSetAccessible( PsiModifierList modifierList, PsiMember member, PsiElement place,
+                                      PsiClass accessObjectClass, PsiElement currentFileResolveScope )
+  {
+    Class<? extends Annotation> annoClass =
+      place.getParent() instanceof PsiAssignmentExpression ? set.class : get.class;
+
+    PsiAnnotation annotation = modifierList.findAnnotation( annoClass.getTypeName() );
+    if( annotation != null )
+    {
+      PsiAnnotationMemberValue value = annotation.findAttributeValue( "value" );
+      if( value != null )
+      {
+        String text = value.getText();
+        List<String> modifiers = new ArrayList<>();
+        if( modifierList.hasExplicitModifier( PsiModifier.STATIC ) )
+        {
+          modifiers.add( PsiModifier.STATIC );
+        }
+
+        if( text.contains( PropOption.Private.name() ) )
+        {
+          modifiers.add( PsiModifier.PRIVATE );
+        }
+        else if( text.contains( PropOption.Package.name() ) )
+        {
+          modifiers.add( PsiModifier.PACKAGE_LOCAL );
+        }
+        else if( text.contains( PropOption.Protected.name() ) )
+        {
+          modifiers.add( PsiModifier.PROTECTED );
+        }
+        else
+        {
+          modifiers.add( PsiModifier.PUBLIC );
+        }
+
+        modifierList = new ManLightModifierListImpl(
+          member.getManager(), JavaLanguage.INSTANCE, modifiers.toArray( new String[0] ) );
+        return super.isAccessible( member, modifierList, place, accessObjectClass, currentFileResolveScope );
+      }
     }
     return null;
   }
