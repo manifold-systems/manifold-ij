@@ -49,14 +49,14 @@ public class ManLightMethodImpl extends LightMethod implements ManLightMethod
   }
 
   @Override
-  public ManLightMethodImpl withParameter( PsiParameter delegate, PsiType type )
+  public ManLightMethodImpl withParameter( PsiParameter delegate, PsiType theType )
   {
     LightParameterWrapper lp = new LightParameterWrapper( delegate, EmptySubstitutor.getInstance() ) {
       @NotNull
       @Override
       public PsiType getType()
       {
-        return type;
+        return theType;
       }
     };
     _parameters.add( lp );
