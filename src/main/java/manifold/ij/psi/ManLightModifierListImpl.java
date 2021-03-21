@@ -84,6 +84,14 @@ public class ManLightModifierListImpl extends LightModifierList
     return psiAnnotation;
   }
 
+  public PsiAnnotation addRawAnnotation( String fqn, String rawAnnoWithArgs )
+  {
+    final PsiElementFactory elementFactory = JavaPsiFacade.getInstance( getProject() ).getElementFactory();
+    final PsiAnnotation psiAnnotation = elementFactory.createAnnotationFromText( rawAnnoWithArgs, null );
+    _annotations.put( fqn, psiAnnotation );
+    return psiAnnotation;
+  }
+
   @Override
   public PsiAnnotation findAnnotation( String qualifiedName )
   {

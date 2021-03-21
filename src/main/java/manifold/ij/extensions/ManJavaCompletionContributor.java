@@ -7,7 +7,7 @@ import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.module.Module;
-import com.intellij.psi.PsiElement;
+import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Consumer;
 import manifold.ij.core.ManModule;
@@ -16,7 +16,8 @@ import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Filters out extension methods not accessible from the call-site
+ * Filters out extension methods not accessible from the call-site.
+ * Also changes icons for properties.
  */
 public class ManJavaCompletionContributor extends CompletionContributor
 {
@@ -33,7 +34,7 @@ public class ManJavaCompletionContributor extends CompletionContributor
     result.stopHere();
   }
 
-  class MyConsumer implements Consumer<CompletionResult>
+  static class MyConsumer implements Consumer<CompletionResult>
   {
     private final CompletionResultSet _result;
     private final Module _module;

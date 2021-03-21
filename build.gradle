@@ -58,6 +58,7 @@ dependencies {
   compile group: 'systems.manifold', name: 'manifold-darkj', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-image', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-ext', version: manifoldVersion
+  compile group: 'systems.manifold', name: 'manifold-props', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-strings', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-exceptions', version: manifoldVersion
   compile group: 'systems.manifold', name: 'manifold-preprocessor', version: manifoldVersion

@@ -50,6 +50,7 @@ import manifold.api.fs.IFile;
 import manifold.api.fs.IFileFragment;
 import manifold.api.type.ContributorKind;
 import manifold.api.type.ITypeManifold;
+import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.rt.api.SourcePosition;
 import manifold.rt.api.TypeReference;
 import manifold.ext.IExtensionClassProducer;
@@ -544,6 +545,17 @@ public class ResourceToManifoldUtil
       }
       return offset >= textOffset && offset <= textOffset + textLength;
     }
+    else if( modifierListOwner instanceof ManLightFieldBuilder )
+    {
+      // for properties (manifold-props)
+
+      PsiElement navElem = modifierListOwner.getNavigationElement();
+      if( navElem != modifierListOwner && navElem instanceof PsiModifierListOwner )
+      {
+        return isJavaElementFor( declaringClass, file, (PsiModifierListOwner)navElem, element );
+      }
+    }
+
     return false;
   }
 

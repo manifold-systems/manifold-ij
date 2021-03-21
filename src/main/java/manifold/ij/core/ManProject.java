@@ -127,7 +127,11 @@ public class ManProject
 
     if( element instanceof ManLightMethodBuilder )
     {
-      return ((ManLightMethodBuilder)element).getModule().getIjModule();
+      ManModule manModule = ((ManLightMethodBuilder)element).getModule();
+      if( manModule != null )
+      {
+        return manModule.getIjModule();
+      }
     }
 
     PsiFile psiFile = element.getContainingFile();

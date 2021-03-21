@@ -4,8 +4,6 @@ import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.search.GlobalSearchScope;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -28,11 +26,9 @@ import manifold.api.type.ITypeManifold;
 import manifold.api.type.ResourceFileTypeManifold;
 import manifold.api.type.TypeName;
 import manifold.rt.api.util.ManIdentifierUtil;
-import manifold.exceptions.CheckedExceptionSuppressor;
 import manifold.ext.IExtensionClassProducer;
 import manifold.ij.fs.IjFile;
 import manifold.internal.host.SimpleModule;
-import manifold.strings.StringLiteralTemplateProcessor;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -49,6 +45,7 @@ public class ManModule extends SimpleModule
   private LocklessLazyVar<List<ManModule>> _modulesDependingOnMe;
   private LocklessLazyVar<Boolean> _isStringsEnabled;
   private LocklessLazyVar<Boolean> _isExceptionsEnabled;
+  private LocklessLazyVar<Boolean> _isPropertiesEnabled;
 
   ManModule( ManProject manProject, Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePath, List<IDirectory> outputPath, List<IDirectory> excludedDirs )
   {
@@ -65,6 +62,7 @@ public class ManModule extends SimpleModule
       } );
     _isStringsEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-strings" ) || hasJar( "manifold-all" ) );
     _isExceptionsEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-exceptions" ) || hasJar( "manifold-all" ) );
+    _isPropertiesEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-props" ) || hasJar( "manifold-all" ) );
   }
 
   private boolean hasJar( String jarName )
@@ -409,6 +407,11 @@ public class ManModule extends SimpleModule
   public boolean isExceptionsEnabled()
   {
     return _isExceptionsEnabled.get();
+  }
+
+  public boolean isPropertiesEnabled()
+  {
+    return _isPropertiesEnabled.get();
   }
 
   public boolean isPluginArgEnabled( String pluginArg )
