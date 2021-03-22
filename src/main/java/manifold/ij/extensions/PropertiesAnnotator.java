@@ -108,6 +108,11 @@ public class PropertiesAnnotator implements Annotator
     PsiExpression lhs = expr.getLExpression();
     if( lhs instanceof PsiReferenceExpression )
     {
+      if( isJailbreakType( (PsiReferenceExpression)lhs ) )
+      {
+        return;
+      }
+
       PsiElement resolve = ((PsiReferenceExpression)lhs).resolve();
       if( resolve instanceof PsiField )
       {
@@ -125,13 +130,25 @@ public class PropertiesAnnotator implements Annotator
     }
   }
 
+  private boolean isJailbreakType( PsiReferenceExpression lhs )
+  {
+    PsiExpression qualifier = lhs.getQualifierExpression();
+    return qualifier != null && ManPsiResolveHelperImpl.isJailbreakType( qualifier.getType() );
+  }
+
   private void handle_MSG_CANNOT_ACCESS_WRITEONLY_PROPERTY( PsiElement element, AnnotationHolder holder )
   {
     if( !(element instanceof PsiReferenceExpression) )
     {
       return;
     }
+
     PsiReferenceExpression expr = (PsiReferenceExpression)element;
+    if( isJailbreakType( expr ) )
+    {
+      return;
+    }
+
     if( !(expr.getParent() instanceof PsiAssignmentExpression) ||
       ((PsiAssignmentExpression)expr.getParent()).getLExpression() != expr )
     {
