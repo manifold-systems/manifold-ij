@@ -8,6 +8,7 @@
 <ul>
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold"><em>Type-safe</em> Meta-programming</a></li>
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extension Methods</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-props">Properties</a></li>
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#operator-overloading">Operator Overloading</a></li>
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions">Unit Expressions</a></li>
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">A <em>Java</em> Template Engine</a></li>
@@ -20,11 +21,13 @@ Simply add Manifold to your existing project and begin taking advantage of it.</
   <p><em><strong>New!</strong></em></p>
   <strong>Properties for Java!</strong>
   <pre><code class="java">
-    <b>public class</b> Person {
-      <b>@var</b> String name; // no more boilerplate code!
+    <b>public interface</b> Book {
+      <b>@var</b> String title; // automatically builds private field & accessors for you
     }
-    person.name = "Daisy"; // setter is called
-    String customer = person.name; // getter is called
+    // refer to it directly by name
+    book.title = &quot;Daisy&quot;;     // calls setter
+    String name = book.title; // calls getter
+    book.title += &quot; chain&quot;;   // calls getter & setter
   </code></pre>
   <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-props">Learn more</a>.
 </blockquote>
@@ -181,6 +184,7 @@ template editing, integrated preprocessor, and more.</p>
 by the core framework. Each project consists of one or more <strong>dependencies</strong> you can easily add to your project:</p>
 <p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold">Manifold : <em>Core</em></a><br></p>
 <p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Manifold : <em>Java Extensions</em></a><br></p>
+<p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-props">Manifold : <em>Java Properties</em></a><br></p>
 <p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-graphql">Manifold : <em>GraphQL</em></a><br>
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-json">Manifold : <em>JSON</em></a><br>
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-xml">Manifold : <em>XML</em></a><br>
@@ -230,16 +234,22 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
 <blockquote>
   <strong>Properties for Java!</strong>
   <pre><code class="java">
-    <b>public class</b> Person {
-      <b>@var</b> String name; // no more boilerplate code!
+    <b>public interface</b> Book {
+      <b>@var</b> String title; // automatically builds private field & accessors for you
     }
-    person.name = "Daisy"; // setter is called
-    String customer = person.name; // getter is called
+    // refer to it directly by name
+    book.title = &quot;Daisy&quot;;     // calls setter
+    String name = book.title; // calls getter
+    book.title += &quot; chain&quot;;   // calls getter & setter
   </code></pre>
   <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-props">Learn more</a>.
 </blockquote>
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/254">#254</a>: Inferred property silently shadows local captured reference from anonymous context
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/253">#253</a>: using manifold-props with AWT/Swing app, cannot find symbols in sun.awt.util
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/251">#251</a>: prevent "error: Xxx is not a repeatable annotation type" esp. jetbrains NotNull, Nullable
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/248">#248</a>: GraphQL: improve support for custom scalar types
