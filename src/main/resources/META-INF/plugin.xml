@@ -4,7 +4,7 @@
   <description>
     <![CDATA[
 <h2><a href="#what-is-manifold" id="what-is-manifold">What is Manifold?</a></h2>
-<p>Manifold plugs into Java to supplement it with powerful features, including:</p>
+<p>Manifold is a Java compiler plugin. Its features include:</p>
 <ul>
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold"><em>Type-safe</em> Meta-programming</a></li>
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extension Methods</a></li>
@@ -15,7 +15,7 @@
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">A Preprocessor</a></li>
   <li>...and more</li>
 </ul>
-<p>All fully supported in <strong>Java 8 - 15</strong> with comprehensive IDE support in <strong>IntelliJ IDEA</strong> and <strong>Android Studio</strong>.
+<p>All fully supported in <strong>Java 8 - 16</strong> with comprehensive IDE support in <strong>IntelliJ IDEA</strong> and <strong>Android Studio</strong>.
 Simply add Manifold to your existing project and begin taking advantage of it.</p>
 <blockquote>
   <p><em><strong>New!</strong></em></p>
@@ -246,6 +246,8 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
 </blockquote>
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/255">#255</a>: Fix issues with JDK 16 compatibility and manifold-props
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/254">#254</a>: Inferred property silently shadows local captured reference from anonymous context
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/253">#253</a>: using manifold-props with AWT/Swing app, cannot find symbols in sun.awt.util
