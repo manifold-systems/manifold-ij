@@ -222,15 +222,17 @@ public class PropertiesAnnotator implements Annotator
     switch( declaredAccess )
     {
       case PRIVATE:
-        // same class as field
-        return PsiUtil.getTopLevelClass( psiClass ) == PsiUtil.getTopLevelClass( psiField );
+        // same class as field or inside same top-level class
+        return psiClass == fieldsClass || PsiUtil.getTopLevelClass( psiClass ) == PsiUtil.getTopLevelClass( psiField );
       case 0: // PACKAGE
         // same package as field's class
         return Objects.equals( PsiUtil.getPackageName( psiClass ),
           PsiUtil.getPackageName( fieldsClass ) );
       case PROTECTED:
-        // sublcass of field's class
-        return psiClass.isInheritor( fieldsClass, true );
+        // same as private, but include subclasses of field's class
+        return fieldsClass == psiClass ||
+          PsiUtil.getTopLevelClass( psiClass ) == PsiUtil.getTopLevelClass( psiField ) ||
+          psiClass.isInheritor( fieldsClass, true );
       case PUBLIC:
         // field is public, no dice
         return true;
