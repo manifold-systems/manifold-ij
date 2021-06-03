@@ -52,7 +52,7 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
 
     String hostText = host.getText();
     List<StringLiteralTemplateParser.Expr> exprs =
-      StringLiteralTemplateParser.parse( index -> isEscaped( hostText, index ), hostText );
+      StringLiteralTemplateParser.parse( index -> isEscaped( hostText, index ), false, hostText );
     if( exprs.isEmpty() )
     {
       // Not a template
