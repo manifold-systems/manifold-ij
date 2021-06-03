@@ -230,22 +230,18 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
 
   <change-notes>
     <![CDATA[
-<h3>Preview:</h3>
-<blockquote>
-  <strong>Properties for Java!</strong>
-  <pre><code class="java">
-    <b>public interface</b> Book {
-      <b>@var</b> String title; // automatically builds private field & accessors for you
-    }
-    // refer to it directly by name
-    book.title = &quot;Daisy&quot;;     // calls setter
-    String name = book.title; // calls getter
-    book.title += &quot; chain&quot;;   // calls getter & setter
-  </code></pre>
-  <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-props">Learn more</a>.
-</blockquote>
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/276">#276</a>: manifold-graphql: support a built-in "JSON" scalar
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/273">#273</a>: IJ plugin: revise logic for protected property access
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/270">#270</a>: don't pollute compiler output with warnings from generated code, particularly relevant with `-Xlint:all` usage
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/268">#268</a>: manifold-strings: provide javac command line option to exclude simple `$foo` syntax from processing while still allowing `${foo}`
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/173">#173</a>: Fix race condition
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/255">#255</a>: Fix issues with JDK 16 compatibility and manifold-props
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/254">#254</a>: Inferred property silently shadows local captured reference from anonymous context
