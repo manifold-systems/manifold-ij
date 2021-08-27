@@ -437,7 +437,7 @@ public class ManStatementParser extends StatementParser
         }
       }
       while (expect(builder, JavaTokenType.COMMA));
-      done(expressionList, JavaElementType.EXPRESSION_LIST);
+      done(expressionList, JavaElementType.CASE_LABEL_ELEMENT_LIST);
     }
 
     if (expect(builder, JavaTokenType.ARROW)) {

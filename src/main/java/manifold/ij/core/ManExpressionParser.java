@@ -5,8 +5,10 @@ import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.WhitespacesBinders;
 import com.intellij.lang.java.parser.ExpressionParser;
 import com.intellij.lang.java.parser.JavaParser;
+import com.intellij.lang.java.parser.PatternParser;
 import com.intellij.lang.java.parser.ReferenceParser;
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.Pair;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.TokenType;
 import com.intellij.psi.impl.source.tree.ElementType;
@@ -14,6 +16,9 @@ import com.intellij.psi.impl.source.tree.JavaElementType;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
 import java.util.function.Function;
+
+import manifold.ext.rt.api.Jailbreak;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.PropertyKey;
@@ -59,7 +64,7 @@ public class ManExpressionParser extends ExpressionParser {
   private static final TokenSet TYPE_START = TokenSet.orSet(
     ElementType.PRIMITIVE_TYPE_BIT_SET, TokenSet.create(JavaTokenType.IDENTIFIER, JavaTokenType.AT));
 
-  private static final Key<Boolean> CASE_LABEL = Key.create("java.parser.case.label.expr");
+  private static final Key<Boolean> CASE_LABEL = (Key<Boolean>)ReflectUtil.field( ExpressionParser.class, "CASE_LABEL" ).getStatic();
 
   private final JavaParser myParser;
 
@@ -77,7 +82,17 @@ public class ManExpressionParser extends ExpressionParser {
   public PsiBuilder.Marker parseCaseLabel(@NotNull PsiBuilder builder) {
     CASE_LABEL.set(builder, Boolean.TRUE);
     try {
-      return parseAssignment(builder);
+      if (builder.getTokenType() == JavaTokenType.DEFAULT_KEYWORD) {
+        PsiBuilder.Marker defaultElement = builder.mark();
+        builder.advanceLexer();
+        done(defaultElement, JavaElementType.DEFAULT_CASE_LABEL_ELEMENT);
+        return defaultElement;
+      }
+      if (myParser.getPatternParser().isPattern(builder)) {
+        @Jailbreak PatternParser patternParser = myParser.getPatternParser();
+        return patternParser.parsePattern(builder);
+      }
+      return parseAssignment( builder );
     }
     finally {
       CASE_LABEL.set(builder, null);
