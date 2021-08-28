@@ -381,12 +381,24 @@ public class ManExpressionParser extends ExpressionParser {
 
       final PsiBuilder.Marker expression = left.precede();
       advanceGtToken(builder, tokenType);
-
-      final PsiBuilder.Marker right = patternExpected ? parsePattern(builder) : parseExpression(builder, ExprType.SHIFT);
-      if (right == null) {
-        error(builder, JavaPsiBundle.message(patternExpected ? "expected.type" : "expected.expression"));
-        expression.done(toCreate);
-        return expression;
+      if (patternExpected) {
+        if (!myParser.getPatternParser().isPattern(builder)) {
+          PsiBuilder.Marker type = parseExpression(builder, ExprType.TYPE);
+          if (type == null) {
+            error(builder, JavaPsiBundle.message("expected.type"));
+          }
+          expression.done(toCreate);
+          return expression;
+        }
+        @Jailbreak PatternParser patternParser = myParser.getPatternParser();
+        patternParser.parsePrimaryPattern(builder);
+      } else {
+        final PsiBuilder.Marker right = parseExpression(builder, ExprType.SHIFT);
+        if (right == null) {
+          error(builder, JavaPsiBundle.message("expected.expression"));
+          expression.done(toCreate);
+          return expression;
+        }
       }
 
       expression.done(toCreate);
