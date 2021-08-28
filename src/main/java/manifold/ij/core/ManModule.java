@@ -71,7 +71,8 @@ public class ManModule extends SimpleModule
 
   private boolean hasJar( String jarName )
   {
-    return Arrays.stream( _typeManifoldClassLoader.getURLs() ).anyMatch( url -> url.toString().contains( jarName ) );
+    return _typeManifoldClassLoader != null &&
+      Arrays.stream( _typeManifoldClassLoader.getURLs() ).anyMatch( url -> url.toString().contains( jarName ) );
   }
 
   @Override
