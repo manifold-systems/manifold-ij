@@ -1,6 +1,6 @@
 package manifold.ij.extensions;
 
-import com.intellij.ide.DataManager;
+import com.intellij.ide.impl.DataManagerImpl;
 import com.intellij.json.psi.JsonProperty;
 import com.intellij.navigation.NavigationItem;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
@@ -599,8 +599,13 @@ public class ResourceToManifoldUtil
   {
     if( FileEditorManager.getInstance( project ) instanceof FileEditorManagerImpl )
     {
+      if( ApplicationManager.getApplication().isDispatchThread() )
+      {
+        return FileEditorManager.getInstance( project ).getSelectedTextEditor();
+      }
+
       // get the active editor without having to use the dispatch thread, which otherwise can cause deadlock
-      return DataManager.getInstance().getDataContext( KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner() ).getData( PlatformDataKeys.EDITOR );
+      return new DataManagerImpl.MyDataContext( KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner() ).getData( PlatformDataKeys.EDITOR );
     }
     else
     {
