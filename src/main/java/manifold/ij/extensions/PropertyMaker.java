@@ -236,7 +236,7 @@ class PropertyMaker
       PsiMethod existingSetter = findExistingAccessor( makeSetter( false, false, PropOption.Public ) );
       if( existingSetter != null )
       {
-        reportError( existingSetter, MSG_SETTER_DEFINED_FOR_READONLY.get(
+        reportError( _field, MSG_SETTER_DEFINED_FOR_READONLY.get(
           existingSetter.getName(), _field.getName() ) );
       }
     }
