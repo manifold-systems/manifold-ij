@@ -231,6 +231,30 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/302">#302</a>: "Access is allowed from event dispatch thread only" exception thrown occasionally in IntelliJ
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/301">#301</a>: GraphQL: Slim down generated source
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/300">#300</a>: CCE at runtime when structural interface having a method that returns a structural interface
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/296">#296</a>: AbstractMethodError using property syntax in an interface default method
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/295">#295</a>: Support compiler option to dump [pre]processed and/or generated manifold sources to disk
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/292">#292</a>: Compile with Java Operator Overloading inc() dec() error
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/288">#288</a>: Incompatible types. required: 'manifold.rt.api.anno.any[]'
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/283">#283</a>: Switch on Enum is probably broken IntelliJ Plugin
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/282">#282</a>: Manifold incompatible with Lombok val/var locals
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/281">#281</a>: IntelliJ 2021.2 Community Edition: Null Ptr Exceptions
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/279">#279</a>: GraphQL: Bearer Authorization broken when calling graphQL server
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/277">#277</a>: GraphQL: Add support for processing the raw GraphQL response to access custom key/value pairs etc.
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/276">#276</a>: manifold-graphql: support a built-in "JSON" scalar
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/273">#273</a>: IJ plugin: revise logic for protected property access
