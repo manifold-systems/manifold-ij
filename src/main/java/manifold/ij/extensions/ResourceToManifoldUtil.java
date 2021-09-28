@@ -599,13 +599,7 @@ public class ResourceToManifoldUtil
   {
     if( FileEditorManager.getInstance( project ) instanceof FileEditorManagerImpl )
     {
-      if( ApplicationManager.getApplication().isDispatchThread() )
-      {
-        return FileEditorManager.getInstance( project ).getSelectedTextEditor();
-      }
-
-      // get the active editor without having to use the dispatch thread, which otherwise can cause deadlock
-      return new EdtDataContext( KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner() ).getData( PlatformDataKeys.EDITOR );
+      return ((FileEditorManagerImpl)FileEditorManager.getInstance( project )).getSelectedTextEditor( !ApplicationManager.getApplication().isDispatchThread() );
     }
     else
     {
