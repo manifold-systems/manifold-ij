@@ -231,6 +231,8 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/303">#303</a>: GQL Fields with Underscores producing incorrectly in 2021.1.23
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/302">#302</a>: "Access is allowed from event dispatch thread only" exception thrown occasionally in IntelliJ
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/301">#301</a>: GraphQL: Slim down generated source
