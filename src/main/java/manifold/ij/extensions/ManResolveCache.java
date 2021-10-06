@@ -23,6 +23,7 @@ import com.intellij.psi.impl.source.resolve.ResolveCache;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.infos.MethodCandidateInfo;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.ClassUtil;
 import java.util.Map;
 
@@ -65,6 +66,13 @@ public class ManResolveCache extends ResolveCache
     if( !ManProject.isManifoldInUse( containingFile ) )
     {
       // Manifold jars are not used in the project
+      return super.resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
+    }
+
+    ManModule manModule = ManProject.getModule( ref.getElement() );
+    if( manModule != null && !manModule.isExtEnabled() )
+    {
+      // manifold-ext-rt is not used in the ref's module
       return super.resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
     }
 
@@ -150,8 +158,20 @@ public class ManResolveCache extends ResolveCache
       return;
     }
 
+    ManModule manModule = ManProject.getModule( ref.getElement() );
+    if( manModule != null &&
+      method instanceof ManLightMethodBuilder &&
+      ((ManLightMethodBuilder)method).getModules().stream()
+        .map( ManModule::getIjModule )
+        .noneMatch( methodModule -> GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( manModule.getIjModule() )
+          .isSearchInModuleContent( methodModule ) ) )
+    {
+      // method is extension method and is not accessible from call-site
+      return;
+    }
+
     // Reassign the candidate method with one that has Self type substitution
-    info.jailbreak().myCandidate = wrapMethod( ManProject.getModule( ref.getElement() ), method, ref );
+    info.jailbreak().myCandidate = wrapMethod( manModule, method, ref );
   }
 
   private void handleFieldSelfTypes( CandidateInfo info, PsiPolyVariantReference ref )
@@ -180,7 +200,7 @@ public class ManResolveCache extends ResolveCache
   {
     ManPsiElementFactory manPsiElemFactory = ManPsiElementFactory.instance();
     ManLightFieldBuilder wrappedField = manPsiElemFactory.createLightField( field.getManager(), field.getName(),
-      handleType( field.getType(), ref, field ) );
+      handleType( field.getType(), ref, field ), field instanceof ManLightFieldBuilder && ((ManLightFieldBuilder)field).isProperty() );
     wrappedField.withNavigationElement( field.getNavigationElement() );
 
     return wrappedField;

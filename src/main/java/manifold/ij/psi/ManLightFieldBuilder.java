@@ -17,4 +17,6 @@ public interface ManLightFieldBuilder extends PsiField
   ManLightFieldBuilder withModifierList( LightModifierList modifierList );
 
   ManLightFieldBuilder withNavigationElement( PsiElement navigationElement );
+
+  boolean isProperty();
 }

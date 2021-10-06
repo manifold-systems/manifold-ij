@@ -47,6 +47,7 @@ public class ManModule extends SimpleModule
   private List<IDirectory> _excludedDirs;
   private URLClassLoader _typeManifoldClassLoader;
   private LocklessLazyVar<List<ManModule>> _modulesDependingOnMe;
+  private LocklessLazyVar<Boolean> _isExtEnabled;
   private LocklessLazyVar<Boolean> _isStringsEnabled;
   private LocklessLazyVar<Boolean> _isExceptionsEnabled;
   private LocklessLazyVar<Boolean> _isPropertiesEnabled;
@@ -64,6 +65,7 @@ public class ManModule extends SimpleModule
         ModuleUtilCore.collectModulesDependsOn( getIjModule(), result );
         return result.stream().map( ManProject::getModule ).collect( Collectors.toList() );
       } );
+    _isExtEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-ext-rt" ) || hasJar( "manifold-all" ) );
     _isStringsEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-strings" ) || hasJar( "manifold-all" ) );
     _isExceptionsEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-exceptions" ) || hasJar( "manifold-all" ) );
     _isPropertiesEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-props" ) || hasJar( "manifold-all" ) );
@@ -71,7 +73,8 @@ public class ManModule extends SimpleModule
 
   private boolean hasJar( String jarName )
   {
-    return Arrays.stream( _typeManifoldClassLoader.getURLs() ).anyMatch( url -> url.toString().contains( jarName ) );
+    return _typeManifoldClassLoader != null &&
+      Arrays.stream( _typeManifoldClassLoader.getURLs() ).anyMatch( url -> url.toString().contains( jarName ) );
   }
 
   @Override
@@ -401,6 +404,11 @@ public class ManModule extends SimpleModule
       }
     }
     return false;
+  }
+
+  public boolean isExtEnabled()
+  {
+    return _isExtEnabled.get();
   }
 
   public boolean isStringsEnabled()

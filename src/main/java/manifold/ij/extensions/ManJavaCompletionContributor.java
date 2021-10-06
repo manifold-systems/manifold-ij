@@ -12,6 +12,7 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Consumer;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -76,10 +77,29 @@ public class ManJavaCompletionContributor extends CompletionContributor
       PsiElement psiElem = lookupElement.getPsiElement();
       if( psiElem instanceof ManLightMethodBuilder )
       {
+        ManModule module = ManProject.getModule( _module );
+        if( module != null && !module.isExtEnabled() )
+        {
+          // module not using manifold-ext-rt
+          return true;
+        }
+
         return ((ManLightMethodBuilder)psiElem).getModules().stream()
           .map( ManModule::getIjModule )
           .noneMatch( methodModule -> GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( _module ).isSearchInModuleContent( methodModule ) );
       }
+
+      //todo: if property is on extension method, filter based on that
+      if( psiElem instanceof ManLightFieldBuilder )
+      {
+        ManModule module = ManProject.getModule( _module );
+        if( module != null && !module.isPropertiesEnabled() )
+        {
+          // module not using manifold-props
+          return true;
+        }
+      }
+
       return false;
     }
   }

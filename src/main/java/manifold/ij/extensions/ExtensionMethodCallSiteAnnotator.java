@@ -40,9 +40,11 @@ public class ExtensionMethodCallSiteAnnotator implements Annotator
         Module callSiteModule = ModuleUtil.findModuleForPsiElement( element );
         if( callSiteModule != null )
         {
-          if( ((ManLightMethodBuilder)member).getModules().stream()
+          ManModule manModule = ManProject.getModule( callSiteModule );
+          if( manModule != null &&
+            (!manModule.isExtEnabled() || ((ManLightMethodBuilder)member).getModules().stream()
             .map( ManModule::getIjModule )
-            .noneMatch( extensionModule -> isAccessible( callSiteModule, extensionModule, methodExpression ) ) )
+              .noneMatch( extensionModule -> isAccessible( callSiteModule, extensionModule, methodExpression ) )) )
           {
             // The extension method is from a module not accessible from the call-site
             PsiElement methodElem = methodExpression.getReferenceNameElement();

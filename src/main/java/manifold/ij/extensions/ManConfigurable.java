@@ -15,7 +15,7 @@ public class ManConfigurable implements Configurable
 {
   private ManifoldPanel _manifoldPanel;
 
-  @Nls(capitalization = Nls.Capitalization.Title)
+//  @Nls(capitalization = Nls.Capitalization.Title)
   @Override
   public String getDisplayName()
   {

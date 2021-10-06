@@ -12,11 +12,18 @@ import com.intellij.util.IncorrectOperationException;
 public class ManLightFieldBuilderImpl extends LightFieldBuilder implements ManLightFieldBuilder
 {
   protected final LightIdentifier _nameIdentifier;
+  private final boolean _isProperty;
 
-  public ManLightFieldBuilderImpl( PsiManager manager, String name, PsiType type )
+  public ManLightFieldBuilderImpl( PsiManager manager, String name, PsiType type, boolean isProperty )
   {
     super( manager, name, type );
     _nameIdentifier = new LightIdentifier( manager, name );
+    _isProperty = isProperty;
+  }
+
+  public boolean isProperty()
+  {
+    return _isProperty;
   }
 
   @Override
