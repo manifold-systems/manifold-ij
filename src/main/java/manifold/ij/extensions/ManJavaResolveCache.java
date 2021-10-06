@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.internal.javac.AbstractBinder.Node;
 import org.jetbrains.annotations.NotNull;
@@ -64,6 +65,12 @@ public class ManJavaResolveCache extends JavaResolveCache
       return super.getType( expr, f );
     }
 
+    if( !isManifoldExtEnabled( expr ) )
+    {
+      // manifold-ext-rt is not used in the expr's module
+      return super.getType( expr, f );
+    }
+
     if( expr instanceof PsiBinaryExpression ||
       expr instanceof PsiAssignmentExpression )
     {
@@ -89,8 +96,19 @@ public class ManJavaResolveCache extends JavaResolveCache
     return op == null;
   }
 
+  static boolean isManifoldExtEnabled( PsiElement elem )
+  {
+    ManModule manModule = ManProject.getModule( elem );
+    return manModule == null || manModule.isExtEnabled();
+  }
+
   static PsiType getTypeForOverloadedBinaryOperator( final PsiExpression expr )
   {
+    if( !isManifoldExtEnabled( expr ) )
+    {
+      return null;
+    }
+
     PsiElement opChild = getOpChild( (CompositeElement)expr );
     IElementType op = opChild == null ? null : ((PsiJavaToken)opChild).getTokenType();
     String opName = op == null ? null : BINARY_OP_TO_NAME.get( op );

@@ -18,9 +18,9 @@ public class ManPsiElementFactory
   {
   }
 
-  public ManLightFieldBuilder createLightField( PsiManager manager, String fieldName, PsiType fieldType )
+  public ManLightFieldBuilder createLightField( PsiManager manager, String fieldName, PsiType fieldType, boolean isProperty )
   {
-    return new ManLightFieldBuilderImpl( manager, fieldName, fieldType );
+    return new ManLightFieldBuilderImpl( manager, fieldName, fieldType, isProperty );
   }
 
   public ManLightMethodBuilder createLightMethod( ManModule manModule, PsiManager manager, String methodName )

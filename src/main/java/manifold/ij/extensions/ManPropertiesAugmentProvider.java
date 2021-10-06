@@ -44,19 +44,6 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
   @NotNull
   public <E extends PsiElement> List<E> getAugments( @NotNull PsiElement element, @NotNull Class<E> cls, String nameHint )
   {
-    if( !ManProject.isManifoldInUse( element ) )
-    {
-      // Manifold jars are not used in the project
-      return Collections.emptyList();
-    }
-
-    ManModule module = ManProject.getModule( element );
-    if( module != null && !module.isPropertiesEnabled() )
-    {
-      // project/module not using properties
-      return Collections.emptyList();
-    }
-
     return ApplicationManager.getApplication().runReadAction( (Computable<List<E>>)() -> _getAugments( element, cls ) );
   }
 
@@ -66,13 +53,6 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
     if( !ManProject.isManifoldInUse( modifierList ) )
     {
       // Manifold jars are not used in the project
-      return modifiers;
-    }
-
-    ManModule module = ManProject.getModule( modifierList );
-    if( module != null && !module.isPropertiesEnabled() )
-    {
-      // project/module not using properties
       return modifiers;
     }
 
@@ -90,6 +70,12 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
 
   private <E extends PsiElement> List<E> _getAugments( PsiElement element, Class<E> cls )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      // Manifold jars are not used in the project
+      return Collections.emptyList();
+    }
+
     // Module is assigned to user-data via ManTypeFinder, which loads the psiClass (element)
     if( DumbService.getInstance( element.getProject() ).isDumb() )
     {
@@ -198,7 +184,7 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
     PsiType type = parameters.length == 0 ? accessor.getReturnType() : parameters[0].getType();
 
     ManPsiElementFactory factory = ManPsiElementFactory.instance();
-    ManLightFieldBuilder propField = factory.createLightField( psiClass.getManager(), fieldName, type )
+    ManLightFieldBuilder propField = factory.createLightField( psiClass.getManager(), fieldName, type, true )
       .withContainingClass( psiClass )
       .withNavigationElement( accessor );
 

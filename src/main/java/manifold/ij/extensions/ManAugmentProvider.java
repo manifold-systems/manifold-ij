@@ -1,32 +1,19 @@
 package manifold.ij.extensions;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbService;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.ModificationTracker;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiElementFactory;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiModifier;
-import com.intellij.psi.PsiNameValuePair;
-import com.intellij.psi.PsiParameter;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeParameter;
-import com.intellij.psi.PsiTypeParameterList;
+import com.intellij.psi.*;
 import com.intellij.psi.augment.PsiAugmentProvider;
-import com.intellij.psi.util.TypeConversionUtil;
+import com.intellij.psi.util.*;
 import com.intellij.util.IncorrectOperationException;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import manifold.api.fs.IFile;
 import manifold.api.gen.AbstractSrcMethod;
@@ -48,6 +35,7 @@ import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManPsiElementFactory;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -63,6 +51,10 @@ import static manifold.api.type.ContributorKind.Supplemental;
 public class ManAugmentProvider extends PsiAugmentProvider
 {
   static final Key<List<String>> KEY_MAN_INTERFACE_EXTENSIONS = new Key<>( "MAN_INTERFACE_EXTENSIONS" );
+  static final Key<CachedValue<? extends PsiElement>> KEY_CACHED_AUGMENTS = new Key<>( "CACHED_AUGMENTS" );
+
+  private final Map<Project, ExtensionClassPsiListener> _mapExtClassListeners = new ConcurrentHashMap<>();
+
 
   @NotNull
   public <E extends PsiElement> List<E> getAugments( @NotNull PsiElement element, @NotNull Class<E> cls )
@@ -94,7 +86,6 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return Collections.emptyList();
     }
 
-    LinkedHashMap<String, PsiMethod> augFeatures = new LinkedHashMap<>();
     PsiClass psiClass = (PsiClass)element;
     String className = psiClass.getQualifiedName();
     if( className == null )
@@ -102,35 +93,65 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return Collections.emptyList();
     }
 
-    String name = ((PsiClass) element).getName();
-    if( name != null && name.equals( "__Array__") )
+    String name = ((PsiClass)element).getName();
+    if( name != null && name.equals( "__Array__" ) )
     {
       className = Array.class.getTypeName();
     }
 
-    addMethods( className, psiClass, augFeatures );
+    String fqnClass = className;
 
+    Project project = psiClass.getProject();
+    addPsiExtensionChangeListener( project );
+
+//Without caching:
+//    LinkedHashMap<String, PsiMethod> augFeatures = new LinkedHashMap<>();
+//    addMethods( fqnClass, psiClass, augFeatures );
+//    return new ArrayList<>( (Collection<? extends E>) augFeatures.values() );
+
+//With caching:
+    ReflectUtil.FieldRef DO_CHECKS = ReflectUtil.field( "com.intellij.util.CachedValueStabilityChecker", "DO_CHECKS" );
+    if( (boolean)DO_CHECKS.getStatic() ) DO_CHECKS.setStatic( false );
     //noinspection unchecked
-    return new ArrayList<>( (Collection<? extends E>) augFeatures.values() );
+    return CachedValuesManager.getCachedValue( psiClass,
+      (Key)KEY_CACHED_AUGMENTS,
+      (CachedValueProvider<List<E>>)() -> {
+        LinkedHashMap<String, PsiMethod> augFeatures = new LinkedHashMap<>();
+        List<Object> dependencies = new ArrayList<>( addMethods( fqnClass, psiClass, augFeatures ) );
+        dependencies.add( psiClass );
+        dependencies.add( new MyModificationTracker( fqnClass, project ) );
+        //noinspection unchecked
+        return new CachedValueProvider.Result<>(
+          new ArrayList<E>( (Collection<E>)augFeatures.values() ), dependencies.toArray() );
+      } );
   }
 
-  private void addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures )
+  private void addPsiExtensionChangeListener( Project project )
+  {
+    ExtensionClassPsiListener extensionClassPsiListener = _mapExtClassListeners.get( project );
+    if( extensionClassPsiListener == null )
+    {
+      extensionClassPsiListener = new ExtensionClassPsiListener();
+      PsiManager.getInstance( project ).addPsiTreeChangeListener( extensionClassPsiListener, project );
+      _mapExtClassListeners.put( project, extensionClassPsiListener );
+    }
+  }
+
+  private List<PsiClass> addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures )
   {
     ManProject manProject = ManProject.manProjectFrom( psiClass.getProject() );
+    List<PsiClass> extensionClasses = new ArrayList<>();
     for( ManModule manModule : manProject.getModules().values() )
     {
-      addMethods( fqn, psiClass, augFeatures, manModule.getIjModule() );
+      extensionClasses.addAll( addMethods( fqn, psiClass, augFeatures, manModule ) );
     }
+    return extensionClasses;
   }
 
-  private void addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, Module module )
+  private List<PsiClass> addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, ManModule manModule )
   {
-    ManModule manModule = ManProject.getModule( module );
-    if( manModule == null )
-    {
-      return;
-    }
-    
+    List<PsiClass> extensionClasses = new ArrayList<>();
+
     for( ITypeManifold tm : manModule.getTypeManifolds() )
     {
       if( tm.getContributorKind() == Supplemental )
@@ -146,7 +167,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
               continue;
             }
 
-            PsiFile psiFile = PsiManager.getInstance( module.getProject() ).findFile( vFile );
+            PsiFile psiFile = PsiManager.getInstance( manModule.getIjModule().getProject() ).findFile( vFile );
             PsiJavaFile psiJavaFile = (PsiJavaFile)psiFile;
             if( psiJavaFile != null )
             {
@@ -157,7 +178,11 @@ public class ManAugmentProvider extends PsiAugmentProvider
                 String innerSuffix = fqn.substring( topLevelFqn.length() );
 
                 PsiClass extClass = findExtClass( classes[0], classes[0].getQualifiedName() + innerSuffix );
-                addMethods( psiClass, augFeatures, manModule, extClass );
+                if( extClass != null )
+                {
+                  extensionClasses.add( extClass );
+                  addMethods( psiClass, augFeatures, manModule, extClass );
+                }
               }
             }
           }
@@ -173,11 +198,16 @@ public class ManAugmentProvider extends PsiAugmentProvider
           {
             PsiClass extPsiClass = ManifoldPsiClassCache.getPsiClass( manModule, extension );
             PsiClass extClass = findExtClass( extPsiClass, extension );
-            addMethods( psiClass, augFeatures, manModule, extClass );
+            if( extClass != null )
+            {
+              extensionClasses.add( extClass );
+              addMethods( psiClass, augFeatures, manModule, extClass );
+            }
           }
         }
       }
     }
+    return extensionClasses;
   }
 
   private PsiClass findExtClass( PsiClass topLevel, String fqn )
@@ -520,5 +550,136 @@ public class ManAugmentProvider extends PsiAugmentProvider
   private boolean isArrayExtension( SrcParameter param, String extendedType )
   {
     return extendedType.endsWith( ".__Array__" ) && param.getType().getName().equals( Object.class.getTypeName() );
+  }
+
+  private class MyModificationTracker implements ModificationTracker
+  {
+    private final String _fqn;
+    private final ExtensionClassPsiListener _extensionChangeListener;
+
+    private MyModificationTracker( String fqn, Project project )
+    {
+      _fqn = fqn;
+      _extensionChangeListener = _mapExtClassListeners.get( project );
+      if( _extensionChangeListener == null )
+      {
+        throw new IllegalStateException();
+      }
+    }
+
+    @Override
+    public long getModificationCount()
+    {
+      // if any mods were made to extension classes on this fqn, the mod count bumps
+      return _extensionChangeListener.getModCount( _fqn );
+    }
+  }
+
+  /**
+   * Used to keep track of when a new extension class is created for a given psi class.
+   */
+  private static class ExtensionClassPsiListener implements PsiTreeChangeListener
+  {
+    private final Map<String, Long> _mapFqnToModCount = new ConcurrentHashMap<>();
+
+    private long getModCount( String fqn )
+    {
+      Long modCount = _mapFqnToModCount.get( fqn );
+      return modCount == null ? 0L : modCount;
+    }
+
+    @Override
+    public void beforeChildAddition( @NotNull PsiTreeChangeEvent event )
+    {
+    }
+
+    @Override
+    public void beforeChildRemoval( @NotNull PsiTreeChangeEvent event )
+    {
+    }
+
+    @Override
+    public void beforeChildReplacement( @NotNull PsiTreeChangeEvent event )
+    {
+    }
+
+    @Override
+    public void beforeChildMovement( @NotNull PsiTreeChangeEvent event )
+    {
+    }
+
+    @Override
+    public void beforeChildrenChange( @NotNull PsiTreeChangeEvent event )
+    {
+    }
+
+    @Override
+    public void beforePropertyChange( @NotNull PsiTreeChangeEvent event )
+    {
+    }
+
+    @Override
+    public void childAdded( @NotNull PsiTreeChangeEvent event )
+    {
+      incIfExtensionClass( event );
+    }
+
+    @Override
+    public void childRemoved( @NotNull PsiTreeChangeEvent event )
+    {
+      incIfExtensionClass( event );
+    }
+
+    @Override
+    public void childReplaced( @NotNull PsiTreeChangeEvent event )
+    {
+      incIfExtensionClass( event );
+    }
+
+    @Override
+    public void childrenChanged( @NotNull PsiTreeChangeEvent event )
+    {
+      incIfExtensionClass( event );
+    }
+
+    @Override
+    public void childMoved( @NotNull PsiTreeChangeEvent event )
+    {
+      incIfExtensionClass( event );
+    }
+
+    @Override
+    public void propertyChanged( @NotNull PsiTreeChangeEvent event )
+    {
+      incIfExtensionClass( event );
+    }
+
+    private void incIfExtensionClass( PsiTreeChangeEvent event )
+    {
+      PsiFile file = event.getFile();
+      if( file instanceof PsiClassOwner )
+      {
+        PsiClass changedClass = null;
+        if( event.getFile() instanceof PsiJavaFile )
+        {
+          PsiClass[] classes = ((PsiJavaFile)event.getFile()).getClasses();
+          if( classes.length > 0 )
+          {
+            changedClass = classes[0];
+          }
+        }
+        if( changedClass != null &&
+          changedClass.hasAnnotation( Extension.class.getTypeName() ) )
+        {
+          String packageName = PsiUtil.getPackageName( changedClass );
+          if( packageName != null )
+          {
+            String extendedClassFqn = ExtensionClassAnnotator.getExtendedClassName( packageName );
+            Long modCount = _mapFqnToModCount.computeIfAbsent( extendedClassFqn, key -> 0L );
+            _mapFqnToModCount.put( extendedClassFqn, modCount + 1 );
+          }
+        }
+      }
+    }
   }
 }

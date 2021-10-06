@@ -1,5 +1,6 @@
 package manifold.ij.extensions;
 
+import com.intellij.codeInsight.daemon.JavaErrorBundle;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
@@ -12,6 +13,7 @@ import com.intellij.psi.util.PsiUtil;
 import manifold.ext.props.rt.api.*;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.ij.psi.ManLightFieldBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,6 +45,9 @@ public class PropertiesAnnotator implements Annotator
     }
 
     ManModule module = ManProject.getModule( element );
+
+    errorIfPropertyAccess( module, element, holder );
+
     if( module != null && !module.isPropertiesEnabled() )
     {
       // project/module not using properties
@@ -55,6 +60,29 @@ public class PropertiesAnnotator implements Annotator
     checkProperty( element, holder );
 
     checkDirectUseOfAccessor( element, holder );
+  }
+
+  private void errorIfPropertyAccess( ManModule module, @NotNull PsiElement element, @NotNull AnnotationHolder holder )
+  {
+    if( module != null && !module.isPropertiesEnabled() && element instanceof PsiReferenceExpression )
+    {
+      PsiReferenceExpression ref = (PsiReferenceExpression)element;
+      PsiElement member = ref.resolve();
+      if( member instanceof ManLightFieldBuilder && ((ManLightFieldBuilder)member).isProperty() )
+      {
+        // manifold-props is not in use from the module at the call-site
+        PsiElement methodElem = ref.getReferenceNameElement();
+        if( methodElem != null )
+        {
+          TextRange textRange = methodElem.getTextRange();
+          TextRange range = new TextRange( textRange.getStartOffset(), textRange.getEndOffset() );
+          holder.newAnnotation( HighlightSeverity.ERROR,
+              JavaErrorBundle.message( "cannot.resolve.method", ref.getReferenceName() ) )
+            .range( range )
+            .create();
+        }
+      }
+    }
   }
 
   private void checkDirectUseOfAccessor( PsiElement element, AnnotationHolder holder )
