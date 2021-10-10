@@ -89,6 +89,13 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
     }
 
     PsiExtensibleClass psiClass = (PsiExtensibleClass)element;
+
+    if( psiClass.getLanguage() != JavaLanguage.INSTANCE &&
+      psiClass.getLanguage().getBaseLanguage() != JavaLanguage.INSTANCE )
+    {
+      return Collections.emptyList();
+    }
+
     String className = psiClass.getQualifiedName();
     if( className == null )
     {

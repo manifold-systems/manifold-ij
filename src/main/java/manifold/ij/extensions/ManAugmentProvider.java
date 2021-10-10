@@ -1,5 +1,6 @@
 package manifold.ij.extensions;
 
+import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
@@ -87,6 +88,13 @@ public class ManAugmentProvider extends PsiAugmentProvider
     }
 
     PsiClass psiClass = (PsiClass)element;
+
+    if( psiClass.getLanguage() != JavaLanguage.INSTANCE &&
+      psiClass.getLanguage().getBaseLanguage() != JavaLanguage.INSTANCE )
+    {
+      return Collections.emptyList();
+    }
+
     String className = psiClass.getQualifiedName();
     if( className == null )
     {

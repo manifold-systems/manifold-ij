@@ -231,6 +231,10 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/306">#306</a>: Support Java 17
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/290">#290</a>: IJ plugin: More performance-related changes targeting type resolution and completion
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/297">#297</a>: IJ plugin: Some features of manifold-ext and manifold-props leak through to modules not depending on these artifacts, in such cases avoid applying these code paths
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/290">#290</a>: IJ plugin: Improve performance while editing, particularly where code completion involves manifold extensions, also avoid irrelevant code paths where possible e.g., type resolution involving manifold-ext where it is not used
