@@ -109,16 +109,14 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
       return null;
     }
 
-    ManModule module = ManProject.getModule( member );
+    ManModule module = ManProject.getModule( place );
     if( module != null && !module.isPropertiesEnabled() )
     {
       // project/module not using properties
       return null;
     }
 
-    member = updateFieldHack( member );
-
-    Boolean res = null;
+    Boolean res;
     if( isCompletionContext )
     {
       res = handleClsPropertyAccessCompletion( member, place, accessObjectClass, currentFileResolveScope );

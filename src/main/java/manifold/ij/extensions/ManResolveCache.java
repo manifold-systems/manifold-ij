@@ -2,30 +2,18 @@ package manifold.ij.extensions;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiModifier;
-import com.intellij.psi.PsiModifierList;
-import com.intellij.psi.PsiModifierListOwner;
-import com.intellij.psi.PsiNameValuePair;
-import com.intellij.psi.PsiParameter;
-import com.intellij.psi.PsiPolyVariantReference;
-import com.intellij.psi.PsiReferenceExpression;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeParameter;
-import com.intellij.psi.ResolveResult;
+import com.intellij.psi.*;
+import com.intellij.psi.augment.PsiAugmentProvider;
+import com.intellij.psi.impl.compiled.ClsClassImpl;
 import com.intellij.psi.impl.source.resolve.ResolveCache;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
+import com.intellij.psi.impl.source.tree.java.PsiReferenceExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.util.ClassUtil;
-import java.util.Map;
+import com.intellij.psi.util.*;
+
+import java.util.*;
 
 import com.intellij.util.IdempotenceChecker;
 import manifold.api.util.BytecodeOptions;
@@ -87,6 +75,8 @@ public class ManResolveCache extends ResolveCache
       return results;
     }
 
+    ensureQualifierIsPropertized( ref );
+
     results = super.resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
     for( ResolveResult result: results )
     {
@@ -138,6 +128,46 @@ public class ManResolveCache extends ResolveCache
       }
     }
     return results;
+  }
+
+  /**
+   * Ensure the type of the qualifier has its fields processed for properties before any field reference is resolved.
+   * <p/>
+   * For example, the `LocalTime` class has existing private field `hour` that matches the inferred property name and,
+   * therefore must be designated as a property, which does not happen unless our PsiAugmentProvider for properties runs,
+   * which does not happen unless and until a property name is resolved that is NOT an existing field. This is how a
+   * PsiClass works with its `findFieldByName()` method -- it won't invoke PsiAugmentProviders until it HAS to.
+   * <p/>
+   * Again, the reason we're doing this -- forcing PsiAugmentProviders to run -- is that they otherwise don't run
+   * for a given PsiClass unless the property name does not exist as a field. So, if a reference to a property is met by
+   * an existing field, even if private, it won't trigger the PsiAugmentProvider. But we need the <i>side effects</i> from
+   * running the PsiAugmentProvider, such as with field LocalTime#hour has the same name as inferred property from `getHour()`
+   * is marked with user data: `VAR_TAG`. This is how a non-private reference to `hour` resolves as a reference to the
+   * public property designated by `getHour()`. Otherwise, the reference resolves to the private field, which results in
+   * an error.
+   */
+  private <T extends PsiPolyVariantReference> void ensureQualifierIsPropertized( T ref )
+  {
+    if( ref instanceof PsiReferenceExpressionImpl )
+    {
+      PsiExpression qual = ((PsiReferenceExpressionImpl)ref).getQualifierExpression();
+      if( qual != null )
+      {
+        ManModule module = ManProject.getModule( qual );
+        if( module != null && !module.isPropertiesEnabled() )
+        {
+          // module not using properties
+          return;
+        }
+
+        PsiClass psiClass = PsiTypesUtil.getPsiClass( qual.getType() );
+        // limiting to ClsClassImpl for now, maybe source classes too someday if necessary
+        if( psiClass instanceof ClsClassImpl )
+        {
+          PsiAugmentProvider.collectAugments( psiClass, PsiField.class, null );
+        }
+      }
+    }
   }
 
   private boolean isJailbreakType( PsiType type )
