@@ -13,15 +13,19 @@ import com.intellij.psi.*;
 import com.intellij.psi.augment.PsiAugmentProvider;
 import com.intellij.psi.impl.compiled.ClsClassImpl;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
+import com.intellij.psi.util.CachedValue;
+import com.intellij.psi.util.CachedValueProvider;
+import com.intellij.psi.util.CachedValuesManager;
 import manifold.ext.props.rt.api.propgen;
-import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightModifierListImpl;
 import manifold.ij.psi.ManPsiElementFactory;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 import static manifold.ij.extensions.PropertyInference.GETTER_TAG;
 import static manifold.ij.extensions.PropertyInference.SETTER_TAG;
@@ -34,6 +38,9 @@ import static manifold.ij.extensions.PropertyMaker.generateAccessors;
  */
 public class ManPropertiesAugmentProvider extends PsiAugmentProvider
 {
+  static final Key<CachedValue<List<PsiField>>> KEY_CACHED_PROP_FIELD_AUGMENTS = new Key<>( "KEY_CACHED_PROP_FIELD_AUGMENTS" );
+  static final Key<CachedValue<List<PsiMethod>>> KEY_CACHED_PROP_METHOD_AUGMENTS = new Key<>( "KEY_CACHED_PROP_METHOD_AUGMENTS" );
+
   @SuppressWarnings( "deprecation" )
   @NotNull
   public <E extends PsiElement> List<E> getAugments( @NotNull PsiElement element, @NotNull Class<E> cls )
@@ -102,20 +109,55 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
       return Collections.emptyList();
     }
 
-    LinkedHashMap<String, PsiMember> augFeatures = new LinkedHashMap<>();
+// Not cached:
+//    LinkedHashMap<String, PsiMember> augFeatures = new LinkedHashMap<>();
+//
+//    if( PsiMethod.class.isAssignableFrom( cls ) )
+//    {
+//      addMethods( psiClass, augFeatures );
+//    }
+//    else if( PsiField.class.isAssignableFrom( cls ) )
+//    {
+//      recreateNonbackingPropertyFields( psiClass, augFeatures );
+//      inferPropertyFieldsFromAccessors( psiClass, augFeatures );
+//    }
+//
+//    //noinspection unchecked
+//    return new ArrayList<>( (Collection<? extends E>)augFeatures.values() );
 
+// Cached:
+    ReflectUtil.FieldRef DO_CHECKS = ReflectUtil.field( "com.intellij.util.CachedValueStabilityChecker", "DO_CHECKS" );
+    if( (boolean)DO_CHECKS.getStatic() ) DO_CHECKS.setStatic( false );
     if( PsiMethod.class.isAssignableFrom( cls ) )
     {
-      addMethods( psiClass, augFeatures );
+      //noinspection unchecked
+      return getCachedAugments( psiClass, (Key)KEY_CACHED_PROP_METHOD_AUGMENTS,
+        augFeatures -> addMethods( psiClass, augFeatures ) );
     }
     else if( PsiField.class.isAssignableFrom( cls ) )
     {
-      recreateNonbackingPropertyFields( psiClass, augFeatures );
-      inferPropertyFieldsFromAccessors( psiClass, augFeatures );
+      //noinspection unchecked
+      return getCachedAugments( psiClass, (Key)KEY_CACHED_PROP_FIELD_AUGMENTS, augFeatures -> {
+        recreateNonbackingPropertyFields( psiClass, augFeatures );
+        inferPropertyFieldsFromAccessors( psiClass, augFeatures );
+      } );
     }
+    return Collections.emptyList();
+  }
 
-    //noinspection unchecked
-    return new ArrayList<>( (Collection<? extends E>)augFeatures.values() );
+  private <E extends PsiElement> List<E> getCachedAugments( PsiExtensibleClass psiClass,
+                                                            Key<CachedValue<List<E>>> key,
+                                                            Consumer<LinkedHashMap<String, PsiMember>> augmenter )
+  {
+    return CachedValuesManager.getCachedValue( psiClass, key, () -> {
+      LinkedHashMap<String, PsiMember> augFeatures = new LinkedHashMap<>();
+      augmenter.accept( augFeatures );
+      List<PsiClass> hierarchy = new ArrayList<>( Arrays.asList( psiClass.getSupers() ) );
+      hierarchy.add( 0, psiClass );
+      //noinspection unchecked
+      return new CachedValueProvider.Result<>(
+        new ArrayList<E>( (Collection<E>)augFeatures.values() ), hierarchy.toArray() );
+    } );
   }
 
   private void inferPropertyFieldsFromAccessors( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )

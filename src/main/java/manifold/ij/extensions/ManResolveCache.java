@@ -5,9 +5,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.compiled.ClsClassImpl;
-import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.impl.source.resolve.ResolveCache;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
+import com.intellij.psi.impl.source.tree.java.PsiReferenceExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -32,8 +32,6 @@ import org.jetbrains.annotations.Nullable;
 
 public class ManResolveCache extends ResolveCache
 {
-  private static final Key<CachedValue<Boolean>> PROPERTIZED_KEY = Key.create( "PROPERTIZED_KEY" );
-  
   public ManResolveCache( @NotNull Project project )
   {
     super( project );
@@ -133,28 +131,26 @@ public class ManResolveCache extends ResolveCache
   }
 
   /**
-   * Ensure the type of the qualifier has its fields processed for properties. Here, we only require that if an
-   * existing field matches a property name, it is marked with `VAR_TAG` before the type's fields are accessed, thus we
-   * don't care about the results of calling `inferPropertyFields()`, just that `VAR_TAG` is applied where necessary.
+   * Ensure the type of the qualifier has its fields processed for properties before any field reference is resolved.
    * <p/>
-   * For example, the `LocalTime` class has existing private field `hour` that is also the property name and
-   * must be marked as such with `VAR_TAG`.
+   * For example, the `LocalTime` class has existing private field `hour` that matches the inferred property name and,
+   * therefore must be designated as a property, which does not happen unless our PsiAugmentProvider for properties runs,
+   * which does not happen unless and until a property name is resolved that is NOT an existing field. This is how a
+   * PsiClass works with its `findFieldByName()` method -- it won't invoke PsiAugmentProviders until it HAS to.
    * <p/>
-   * Note, {@code CachedValuesManager#getCachedValue} is used so that the call to `inferPropertyFields()` only happens
-   * when the declaring type (a `ClsClassImpl`) changes, which should be relatively infrequent.
-   * <p/>
-   * Also note, the reason we're doing this -- forcing a call to `inferPropertyFields()` -- is that it is otherwise called
-   * exclusively through the PsiAugmentProvider, which is triggered on demand through `ClassInnerStuffCache#findFieldByName()`.
-   * So, if a reference to a property is met by an existing field, even if private, it won't trigger the PsiAugmentProvider.
-   * The inferPropertyFields() call, among other things, tags existing fields such as LocalTime#hour as having the same
-   * name as an inferred property with `VAR_TAG`. This is how a non-private reference to `hour` resolves as a reference to the
-   * public property designated by `getHour()`.
+   * Again, the reason we're doing this -- forcing PsiAugmentProviders to run -- is that they otherwise don't run
+   * for a given PsiClass unless the property name does not exist as a field. So, if a reference to a property is met by
+   * an existing field, even if private, it won't trigger the PsiAugmentProvider. But we need the <i>side effects</i> from
+   * running the PsiAugmentProvider, such as with field LocalTime#hour has the same name as inferred property from `getHour()`
+   * is marked with user data: `VAR_TAG`. This is how a non-private reference to `hour` resolves as a reference to the
+   * public property designated by `getHour()`. Otherwise, the reference resolves to the private field, which results in
+   * an error.
    */
   private <T extends PsiPolyVariantReference> void ensureQualifierIsPropertized( T ref )
   {
-    if( ref instanceof PsiReferenceExpression )
+    if( ref instanceof PsiReferenceExpressionImpl )
     {
-      PsiExpression qual = ((PsiReferenceExpression)ref).getQualifierExpression();
+      PsiExpression qual = ((PsiReferenceExpressionImpl)ref).getQualifierExpression();
       if( qual != null )
       {
         ManModule module = ManProject.getModule( qual );
@@ -165,14 +161,11 @@ public class ManResolveCache extends ResolveCache
         }
 
         PsiClass psiClass = PsiTypesUtil.getPsiClass( qual.getType() );
+        // limiting to ClsClassImpl for now, maybe source classes too someday if necessary
         if( psiClass instanceof ClsClassImpl )
         {
-          CachedValuesManager.getCachedValue( psiClass, PROPERTIZED_KEY,
-            () -> {
-              PropertyInference.inferPropertyFields( (PsiExtensibleClass)psiClass, new LinkedHashMap<>() );
-              return new CachedValueProvider.Result<>( true, psiClass );
-            }
-          );
+          // unthinkable field name forces our property PsiAugmentProvider to kick-in
+          psiClass.findFieldByName( "covidIsALie", true );
         }
       }
     }
