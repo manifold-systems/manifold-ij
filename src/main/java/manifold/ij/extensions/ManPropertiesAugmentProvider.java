@@ -162,12 +162,12 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
 
   private void inferPropertyFieldsFromAccessors( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
   {
-    forceAncestryToAugment( psiClass );
+    forceAncestryToAugment( psiClass, psiClass );
     PropertyInference.inferPropertyFields( psiClass, augFeatures );
   }
 
   private static final Key<Boolean> forceAncestryToAugment_TAG = Key.create( "forceAncestryToAugment_TAG" );
-  private void forceAncestryToAugment( PsiClass psiClass )
+  private void forceAncestryToAugment( PsiClass psiClass, PsiClass origin )
   {
     if( !(psiClass instanceof PsiExtensibleClass) || psiClass.getUserData( forceAncestryToAugment_TAG ) != null )
     {
@@ -177,13 +177,16 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
     psiClass.putUserData( forceAncestryToAugment_TAG, true );
 
     PsiClass st = psiClass.getSuperClass();
-    forceAncestryToAugment( st );
+    forceAncestryToAugment( st, origin );
     for( PsiClass iface : psiClass.getInterfaces() )
     {
-      forceAncestryToAugment( iface );
+      forceAncestryToAugment( iface, origin );
     }
-    // force augments to load on fields
-    psiClass.getFields();
+    if( psiClass != origin )
+    {
+      // force augments to load on fields, for the side effect of adding VAR_TAG etc. to existing fields
+      psiClass.getFields();
+    }
   }
 
   private void recreateNonbackingPropertyFields( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )

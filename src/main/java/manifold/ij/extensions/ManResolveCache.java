@@ -2,8 +2,8 @@ package manifold.ij.extensions;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Key;
 import com.intellij.psi.*;
+import com.intellij.psi.augment.PsiAugmentProvider;
 import com.intellij.psi.impl.compiled.ClsClassImpl;
 import com.intellij.psi.impl.source.resolve.ResolveCache;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
@@ -164,8 +164,7 @@ public class ManResolveCache extends ResolveCache
         // limiting to ClsClassImpl for now, maybe source classes too someday if necessary
         if( psiClass instanceof ClsClassImpl )
         {
-          // unthinkable field name forces our property PsiAugmentProvider to kick-in
-          psiClass.findFieldByName( "covidIsALie", true );
+          PsiAugmentProvider.collectAugments( psiClass, PsiField.class, null );
         }
       }
     }
