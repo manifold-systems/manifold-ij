@@ -2,7 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.util.concurrent.TimeUnit
 
 plugins {
-  id 'org.jetbrains.intellij' version '0.6.3'
+  id 'org.jetbrains.intellij' version '1.2.0'
 }
 
 description = 'Manifold :: IJ'
@@ -28,7 +28,8 @@ allprojects {
     if(!System.getenv('CI')) {
       mavenLocal()
     }
-    jcenter()
+    mavenLocal()
+    mavenCentral()
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
   }
 
@@ -53,23 +54,23 @@ jar {
 }
 
 dependencies {
-  compile group: 'systems.manifold', name: 'manifold', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-util', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-darkj', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-image', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-ext', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-props', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-strings', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-exceptions', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-preprocessor', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-xml-rt', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-util', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-darkj', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-image', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-ext', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-props', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-strings', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-exceptions', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-preprocessor', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-xml-rt', version: manifoldVersion
 
-  testCompile group: 'junit', name: 'junit', version: '4.12'
+  testImplementation group: 'junit', name: 'junit', version: '4.12'
 
   manifoldAll group: 'systems.manifold', name: 'manifold-all', version: manifoldVersion
   manifoldEp group: 'systems.manifold', name: 'manifold-ext-producer-sample', version: manifoldVersion
 
-  compile project('jps-plugin')
+  implementation project('jps-plugin')
 }
 
 configurations.all {
@@ -88,50 +89,30 @@ String getIjVersion() {
 }
 
 intellij {
-  //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2017.3.4'
-  //alternativeIdePath = 'C:\\Program Files\\Android\\Android Studio'
-  //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2018.3.4'
-  //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA 192.5281.24'
-  //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA 2019.2.2'
-  //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA 2019.3.3'
-  //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 193.3793.14'
-  //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 193.5233.102'
-  pluginName project.name
-  version getIjVersion() // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
-  if( version.contains( "EAP" ) || Double.parseDouble( version.substring(0, version.lastIndexOf('.'))) >= 2019.2 )
-  {
-    plugins = ['java', 'com.intellij.lang.jsgraphql:3.0.0'] //include GraphQL JS in sandbox
-  }
-  else
-  {
-    plugins = ['com.intellij.lang.jsgraphql:3.0.0'] //include GraphQL JS in sandbox
-  }
+  pluginName = project.name
+  version = getIjVersion()
+  plugins = ['java']//, 'com.intellij.lang.jsgraphql:3.0.0']
 }
 
 runIde {
-  minHeapSize '1g'
-  maxHeapSize '4g'
+  minHeapSize = '1g'
+  maxHeapSize = '4g'
 }
 
 patchPluginXml {
-  sinceBuild '212.0'
-  untilBuild '212.*'
+  sinceBuild = '213.0'
+  untilBuild = '213.*'
 }
 
-publishPlugin {
-  username = System.getenv('JB_PUBLISH_USER')
-  password = System.getenv('JB_PUBLISH_PASS')
-}
-
-test {
-  //uncomment below to show stdout/stderr in console
-  //testLogging.showStandardStreams = true
-
-  testLogging {
-    events TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED
-  }
-
-  //set a system property in the test JVM containing the path to manifold-all (it could be under ~/.gradle/caches or ~/.m2/repository)
-  systemProperties = ['path.to.manifold.all':project.configurations.manifoldAll.singleFile.absolutePath,
-                      'path.to.manifold.ep':project.configurations.manifoldEp.files.first()]
-}
+//test {
+//  //uncomment below to show stdout/stderr in console
+//  //testLogging.showStandardStreams = true
+//
+//  testLogging {
+//    events = TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED
+//  }
+//
+//  //set a system property in the test JVM containing the path to manifold-all (it could be under ~/.gradle/caches or ~/.m2/repository)
+//  systemProperties = ['path.to.manifold.all':project.configurations.manifoldAll.singleFile.absolutePath,
+//                      'path.to.manifold.ep':project.configurations.manifoldEp.files.first()]
+//}

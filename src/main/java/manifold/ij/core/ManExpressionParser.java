@@ -3,12 +3,7 @@ package manifold.ij.core;
 import com.intellij.core.JavaPsiBundle;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.WhitespacesBinders;
-import com.intellij.lang.java.parser.ExpressionParser;
-import com.intellij.lang.java.parser.JavaParser;
-import com.intellij.lang.java.parser.PatternParser;
-import com.intellij.lang.java.parser.ReferenceParser;
-import com.intellij.openapi.util.Key;
-import com.intellij.openapi.util.Pair;
+import com.intellij.lang.java.parser.*;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.TokenType;
 import com.intellij.psi.impl.source.tree.ElementType;
@@ -17,8 +12,8 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
 import java.util.function.Function;
 
+import com.intellij.util.BitUtil;
 import manifold.ext.rt.api.Jailbreak;
-import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.PropertyKey;
@@ -36,7 +31,7 @@ public class ManExpressionParser extends ExpressionParser {
     CONDITIONAL_OR, CONDITIONAL_AND, OR, XOR, AND, EQUALITY, RELATIONAL, SHIFT, ADDITIVE, MULTIPLICATIVE, UNARY, TYPE
   }
 
-  private static final TokenSet ASSIGNMENT_OPS = TokenSet.create(
+  public static final TokenSet ASSIGNMENT_OPS = TokenSet.create(
     JavaTokenType.EQ, JavaTokenType.ASTERISKEQ, JavaTokenType.DIVEQ, JavaTokenType.PERCEQ, JavaTokenType.PLUSEQ, JavaTokenType.MINUSEQ,
     JavaTokenType.LTLTEQ, JavaTokenType.GTGTEQ, JavaTokenType.GTGTGTEQ, JavaTokenType.ANDEQ, JavaTokenType.OREQ, JavaTokenType.XOREQ);
   private static final TokenSet RELATIONAL_OPS = TokenSet.create(JavaTokenType.LT, JavaTokenType.GT, JavaTokenType.LE, JavaTokenType.GE);
@@ -64,7 +59,7 @@ public class ManExpressionParser extends ExpressionParser {
   private static final TokenSet TYPE_START = TokenSet.orSet(
     ElementType.PRIMITIVE_TYPE_BIT_SET, TokenSet.create(JavaTokenType.IDENTIFIER, JavaTokenType.AT));
 
-  private static final Key<Boolean> CASE_LABEL = (Key<Boolean>)ReflectUtil.field( ExpressionParser.class, "CASE_LABEL" ).getStatic();
+  static final int FORBID_LAMBDA_MASK = 0x1;
 
   private final JavaParser myParser;
 
@@ -74,63 +69,48 @@ public class ManExpressionParser extends ExpressionParser {
   }
 
   @Nullable
-  public PsiBuilder.Marker parse( @NotNull PsiBuilder builder) {
+  public PsiBuilder.Marker parse(@NotNull PsiBuilder builder) {
     return parseAssignment(builder);
   }
 
   @Nullable
   public PsiBuilder.Marker parseCaseLabel(@NotNull PsiBuilder builder) {
-    CASE_LABEL.set(builder, Boolean.TRUE);
-    try {
-      if (builder.getTokenType() == JavaTokenType.DEFAULT_KEYWORD) {
-        PsiBuilder.Marker defaultElement = builder.mark();
-        builder.advanceLexer();
-        done(defaultElement, JavaElementType.DEFAULT_CASE_LABEL_ELEMENT);
-        return defaultElement;
-      }
-      if (myParser.getPatternParser().isPattern(builder)) {
-        @Jailbreak PatternParser patternParser = myParser.getPatternParser();
-        return patternParser.parsePattern(builder);
-      }
-      return parseAssignment( builder );
-    }
-    finally {
-      CASE_LABEL.set(builder, null);
-    }
+    @Jailbreak StatementParser statementParser = myParser.getStatementParser();
+    return statementParser.parseCaseLabel(builder).first;
   }
 
   @Nullable
   private PsiBuilder.Marker parseAssignment(final PsiBuilder builder) {
-    return parseAssignment( builder, false );
+    return parseAssignment( builder, 0, false );
   }
   //Manifold: added lhs param to distinguish between declaration part and non-declaration part e.g., X y = z, X y is decl, z is non-decl.
-  public PsiBuilder.Marker parseAssignment(final PsiBuilder builder, boolean lhs) {
+  public PsiBuilder.Marker parseAssignment(final PsiBuilder builder, final int mode, boolean lhs) {
 
     final PsiBuilder.Marker left;
     if( lhs )
     {
       // unary expr may be the actual target call for the lhs of decl, this change
       // allows binding expressions to parse (see parseBinary())
-      left = parseUnary( builder );
+      left = parseUnary( builder, mode );
     }
     else
     {
-      left = parseConditional( builder );
+      left = parseConditional(builder, mode);
     }
 
     if (left == null) return null;
 
-    final IElementType tokenType = getGtTokenType( builder );
-    if( ASSIGNMENT_OPS.contains( tokenType ) ) {
+    final IElementType tokenType = getGtTokenType(builder);
+    if (tokenType != null && ASSIGNMENT_OPS.contains(tokenType)) {
       final PsiBuilder.Marker assignment = left.precede();
-      advanceGtToken( builder, tokenType );
+      advanceGtToken(builder, tokenType);
 
-      final PsiBuilder.Marker right = parse( builder );
+      final PsiBuilder.Marker right = parse(builder);
       if (right == null) {
-        error( builder, JavaPsiBundle.message( "expected.expression" ) );
+        error(builder, JavaPsiBundle.message("expected.expression"));
       }
 
-      assignment.done( JavaElementType.ASSIGNMENT_EXPRESSION );
+      assignment.done(JavaElementType.ASSIGNMENT_EXPRESSION);
       return assignment;
     }
 
@@ -138,8 +118,13 @@ public class ManExpressionParser extends ExpressionParser {
   }
 
   @Nullable
-  public PsiBuilder.Marker parseConditional(final PsiBuilder builder) {
-    final PsiBuilder.Marker condition = parseExpression(builder, ExprType.CONDITIONAL_OR);
+  PsiBuilder.Marker parseConditionalAnd(final PsiBuilder builder, final int mode) {
+    return parseExpression(builder, ExprType.CONDITIONAL_AND, mode);
+  }
+
+  @Nullable
+  public PsiBuilder.Marker parseConditional(final PsiBuilder builder, final int mode) {
+    final PsiBuilder.Marker condition = parseExpression(builder, ExprType.CONDITIONAL_OR, mode);
     if (condition == null) return null;
 
     if (builder.getTokenType() != JavaTokenType.QUEST) return condition;
@@ -160,7 +145,7 @@ public class ManExpressionParser extends ExpressionParser {
     }
     builder.advanceLexer();
 
-    final PsiBuilder.Marker falsePart = parseConditional(builder);
+    final PsiBuilder.Marker falsePart = parseConditional(builder, mode);
     if (falsePart == null) {
       error(builder, JavaPsiBundle.message("expected.expression"));
       ternary.done(JavaElementType.CONDITIONAL_EXPRESSION);
@@ -172,48 +157,48 @@ public class ManExpressionParser extends ExpressionParser {
   }
 
   @Nullable
-  private PsiBuilder.Marker parseExpression(final PsiBuilder builder, final ExprType type) {
+  private PsiBuilder.Marker parseExpression(final PsiBuilder builder, final ExprType type, final int mode) {
     //Manifold: handle binding expressions (null type indiciates binding expr type)
     if( type == null ) {
-      return parseBinary( builder, ExprType.MULTIPLICATIVE, TokenSet.EMPTY );
+      return parseBinary( builder, ExprType.MULTIPLICATIVE, TokenSet.EMPTY, mode );
     }
 
     switch (type) {
       case CONDITIONAL_OR:
-        return parseBinary(builder, ExprType.CONDITIONAL_AND, CONDITIONAL_OR_OPS);
+        return parseBinary(builder, ExprType.CONDITIONAL_AND, CONDITIONAL_OR_OPS, mode);
 
       case CONDITIONAL_AND:
-        return parseBinary(builder, ExprType.OR, CONDITIONAL_AND_OPS);
+        return parseBinary(builder, ExprType.OR, CONDITIONAL_AND_OPS, mode);
 
       case OR:
-        return parseBinary(builder, ExprType.XOR, OR_OPS);
+        return parseBinary(builder, ExprType.XOR, OR_OPS, mode);
 
       case XOR:
-        return parseBinary(builder, ExprType.AND, XOR_OPS);
+        return parseBinary(builder, ExprType.AND, XOR_OPS, mode);
 
       case AND:
-        return parseBinary(builder, ExprType.EQUALITY, AND_OPS);
+        return parseBinary(builder, ExprType.EQUALITY, AND_OPS, mode);
 
       case EQUALITY:
-        return parseBinary(builder, ExprType.RELATIONAL, EQUALITY_OPS);
+        return parseBinary(builder, ExprType.RELATIONAL, EQUALITY_OPS, mode);
 
       case RELATIONAL:
-        return parseRelational(builder);
+        return parseRelational(builder, mode);
 
       case SHIFT:
-        return parseBinary(builder, ExprType.ADDITIVE, SHIFT_OPS);
+        return parseBinary(builder, ExprType.ADDITIVE, SHIFT_OPS, mode);
 
       case ADDITIVE:
         //Manifold: null expr type indicates binding expr, which has precedence between + and *
-        return parseBinary(builder, null, ADDITIVE_OPS);
+        return parseBinary(builder, null, ADDITIVE_OPS, mode);
 
       // See type == null case above for binding expressions
 
       case MULTIPLICATIVE:
-        return parseBinary(builder, ExprType.UNARY, MULTIPLICATIVE_OPS);
+        return parseBinary(builder, ExprType.UNARY, MULTIPLICATIVE_OPS, mode);
 
       case UNARY:
-        return parseUnary(builder);
+        return parseUnary(builder, mode);
 
       case TYPE:
         return myParser.getReferenceParser().parseType(builder, ReferenceParser.EAT_LAST_DOT | ReferenceParser.WILDCARD);
@@ -245,12 +230,12 @@ public class ManExpressionParser extends ExpressionParser {
 
   //Manifold: modify parseBinary() to handle binding expressions
   @Nullable
-  private PsiBuilder.Marker parseBinary( final PsiBuilder builder, final ExprType type, final TokenSet ops) {
-    return parseBinary( null, builder, type, ops );
+  private PsiBuilder.Marker parseBinary( final PsiBuilder builder, final ExprType type, final TokenSet ops, final int mode) {
+    return parseBinary( null, builder, type, ops, mode );
   }
-  private PsiBuilder.Marker parseBinary( final PsiBuilder.Marker lhs, final PsiBuilder builder, final ExprType type, final TokenSet ops) {
+  private PsiBuilder.Marker parseBinary( final PsiBuilder.Marker lhs, final PsiBuilder builder, final ExprType type, final TokenSet ops, final int mode) {
     //Manifold: optional lhs from binding expr parsing
-    PsiBuilder.Marker result = lhs == null ? parseExpression(builder, type) : lhs;
+    PsiBuilder.Marker result = lhs == null ? parseExpression(builder, type, mode) : lhs;
     if (result == null) return null;
     int operandCount = 1;
 
@@ -270,7 +255,7 @@ public class ManExpressionParser extends ExpressionParser {
         advanceGtToken( builder, tokenType );
       }
 
-      final PsiBuilder.Marker right = isBinderExpr ? parseBinderRhs( builder, type ) : parseExpression(builder, type);
+      final PsiBuilder.Marker right = isBinderExpr ? parseBinderRhs( builder, type, mode ) : parseExpression(builder, type, mode);
       operandCount++;
       tokenType = getGtTokenType(builder);
       //Manifold: comment out if-stmt to prevent "polyadic" expressions, favor binary expressions instead to make bindings work
@@ -291,7 +276,7 @@ public class ManExpressionParser extends ExpressionParser {
   }
 
   //Manifold:
-  private PsiBuilder.Marker parseBinderRhs( PsiBuilder builder, ExprType type )
+  private PsiBuilder.Marker parseBinderRhs( PsiBuilder builder, ExprType type, final int mode)
   {
     IElementType tokenType = builder.getTokenType();
 
@@ -337,7 +322,7 @@ public class ManExpressionParser extends ExpressionParser {
     tokenType = getGtTokenType( builder );
     if( MULTIPLICATIVE_OPS.contains( tokenType ) )
     {
-      expr = parseBinary( expr, builder, ExprType.UNARY, MULTIPLICATIVE_OPS );
+      expr = parseBinary( expr, builder, ExprType.UNARY, MULTIPLICATIVE_OPS, mode );
     }
     return expr;
   }
@@ -359,8 +344,8 @@ public class ManExpressionParser extends ExpressionParser {
   }
 
   @Nullable
-  private PsiBuilder.Marker parseRelational(final PsiBuilder builder) {
-    PsiBuilder.Marker left = parseExpression(builder, ExprType.SHIFT);
+  private PsiBuilder.Marker parseRelational(final PsiBuilder builder, final int mode) {
+    PsiBuilder.Marker left = parseExpression(builder, ExprType.SHIFT, mode);
     if (left == null) return null;
 
     IElementType tokenType;
@@ -383,7 +368,7 @@ public class ManExpressionParser extends ExpressionParser {
       advanceGtToken(builder, tokenType);
       if (patternExpected) {
         if (!myParser.getPatternParser().isPattern(builder)) {
-          PsiBuilder.Marker type = parseExpression(builder, ExprType.TYPE);
+          PsiBuilder.Marker type = parseExpression(builder, ExprType.TYPE, mode);
           if (type == null) {
             error(builder, JavaPsiBundle.message("expected.type"));
           }
@@ -393,7 +378,7 @@ public class ManExpressionParser extends ExpressionParser {
         @Jailbreak PatternParser patternParser = myParser.getPatternParser();
         patternParser.parsePrimaryPattern(builder);
       } else {
-        final PsiBuilder.Marker right = parseExpression(builder, ExprType.SHIFT);
+        final PsiBuilder.Marker right = parseExpression(builder, ExprType.SHIFT, mode);
         if (right == null) {
           error(builder, JavaPsiBundle.message("expected.expression"));
           expression.done(toCreate);
@@ -409,14 +394,14 @@ public class ManExpressionParser extends ExpressionParser {
   }
 
   @Nullable
-  private PsiBuilder.Marker parseUnary(final PsiBuilder builder) {
+  private PsiBuilder.Marker parseUnary(final PsiBuilder builder, final int mode) {
     final IElementType tokenType = builder.getTokenType();
 
     if (PREFIX_OPS.contains(tokenType)) {
       final PsiBuilder.Marker unary = builder.mark();
       builder.advanceLexer();
 
-      final PsiBuilder.Marker operand = parseUnary(builder);
+      final PsiBuilder.Marker operand = parseUnary(builder, mode);
       if (operand == null) {
         error(builder, JavaPsiBundle.message("expected.expression"));
       }
@@ -432,19 +417,19 @@ public class ManExpressionParser extends ExpressionParser {
         builder, ReferenceParser.EAT_LAST_DOT | ReferenceParser.WILDCARD | ReferenceParser.CONJUNCTIONS | ReferenceParser.INCOMPLETE_ANNO);
       if (typeInfo == null || !expect(builder, JavaTokenType.RPARENTH)) {
         typeCast.rollbackTo();
-        return parsePostfix(builder);
+        return parsePostfix(builder, mode);
       }
 
       if (PREF_ARITHMETIC_OPS.contains(builder.getTokenType()) && !typeInfo.isPrimitive) {
         typeCast.rollbackTo();
-        return parsePostfix(builder);
+        return parsePostfix(builder, mode);
       }
 
-      final PsiBuilder.Marker expr = parseUnary(builder);
+      final PsiBuilder.Marker expr = parseUnary(builder, mode);
       if (expr == null) {
         if (!typeInfo.isParameterized) {  // cannot parse correct parenthesized expression after correct parameterized type
           typeCast.rollbackTo();
-          return parsePostfix(builder);
+          return parsePostfix(builder, mode);
         }
         else {
           error(builder, JavaPsiBundle.message("expected.expression"));
@@ -458,13 +443,13 @@ public class ManExpressionParser extends ExpressionParser {
       return myParser.getStatementParser().parseExprInParenthWithBlock(builder, JavaElementType.SWITCH_EXPRESSION, true);
     }
     else {
-      return parsePostfix(builder);
+      return parsePostfix(builder, mode);
     }
   }
 
   @Nullable
-  private PsiBuilder.Marker parsePostfix(final PsiBuilder builder) {
-    PsiBuilder.Marker operand = parsePrimary(builder, null, -1);
+  private PsiBuilder.Marker parsePostfix(final PsiBuilder builder, final int mode) {
+    PsiBuilder.Marker operand = parsePrimary(builder, null, -1, mode);
     if (operand == null) return null;
 
     while (POSTFIX_OPS.contains(builder.getTokenType())) {
@@ -480,10 +465,10 @@ public class ManExpressionParser extends ExpressionParser {
   private enum BreakPoint {P1, P2, P4}
 
   @Nullable
-  private PsiBuilder.Marker parsePrimary( PsiBuilder builder, @Nullable BreakPoint breakPoint, int breakOffset) {
+  private PsiBuilder.Marker parsePrimary(PsiBuilder builder, @Nullable BreakPoint breakPoint, int breakOffset, final int mode) {
     PsiBuilder.Marker startMarker = builder.mark();
 
-    PsiBuilder.Marker expr = parsePrimaryExpressionStart(builder);
+    PsiBuilder.Marker expr = parsePrimaryExpressionStart(builder, mode);
     if (expr == null) {
       startMarker.drop();
       return null;
@@ -503,7 +488,7 @@ public class ManExpressionParser extends ExpressionParser {
         }
 
         if (dotTokenType == JavaTokenType.CLASS_KEYWORD && exprType(expr) == JavaElementType.REFERENCE_EXPRESSION) {
-          if ( breakPoint == BreakPoint.P1 && builder.getCurrentOffset() == breakOffset) {
+          if (breakPoint == BreakPoint.P1 && builder.getCurrentOffset() == breakOffset) {
             error(builder, JavaPsiBundle.message("expected.identifier"));
             drop(startMarker, dotPos);
             return expr;
@@ -516,7 +501,7 @@ public class ManExpressionParser extends ExpressionParser {
           final PsiBuilder.Marker classObjAccess = parseClassAccessOrMethodReference(builder);
           if (classObjAccess == null || builder.getCurrentOffset() < offset) {
             copy.rollbackTo();
-            return parsePrimary(builder, BreakPoint.P1, offset);
+            return parsePrimary(builder, BreakPoint.P1, offset, mode);
           }
 
           startMarker = copy;
@@ -535,7 +520,7 @@ public class ManExpressionParser extends ExpressionParser {
           expr = refExpr;
         }
         else if (THIS_OR_SUPER.contains(dotTokenType) && exprType(expr) == JavaElementType.REFERENCE_EXPRESSION) {
-          if ( breakPoint == BreakPoint.P2 && builder.getCurrentOffset() == breakOffset) {
+          if (breakPoint == BreakPoint.P2 && builder.getCurrentOffset() == breakOffset) {
             dotPos.rollbackTo();
             startMarker.drop();
             return expr;
@@ -548,13 +533,13 @@ public class ManExpressionParser extends ExpressionParser {
           PsiBuilder.Marker ref = myParser.getReferenceParser().parseJavaCodeReference(builder, false, true, false, false);
           if (ref == null || builder.getTokenType() != JavaTokenType.DOT || builder.getCurrentOffset() != dotOffset) {
             copy.rollbackTo();
-            return parsePrimary(builder, BreakPoint.P2, offset);
+            return parsePrimary(builder, BreakPoint.P2, offset, mode);
           }
           builder.advanceLexer();
 
           if (builder.getTokenType() != dotTokenType) {
             copy.rollbackTo();
-            return parsePrimary(builder, BreakPoint.P2, offset);
+            return parsePrimary(builder, BreakPoint.P2, offset, mode);
           }
           builder.advanceLexer();
 
@@ -594,7 +579,7 @@ public class ManExpressionParser extends ExpressionParser {
         expr = callExpr;
       }
       else if (tokenType == JavaTokenType.LBRACKET) {
-        if ( breakPoint == BreakPoint.P4) {
+        if (breakPoint == BreakPoint.P4) {
           startMarker.drop();
           return expr;
         }
@@ -609,7 +594,7 @@ public class ManExpressionParser extends ExpressionParser {
           final PsiBuilder.Marker classObjAccess = parseClassAccessOrMethodReference(builder);
           if (classObjAccess == null || builder.getCurrentOffset() <= pos) {
             copy.rollbackTo();
-            return parsePrimary(builder, BreakPoint.P4, -1);
+            return parsePrimary(builder, BreakPoint.P4, -1, mode);
           }
 
           startMarker = copy;
@@ -649,10 +634,10 @@ public class ManExpressionParser extends ExpressionParser {
   }
 
   @Nullable
-  private PsiBuilder.Marker parsePrimaryExpressionStart(final PsiBuilder builder) {
+  private PsiBuilder.Marker parsePrimaryExpressionStart(final PsiBuilder builder, final int mode) {
     IElementType tokenType = builder.getTokenType();
 
-    if (LITERALS.contains(tokenType)) {
+    if (ElementType.ALL_LITERALS.contains(tokenType)) {
       final PsiBuilder.Marker literal = builder.mark();
       builder.advanceLexer();
       literal.done(JavaElementType.LITERAL_EXPRESSION);
@@ -668,7 +653,7 @@ public class ManExpressionParser extends ExpressionParser {
     }
 
     if (tokenType == JavaTokenType.LPARENTH) {
-      if (CASE_LABEL.get(builder) != Boolean.TRUE) {
+      if (!BitUtil.isSet(mode, FORBID_LAMBDA_MASK)) {
         final PsiBuilder.Marker lambda = parseLambdaAfterParenth(builder);
         if (lambda != null) {
           return lambda;
@@ -720,7 +705,7 @@ public class ManExpressionParser extends ExpressionParser {
       builder.remapCurrentToken(tokenType = JavaTokenType.IDENTIFIER);
     }
     if (tokenType == JavaTokenType.IDENTIFIER) {
-      if (CASE_LABEL.get(builder) != Boolean.TRUE && builder.lookAhead(1) == JavaTokenType.ARROW) {
+      if (!BitUtil.isSet(mode, FORBID_LAMBDA_MASK) && builder.lookAhead(1) == JavaTokenType.ARROW) {
         return parseLambdaExpression(builder, false);
       }
 
@@ -768,10 +753,10 @@ public class ManExpressionParser extends ExpressionParser {
       }
       builder.advanceLexer();
       expr.done(builder.getTokenType() == JavaTokenType.LPARENTH
-                ? JavaElementType.REFERENCE_EXPRESSION
-                : tokenType == JavaTokenType.THIS_KEYWORD
-                  ? JavaElementType.THIS_EXPRESSION
-                  : JavaElementType.SUPER_EXPRESSION);
+        ? JavaElementType.REFERENCE_EXPRESSION
+        : tokenType == JavaTokenType.THIS_KEYWORD
+        ? JavaElementType.THIS_EXPRESSION
+        : JavaElementType.SUPER_EXPRESSION);
       return expr;
     }
 
@@ -956,7 +941,7 @@ public class ManExpressionParser extends ExpressionParser {
     else {
       if (!optionalClassKeyword) return null;
       mark.rollbackTo();
-      builder.error(".class expected");
+      builder.error(JavaPsiBundle.message("class.literal.expected"));
     }
 
     expr.done(JavaElementType.CLASS_OBJECT_ACCESS_EXPRESSION);
