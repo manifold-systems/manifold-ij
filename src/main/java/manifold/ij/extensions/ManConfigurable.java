@@ -66,11 +66,10 @@ public class ManConfigurable implements Configurable
       c.weighty = 0;
       c.insets = JBUI.insets( 2, 2, 0, 0 );
       add( _mode = new JCheckBox( "Preprocessor smart mode" ), c );
-      _mode.setToolTipText( "When in smart mode the preprocessor actively shades inactive\n" +
-                            "code according to both local and environmental definitions.\n" +
-                            "Additionally inactive code is not parsed by IntelliJ to avoid\n" +
-                            "compiler errors and to avoid false positives wrt usage searches" +
-                            "etc." );
+      _mode.setToolTipText( "<html>When in smart mode the preprocessor actively shades inactive<br/>" +
+                            "code according to both local and environmental definitions.<br/>" +
+                            "Additionally inactive code is not parsed by IntelliJ to avoid<br/>" +
+                            "compiler errors and to avoid false positives wrt usage searches etc.</html>" );
       _mode.setSelected( !ManJavaLexer.isDumbPreprocessorMode() );
       _mode.addChangeListener( e -> _modified = true );
 

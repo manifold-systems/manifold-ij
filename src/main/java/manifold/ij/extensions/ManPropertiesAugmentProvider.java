@@ -162,30 +162,38 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
 
   private void inferPropertyFieldsFromAccessors( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
   {
-    forceAncestryToAugment( psiClass, psiClass );
+    forceAncestryToAugmentFields( psiClass, psiClass );
     PropertyInference.inferPropertyFields( psiClass, augFeatures );
   }
 
-  private static final Key<Boolean> forceAncestryToAugment_TAG = Key.create( "forceAncestryToAugment_TAG" );
-  private void forceAncestryToAugment( PsiClass psiClass, PsiClass origin )
+  private static final Key<Boolean> forceAncestryToAugmentFields_KEY = Key.create( "forceAncestryToAugment_TAG" );
+  private void forceAncestryToAugmentFields( PsiClass psiClass, PsiClass origin )
   {
-    if( !(psiClass instanceof PsiExtensibleClass) || psiClass.getUserData( forceAncestryToAugment_TAG ) != null )
+    if( !(psiClass instanceof PsiExtensibleClass) ||
+      psiClass.getUserData( forceAncestryToAugmentFields_KEY ) != null ||
+      psiClass.getUserData( KEY_CACHED_PROP_FIELD_AUGMENTS ) != null )
     {
       return;
     }
 
-    psiClass.putUserData( forceAncestryToAugment_TAG, true );
-
-    PsiClass st = psiClass.getSuperClass();
-    forceAncestryToAugment( st, origin );
-    for( PsiClass iface : psiClass.getInterfaces() )
+    psiClass.putUserData( forceAncestryToAugmentFields_KEY, true );
+    try
     {
-      forceAncestryToAugment( iface, origin );
+      PsiClass st = psiClass.getSuperClass();
+      forceAncestryToAugmentFields( st, origin );
+      for( PsiClass iface : psiClass.getInterfaces() )
+      {
+        forceAncestryToAugmentFields( iface, origin );
+      }
+      if( psiClass != origin )
+      {
+        // force augments to load on fields, for the side effect of adding VAR_TAG etc. to existing fields
+        PsiAugmentProvider.collectAugments( psiClass, PsiField.class, null );
+      }
     }
-    if( psiClass != origin )
+    finally
     {
-      // force augments to load on fields, for the side effect of adding VAR_TAG etc. to existing fields
-      psiClass.getFields();
+      psiClass.putUserData( forceAncestryToAugmentFields_KEY, null );
     }
   }
 
