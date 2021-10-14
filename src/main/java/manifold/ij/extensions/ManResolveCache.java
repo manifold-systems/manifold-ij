@@ -30,6 +30,8 @@ import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static manifold.ij.extensions.ManPropertiesAugmentProvider.KEY_CACHED_PROP_FIELD_AUGMENTS;
+
 public class ManResolveCache extends ResolveCache
 {
   public ManResolveCache( @NotNull Project project )
@@ -75,8 +77,6 @@ public class ManResolveCache extends ResolveCache
       return results;
     }
 
-    ensureQualifierIsPropertized( ref );
-
     results = super.resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
     for( ResolveResult result: results )
     {
@@ -92,6 +92,19 @@ public class ManResolveCache extends ResolveCache
             if( refExpr.getQualifier() instanceof PsiReferenceExpression )
             {
               PsiType type = ((PsiReferenceExpression)refExpr.getQualifier()).getType();
+
+              if( refExpr instanceof PsiReferenceExpressionImpl )
+              {
+                // field is not accessible, maybe it's an inferred property that matches an existing field and the
+                // enclosing class hasn't been augmented yet. This can happen if no properties were referenced that
+                // don't match existing field names.
+                if( maybeInvokeFieldAugmenter( ref ) )
+                {
+                  // trigger field augmenter if need be and re-resolve
+                  return resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
+                }
+              }
+
               if( isJailbreakType( type ) )
               {
                 info.myAccessible = true;
@@ -131,43 +144,57 @@ public class ManResolveCache extends ResolveCache
   }
 
   /**
-   * Ensure the type of the qualifier has its fields processed for properties before any field reference is resolved.
+   * If a field/prop ref resolves as inaccessible, explicitly invoke field augmenters on the qualifier's type.
    * <p/>
    * For example, the `LocalTime` class has existing private field `hour` that matches the inferred property name and,
    * therefore must be designated as a property, which does not happen unless our PsiAugmentProvider for properties runs,
    * which does not happen unless and until a property name is resolved that is NOT an existing field. This is how a
    * PsiClass works with its `findFieldByName()` method -- it won't invoke PsiAugmentProviders until it HAS to.
    * <p/>
-   * Again, the reason we're doing this -- forcing PsiAugmentProviders to run -- is that they otherwise don't run
+   * The reason we're doing this -- forcing PsiAugmentProviders to run -- is that they otherwise don't run
    * for a given PsiClass unless the property name does not exist as a field. So, if a reference to a property is met by
    * an existing field, even if private, it won't trigger the PsiAugmentProvider. But we need the <i>side effects</i> from
-   * running the PsiAugmentProvider, such as with field LocalTime#hour has the same name as inferred property from `getHour()`
+   * running the PsiAugmentProvider, such as with field LocalTime#hour which the same name as inferred property from `getHour()`
    * is marked with user data: `VAR_TAG`. This is how a non-private reference to `hour` resolves as a reference to the
    * public property designated by `getHour()`. Otherwise, the reference resolves to the private field, which results in
    * an error.
    */
-  private <T extends PsiPolyVariantReference> void ensureQualifierIsPropertized( T ref )
+  private <T extends PsiPolyVariantReference> boolean maybeInvokeFieldAugmenter( T ref )
   {
-    if( ref instanceof PsiReferenceExpressionImpl )
+    if( !(ref instanceof PsiReferenceExpressionImpl) )
     {
-      PsiExpression qual = ((PsiReferenceExpressionImpl)ref).getQualifierExpression();
-      if( qual != null )
-      {
-        ManModule module = ManProject.getModule( qual );
-        if( module != null && !module.isPropertiesEnabled() )
-        {
-          // module not using properties
-          return;
-        }
-
-        PsiClass psiClass = PsiTypesUtil.getPsiClass( qual.getType() );
-        // limiting to ClsClassImpl for now, maybe source classes too someday if necessary
-        if( psiClass instanceof ClsClassImpl )
-        {
-          PsiAugmentProvider.collectAugments( psiClass, PsiField.class, null );
-        }
-      }
+      return false;
     }
+
+    PsiExpression qual = ((PsiReferenceExpressionImpl)ref).getQualifierExpression();
+    if( qual == null )
+    {
+      return false;
+    }
+
+    ManModule module = ManProject.getModule( qual );
+    if( module != null && !module.isPropertiesEnabled() )
+    {
+      // module not using properties
+      return false;
+    }
+
+    PsiClass psiClass = PsiTypesUtil.getPsiClass( qual.getType() );
+
+    if( psiClass == null || psiClass.getUserData( KEY_CACHED_PROP_FIELD_AUGMENTS ) != null )
+    {
+      // already augmented with fields/props
+      return false;
+    }
+
+    // limiting to ClsClassImpl for now, maybe source classes too someday if necessary
+    if( psiClass instanceof ClsClassImpl )
+    {
+      PsiAugmentProvider.collectAugments( psiClass, PsiField.class, null );
+      return true;
+    }
+
+    return false;
   }
 
   private boolean isJailbreakType( PsiType type )
