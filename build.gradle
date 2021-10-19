@@ -104,15 +104,14 @@ patchPluginXml {
   untilBuild = '213.*'
 }
 
-//test {
-//  //uncomment below to show stdout/stderr in console
-//  //testLogging.showStandardStreams = true
-//
-//  testLogging {
-//    events = TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED
-//  }
-//
-//  //set a system property in the test JVM containing the path to manifold-all (it could be under ~/.gradle/caches or ~/.m2/repository)
-//  systemProperties = ['path.to.manifold.all':project.configurations.manifoldAll.singleFile.absolutePath,
-//                      'path.to.manifold.ep':project.configurations.manifoldEp.files.first()]
-//}
+test {
+  //uncomment below to show stdout/stderr in console
+  //testLogging.showStandardStreams = true
+  testLogging {
+    events = [TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED]
+  }
+
+  //set a system property in the test JVM containing the path to manifold-all (it could be under ~/.gradle/caches or ~/.m2/repository)
+  systemProperties = ['path.to.manifold.all':project.configurations.manifoldAll.singleFile.absolutePath,
+                      'path.to.manifold.ep':project.configurations.manifoldEp.files.first()]
+}
