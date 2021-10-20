@@ -12,6 +12,7 @@ import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.module.ModuleUtil;
+import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.DependencyScope;
@@ -27,6 +28,7 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
+import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.util.PlatformUtils;
 import com.intellij.util.messages.MessageBusConnection;
 import java.io.File;
@@ -144,6 +146,16 @@ public class ManProject
     if( javaFacadePsiClass != null )
     {
       return javaFacadePsiClass.getModule();
+    }
+
+    VirtualFile virtualFile = psiFile.getViewProvider().getVirtualFile();
+    if( virtualFile instanceof LightVirtualFile )
+    {
+      VirtualFile originalFile = ((LightVirtualFile)virtualFile).getOriginalFile();
+      if( originalFile != null )
+      {
+        return ModuleUtilCore.findModuleForFile( originalFile, psiFile.getProject() );
+      }
     }
 
     return null;
