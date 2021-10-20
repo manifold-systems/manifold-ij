@@ -231,6 +231,8 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/306">#311</a>: IJ plugin: Fix psi cache exception caused by intellij internals using WrappedLexer
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/306">#306</a>: Support Java 17
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/290">#290</a>: IJ plugin: More performance-related changes targeting type resolution and completion

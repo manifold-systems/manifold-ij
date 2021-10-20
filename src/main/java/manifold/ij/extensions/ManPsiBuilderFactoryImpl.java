@@ -6,16 +6,27 @@ import com.intellij.lang.LanguageParserDefinitions;
 import com.intellij.lang.ParserDefinition;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.impl.PsiBuilderFactoryImpl;
+import com.intellij.lang.impl.TokenSequence;
 import com.intellij.lang.java.JavaLanguage;
+import com.intellij.lang.java.JavaParserDefinition;
 import com.intellij.lang.java.lexer.JavaLexer;
 import com.intellij.lexer.Lexer;
+import com.intellij.lexer.TokenList;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.impl.source.tree.TreeUtil;
+import com.intellij.psi.impl.source.tree.java.JavaFileElement;
 import com.intellij.psi.text.BlockSupport;
+import com.intellij.psi.util.CachedValueProvider;
+import com.intellij.psi.util.CachedValuesManager;
+import com.intellij.psi.util.PsiUtil;
 import com.intellij.testFramework.LightVirtualFile;
+import com.intellij.util.indexing.IndexingDataKeys;
+import manifold.ext.rt.api.Jailbreak;
+import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.FileUtil;
 import manifold.rt.api.util.Stack;
@@ -75,6 +86,31 @@ public class ManPsiBuilderFactoryImpl extends PsiBuilderFactoryImpl
     {
       lexer = createLexer( project, lang );
     }
+    else if( chameleon instanceof JavaFileElement )
+    {
+      // With stubbed PSI IntelliJ uses a JavaLexer directly to collect all tokens and jam them into a cached WrappedLexer,
+      // this will not do...
+
+      // This logic is taken from JavaParserUtil.createBuilder(), basically we create a cached WrappedLexer based on the
+      // tokens emitted from a ManJavaLexer
+
+      @Jailbreak JavaFileElement javaFile = (JavaFileElement)chameleon;
+      PsiElement cachedPsi = javaFile.getCachedPsi();
+      if( cachedPsi != null )
+      {
+        ManModule module = ManProject.getModule( cachedPsi );
+        if( module != null && module.isPreprocessorEnabled() )
+        {
+          CharSequence indexedText = cachedPsi.getUserData( IndexingDataKeys.FILE_TEXT_CONTENT_KEY);
+          if( cachedPsi instanceof PsiFile && indexedText != null )
+          {
+            lexer = obtainTokens((PsiFile)cachedPsi).asLexer();
+//            lexer = createLexer( project, lang );
+          }
+        }
+      }
+
+    }
 
     if( lexer instanceof ManJavaLexer )
     {
@@ -90,6 +126,13 @@ public class ManPsiBuilderFactoryImpl extends PsiBuilderFactoryImpl
     }
     
     return new ManPsiBuilderImpl( project, parserDefinition, lexer, chameleon, seq );
+  }
+
+  public static TokenList obtainTokens( @NotNull PsiFile file) {
+    return CachedValuesManager.getCachedValue(file, () ->
+      CachedValueProvider.Result.create(
+        TokenSequence.performLexing(file.getViewProvider().getContents(), ManJavaParserDefinition.createLexer( PsiUtil.getLanguageLevel(file))),
+        file));
   }
 
   @NotNull

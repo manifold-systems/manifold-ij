@@ -50,6 +50,7 @@ public class ManModule extends SimpleModule
   private LocklessLazyVar<Boolean> _isExtEnabled;
   private LocklessLazyVar<Boolean> _isStringsEnabled;
   private LocklessLazyVar<Boolean> _isExceptionsEnabled;
+  private LocklessLazyVar<Boolean> _isPreprocessorEnabled;
   private LocklessLazyVar<Boolean> _isPropertiesEnabled;
 
   ManModule( ManProject manProject, Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePath, List<IDirectory> outputPath, List<IDirectory> excludedDirs )
@@ -68,6 +69,7 @@ public class ManModule extends SimpleModule
     _isExtEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-ext-rt" ) || hasJar( "manifold-all" ) );
     _isStringsEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-strings" ) || hasJar( "manifold-all" ) );
     _isExceptionsEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-exceptions" ) || hasJar( "manifold-all" ) );
+    _isPreprocessorEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-preprocessor" ) || hasJar( "manifold-all" ) );
     _isPropertiesEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-props" ) || hasJar( "manifold-all" ) );
   }
 
@@ -419,6 +421,11 @@ public class ManModule extends SimpleModule
   public boolean isExceptionsEnabled()
   {
     return _isExceptionsEnabled.get();
+  }
+
+  public boolean isPreprocessorEnabled()
+  {
+    return _isPreprocessorEnabled.get();
   }
 
   public boolean isPropertiesEnabled()
