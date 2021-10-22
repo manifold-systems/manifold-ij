@@ -38,12 +38,23 @@ public class ManConfigurable implements Configurable
   @Override
   public void apply()
   {
-    ManJavaLexer.setDumbPreprocessorMode( !_manifoldPanel.getMode().isSelected() );
+    boolean dumbProcessorMode = !_manifoldPanel.getMode().isSelected();
+    if( ManJavaLexer.isDumbPreprocessorMode() != dumbProcessorMode )
+    {
+      ManJavaLexer.setDumbPreprocessorMode( dumbProcessorMode );
+    }
+
+    boolean experimentalFeaturesEnabled = _manifoldPanel.getExperimentalFeatures().isSelected();
+    if( ManResolveCache.isExperimentalFeaturesEnabled() != experimentalFeaturesEnabled )
+    {
+      ManResolveCache.setExperimentalFeaturesEnabled( experimentalFeaturesEnabled );
+    }
   }
 
-  private class ManifoldPanel extends JPanel
+  private static class ManifoldPanel extends JPanel
   {
     private JCheckBox _mode;
+    private JCheckBox _experimentalFeatures;
     private boolean _modified;
 
     ManifoldPanel()
@@ -73,6 +84,11 @@ public class ManConfigurable implements Configurable
       _mode.setSelected( !ManJavaLexer.isDumbPreprocessorMode() );
       _mode.addChangeListener( e -> _modified = true );
 
+      c.gridy = y++;
+      add( _experimentalFeatures = new JCheckBox( "Enable experimental features" ), c );
+      _experimentalFeatures.setSelected( ManResolveCache.isExperimentalFeaturesEnabled() );
+      _experimentalFeatures.addChangeListener( e -> _modified = true );
+
       c.anchor = GridBagConstraints.NORTHWEST;
       c.fill = GridBagConstraints.BOTH;
       c.gridx = 0;
@@ -87,6 +103,11 @@ public class ManConfigurable implements Configurable
     JCheckBox getMode()
     {
       return _mode;
+    }
+
+    JCheckBox getExperimentalFeatures()
+    {
+      return _experimentalFeatures;
     }
 
     boolean isModified()

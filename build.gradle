@@ -53,23 +53,23 @@ jar {
 }
 
 dependencies {
-  compile group: 'systems.manifold', name: 'manifold', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-util', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-darkj', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-image', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-ext', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-props', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-strings', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-exceptions', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-preprocessor', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-xml-rt', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-util', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-darkj', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-image', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-ext', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-props', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-strings', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-exceptions', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-preprocessor', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-xml-rt', version: manifoldVersion
 
-  testCompile group: 'junit', name: 'junit', version: '4.12'
+  testImplementation group: 'junit', name: 'junit', version: '4.12'
 
   manifoldAll group: 'systems.manifold', name: 'manifold-all', version: manifoldVersion
   manifoldEp group: 'systems.manifold', name: 'manifold-ext-producer-sample', version: manifoldVersion
 
-  compile project('jps-plugin')
+  implementation project('jps-plugin')
 }
 
 configurations.all {

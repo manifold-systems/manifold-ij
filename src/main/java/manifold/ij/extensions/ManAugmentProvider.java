@@ -119,7 +119,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
 
 //With caching:
     ReflectUtil.FieldRef DO_CHECKS = ReflectUtil.field( "com.intellij.util.CachedValueStabilityChecker", "DO_CHECKS" );
-    if( (boolean)DO_CHECKS.getStatic() ) DO_CHECKS.setStatic( false );
+    try { if( (boolean)DO_CHECKS.getStatic() ) DO_CHECKS.setStatic( false ); } catch( Throwable ignore ){}
     //noinspection unchecked
     return CachedValuesManager.getCachedValue( psiClass,
       (Key)KEY_CACHED_AUGMENTS,
