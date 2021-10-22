@@ -101,8 +101,8 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return Collections.emptyList();
     }
 
-    String name = ((PsiClass) element).getName();
-    if( name != null && name.equals( "__Array__") )
+    String name = ((PsiClass)element).getName();
+    if( name != null && name.equals( "__Array__" ) )
     {
       className = Array.class.getTypeName();
     }
@@ -119,7 +119,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
 
 //With caching:
     ReflectUtil.FieldRef DO_CHECKS = ReflectUtil.field( "com.intellij.util.CachedValueStabilityChecker", "DO_CHECKS" );
-    if( (boolean)DO_CHECKS.getStatic() ) DO_CHECKS.setStatic( false );
+    try { if( (boolean)DO_CHECKS.getStatic() ) DO_CHECKS.setStatic( false ); } catch( Throwable ignore ){}
     //noinspection unchecked
     return CachedValuesManager.getCachedValue( psiClass,
       (Key)KEY_CACHED_AUGMENTS,
@@ -128,7 +128,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
         List<Object> dependencies = new ArrayList<>( addMethods( fqnClass, psiClass, augFeatures ) );
         dependencies.add( psiClass );
         dependencies.add( new MyModificationTracker( fqnClass, project ) );
-    //noinspection unchecked
+        //noinspection unchecked
         return new CachedValueProvider.Result<>(
           new ArrayList<E>( (Collection<E>)augFeatures.values() ), dependencies.toArray() );
       } );
@@ -159,7 +159,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
   private List<PsiClass> addMethods( String fqn, PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, ManModule manModule )
   {
     List<PsiClass> extensionClasses = new ArrayList<>();
-    
+
     for( ITypeManifold tm : manModule.getTypeManifolds() )
     {
       if( tm.getContributorKind() == Supplemental )
@@ -189,12 +189,12 @@ public class ManAugmentProvider extends PsiAugmentProvider
                 if( extClass != null )
                 {
                   extensionClasses.add( extClass );
-                addMethods( psiClass, augFeatures, manModule, extClass );
+                  addMethods( psiClass, augFeatures, manModule, extClass );
+                }
               }
             }
           }
         }
-      }
       }
       else if( tm instanceof IExtensionClassProducer )
       {
@@ -209,12 +209,12 @@ public class ManAugmentProvider extends PsiAugmentProvider
             if( extClass != null )
             {
               extensionClasses.add( extClass );
-            addMethods( psiClass, augFeatures, manModule, extClass );
+              addMethods( psiClass, augFeatures, manModule, extClass );
+            }
           }
         }
       }
     }
-  }
     return extensionClasses;
   }
 

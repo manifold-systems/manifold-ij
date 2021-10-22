@@ -1,5 +1,6 @@
 package manifold.ij.extensions;
 
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
@@ -25,7 +26,9 @@ import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethod;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManPsiElementFactory;
+import manifold.ij.util.ReparseUtil;
 import manifold.util.ReflectUtil;
+import manifold.util.concurrent.LocklessLazyVar;
 import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +37,10 @@ import static manifold.ij.extensions.ManPropertiesAugmentProvider.KEY_CACHED_PRO
 
 public class ManResolveCache extends ResolveCache
 {
+  private static final String MANIFOLD_EXPERIMENTAL_FEATURES_ENABLED = "manifold.experimental.features.enabled";
+  private static final LocklessLazyVar<boolean[]> EXPERIMENTAL_FEATURES_ENABLED = LocklessLazyVar.make( () ->
+    new boolean[] {PropertiesComponent.getInstance().getBoolean( MANIFOLD_EXPERIMENTAL_FEATURES_ENABLED, true )} );
+
   public ManResolveCache( @NotNull Project project )
   {
     super( project );
@@ -143,6 +150,16 @@ public class ManResolveCache extends ResolveCache
     return results;
   }
 
+  static boolean isExperimentalFeaturesEnabled()
+  {
+    return EXPERIMENTAL_FEATURES_ENABLED.get()[0];
+  }
+  static void setExperimentalFeaturesEnabled( boolean enabled )
+  {
+    EXPERIMENTAL_FEATURES_ENABLED.get()[0] = enabled;
+    PropertiesComponent.getInstance().setValue( MANIFOLD_EXPERIMENTAL_FEATURES_ENABLED, enabled, true );
+  }
+
   /**
    * If a field/prop ref resolves as inaccessible, explicitly invoke field augmenters on the qualifier's type.
    * <p/>
@@ -161,6 +178,11 @@ public class ManResolveCache extends ResolveCache
    */
   private <T extends PsiPolyVariantReference> boolean maybeInvokeFieldAugmenter( T ref )
   {
+    if( !isExperimentalFeaturesEnabled() )
+    {
+      return false;
+    }
+
     if( !(ref instanceof PsiReferenceExpressionImpl) )
     {
       return false;

@@ -127,7 +127,7 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
 
 // Cached:
     ReflectUtil.FieldRef DO_CHECKS = ReflectUtil.field( "com.intellij.util.CachedValueStabilityChecker", "DO_CHECKS" );
-    if( (boolean)DO_CHECKS.getStatic() ) DO_CHECKS.setStatic( false );
+    try { if( (boolean)DO_CHECKS.getStatic() ) DO_CHECKS.setStatic( false ); } catch( Throwable ignore ){}
     if( PsiMethod.class.isAssignableFrom( cls ) )
     {
       //noinspection unchecked
