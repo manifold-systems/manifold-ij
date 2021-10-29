@@ -455,6 +455,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       if( file == null &&
           (propertyName == null
            || propertyName.equals( PsiTreeChangeEvent.PROP_FILE_TYPES )
+           || propertyName.equals( PsiTreeChangeEvent.PROP_UNLOADED_PSI )
            || propertyName.equals( PsiTreeChangeEvent.PROP_ROOTS )) )
       {
         refreshed();

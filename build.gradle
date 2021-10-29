@@ -91,7 +91,7 @@ String getIjVersion() {
 intellij {
   pluginName = project.name
   version = getIjVersion()
-  plugins = ['java']//, 'com.intellij.lang.jsgraphql:3.0.0']
+  plugins = ['java', 'com.intellij.lang.jsgraphql:3.0.0']
 }
 
 runIde {

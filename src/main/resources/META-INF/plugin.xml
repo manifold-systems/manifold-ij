@@ -440,6 +440,7 @@ Other minor fixes and improvements.
     <completion.contributor language="JAVA" implementationClass="manifold.ij.extensions.ManJavaCompletionContributor" order="first"/>
     <iconProvider implementation="manifold.ij.extensions.PropertiesIconProvider"/>
     <highlightVisitor implementation="manifold.ij.extensions.ManHighlightVisitor"/>
+    <psi.treeChangeListener implementation="manifold.ij.extensions.GraphQlConfigTreeChangeListener"/>
 
     <applicationConfigurable instance="manifold.ij.extensions.ManConfigurable"/>
 
