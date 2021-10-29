@@ -59,11 +59,11 @@ interface PsiFileFragment extends ASTNode, PsiElement
     FragmentProcessor.Fragment f = fragmentProcessor.parseFragment( 0, hostText, style );
     if( f != null )
     {
-      FileFragmentImpl fragment = new FileFragmentImpl( f.getName(), f.getExt(), style,
+      FileFragmentImpl fragment = new FileFragmentImpl( f.getScope(), f.getName(), f.getExt(), style,
         FileUtil.toIFile( containingFile.getProject(), FileUtil.toVirtualFile( containingFile ) ),
         f.getOffset(), f.getContent().length(), f.getContent() );
 
-      // must add a callback for the offset because it this element's parent chain not connected yet
+      // must add a callback for the offset because this element's parent chain is not connected yet
       fragment.setOffset( () -> getStartOffset() + f.getOffset() );
 
       ManModule module = ManProject.getModule( containingFile );

@@ -231,6 +231,8 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/101">#101</a>: Support multiple GraphQL schemas using .graphqlconfig files
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/306">#311</a>: IJ plugin: Fix psi cache exception caused by intellij internals using WrappedLexer
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/306">#306</a>: Support Java 17
@@ -440,6 +442,7 @@ Other minor fixes and improvements.
     <completion.contributor language="JAVA" implementationClass="manifold.ij.extensions.ManJavaCompletionContributor" order="first"/>
     <iconProvider implementation="manifold.ij.extensions.PropertiesIconProvider"/>
     <highlightVisitor implementation="manifold.ij.extensions.ManHighlightVisitor"/>
+    <psi.treeChangeListener implementation="manifold.ij.extensions.GraphQlConfigTreeChangeListener"/>
 
     <applicationConfigurable instance="manifold.ij.extensions.ManConfigurable"/>
 
