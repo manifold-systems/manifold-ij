@@ -4,13 +4,13 @@ import com.intellij.lang.annotation.Annotation;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.impl.DocumentMarkupModel;
+import com.intellij.openapi.editor.markup.MarkupModel;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassOwner;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiFileSystemItem;
-import com.intellij.psi.PsiPlainTextFile;
+import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 import java.util.HashSet;
 import java.util.Locale;
@@ -64,6 +64,21 @@ public class ManifoldPsiClassAnnotator implements Annotator
     if( !(psiClass instanceof ManifoldPsiClass) )
     {
       return;
+    }
+
+    if( containingFile instanceof PsiPlainTextFile )
+    {
+      // IJ doesn't clear previously added annotations, so we do this bullshit
+
+      ApplicationManager.getApplication().invokeLater( () -> {
+        Project project = containingFile.getProject();
+        Document document = PsiDocumentManager.getInstance( project ).getDocument( containingFile );
+        if( document != null )
+        {
+          MarkupModel markupModel = DocumentMarkupModel.forDocument( document, project, false );
+          markupModel.removeAllHighlighters();
+        }
+      } );
     }
 
     DiagnosticCollector issues = ((ManifoldPsiClass)psiClass).getIssues();
