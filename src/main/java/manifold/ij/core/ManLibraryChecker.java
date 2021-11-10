@@ -1,7 +1,9 @@
 package manifold.ij.core;
 
+import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.ide.plugins.cl.PluginClassLoader;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -271,8 +273,18 @@ public class ManLibraryChecker
 
   public List<String> getManifoldJarsInProject( Project project )
   {
+    ModuleManager moduleManager = ModuleManager.getInstance( project );
+    Module[] allModules = moduleManager.getModules();
+    PathsList preprocessorPath = new PathsList();
+    for( Module m: allModules )
+    {
+      String processorPath = CompilerConfiguration.getInstance( project )
+        .getAnnotationProcessingConfiguration( m ).getProcessorPath();
+      Arrays.stream( processorPath.split( File.pathSeparator ) ).forEach( path -> preprocessorPath.add( path ) );
+    }
     PathsList pathsList = ProjectRootManager.getInstance( project )
       .orderEntries().withoutSdk().librariesOnly().getPathsList();
+    pathsList.addAll( preprocessorPath.getPathList() );
     return getManifoldJars( pathsList );
   }
   public List<String> getManifoldJarsInModule( Module module )

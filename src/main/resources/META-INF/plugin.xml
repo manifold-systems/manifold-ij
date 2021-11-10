@@ -231,6 +231,8 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/319">#319</a>: Fix IJ plugin regarding manifold preprocessor when only the preprocessor is in use
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/313">#313</a>: Fix default parameter values for graphql operations
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/101">#101</a>: Support multiple GraphQL schemas using .graphqlconfig files
