@@ -110,9 +110,15 @@ public class ManPsiPrefixExpressionImpl extends PsiPrefixExpressionImpl implemen
   @Override
   public boolean isOverloaded()
   {
+    PsiExpression operand = getOperand();
+    if( operand == null )
+    {
+      return false;
+    }
+
     PsiMethod method = ManJavaResolveCache.getBinaryOperatorMethod(
       getOperationSign(),
-      getOperand().getType(),
+      operand.getType(),
       null, this );
     return method != null || getTypeForUnaryMinusOverload() != null;
   }
