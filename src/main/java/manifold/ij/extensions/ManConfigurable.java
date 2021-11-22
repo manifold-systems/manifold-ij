@@ -15,7 +15,7 @@ public class ManConfigurable implements Configurable
 {
   private ManifoldPanel _manifoldPanel;
 
-  @Nls(capitalization = Nls.Capitalization.Title)
+//  @Nls(capitalization = Nls.Capitalization.Title)
   @Override
   public String getDisplayName()
   {
@@ -38,12 +38,23 @@ public class ManConfigurable implements Configurable
   @Override
   public void apply()
   {
-    ManJavaLexer.setDumbPreprocessorMode( !_manifoldPanel.getMode().isSelected() );
+    boolean dumbProcessorMode = !_manifoldPanel.getMode().isSelected();
+    if( ManJavaLexer.isDumbPreprocessorMode() != dumbProcessorMode )
+    {
+      ManJavaLexer.setDumbPreprocessorMode( dumbProcessorMode );
+    }
+
+    boolean experimentalFeaturesEnabled = _manifoldPanel.getExperimentalFeatures().isSelected();
+    if( ManResolveCache.isExperimentalFeaturesEnabled() != experimentalFeaturesEnabled )
+    {
+      ManResolveCache.setExperimentalFeaturesEnabled( experimentalFeaturesEnabled );
+    }
   }
 
-  private class ManifoldPanel extends JPanel
+  private static class ManifoldPanel extends JPanel
   {
     private JCheckBox _mode;
+    private JCheckBox _experimentalFeatures;
     private boolean _modified;
 
     ManifoldPanel()
@@ -66,13 +77,17 @@ public class ManConfigurable implements Configurable
       c.weighty = 0;
       c.insets = JBUI.insets( 2, 2, 0, 0 );
       add( _mode = new JCheckBox( "Preprocessor smart mode" ), c );
-      _mode.setToolTipText( "When in smart mode the preprocessor actively shades inactive\n" +
-                            "code according to both local and environmental definitions.\n" +
-                            "Additionally inactive code is not parsed by IntelliJ to avoid\n" +
-                            "compiler errors and to avoid false positives wrt usage searches" +
-                            "etc." );
+      _mode.setToolTipText( "<html>When in smart mode the preprocessor actively shades inactive<br/>" +
+                            "code according to both local and environmental definitions.<br/>" +
+                            "Additionally inactive code is not parsed by IntelliJ to avoid<br/>" +
+                            "compiler errors and to avoid false positives wrt usage searches etc.</html>" );
       _mode.setSelected( !ManJavaLexer.isDumbPreprocessorMode() );
       _mode.addChangeListener( e -> _modified = true );
+
+      c.gridy = y++;
+      add( _experimentalFeatures = new JCheckBox( "Enable experimental features" ), c );
+      _experimentalFeatures.setSelected( ManResolveCache.isExperimentalFeaturesEnabled() );
+      _experimentalFeatures.addChangeListener( e -> _modified = true );
 
       c.anchor = GridBagConstraints.NORTHWEST;
       c.fill = GridBagConstraints.BOTH;
@@ -88,6 +103,11 @@ public class ManConfigurable implements Configurable
     JCheckBox getMode()
     {
       return _mode;
+    }
+
+    JCheckBox getExperimentalFeatures()
+    {
+      return _experimentalFeatures;
     }
 
     boolean isModified()

@@ -13,15 +13,19 @@ import com.intellij.psi.*;
 import com.intellij.psi.augment.PsiAugmentProvider;
 import com.intellij.psi.impl.compiled.ClsClassImpl;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
+import com.intellij.psi.util.CachedValue;
+import com.intellij.psi.util.CachedValueProvider;
+import com.intellij.psi.util.CachedValuesManager;
 import manifold.ext.props.rt.api.propgen;
-import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightModifierListImpl;
 import manifold.ij.psi.ManPsiElementFactory;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 import static manifold.ij.extensions.PropertyInference.GETTER_TAG;
 import static manifold.ij.extensions.PropertyInference.SETTER_TAG;
@@ -34,6 +38,9 @@ import static manifold.ij.extensions.PropertyMaker.generateAccessors;
  */
 public class ManPropertiesAugmentProvider extends PsiAugmentProvider
 {
+  static final Key<CachedValue<List<PsiField>>> KEY_CACHED_PROP_FIELD_AUGMENTS = new Key<>( "KEY_CACHED_PROP_FIELD_AUGMENTS" );
+  static final Key<CachedValue<List<PsiMethod>>> KEY_CACHED_PROP_METHOD_AUGMENTS = new Key<>( "KEY_CACHED_PROP_METHOD_AUGMENTS" );
+
   @SuppressWarnings( "deprecation" )
   @NotNull
   public <E extends PsiElement> List<E> getAugments( @NotNull PsiElement element, @NotNull Class<E> cls )
@@ -44,19 +51,6 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
   @NotNull
   public <E extends PsiElement> List<E> getAugments( @NotNull PsiElement element, @NotNull Class<E> cls, String nameHint )
   {
-    if( !ManProject.isManifoldInUse( element ) )
-    {
-      // Manifold jars are not used in the project
-      return Collections.emptyList();
-    }
-
-    ManModule module = ManProject.getModule( element );
-    if( module != null && !module.isPropertiesEnabled() )
-    {
-      // project/module not using properties
-      return Collections.emptyList();
-    }
-
     return ApplicationManager.getApplication().runReadAction( (Computable<List<E>>)() -> _getAugments( element, cls ) );
   }
 
@@ -66,13 +60,6 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
     if( !ManProject.isManifoldInUse( modifierList ) )
     {
       // Manifold jars are not used in the project
-      return modifiers;
-    }
-
-    ManModule module = ManProject.getModule( modifierList );
-    if( module != null && !module.isPropertiesEnabled() )
-    {
-      // project/module not using properties
       return modifiers;
     }
 
@@ -90,6 +77,12 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
 
   private <E extends PsiElement> List<E> _getAugments( PsiElement element, Class<E> cls )
   {
+    if( !ManProject.isManifoldInUse( element ) )
+    {
+      // Manifold jars are not used in the project
+      return Collections.emptyList();
+    }
+
     // Module is assigned to user-data via ManTypeFinder, which loads the psiClass (element)
     if( DumbService.getInstance( element.getProject() ).isDumb() )
     {
@@ -103,52 +96,105 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
     }
 
     PsiExtensibleClass psiClass = (PsiExtensibleClass)element;
+
+    if( psiClass.getLanguage() != JavaLanguage.INSTANCE &&
+      psiClass.getLanguage().getBaseLanguage() != JavaLanguage.INSTANCE )
+    {
+      return Collections.emptyList();
+    }
+
     String className = psiClass.getQualifiedName();
     if( className == null )
     {
       return Collections.emptyList();
     }
 
-    LinkedHashMap<String, PsiMember> augFeatures = new LinkedHashMap<>();
+// Not cached:
+//    LinkedHashMap<String, PsiMember> augFeatures = new LinkedHashMap<>();
+//
+//    if( PsiMethod.class.isAssignableFrom( cls ) )
+//    {
+//      addMethods( psiClass, augFeatures );
+//    }
+//    else if( PsiField.class.isAssignableFrom( cls ) )
+//    {
+//      recreateNonbackingPropertyFields( psiClass, augFeatures );
+//      inferPropertyFieldsFromAccessors( psiClass, augFeatures );
+//    }
+//
+//    //noinspection unchecked
+//    return new ArrayList<>( (Collection<? extends E>)augFeatures.values() );
 
+// Cached:
+    ReflectUtil.FieldRef DO_CHECKS = ReflectUtil.field( "com.intellij.util.CachedValueStabilityChecker", "DO_CHECKS" );
+    try { if( (boolean)DO_CHECKS.getStatic() ) DO_CHECKS.setStatic( false ); } catch( Throwable ignore ){}
     if( PsiMethod.class.isAssignableFrom( cls ) )
     {
-      addMethods( psiClass, augFeatures );
+      //noinspection unchecked
+      return getCachedAugments( psiClass, (Key)KEY_CACHED_PROP_METHOD_AUGMENTS,
+        augFeatures -> addMethods( psiClass, augFeatures ) );
     }
     else if( PsiField.class.isAssignableFrom( cls ) )
     {
-      recreateNonbackingPropertyFields( psiClass, augFeatures );
-      inferPropertyFieldsFromAccessors( psiClass, augFeatures );
+      //noinspection unchecked
+      return getCachedAugments( psiClass, (Key)KEY_CACHED_PROP_FIELD_AUGMENTS, augFeatures -> {
+        recreateNonbackingPropertyFields( psiClass, augFeatures );
+        inferPropertyFieldsFromAccessors( psiClass, augFeatures );
+      } );
     }
+    return Collections.emptyList();
+  }
 
-    //noinspection unchecked
-    return new ArrayList<>( (Collection<? extends E>)augFeatures.values() );
+  private <E extends PsiElement> List<E> getCachedAugments( PsiExtensibleClass psiClass,
+                                                            Key<CachedValue<List<E>>> key,
+                                                            Consumer<LinkedHashMap<String, PsiMember>> augmenter )
+  {
+    return CachedValuesManager.getCachedValue( psiClass, key, () -> {
+      LinkedHashMap<String, PsiMember> augFeatures = new LinkedHashMap<>();
+      augmenter.accept( augFeatures );
+      List<PsiClass> hierarchy = new ArrayList<>( Arrays.asList( psiClass.getSupers() ) );
+      hierarchy.add( 0, psiClass );
+      //noinspection unchecked
+      return new CachedValueProvider.Result<>(
+        new ArrayList<E>( (Collection<E>)augFeatures.values() ), hierarchy.toArray() );
+    } );
   }
 
   private void inferPropertyFieldsFromAccessors( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
   {
-    forceAncestryToAugment( psiClass );
+    forceAncestryToAugmentFields( psiClass, psiClass );
     PropertyInference.inferPropertyFields( psiClass, augFeatures );
   }
 
-  private static final Key<Boolean> forceAncestryToAugment_TAG = Key.create( "forceAncestryToAugment_TAG" );
-  private void forceAncestryToAugment( PsiClass psiClass )
+  private static final Key<Boolean> forceAncestryToAugmentFields_KEY = Key.create( "forceAncestryToAugment_TAG" );
+  private void forceAncestryToAugmentFields( PsiClass psiClass, PsiClass origin )
   {
-    if( !(psiClass instanceof PsiExtensibleClass) || psiClass.getUserData( forceAncestryToAugment_TAG ) != null )
+    if( !(psiClass instanceof PsiExtensibleClass) ||
+      psiClass.getUserData( forceAncestryToAugmentFields_KEY ) != null ||
+      psiClass.getUserData( KEY_CACHED_PROP_FIELD_AUGMENTS ) != null )
     {
       return;
     }
 
-    psiClass.putUserData( forceAncestryToAugment_TAG, true );
-
-    PsiClass st = psiClass.getSuperClass();
-    forceAncestryToAugment( st );
-    for( PsiClass iface : psiClass.getInterfaces() )
+    psiClass.putUserData( forceAncestryToAugmentFields_KEY, true );
+    try
     {
-      forceAncestryToAugment( iface );
+      PsiClass st = psiClass.getSuperClass();
+      forceAncestryToAugmentFields( st, origin );
+      for( PsiClass iface : psiClass.getInterfaces() )
+      {
+        forceAncestryToAugmentFields( iface, origin );
+      }
+      if( psiClass != origin )
+      {
+        // force augments to load on fields, for the side effect of adding VAR_TAG etc. to existing fields
+        PsiAugmentProvider.collectAugments( psiClass, PsiField.class, null );
+      }
     }
-    // force augments to load on fields
-    psiClass.getFields();
+    finally
+    {
+      psiClass.putUserData( forceAncestryToAugmentFields_KEY, null );
+    }
   }
 
   private void recreateNonbackingPropertyFields( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
@@ -198,7 +244,7 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
     PsiType type = parameters.length == 0 ? accessor.getReturnType() : parameters[0].getType();
 
     ManPsiElementFactory factory = ManPsiElementFactory.instance();
-    ManLightFieldBuilder propField = factory.createLightField( psiClass.getManager(), fieldName, type )
+    ManLightFieldBuilder propField = factory.createLightField( psiClass.getManager(), fieldName, type, true )
       .withContainingClass( psiClass )
       .withNavigationElement( accessor );
 

@@ -3,7 +3,6 @@
   <name>Manifold</name>
   <description>
     <![CDATA[
-<h2><a href="#what-is-manifold" id="what-is-manifold">What is Manifold?</a></h2>
 <p>Manifold is a Java compiler plugin. Its features include:</p>
 <ul>
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold"><em>Type-safe</em> Meta-programming</a></li>
@@ -232,6 +231,48 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/319">#319</a>: Fix IJ plugin regarding manifold preprocessor when only the preprocessor is in use
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/313">#313</a>: Fix default parameter values for graphql operations
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/101">#101</a>: Support multiple GraphQL schemas using .graphqlconfig files
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/306">#311</a>: IJ plugin: Fix psi cache exception caused by intellij internals using WrappedLexer
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/306">#306</a>: Support Java 17
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/290">#290</a>: IJ plugin: More performance-related changes targeting type resolution and completion
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/297">#297</a>: IJ plugin: Some features of manifold-ext and manifold-props leak through to modules not depending on these artifacts, in such cases avoid applying these code paths
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/290">#290</a>: IJ plugin: Improve performance while editing, particularly where code completion involves manifold extensions, also avoid irrelevant code paths where possible e.g., type resolution involving manifold-ext where it is not used
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/303">#303</a>: GQL Fields with Underscores producing incorrectly in 2021.1.23
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/302">#302</a>: "Access is allowed from event dispatch thread only" exception thrown occasionally in IntelliJ
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/301">#301</a>: GraphQL: Slim down generated source
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/300">#300</a>: CCE at runtime when structural interface having a method that returns a structural interface
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/296">#296</a>: AbstractMethodError using property syntax in an interface default method
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/295">#295</a>: Support compiler option to dump [pre]processed and/or generated manifold sources to disk
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/292">#292</a>: Compile with Java Operator Overloading inc() dec() error
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/288">#288</a>: Incompatible types. required: 'manifold.rt.api.anno.any[]'
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/283">#283</a>: Switch on Enum is probably broken IntelliJ Plugin
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/282">#282</a>: Manifold incompatible with Lombok val/var locals
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/281">#281</a>: IntelliJ 2021.2 Community Edition: Null Ptr Exceptions
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/279">#279</a>: GraphQL: Bearer Authorization broken when calling graphQL server
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/277">#277</a>: GraphQL: Add support for processing the raw GraphQL response to access custom key/value pairs etc.
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/276">#276</a>: manifold-graphql: support a built-in "JSON" scalar
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/273">#273</a>: IJ plugin: revise logic for protected property access
@@ -405,6 +446,7 @@ Other minor fixes and improvements.
     <completion.contributor language="JAVA" implementationClass="manifold.ij.extensions.ManJavaCompletionContributor" order="first"/>
     <iconProvider implementation="manifold.ij.extensions.PropertiesIconProvider"/>
     <highlightVisitor implementation="manifold.ij.extensions.ManHighlightVisitor"/>
+    <psi.treeChangeListener implementation="manifold.ij.extensions.GraphQlConfigTreeChangeListener"/>
 
     <applicationConfigurable instance="manifold.ij.extensions.ManConfigurable"/>
 

@@ -25,7 +25,8 @@ public class ManPsiAssignmentExpressionImpl extends PsiAssignmentExpressionImpl 
   public PsiType getType()
   {
     PsiExpression lExpression = PsiUtil.deparenthesizeExpression( getLExpression() );
-    if( !(lExpression instanceof PsiReferenceExpression || lExpression instanceof PsiArrayAccessExpression) )
+    if( lExpression == null || lExpression.getManager() == null ||
+      !(lExpression instanceof PsiReferenceExpression || lExpression instanceof PsiArrayAccessExpression) )
     {
       return null;
     }

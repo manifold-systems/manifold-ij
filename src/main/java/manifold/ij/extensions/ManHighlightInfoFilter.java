@@ -5,27 +5,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.JavaResolveResult;
-import com.intellij.psi.JavaTokenType;
-import com.intellij.psi.PsiBinaryExpression;
-import com.intellij.psi.PsiCapturedWildcardType;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiComment;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiExpression;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiIdentifier;
-import com.intellij.psi.PsiJavaToken;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiMethodCallExpression;
-import com.intellij.psi.PsiParameter;
-import com.intellij.psi.PsiReferenceExpression;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeCastExpression;
-import com.intellij.psi.PsiTypeElement;
-import com.intellij.psi.PsiWildcardType;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.source.tree.java.PsiArrayAccessExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiAssignmentExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
@@ -174,6 +154,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
     if( filterVariableExpected( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterAnyAnnoTypeError( hi, elem, firstElem ) )
     {
       return false;
     }
@@ -330,6 +315,15 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_SET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
+  }
+
+  private boolean filterAnyAnnoTypeError( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    // for use with properties e.g., @val(annos = @Foo) String name;
+
+    return elem instanceof PsiAnnotation &&
+      hi.getDescription().startsWith( "Incompatible types" ) &&
+      hi.getDescription().contains( manifold.rt.api.anno.any.class.getTypeName() );
   }
 
   private boolean filterUnclosedComment( HighlightInfo hi, PsiElement firstElem )

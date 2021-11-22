@@ -109,14 +109,14 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
       return null;
     }
 
-    ManModule module = ManProject.getModule( member );
+    ManModule module = ManProject.getModule( place );
     if( module != null && !module.isPropertiesEnabled() )
     {
       // project/module not using properties
       return null;
     }
 
-    Boolean res = null;
+    Boolean res;
     if( isCompletionContext )
     {
       res = handleClsPropertyAccessCompletion( member, place, accessObjectClass, currentFileResolveScope );
@@ -215,6 +215,31 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
       }
     }
     return null;
+  }
+
+  /**
+   * This is a hack to get the latest version of a field, otherwise we sometimes
+   * get an incomplete one e.g., missing VAR_TAG
+   */
+  @NotNull
+  private PsiMember updateFieldHack( @NotNull PsiMember member )
+  {
+    if( !(member instanceof PsiField) )
+    {
+      return member;
+    }
+
+    for( PsiField f : member.getContainingClass().getFields() )
+    {
+      if( f.getName().equals( member.getName() ) )
+      {
+        // update the field
+        member = f;
+        break;
+      }
+    }
+
+    return member;
   }
 
   private Boolean handleClsPropertyAccessCompletion( PsiMember member, PsiElement place, PsiClass accessObjectClass,

@@ -364,7 +364,7 @@ class PropertyInference
 
   private ManLightFieldBuilder makePropField( String fieldName, PsiClass psiClass, PsiType t, int flags, PropAttrs accessor )
   {
-    return ManPsiElementFactory.instance().createLightField( psiClass.getManager(), fieldName, t )
+    return ManPsiElementFactory.instance().createLightField( psiClass.getManager(), fieldName, t, true )
       .withModifierList( new ManLightModifierListImpl( psiClass.getManager(), JavaLanguage.INSTANCE,
         ModifierMap.fromBits( flags ).toArray( new String[0] ) ) )
       .withContainingClass( psiClass )

@@ -1,30 +1,20 @@
 package manifold.ij.extensions;
 
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiModifier;
-import com.intellij.psi.PsiModifierList;
-import com.intellij.psi.PsiModifierListOwner;
-import com.intellij.psi.PsiNameValuePair;
-import com.intellij.psi.PsiParameter;
-import com.intellij.psi.PsiPolyVariantReference;
-import com.intellij.psi.PsiReferenceExpression;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeParameter;
-import com.intellij.psi.ResolveResult;
+import com.intellij.psi.*;
+import com.intellij.psi.augment.PsiAugmentProvider;
+import com.intellij.psi.impl.compiled.ClsClassImpl;
 import com.intellij.psi.impl.source.resolve.ResolveCache;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
+import com.intellij.psi.impl.source.tree.java.PsiReferenceExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.infos.MethodCandidateInfo;
-import com.intellij.psi.util.ClassUtil;
-import java.util.Map;
+import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.util.*;
+
+import java.util.*;
 
 import com.intellij.util.IdempotenceChecker;
 import manifold.api.util.BytecodeOptions;
@@ -36,13 +26,21 @@ import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethod;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManPsiElementFactory;
+import manifold.ij.util.ReparseUtil;
 import manifold.util.ReflectUtil;
+import manifold.util.concurrent.LocklessLazyVar;
 import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static manifold.ij.extensions.ManPropertiesAugmentProvider.KEY_CACHED_PROP_FIELD_AUGMENTS;
+
 public class ManResolveCache extends ResolveCache
 {
+  private static final String MANIFOLD_EXPERIMENTAL_FEATURES_ENABLED = "manifold.experimental.features.enabled";
+  private static final LocklessLazyVar<boolean[]> EXPERIMENTAL_FEATURES_ENABLED = LocklessLazyVar.make( () ->
+    new boolean[] {PropertiesComponent.getInstance().getBoolean( MANIFOLD_EXPERIMENTAL_FEATURES_ENABLED, true )} );
+
   public ManResolveCache( @NotNull Project project )
   {
     super( project );
@@ -65,6 +63,13 @@ public class ManResolveCache extends ResolveCache
     if( !ManProject.isManifoldInUse( containingFile ) )
     {
       // Manifold jars are not used in the project
+      return super.resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
+    }
+
+    ManModule manModule = ManProject.getModule( ref.getElement() );
+    if( manModule != null && !manModule.isExtEnabled() )
+    {
+      // manifold-ext-rt is not used in the ref's module
       return super.resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
     }
 
@@ -94,6 +99,19 @@ public class ManResolveCache extends ResolveCache
             if( refExpr.getQualifier() instanceof PsiReferenceExpression )
             {
               PsiType type = ((PsiReferenceExpression)refExpr.getQualifier()).getType();
+
+              if( refExpr instanceof PsiReferenceExpressionImpl )
+              {
+                // field is not accessible, maybe it's an inferred property that matches an existing field and the
+                // enclosing class hasn't been augmented yet. This can happen if no properties were referenced that
+                // don't match existing field names.
+                if( maybeInvokeFieldAugmenter( ref ) )
+                {
+                  // trigger field augmenter if need be and re-resolve
+                  return resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
+                }
+              }
+
               if( isJailbreakType( type ) )
               {
                 info.myAccessible = true;
@@ -132,6 +150,75 @@ public class ManResolveCache extends ResolveCache
     return results;
   }
 
+  static boolean isExperimentalFeaturesEnabled()
+  {
+    return EXPERIMENTAL_FEATURES_ENABLED.get()[0];
+  }
+  static void setExperimentalFeaturesEnabled( boolean enabled )
+  {
+    EXPERIMENTAL_FEATURES_ENABLED.get()[0] = enabled;
+    PropertiesComponent.getInstance().setValue( MANIFOLD_EXPERIMENTAL_FEATURES_ENABLED, enabled, true );
+  }
+
+  /**
+   * If a field/prop ref resolves as inaccessible, explicitly invoke field augmenters on the qualifier's type.
+   * <p/>
+   * For example, the `LocalTime` class has existing private field `hour` that matches the inferred property name and,
+   * therefore must be designated as a property, which does not happen unless our PsiAugmentProvider for properties runs,
+   * which does not happen unless and until a property name is resolved that is NOT an existing field. This is how a
+   * PsiClass works with its `findFieldByName()` method -- it won't invoke PsiAugmentProviders until it HAS to.
+   * <p/>
+   * The reason we're doing this -- forcing PsiAugmentProviders to run -- is that they otherwise don't run
+   * for a given PsiClass unless the property name does not exist as a field. So, if a reference to a property is met by
+   * an existing field, even if private, it won't trigger the PsiAugmentProvider. But we need the <i>side effects</i> from
+   * running the PsiAugmentProvider, such as with field LocalTime#hour which the same name as inferred property from `getHour()`
+   * is marked with user data: `VAR_TAG`. This is how a non-private reference to `hour` resolves as a reference to the
+   * public property designated by `getHour()`. Otherwise, the reference resolves to the private field, which results in
+   * an error.
+   */
+  private <T extends PsiPolyVariantReference> boolean maybeInvokeFieldAugmenter( T ref )
+  {
+    if( !isExperimentalFeaturesEnabled() )
+    {
+      return false;
+    }
+
+    if( !(ref instanceof PsiReferenceExpressionImpl) )
+    {
+      return false;
+    }
+
+    PsiExpression qual = ((PsiReferenceExpressionImpl)ref).getQualifierExpression();
+    if( qual == null )
+    {
+      return false;
+    }
+
+    ManModule module = ManProject.getModule( qual );
+    if( module != null && !module.isPropertiesEnabled() )
+    {
+      // module not using properties
+      return false;
+    }
+
+    PsiClass psiClass = PsiTypesUtil.getPsiClass( qual.getType() );
+
+    if( psiClass == null || psiClass.getUserData( KEY_CACHED_PROP_FIELD_AUGMENTS ) != null )
+    {
+      // already augmented with fields/props
+      return false;
+    }
+
+    // limiting to ClsClassImpl for now, maybe source classes too someday if necessary
+    if( psiClass instanceof ClsClassImpl )
+    {
+      PsiAugmentProvider.collectAugments( psiClass, PsiField.class, null );
+      return true;
+    }
+
+    return false;
+  }
+
   private boolean isJailbreakType( PsiType type )
   {
     return type != null && type.findAnnotation( Jailbreak.class.getTypeName() ) != null;
@@ -150,8 +237,20 @@ public class ManResolveCache extends ResolveCache
       return;
     }
 
+    ManModule manModule = ManProject.getModule( ref.getElement() );
+    if( manModule != null &&
+      method instanceof ManLightMethodBuilder &&
+      ((ManLightMethodBuilder)method).getModules().stream()
+        .map( ManModule::getIjModule )
+        .noneMatch( methodModule -> GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( manModule.getIjModule() )
+          .isSearchInModuleContent( methodModule ) ) )
+    {
+      // method is extension method and is not accessible from call-site
+      return;
+    }
+
     // Reassign the candidate method with one that has Self type substitution
-    info.jailbreak().myCandidate = wrapMethod( ManProject.getModule( ref.getElement() ), method, ref );
+    info.jailbreak().myCandidate = wrapMethod( manModule, method, ref );
   }
 
   private void handleFieldSelfTypes( CandidateInfo info, PsiPolyVariantReference ref )
@@ -180,7 +279,7 @@ public class ManResolveCache extends ResolveCache
   {
     ManPsiElementFactory manPsiElemFactory = ManPsiElementFactory.instance();
     ManLightFieldBuilder wrappedField = manPsiElemFactory.createLightField( field.getManager(), field.getName(),
-      handleType( field.getType(), ref, field ) );
+      handleType( field.getType(), ref, field ), field instanceof ManLightFieldBuilder && ((ManLightFieldBuilder)field).isProperty() );
     wrappedField.withNavigationElement( field.getNavigationElement() );
 
     return wrappedField;

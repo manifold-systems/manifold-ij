@@ -104,7 +104,13 @@ public class ManChangedResourcesBuilder extends ResourcesBuilder implements Buil
     boolean incremental = JavaBuilderUtil.isCompileJavaIncrementally( context );
     System.setProperty( "manifold.compiler.incremental", String.valueOf( incremental ) );
 
-    addOutputConsumer( (BuildOutputConsumerImpl)outputConsumer, target.getOutputDir() );
+    File targetOutputDir = target.getOutputDir();
+    if( targetOutputDir == null )
+    {
+      return;
+    }
+
+    addOutputConsumer( (BuildOutputConsumerImpl)outputConsumer, targetOutputDir );
 
     try
     {
