@@ -96,6 +96,7 @@ intellij {
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA 2019.3.3'
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 193.3793.14'
   //alternativeIdePath = 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 193.5233.102'
+  alternativeIdePath = 'C:\\Program Files\\Android\\Android Studio1'
   pluginName project.name
   version getIjVersion() // Ordinarily, just use the version number: '15.0.6' or '2016.3'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
   if( version.contains( "EAP" ) || Double.parseDouble( version.substring(0, version.lastIndexOf('.'))) >= 2019.2 )

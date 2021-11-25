@@ -1,6 +1,7 @@
 package manifold.ij.extensions;
 
 import com.intellij.compiler.CompilerConfiguration;
+import com.intellij.lang.ASTNode;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.FileIndexFacade;
@@ -13,6 +14,10 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
 import java.io.File;
 import java.util.Map;
+
+import com.intellij.psi.util.PsiUtil;
+import manifold.ij.core.ManModule;
+import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
 import manifold.ij.util.FileUtil;
 import manifold.preprocessor.definitions.Definitions;
@@ -23,14 +28,16 @@ import org.jetbrains.annotations.Nullable;
 /**
  * For preprocessor.  Provides a Definitions specific to IDE settings, as opposed to javac settings.
  */
-class ManDefinitions extends Definitions
+public class ManDefinitions extends Definitions
 {
   private static final String MODULE_INFO_FILE = "module-info.java";
+  private final ASTNode _chameleon;
   private final PsiJavaFile _psiFile;
 
-  ManDefinitions( PsiJavaFile psiFile )
+  ManDefinitions( ASTNode chameleon, PsiJavaFile psiFile )
   {
     super( getFile( psiFile ) );
+    _chameleon = chameleon;
     _psiFile = psiFile;
   }
 
@@ -41,6 +48,20 @@ class ManDefinitions extends Definitions
       return null;
     }
     return FileUtil.toIFile( psiFile.getProject(), FileUtil.toVirtualFile( psiFile ) );
+  }
+
+  public PsiJavaFile getPsiFile()
+  {
+    return _psiFile;
+  }
+
+  public ManModule getModule()
+  {
+    if( _psiFile != null )
+    {
+      return ManProject.getModule( _psiFile );
+    }
+    return ManProject.getModule( _chameleon.getPsi() );
   }
 
   @Override
@@ -54,11 +75,6 @@ class ManDefinitions extends Definitions
     @Override
     protected void addJavacEnvironment( Map<String, String> map )
     {
-      if( _psiFile == null )
-      {
-        return;
-      }
-
       int major = getJavaVersion();
       makeJavaVersionDefinitions( map, major );
 
@@ -69,27 +85,41 @@ class ManDefinitions extends Definitions
     @Override
     protected void addJpms( Map<String, String> map )
     {
-      if( _psiFile == null )
-      {
-        return;
-      }
-      
       if( getJavaVersion() < 9 )
       {
         map.put( EnvironmentDefinitions.JPMS_NONE, "" );
       }
       else
       {
-        Project project = _psiFile.getProject();
-        VirtualFile sourceRoot = ProjectFileIndex.getInstance( project )
-          .getSourceRootForFile( FileUtil.toVirtualFile( _psiFile ) );
-        if( sourceRoot != null )
+        if( _psiFile != null )
         {
-          File moduleInfoFile = findModuleInfoFile( sourceRoot, project );
-          if( moduleInfoFile != null )
+          Project project = _psiFile.getProject();
+          VirtualFile sourceRoot = ProjectFileIndex.getInstance( project )
+            .getSourceRootForFile( FileUtil.toVirtualFile( _psiFile ) );
+          if( sourceRoot != null )
           {
-            map.put( EnvironmentDefinitions.JPMS_NAMED, "" );
-            return;
+            File moduleInfoFile = findModuleInfoFile( sourceRoot, project );
+            if( moduleInfoFile != null )
+            {
+              map.put( EnvironmentDefinitions.JPMS_NAMED, "" );
+              return;
+            }
+          }
+        }
+        else
+        {
+          ManModule module = ManProject.getModule( _chameleon.getPsi() );
+          if( module != null )
+          {
+            for( VirtualFile sourceRoot: ManProject.getSourceRoots( module.getIjModule() ) )
+            {
+              File moduleInfoFile = findModuleInfoFile( sourceRoot, module.getIjProject() );
+              if( moduleInfoFile != null )
+              {
+                map.put( EnvironmentDefinitions.JPMS_NAMED, "" );
+                return;
+              }
+            }
           }
         }
         map.put( EnvironmentDefinitions.JPMS_UNNAMED, "" );
@@ -98,7 +128,9 @@ class ManDefinitions extends Definitions
 
     private int getJavaVersion()
     {
-      LanguageLevel languageLevel = _psiFile.getLanguageLevel();
+      LanguageLevel languageLevel = _psiFile != null
+        ? _psiFile.getLanguageLevel()
+        : PsiUtil.getLanguageLevel( _chameleon.getPsi() );
       return languageLevel.toJavaVersion().feature;
     }
 

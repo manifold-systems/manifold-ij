@@ -9,33 +9,26 @@ import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiFileFactory;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.PsiTreeChangeAdapter;
-import com.intellij.psi.PsiTreeChangeEvent;
-import com.intellij.psi.SmartPsiElementPointer;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.PsiModificationTrackerImpl;
 import com.intellij.psi.search.GlobalSearchScope;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
+
 import manifold.api.fs.IFile;
 import manifold.api.fs.IFileFragment;
 import manifold.api.host.AbstractTypeSystemListener;
 import manifold.api.host.Dependency;
 import manifold.api.host.RefreshRequest;
 import manifold.api.type.ITypeManifold;
+import manifold.ij.android.BuildVariantSymbols;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.ij.util.ReparseUtil;
 import manifold.internal.javac.FragmentProcessor;
 import manifold.api.util.cache.FqnCache;
 import manifold.api.util.cache.FqnCacheNode;
@@ -459,6 +452,15 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
            || propertyName.equals( PsiTreeChangeEvent.PROP_ROOTS )) )
       {
         refreshed();
+
+        if( BuildVariantSymbols.INSTANCE != null )
+        {
+          // forces a file with refs to build variant syms to retokenize, since the variant could've changed
+          BuildVariantSymbols.INSTANCE.reset();
+
+          // retokenize open files in case the build variant changed
+          ReparseUtil.reparseOpenJavaFiles( getProject().getNativeProject() );
+        }
       }
     }
   }

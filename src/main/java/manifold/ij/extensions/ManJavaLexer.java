@@ -50,6 +50,8 @@ public class ManJavaLexer extends LexerBase
   private int _tokenEndOffset;  // positioned after the last symbol of the current token
   private IElementType _tokenType;
   private PsiJavaFile _psiFile;
+  private ASTNode _chameleon;
+
   private final List<SourceStatement> _visibleStmts = new ArrayList<>();
   private final LocklessLazyVar<Definitions> _definitions = LocklessLazyVar.make( () -> {
     Definitions definitions = makeDefinitions();
@@ -79,7 +81,7 @@ public class ManJavaLexer extends LexerBase
   @NotNull
   private ManDefinitions makeDefinitions()
   {
-    return new ManDefinitions( _psiFile );
+    return new ManDefinitions( _chameleon, _psiFile );
   }
 
   public ManJavaLexer( @NotNull LanguageLevel level )
@@ -94,6 +96,7 @@ public class ManJavaLexer extends LexerBase
 
   public void setChameleon( ASTNode chameleon )
   {
+    _chameleon = chameleon;
     _psiFile = ManPsiBuilderFactoryImpl.getPsiFile( chameleon );
   }
 

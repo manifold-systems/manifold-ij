@@ -6,9 +6,11 @@ import com.intellij.codeInsight.daemon.impl.HighlightVisitor;
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightVisitorImpl;
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
+import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilerPaths;
 import com.intellij.openapi.editor.EditorFactory;
+import com.intellij.openapi.fileEditor.*;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.module.ModuleUtil;
@@ -23,10 +25,12 @@ import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.libraries.Library;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.PsiDocumentTransactionListener;
 import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.util.PlatformUtils;
@@ -44,16 +48,13 @@ import manifold.api.fs.IFileUtil;
 import manifold.api.fs.jar.JarFileDirectoryImpl;
 import manifold.api.host.Dependency;
 import manifold.api.host.IModule;
-import manifold.ij.extensions.FileModificationManager;
-import manifold.ij.extensions.ManifoldPsiClass;
-import manifold.ij.extensions.ManifoldPsiClassCache;
-import manifold.ij.extensions.ModuleClasspathListener;
-import manifold.ij.extensions.ModuleRefreshListener;
+import manifold.ij.extensions.*;
 import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
 import manifold.ij.license.CheckLicense;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.util.MessageUtil;
+import manifold.ij.util.ReparseUtil;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LockingLazyVar;
 import manifold.util.concurrent.LocklessLazyVar;
@@ -334,6 +335,7 @@ public class ManProject
 
     addModuleRefreshListener();
     addModuleClasspathListener();
+    addFileOpenedListener();
     addBuildPropertiesFilePersistenceListener();
 
     EditorFactory.getInstance().getEventMulticaster().addDocumentListener(
@@ -540,6 +542,41 @@ public class ManProject
   {
     _permanentProjectConnection.subscribe( ProjectTopics.PROJECT_ROOTS,
       new ModuleClasspathListener() );
+  }
+
+  /**
+   * If the preprocessor is in use...
+   * If a file has any #if directive force it to fully reparse when opened. This to handle the case where the environment
+   * changed i.e., Java version changed, or Android build variant changed, etc. Note, this is necessary because IJ caches
+   * tokenization and does not retokenize when opening a file that has been opened before.
+   */
+  private void addFileOpenedListener()
+  {
+    _permanentProjectConnection.subscribe( FileEditorManagerListener.FILE_EDITOR_MANAGER,
+      new FileEditorManagerListener()
+      {
+        @Override
+        public void fileOpenedSync( @NotNull FileEditorManager source, @NotNull VirtualFile file, @NotNull Pair<FileEditor[], FileEditorProvider[]> editors )
+        {
+          PsiFile psiFile = PsiManager.getInstance( source.getProject() ).findFile( file );
+          if( psiFile != null && psiFile.getLanguage() == JavaLanguage.INSTANCE )
+          {
+            ManModule module = ManProject.getModule( psiFile );
+            if( module == null || !module.isPreprocessorEnabled() )
+            {
+              // preprocessor is not used in the file's module
+              return;
+            }
+
+            if( psiFile.getText().contains( "#endif" ) )
+            {
+              // force retokenziation of files with #if in case the environment or other conditions have changed
+              // while the file was closed (IJ caches tokenization and won't retokenize unless forced)
+              ReparseUtil.reparseFile( file );
+            }
+          }
+        }
+      } );
   }
 
   void projectClosed()
@@ -803,7 +840,7 @@ public class ManProject
     return getExcludedRoots( ijModule ).stream().map( this::toDirectory ).collect( Collectors.toList() );
   }
 
-  private static List<VirtualFile> getSourceRoots( Module ijModule )
+  public static List<VirtualFile> getSourceRoots( Module ijModule )
   {
     final ModuleRootManager moduleManager = ModuleRootManager.getInstance( ijModule );
     final List<VirtualFile> sourcePaths = new ArrayList<>();
