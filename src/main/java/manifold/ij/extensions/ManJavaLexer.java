@@ -6,9 +6,7 @@ import com.intellij.lang.java.lexer.JavaLexer;
 import com.intellij.lexer.LexerBase;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.pom.java.LanguageLevel;
-import com.intellij.psi.JavaTokenType;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.TokenType;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.source.tree.JavaDocElementType;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.util.text.CharArrayUtil;
@@ -49,13 +47,17 @@ public class ManJavaLexer extends LexerBase
   private int _bufferEndOffset;
   private int _tokenEndOffset;  // positioned after the last symbol of the current token
   private IElementType _tokenType;
-  private PsiJavaFile _psiFile;
+  private SmartPsiElementPointer<PsiJavaFile> _psiFile;
+  private ASTNode _chameleon;
+
   private final List<SourceStatement> _visibleStmts = new ArrayList<>();
   private final LocklessLazyVar<Definitions> _definitions = LocklessLazyVar.make( () -> {
     Definitions definitions = makeDefinitions();
-    if( _psiFile != null )
+    PsiJavaFile psiJavaFile;
+    if( _psiFile != null && (psiJavaFile = _psiFile.getElement()) != null )
     {
-      CharSequence text = _buffer.length() < _psiFile.getTextLength() ? _psiFile.getText() : _buffer;
+      // add local #define symbols
+      CharSequence text = _buffer.length() < psiJavaFile.getTextLength() ? psiJavaFile.getText() : _buffer;
       if( StringUtil.contains( text, "#define" ) || StringUtil.contains( text, "#undef" ) )
       {
         FileStatement fileStmt = new PreprocessorParser( text, null ).parseFile();
@@ -76,12 +78,6 @@ public class ManJavaLexer extends LexerBase
     ReparseUtil.reparseOpenJavaFilesForAllProjects();
   }
 
-  @NotNull
-  private ManDefinitions makeDefinitions()
-  {
-    return new ManDefinitions( _psiFile );
-  }
-
   public ManJavaLexer( @NotNull LanguageLevel level )
   {
     _flexLexer = new com.intellij.lang.java.lexer.@Jailbreak _JavaLexer( level );
@@ -94,7 +90,14 @@ public class ManJavaLexer extends LexerBase
 
   public void setChameleon( ASTNode chameleon )
   {
-    _psiFile = ManPsiBuilderFactoryImpl.getPsiFile( chameleon );
+    _chameleon = chameleon;
+    _psiFile = SmartPointerManager.createPointer( ManPsiBuilderFactoryImpl.getPsiFile( chameleon ) );
+  }
+
+  @NotNull
+  private ManDefinitions makeDefinitions()
+  {
+    return new ManDefinitions( _chameleon, _psiFile );
   }
 
   @Override
@@ -569,34 +572,6 @@ public class ManJavaLexer extends LexerBase
       }
       pos++;
     }
-
-    return pos;
-  }
-
-  private int getRawLiteralEnd( int offset )
-  {
-    int pos = offset;
-
-    while( pos < _bufferEndOffset && charAt( pos ) == '`' )
-    {
-      pos++;
-    }
-    int quoteLen = pos - offset;
-
-    int start;
-    do
-    {
-      while( pos < _bufferEndOffset && charAt( pos ) != '`' )
-      {
-        pos++;
-      }
-      start = pos;
-      while( pos < _bufferEndOffset && charAt( pos ) == '`' )
-      {
-        pos++;
-      }
-    }
-    while( pos - start != quoteLen && pos < _bufferEndOffset );
 
     return pos;
   }

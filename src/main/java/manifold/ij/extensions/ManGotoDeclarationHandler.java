@@ -58,15 +58,12 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
         }
 
         PsiElement answer = find( (PsiModifierListOwner)resolve );
-        if( answer == null )
-        {
-          answer = resolve;
-        }
 
         // for properties (manifold-props)
-        if( answer instanceof ManLightFieldBuilder )
+        PsiElement propAnswer = answer == null ? resolve : answer;
+        if( propAnswer instanceof ManLightFieldBuilder )
         {
-          answer = findTypeManifoldPropertyTarget( answer );
+          answer = findTypeManifoldPropertyTarget( propAnswer );
         }
 
         return answer;
