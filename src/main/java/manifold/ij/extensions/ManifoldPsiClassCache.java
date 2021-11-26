@@ -5,44 +5,42 @@
 package manifold.ij.extensions;
 
 import com.intellij.ide.highlighter.JavaFileType;
+import com.intellij.lang.Language;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiFileFactory;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.PsiTreeChangeAdapter;
-import com.intellij.psi.PsiTreeChangeEvent;
-import com.intellij.psi.SmartPsiElementPointer;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.*;
+import com.intellij.psi.impl.PsiFileFactoryImpl;
 import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.PsiModificationTrackerImpl;
 import com.intellij.psi.search.GlobalSearchScope;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
+
 import manifold.api.fs.IFile;
 import manifold.api.fs.IFileFragment;
 import manifold.api.host.AbstractTypeSystemListener;
 import manifold.api.host.Dependency;
 import manifold.api.host.RefreshRequest;
 import manifold.api.type.ITypeManifold;
+import manifold.ij.android.BuildVariantSymbols;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.ij.util.ReparseUtil;
 import manifold.internal.javac.FragmentProcessor;
 import manifold.api.util.cache.FqnCache;
 import manifold.api.util.cache.FqnCacheNode;
 import manifold.api.util.cache.IllegalTypeNameException;
+import manifold.preprocessor.definitions.ServiceDefinitions;
 import manifold.util.concurrent.ConcurrentHashSet;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 
 import static manifold.api.type.ContributorKind.*;
@@ -359,7 +357,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     ////new Exception().fillInStackTrace().printStackTrace();
 
     PsiManager manager = PsiManagerImpl.getInstance( module.getIjProject() );
-    final PsiJavaFile aFile = createDummyJavaFile( fqn, manager, source );
+    final PsiJavaFile aFile = createDummyJavaFile( fqn, module, manager, source );
     final PsiClass[] classes = aFile.getClasses();
     if( classes.length == 0 )
     {
@@ -368,12 +366,27 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     return classes[0];
   }
 
-  private PsiJavaFile createDummyJavaFile( String type, PsiManager manager, final String text )
+  private PsiJavaFile createDummyJavaFile( String type, ManModule module, PsiManager manager, final String text )
   {
     // note, calling version of PsiFileFactory#createFileFromText that takes file content of any size, which is vital
     // for large generated files e.g., graphql files like github.graphql
-    return (PsiJavaFile)PsiFileFactory.getInstance( manager.getProject() )
-      .createFileFromText( type + '.' + JavaFileType.INSTANCE.getDefaultExtension(), JavaLanguage.INSTANCE, text, false, true, true );
+    return (PsiJavaFile)createFileFromText( module, manager, type + '.' + JavaFileType.INSTANCE.getDefaultExtension(),
+      JavaLanguage.INSTANCE, text, false, true, true, null );
+  }
+
+  // Taken from PsiFileFactoryImpl to add the Module context, which is needed for ManLexer because the preprocessor needs module context to resolve stuff from e.g., BuildConfig files
+  private PsiFile createFileFromText( ManModule module, PsiManager manager, @NotNull String name, @NotNull Language language, @NotNull CharSequence text,
+                                     boolean eventSystemEnabled, boolean markAsCopy, boolean noSizeLimit,
+                                     @Nullable VirtualFile original) {
+    ManLightVirtualFile virtualFile = new ManLightVirtualFile( module, name, language, text );
+    if (original != null) {
+      virtualFile.setOriginalFile(original);
+      virtualFile.setFileType(original.getFileType());
+    }
+    if (noSizeLimit) {
+      SingleRootFileViewProvider.doNotCheckFileSizeLimit(virtualFile);
+    }
+    return ((PsiFileFactoryImpl)PsiFileFactory.getInstance( manager.getProject() )).trySetupPsiForFile(virtualFile, language, eventSystemEnabled, markAsCopy);
   }
 
   @Override
@@ -459,6 +472,16 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
            || propertyName.equals( PsiTreeChangeEvent.PROP_ROOTS )) )
       {
         refreshed();
+
+        if( BuildVariantSymbols.INSTANCE != null )
+        {
+          // forces a file with refs to build variant syms to retokenize, since the variant could've changed
+//          BuildVariantSymbols.INSTANCE.reset();
+          ServiceDefinitions.REGISTERED_SYMBOL_PROVIDERS.clear();
+
+          // retokenize open files in case the build variant changed
+          ReparseUtil.reparseOpenJavaFiles( getProject().getNativeProject() );
+        }
       }
     }
   }

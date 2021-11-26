@@ -104,7 +104,7 @@ public class ManPsiBuilderFactoryImpl extends PsiBuilderFactoryImpl
           CharSequence indexedText = cachedPsi.getUserData( IndexingDataKeys.FILE_TEXT_CONTENT_KEY);
           if( cachedPsi instanceof PsiFile && indexedText != null )
           {
-            lexer = obtainTokens((PsiFile)cachedPsi).asLexer();
+            lexer = obtainTokens( (PsiFile)cachedPsi, chameleon ).asLexer();
 //            lexer = createLexer( project, lang );
           }
         }
@@ -128,11 +128,15 @@ public class ManPsiBuilderFactoryImpl extends PsiBuilderFactoryImpl
     return new ManPsiBuilderImpl( project, parserDefinition, lexer, chameleon, seq );
   }
 
-  public static TokenList obtainTokens( @NotNull PsiFile file) {
+  public static TokenList obtainTokens( @NotNull PsiFile file, ASTNode chameleon ) {
     return CachedValuesManager.getCachedValue(file, () ->
-      CachedValueProvider.Result.create(
-        TokenSequence.performLexing(file.getViewProvider().getContents(), ManJavaParserDefinition.createLexer( PsiUtil.getLanguageLevel(file))),
-        file));
+    {
+      ManJavaLexer lexer = (ManJavaLexer)ManJavaParserDefinition.createLexer( PsiUtil.getLanguageLevel( file ) );
+      lexer.setChameleon( chameleon );
+      return CachedValueProvider.Result.create(
+        TokenSequence.performLexing( file.getViewProvider().getContents(), lexer ),
+        file );
+    } );
   }
 
   @NotNull
