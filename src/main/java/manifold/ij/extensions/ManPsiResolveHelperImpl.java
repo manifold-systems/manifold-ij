@@ -116,8 +116,6 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
       return null;
     }
 
-    member = updateFieldHack( member );
-
     Boolean res;
     if( isCompletionContext )
     {
