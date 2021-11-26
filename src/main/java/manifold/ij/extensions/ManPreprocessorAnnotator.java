@@ -69,6 +69,11 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
       return new Info();
     }
 
+    if( !ManProject.getModule( file ).isPreprocessorEnabled() )
+    {
+      return new Info();
+    }
+
     return ApplicationManager.getApplication().runReadAction( (Computable<Info>) () -> {
       Info info = new Info();
       String source = file.getText();
@@ -98,6 +103,12 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
     if( !ManProject.isManifoldInUse( file ) )
     {
       // Manifold jars are not used in the project
+      return;
+    }
+
+    if( !ManProject.getModule( file ).isPreprocessorEnabled() )
+    {
+      // preprocessor not in use in module
       return;
     }
 

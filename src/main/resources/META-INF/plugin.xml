@@ -231,6 +231,14 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/327">#327</a>: fix conflict with preprocessor build.properties and environment symbols
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/326">#326</a>: Add a preprocessor SymbolProvider implementation for Android build variants
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/325">#325</a>: Building on Android Studio with Gradle 7.0.3 and Java 11 causes internal compiler errors
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/322">#322</a>: Add an SPI to augment the preprocessor's symbols dynamically
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/319">#319</a>: Fix IJ plugin regarding manifold preprocessor when only the preprocessor is in use
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/313">#313</a>: Fix default parameter values for graphql operations
