@@ -25,6 +25,7 @@ import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.libraries.Library;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
@@ -152,6 +153,11 @@ public class ManProject
     VirtualFile virtualFile = psiFile.getViewProvider().getVirtualFile();
     if( virtualFile instanceof LightVirtualFile )
     {
+      if( virtualFile instanceof ManLightVirtualFile )
+      {
+        return ((ManLightVirtualFile)virtualFile).getModule().getIjModule();
+      }
+
       VirtualFile originalFile = ((LightVirtualFile)virtualFile).getOriginalFile();
       if( originalFile != null )
       {

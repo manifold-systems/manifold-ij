@@ -45,6 +45,11 @@ public class BuildVariantSymbols implements SymbolProvider
   private Map<String, String> loadBuildConfigSymbols( Definitions rootDef )
   {
     ManModule module = ((ManDefinitions)rootDef).getModule();
+    if( module == null )
+    {
+      return Collections.emptyMap();
+    }
+
     if( _buildConfigSyms == null )
     {
       _buildConfigSyms = new ConcurrentHashMap<>();

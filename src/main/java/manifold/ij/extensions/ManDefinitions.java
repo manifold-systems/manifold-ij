@@ -2,7 +2,6 @@ package manifold.ij.extensions;
 
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.lang.ASTNode;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.FileIndexFacade;
 import com.intellij.openapi.roots.ProjectFileIndex;
@@ -10,11 +9,11 @@ import com.intellij.openapi.util.io.FileUtilRt;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.java.LanguageLevel;
-import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
 import java.io.File;
 import java.util.Map;
 
+import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.util.PsiUtil;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
@@ -32,25 +31,30 @@ public class ManDefinitions extends Definitions
 {
   private static final String MODULE_INFO_FILE = "module-info.java";
   private final ASTNode _chameleon;
-  private final PsiJavaFile _psiFile;
+  private final SmartPsiElementPointer<PsiJavaFile> _psiFile;
 
-  ManDefinitions( ASTNode chameleon, PsiJavaFile psiFile )
+  ManDefinitions( ASTNode chameleon, SmartPsiElementPointer<PsiJavaFile> psiFile )
   {
     super( getFile( psiFile ) );
     _chameleon = chameleon;
     _psiFile = psiFile;
   }
 
-  private static IjFile getFile( PsiFile psiFile )
+  private static IjFile getFile( SmartPsiElementPointer<PsiJavaFile> psiFile )
   {
     if( psiFile == null )
     {
       return null;
     }
-    return FileUtil.toIFile( psiFile.getProject(), FileUtil.toVirtualFile( psiFile ) );
+    PsiJavaFile psiJavaFile = psiFile.getElement();
+    if( psiJavaFile == null )
+    {
+      return null;
+    }
+    return FileUtil.toIFile( psiFile.getProject(), FileUtil.toVirtualFile( psiJavaFile ) );
   }
 
-  public PsiJavaFile getPsiFile()
+  public SmartPsiElementPointer<PsiJavaFile> getPsiFile()
   {
     return _psiFile;
   }
@@ -59,7 +63,11 @@ public class ManDefinitions extends Definitions
   {
     if( _psiFile != null )
     {
-      return ManProject.getModule( _psiFile );
+      PsiJavaFile psiJavaFile = _psiFile.getElement();
+      if( psiJavaFile != null )
+      {
+        return ManProject.getModule( psiJavaFile );
+      }
     }
     return ManProject.getModule( _chameleon.getPsi() );
   }
@@ -91,11 +99,12 @@ public class ManDefinitions extends Definitions
       }
       else
       {
-        if( _psiFile != null )
+        PsiJavaFile psiJavaFile;
+        if( _psiFile != null && (psiJavaFile = _psiFile.getElement()) != null )
         {
           Project project = _psiFile.getProject();
           VirtualFile sourceRoot = ProjectFileIndex.getInstance( project )
-            .getSourceRootForFile( FileUtil.toVirtualFile( _psiFile ) );
+            .getSourceRootForFile( FileUtil.toVirtualFile( psiJavaFile ) );
           if( sourceRoot != null )
           {
             File moduleInfoFile = findModuleInfoFile( sourceRoot, project );
@@ -128,8 +137,9 @@ public class ManDefinitions extends Definitions
 
     private int getJavaVersion()
     {
-      LanguageLevel languageLevel = _psiFile != null
-        ? _psiFile.getLanguageLevel()
+      PsiJavaFile psiJavaFile;
+      LanguageLevel languageLevel = _psiFile != null && (psiJavaFile = _psiFile.getElement()) != null
+        ? psiJavaFile.getLanguageLevel()
         : PsiUtil.getLanguageLevel( _chameleon.getPsi() );
       return languageLevel.toJavaVersion().feature;
     }
@@ -147,7 +157,7 @@ public class ManDefinitions extends Definitions
     private boolean isExcluded( final VirtualFile vFile, final Project project )
     {
       return vFile != null
-             && ServiceManager.getService( project, FileIndexFacade.class ).isInSource( vFile )
+             && project.getService( FileIndexFacade.class ).isInSource( vFile )
              && CompilerConfiguration.getInstance( project ).isExcludedFromCompilation( vFile );
     }
 
