@@ -9,26 +9,27 @@ configurations {
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
+buildSearchableOptions {
+  enabled = false
+}
+
 intellij {
 //  type = 'JPS'
-  version defaultIjVersion // e.g.,'2018.2.4'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
-  if( version.contains( "EAP" ) || Double.parseDouble( version.substring(0, version.lastIndexOf('.'))) >= 2019.2 )
-  {
-    plugins = ['java'] //include PsiViewer & GraphQL JS in sandbox
-  }
+  version = defaultIjVersion // e.g.,'2018.2.4'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
+  plugins = ['java'] //include PsiViewer & GraphQL JS in sandbox
 }
 
 dependencies {
-  compile group: 'systems.manifold', name: 'manifold', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-util', version: manifoldVersion
-  compile group: 'systems.manifold', name: 'manifold-ext', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-util', version: manifoldVersion
+  implementation group: 'systems.manifold', name: 'manifold-ext', version: manifoldVersion
 
-  testCompile group: 'junit', name: 'junit', version: '4.12'
+  testImplementation group: 'junit', name: 'junit', version: '4.12'
 
   manifoldAll group: 'systems.manifold', name: 'manifold-all', version: manifoldVersion
 }
 
-afterEvaluate {
-  // don't run the JPS plugin
-  project.tasks.remove( project.getTasks().runIde )
-}
+//afterEvaluate {
+//  // don't run the JPS plugin
+//  project.tasks.remove( project.getTasks().runIde )
+//}
