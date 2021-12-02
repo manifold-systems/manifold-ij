@@ -19,6 +19,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
+
+import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.preprocessor.PreprocessorParser;
 import manifold.preprocessor.TokenType;
@@ -69,7 +71,8 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
       return new Info();
     }
 
-    if( !ManProject.getModule( file ).isPreprocessorEnabled() )
+    ManModule module = ManProject.getModule( file );
+    if( module == null || !module.isPreprocessorEnabled() )
     {
       return new Info();
     }
