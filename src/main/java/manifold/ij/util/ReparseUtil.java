@@ -47,9 +47,19 @@ public class ReparseUtil
 
   public static void reparseOpenJavaFiles( @NotNull Project project )
   {
+    if( project.isDisposed() )
+    {
+      return;
+    }
+
     ApplicationManager.getApplication().invokeLater(
       () -> ApplicationManager.getApplication().runReadAction(
-        () -> FileContentUtil.reparseFiles( project, getOpenJavaFiles( project ), false ) ) );
+        () -> {
+          if( !project.isDisposed() )
+          {
+            FileContentUtil.reparseFiles( project, getOpenJavaFiles( project ), false );
+          }
+        } ) );
   }
 
   public static void reparseFile( @NotNull VirtualFile file )
