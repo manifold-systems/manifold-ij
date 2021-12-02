@@ -14,7 +14,7 @@
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">A Preprocessor</a></li>
   <li>...and more</li>
 </ul>
-<p>All fully supported in <strong>Java 8 - 16</strong> with comprehensive IDE support in <strong>IntelliJ IDEA</strong> and <strong>Android Studio</strong>.
+<p>All fully supported in <strong>Java 8 - 17</strong> with comprehensive IDE support in <strong>IntelliJ IDEA</strong> and <strong>Android Studio</strong>.
 Simply add Manifold to your existing project and begin taking advantage of it.</p>
 <blockquote>
   <p><em><strong>New!</strong></em></p>
