@@ -103,7 +103,13 @@ public class ManProject
 
   public static ManModule getModule( Module module )
   {
-    ManProject manProject = getProject( module.getProject() );
+    Project project = module.getProject();
+    if( project.isDisposed() )
+    {
+      return null;
+    }
+
+    ManProject manProject = getProject( project );
     if( manProject == null )
     {
       return null;
@@ -880,13 +886,13 @@ public class ManProject
     return getFileSystem().getIDirectory( file );
   }
 
-  private static Set<IDirectory> getInitialClasspaths( Module ijModule )
+  private Set<IDirectory> getInitialClasspaths( Module ijModule )
   {
     List<String> paths = getDirectClassPaths( ijModule );
     Set<IDirectory> dirs = new LinkedHashSet<>();
     for( String path: paths )
     {
-      dirs.add( manProjectFrom( ijModule ).getFileSystem().getIDirectory( new File( path ) ) );
+      dirs.add( getFileSystem().getIDirectory( new File( path ) ) );
     }
     return dirs;
   }
