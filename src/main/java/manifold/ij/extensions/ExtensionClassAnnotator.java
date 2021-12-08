@@ -9,20 +9,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.FileIndexUtil;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiKeyword;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.PsiModifierList;
-import com.intellij.psi.PsiPackageStatement;
-import com.intellij.psi.PsiParameter;
-import com.intellij.psi.PsiPrimitiveType;
-import com.intellij.psi.PsiType;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.impl.source.PsiJavaCodeReferenceElementImpl;
 import com.intellij.psi.impl.source.PsiJavaFileImpl;
@@ -106,7 +93,8 @@ public class ExtensionClassAnnotator implements Annotator
     for( int i = 0; i < parameters.length; i++ )
     {
       PsiParameter param = parameters[i];
-      if( param.getModifierList().findAnnotation( This.class.getName() ) != null )
+      PsiModifierList modifierList = param.getModifierList();
+      if( modifierList != null && modifierList.findAnnotation( This.class.getName() ) != null )
       {
         thisAnnoFound = true;
 
@@ -154,7 +142,9 @@ public class ExtensionClassAnnotator implements Annotator
       {
         TextRange range = new TextRange( param.getTextRange().getStartOffset(),
                                          param.getTextRange().getEndOffset() );
-        holder.createWarningAnnotation( range, ExtIssueMsg.MSG_MAYBE_MISSING_THIS.get() );
+        holder.newAnnotation( HighlightSeverity.WARNING, ExtIssueMsg.MSG_MAYBE_MISSING_THIS.get() )
+          .range( range )
+          .create();
       }
     }
 
@@ -164,14 +154,18 @@ public class ExtensionClassAnnotator implements Annotator
       {
         TextRange range = new TextRange( psiMethod.getNavigationElement().getTextRange().getStartOffset(),
                                          psiMethod.getNavigationElement().getTextRange().getEndOffset() );
-        holder.createWarningAnnotation( range, ExtIssueMsg.MSG_MUST_BE_STATIC.get( psiMethod.getName() ) );
+        holder.newAnnotation( HighlightSeverity.WARNING, ExtIssueMsg.MSG_MUST_BE_STATIC.get( psiMethod.getName() ) )
+          .range( range )
+          .create();
       }
 
       if( Modifier.isPrivate( (int)modifiers ) )
       {
         TextRange range = new TextRange( psiMethod.getNavigationElement().getTextRange().getStartOffset(),
                                          psiMethod.getNavigationElement().getTextRange().getEndOffset() );
-        holder.createWarningAnnotation( range, ExtIssueMsg.MSG_MUST_NOT_BE_PRIVATE.get( psiMethod.getName() ) );
+        holder.newAnnotation( HighlightSeverity.WARNING, ExtIssueMsg.MSG_MUST_NOT_BE_PRIVATE.get( psiMethod.getName() ) )
+          .range( range )
+          .create();
       }
     }
   }
@@ -209,7 +203,12 @@ public class ExtensionClassAnnotator implements Annotator
         ((PsiJavaCodeReferenceElementImpl)element).getTreeParent() instanceof ReferenceListElement &&
         ((PsiJavaCodeReferenceElementImpl)element).getTreeParent().getText().startsWith( PsiKeyword.IMPLEMENTS ) )
     {
-      final PsiElement resolve = element.getReference().resolve();
+      PsiReference reference = element.getReference();
+      if( reference == null )
+      {
+        return;
+      }
+      final PsiElement resolve = reference.resolve();
       if( resolve instanceof PsiExtensibleClass )
       {
         PsiExtensibleClass iface = (PsiExtensibleClass)resolve;
@@ -293,7 +292,10 @@ public class ExtensionClassAnnotator implements Annotator
       {
         TextRange range = new TextRange( element.getTextRange().getStartOffset(),
                                          element.getTextRange().getEndOffset() );
-        holder.createWarningAnnotation( range, ExtIssueMsg.MSG_CANNOT_EXTEND_SOURCE_FILE.get( extendedClassName ) );
+        holder.newAnnotation( HighlightSeverity.WARNING,
+          ExtIssueMsg.MSG_CANNOT_EXTEND_SOURCE_FILE.get( extendedClassName ) )
+          .range( range )
+          .create();
       }
     }
   }
@@ -319,10 +321,8 @@ public class ExtensionClassAnnotator implements Annotator
     Module module = ManProject.getIjModule( psiExtentionInterface );
     if( module != null )
     {
-      if( isInterfaceMadeStructuralByExtension( psiExtentionInterface, ManProject.getModule( module ) ) )
-      {
-        return true;
-      }
+      ManModule manModule = ManProject.getModule( module );
+      return manModule != null && isInterfaceMadeStructuralByExtension( psiExtentionInterface, manModule );
     }
     else
     {
@@ -342,6 +342,10 @@ public class ExtensionClassAnnotator implements Annotator
   {
     final String fqn = psiInterface.getQualifiedName();
     ManModule manModule = ManProject.getModule( module.getIjModule() );
+    if( manModule == null )
+    {
+      return false;
+    }
     for( ITypeManifold sp : manModule.getTypeManifolds() )
     {
       if( sp.getContributorKind() == Supplemental )
@@ -359,11 +363,16 @@ public class ExtensionClassAnnotator implements Annotator
 
             PsiJavaFile psiExtClassJavaFile =
               (PsiJavaFile)PsiManager.getInstance( module.getIjModule().getProject() ).findFile( vExtensionClassFile );
-            PsiClass[] classes = psiExtClassJavaFile.getClasses();
+            PsiClass[] classes = new PsiClass[0];
+            if( psiExtClassJavaFile != null )
+            {
+              classes = psiExtClassJavaFile.getClasses();
+            }
             if( classes.length > 0 )
             {
               PsiClass psiExtClass = classes[0];
-              if( psiExtClass.getModifierList().findAnnotation( Structural.class.getName() ) != null )
+              PsiModifierList modifierList = psiExtClass.getModifierList();
+              if( modifierList != null && modifierList.findAnnotation( Structural.class.getName() ) != null )
               {
                 return true;
               }
@@ -386,7 +395,8 @@ public class ExtensionClassAnnotator implements Annotator
     PsiJavaFileImpl file = (PsiJavaFileImpl)containingFile;
     for( PsiClass psiClass : file.getClasses() )
     {
-      if( psiClass.getModifierList().findAnnotation( Extension.class.getName() ) != null )
+      PsiModifierList modifierList = psiClass.getModifierList();
+      if( modifierList != null && modifierList.findAnnotation( Extension.class.getName() ) != null )
       {
         return psiClass;
       }
