@@ -46,6 +46,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.intellij.util.SlowOperations;
 import manifold.api.fs.IFile;
 import manifold.api.fs.IFileFragment;
 import manifold.api.type.ContributorKind;
@@ -117,7 +119,8 @@ public class ResourceToManifoldUtil
    */
   public static Set<PsiModifierListOwner> findJavaElementsFor( @NotNull PsiElement element )
   {
-    return findJavaElementsFor( element, new HashSet<>() );
+    // wrapping call in allowSlowOperations(), otherwise IJ throws an exception about slowness, can't make it faster or perform in background for now
+    return SlowOperations.allowSlowOperations( () -> findJavaElementsFor( element, new HashSet<>() ) );
   }
   private static Set<PsiModifierListOwner> findJavaElementsFor( @NotNull PsiElement element, Set<PsiElement> visited )
   {
