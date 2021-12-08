@@ -136,9 +136,15 @@ public class ManJavaResolveCache extends JavaResolveCache
       }
     }
 
-    PsiType left = expr instanceof PsiBinaryExpression
-      ? ((PsiBinaryExpression)expr).getLOperand().getType()
-      : ((PsiAssignmentExpression)expr).getLExpression().getType();
+    PsiExpression lOperand = expr instanceof PsiBinaryExpression
+      ? ((PsiBinaryExpression)expr).getLOperand()
+      : ((PsiAssignmentExpression)expr).getLExpression();
+    if( lOperand == expr )
+    {
+      return null;
+    }
+
+    PsiType left = lOperand.getType();
     if( left == null )
     {
       return null;
@@ -147,7 +153,7 @@ public class ManJavaResolveCache extends JavaResolveCache
     PsiExpression rOperand = expr instanceof PsiBinaryExpression
       ? ((PsiBinaryExpression)expr).getROperand()
       : ((PsiAssignmentExpression)expr).getRExpression();
-    if( rOperand == null )
+    if( rOperand == null || rOperand == expr )
     {
       return null;
     }

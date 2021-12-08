@@ -888,11 +888,17 @@ public class ManProject
 
   private Set<IDirectory> getInitialClasspaths( Module ijModule )
   {
+    IjFileSystem fileSystem = getFileSystem();
+    if( fileSystem == null )
+    {
+      return Collections.emptySet();
+    }
+
     List<String> paths = getDirectClassPaths( ijModule );
     Set<IDirectory> dirs = new LinkedHashSet<>();
     for( String path: paths )
     {
-      dirs.add( getFileSystem().getIDirectory( new File( path ) ) );
+      dirs.add( fileSystem.getIDirectory( new File( path ) ) );
     }
     return dirs;
   }

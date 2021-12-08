@@ -109,7 +109,8 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
       return;
     }
 
-    if( !ManProject.getModule( file ).isPreprocessorEnabled() )
+    ManModule module = ManProject.getModule( file );
+    if( module == null || !module.isPreprocessorEnabled() )
     {
       // preprocessor not in use in module
       return;
