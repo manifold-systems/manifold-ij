@@ -222,6 +222,27 @@ public class ManProject
     return _manInUse;
   }
 
+  public static boolean isPropertiesEnabledInAnyModules( PsiElement element )
+  {
+    if( !isManifoldInUse( element ) )
+    {
+      return false;
+    }
+
+    ManProject manProject = ManProject.manProjectFrom( element.getProject() );
+    if( manProject == null )
+    {
+      return false;
+    }
+
+    Map<Module, ManModule> modules = manProject.getModules();
+    if( modules == null )
+    {
+      return false;
+    }
+    return modules.values().stream().anyMatch( m -> m.isPropertiesEnabled() );
+  }
+
   private void init()
   {
     // Remove stock highlighter regardless of _manInUse since we add a replacement in plugin.xml
@@ -570,6 +591,11 @@ public class ManProject
         @Override
         public void fileOpenedSync( @NotNull FileEditorManager source, @NotNull VirtualFile file, @NotNull Pair<FileEditor[], FileEditorProvider[]> editors )
         {
+          if( !isManifoldInUse() )
+          {
+            return;
+          }
+
           PsiFile psiFile = PsiManager.getInstance( source.getProject() ).findFile( file );
           if( psiFile != null && psiFile.getLanguage() == JavaLanguage.INSTANCE )
           {

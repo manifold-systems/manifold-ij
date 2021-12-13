@@ -63,6 +63,7 @@ public class IjFile extends IjResource implements IFile
     // we're getting the cached documents since getDocument() forces PSI creating which will cause deadlock !!!
     if( virtualFile != null && !virtualFile.getFileType().isBinary() )
     {
+//      return LoadTextUtil.loadText( virtualFile ).toString();
       final Document document = FileDocumentManager.getInstance().getCachedDocument( virtualFile );
       final String[] result = new String[1];
       if( document != null )

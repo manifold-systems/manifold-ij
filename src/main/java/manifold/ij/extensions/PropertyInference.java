@@ -601,7 +601,8 @@ class PropertyInference
 
   private PropAttrs derivePropertyNameFromGetter( PsiMethod m )
   {
-    if( PsiType.VOID.equals( m.getReturnType() ) || m.getParameterList().getParametersCount() > 0 )
+    if( m.getReturnType() == null ||
+      PsiType.VOID.equals( m.getReturnType() ) || m.getParameterList().getParametersCount() > 0 )
     {
       return null;
     }
