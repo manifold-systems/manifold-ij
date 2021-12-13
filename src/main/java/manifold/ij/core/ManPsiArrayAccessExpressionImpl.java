@@ -117,7 +117,7 @@ public class ManPsiArrayAccessExpressionImpl extends PsiArrayAccessExpressionImp
   @Override
   public boolean isReferenceTo( @NotNull PsiElement element )
   {
-    return resolve() == element;
+    return element instanceof PsiMethod && element.getManager().areElementsEquivalent( resolve(), element );
   }
 
   @Override

@@ -230,6 +230,10 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
     }
 
     ManModule module = ManProject.getModule( mod );
+    if( module == null )
+    {
+      return;
+    }
 
     PsiClass psiClass = findPsiClass( (PsiFileSystemItem)element, module );
     if( psiClass == null )
