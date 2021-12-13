@@ -78,7 +78,10 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-
+    if( filterArrayIndexIsOutOfBounds( hi, file ) )
+    {
+      return false;
+    }
 
     if( hi.getSeverity() != HighlightSeverity.ERROR )
     {
@@ -149,7 +152,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     // handle indexed operator overloading
-    if( filterArratTypeExpected( hi, elem, firstElem ) )
+    if( filterArrayTypeExpected( hi, elem, firstElem ) )
     {
       return false;
     }
@@ -297,7 +300,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   }
 
   // support indexed operator overloading
-  private boolean filterArratTypeExpected( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  private boolean filterArrayTypeExpected( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
   {
     PsiArrayAccessExpressionImpl arrayAccess;
     return elem.getParent() instanceof PsiArrayAccessExpressionImpl &&
@@ -314,6 +317,28 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       hi.getDescription().startsWith( "Variable expected" ) &&
       arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_SET,
+        arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
+  }
+  private boolean filterArrayIndexIsOutOfBounds( HighlightInfo hi, PsiFile file )
+  {
+    String description = hi.getDescription();
+    if( description == null || !description.startsWith( "Array index is out of bounds" ) )
+    {
+      return false;
+    }
+
+    PsiElement elem = file.findElementAt( hi.getStartOffset() );
+    while( elem != null && !(elem instanceof PsiArrayAccessExpressionImpl) )
+    {
+      elem = elem.getParent();
+    }
+    if( elem == null )
+    {
+      return false;
+    }
+    PsiArrayAccessExpressionImpl arrayAccess = (PsiArrayAccessExpressionImpl)elem;
+    return arrayAccess.getIndexExpression() != null &&
+      ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_GET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
   }
 
