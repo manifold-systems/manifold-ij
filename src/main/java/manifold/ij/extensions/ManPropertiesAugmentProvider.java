@@ -57,9 +57,9 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
   @Override
   protected @NotNull Set<String> transformModifiers( @NotNull PsiModifierList modifierList, @NotNull Set<String> modifiers )
   {
-    if( !ManProject.isManifoldInUse( modifierList ) )
+    if( !ManProject.isPropertiesEnabledInAnyModules( modifierList ) )
     {
-      // Manifold jars are not used in the project
+      // manifold-props jars are not used in the project
       return modifiers;
     }
 
@@ -77,12 +77,6 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
 
   private <E extends PsiElement> List<E> _getAugments( PsiElement element, Class<E> cls )
   {
-    if( !ManProject.isManifoldInUse( element ) )
-    {
-      // Manifold jars are not used in the project
-      return Collections.emptyList();
-    }
-
     // Module is assigned to user-data via ManTypeFinder, which loads the psiClass (element)
     if( DumbService.getInstance( element.getProject() ).isDumb() )
     {
@@ -92,6 +86,12 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
 
     if( !(element instanceof PsiExtensibleClass) || !element.isValid() )
     {
+      return Collections.emptyList();
+    }
+
+    if( !ManProject.isPropertiesEnabledInAnyModules( element ) )
+    {
+      // Manifold jars are not used in the project
       return Collections.emptyList();
     }
 
@@ -152,11 +152,32 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
     return CachedValuesManager.getCachedValue( psiClass, key, () -> {
       LinkedHashMap<String, PsiMember> augFeatures = new LinkedHashMap<>();
       augmenter.accept( augFeatures );
-      List<PsiClass> hierarchy = new ArrayList<>( Arrays.asList( psiClass.getSupers() ) );
-      hierarchy.add( 0, psiClass );
+      Set<PsiElement> hierarchy = new LinkedHashSet<>();
+      hierarchy.add( psiClass );
+      hierarchy.addAll( Arrays.asList( psiClass.getSupers() ) );
+      addFilesOfNavigationElements( augFeatures, hierarchy );
       //noinspection unchecked
       return new CachedValueProvider.Result<>(
         new ArrayList<E>( (Collection<E>)augFeatures.values() ), hierarchy.toArray() );
+    } );
+  }
+
+  /**
+   * Add the containing PsiFiles for the properties. This is necessary when inferring properties for a projected class
+   * from a type manifold; changes to the corresponding resource files should invalidate the cache.
+   */
+  private void addFilesOfNavigationElements( LinkedHashMap<String, PsiMember> augFeatures, Set<PsiElement> hierarchy )
+  {
+    augFeatures.values().forEach( feature -> {
+      PsiElement navigationElement = feature.getNavigationElement();
+      if( navigationElement != null && navigationElement != feature )
+      {
+        PsiFile containingFile = navigationElement.getContainingFile();
+        if( containingFile != null )
+        {
+          hierarchy.add( containingFile );
+        }
+      }
     } );
   }
 
