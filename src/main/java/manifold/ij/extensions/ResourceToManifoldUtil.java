@@ -1,9 +1,10 @@
 package manifold.ij.extensions;
 
-import com.intellij.ide.DataManager;
+import com.intellij.ide.highlighter.JavaClassFileType;
+import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.json.psi.JsonProperty;
+import com.intellij.lang.java.JavaLanguage;
 import com.intellij.navigation.NavigationItem;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Document;
@@ -33,11 +34,12 @@ import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiPlainText;
 import com.intellij.psi.PsiPlainTextFile;
 import com.intellij.psi.PsiReference;
+import com.intellij.psi.impl.compiled.ClsFileImpl;
+import com.intellij.psi.impl.source.PsiJavaFileImpl;
 import com.intellij.psi.impl.source.resolve.FileContextUtil;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.util.Query;
-import java.awt.KeyboardFocusManager;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -77,6 +79,18 @@ public class ResourceToManifoldUtil
    */
   public static Set<PsiClass> findPsiClass( PsiFileSystemItem fileElem )
   {
+    if( !ManProject.isManifoldInUse( fileElem ) )
+    {
+      // manifold is not used with the project
+      return Collections.emptySet();
+    }
+
+    if( fileElem instanceof PsiJavaFileImpl || fileElem instanceof ClsFileImpl )
+    {
+      // not a resource file
+      return Collections.emptySet();
+    }
+
     Project project = fileElem.getProject();
     ManProject manProject = ManProject.manProjectFrom( project );
     VirtualFile virtualFile = fileElem.getVirtualFile();
@@ -118,6 +132,12 @@ public class ResourceToManifoldUtil
    */
   public static Set<PsiModifierListOwner> findJavaElementsFor( @NotNull PsiElement element )
   {
+    if( isFromJavaFile( element ) )
+    {
+      // only care about resource file elements
+      return Collections.emptySet();
+    }
+
     return findJavaElementsFor( element, new HashSet<>() );
   }
   private static Set<PsiModifierListOwner> findJavaElementsFor( @NotNull PsiElement element, Set<PsiElement> visited )
@@ -212,6 +232,15 @@ public class ResourceToManifoldUtil
     }
 
     return result;
+  }
+
+  private static boolean isFromJavaFile( @NotNull PsiElement element )
+  {
+    PsiFile containingFile = element.getContainingFile();
+    return containingFile != null &&
+      (containingFile.getLanguage() == JavaLanguage.INSTANCE ||
+        containingFile.getFileType() == JavaFileType.INSTANCE ||
+        containingFile.getFileType() == JavaClassFileType.INSTANCE);
   }
 
   // Handle cases like XML files where IntelliJ overlays the file with a fake DTD e.g., Foo.xml is masked by a Foo.xml.dtd
@@ -600,8 +629,7 @@ public class ResourceToManifoldUtil
   {
     if( FileEditorManager.getInstance( project ) instanceof FileEditorManagerImpl )
     {
-      // get the active editor without having to use the dispatch thread, which otherwise can cause deadlock
-      return DataManager.getInstance().getDataContext( KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner() ).getData( PlatformDataKeys.EDITOR );
+      return ((FileEditorManagerImpl)FileEditorManager.getInstance( project )).getSelectedTextEditor( !ApplicationManager.getApplication().isDispatchThread() );
     }
     else
     {

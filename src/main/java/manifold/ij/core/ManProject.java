@@ -25,7 +25,6 @@ import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.libraries.Library;
-import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
@@ -224,23 +223,42 @@ public class ManProject
 
   public static boolean isPropertiesEnabledInAnyModules( PsiElement element )
   {
-    if( !isManifoldInUse( element ) )
-    {
-      return false;
-    }
-
     ManProject manProject = ManProject.manProjectFrom( element.getProject() );
     if( manProject == null )
     {
       return false;
     }
+    return manProject.isPropertiesEnabledInAnyModules();
+  }
 
-    Map<Module, ManModule> modules = manProject.getModules();
+  public boolean isPropertiesEnabledInAnyModules()
+  {
+    if( !isManifoldInUse() )
+    {
+      return false;
+    }
+
+    Map<Module, ManModule> modules = getModules();
     if( modules == null )
     {
       return false;
     }
     return modules.values().stream().anyMatch( m -> m.isPropertiesEnabled() );
+  }
+
+  public boolean isPreprocessorEnabledInAnyModules()
+  {
+    if( !isManifoldInUse() )
+    {
+      return false;
+    }
+
+    Map<Module, ManModule> modules = getModules();
+    if( modules == null )
+    {
+      return false;
+    }
+    return modules.values().stream().anyMatch( m -> m.isPreprocessorEnabled() );
   }
 
   private void init()
