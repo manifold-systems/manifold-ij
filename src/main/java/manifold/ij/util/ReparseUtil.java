@@ -14,6 +14,8 @@ import com.intellij.util.FileContentUtilCore;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
+
+import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 
 public class ReparseUtil
@@ -49,6 +51,13 @@ public class ReparseUtil
   {
     if( project.isDisposed() )
     {
+      return;
+    }
+
+    ManProject manProject = ManProject.manProjectFrom( project );
+    if( manProject == null || !manProject.isPreprocessorEnabledInAnyModules() )
+    {
+      // manifold-preprocessor is not used in this project, no need to reparse
       return;
     }
 
