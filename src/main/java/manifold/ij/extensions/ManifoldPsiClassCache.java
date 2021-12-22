@@ -472,16 +472,6 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
            || propertyName.equals( PsiTreeChangeEvent.PROP_ROOTS )) )
       {
         refreshed();
-
-        if( BuildVariantSymbols.INSTANCE != null )
-        {
-          // forces a file with refs to build variant syms to retokenize, since the variant could've changed
-//          BuildVariantSymbols.INSTANCE.reset();
-          ServiceDefinitions.REGISTERED_SYMBOL_PROVIDERS.clear();
-
-          // retokenize open files in case the build variant changed
-          ReparseUtil.reparseOpenJavaFiles( getProject().getNativeProject() );
-        }
       }
     }
   }

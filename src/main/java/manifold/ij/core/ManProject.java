@@ -48,6 +48,7 @@ import manifold.api.fs.IFileUtil;
 import manifold.api.fs.jar.JarFileDirectoryImpl;
 import manifold.api.host.Dependency;
 import manifold.api.host.IModule;
+import manifold.ij.android.BuildVariantSymbols;
 import manifold.ij.extensions.*;
 import manifold.ij.fs.IjFile;
 import manifold.ij.fs.IjFileSystem;
@@ -55,6 +56,7 @@ import manifold.ij.license.CheckLicense;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.util.MessageUtil;
 import manifold.ij.util.ReparseUtil;
+import manifold.preprocessor.definitions.ServiceDefinitions;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LockingLazyVar;
 import manifold.util.concurrent.LocklessLazyVar;
@@ -353,9 +355,26 @@ public class ManProject
         if( _modules == null || _modules.isLoaded() ) // prevent double reset()
         {
           init();
+
+          reparseOpenFilesForPreprocessor();
+
           getFileModificationManager().getManRefresher().nukeFromOrbit();
         }
       } );
+  }
+
+  private void reparseOpenFilesForPreprocessor()
+  {
+    if( BuildVariantSymbols.INSTANCE != null ) // this means preprocessor is used and symbol providers were accessed
+    {
+      // Force symbol providers to reload in order to handle a build variant change
+      ServiceDefinitions.REGISTERED_SYMBOL_PROVIDERS.clear();
+
+      // retokenize open files in case the build variant changed
+      ReparseUtil.reparseOpenJavaFiles( getNativeProject() );
+
+      //todo: a file that was opened and then closed needs to be retokenized as well
+    }
   }
 
   public IjManifoldHost getHost()
