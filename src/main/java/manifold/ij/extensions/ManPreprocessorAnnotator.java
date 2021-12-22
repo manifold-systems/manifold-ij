@@ -71,13 +71,13 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
       return new Info();
     }
 
-    ManModule module = ManProject.getModule( file );
-    if( module == null || !module.isPreprocessorEnabled() )
-    {
-      return new Info();
-    }
-
     return ApplicationManager.getApplication().runReadAction( (Computable<Info>) () -> {
+      ManModule module = ManProject.getModule( file );
+      if( module == null || !module.isPreprocessorEnabled() )
+      {
+        return new Info();
+      }
+
       Info info = new Info();
       String source = file.getText();
       PreprocessorParser parser = new PreprocessorParser( source, t -> addDirective( t, info ) );

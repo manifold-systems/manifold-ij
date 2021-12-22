@@ -29,7 +29,7 @@ public class ManResolveScopeProvider extends ResolveScopeEnlarger
   @Override
   public SearchScope getAdditionalResolveScope( @NotNull VirtualFile file, Project project )
   {
-    if( !ManProject.isManifoldInUse( project ) )
+    if( !ManProject.isManifoldInUse( project ) || !file.isValid() )
     {
       return null;
     }
