@@ -231,6 +231,12 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/334">#334</a>: handle case with ReflectUtil.invokeDefault() where the receiving default method has param type that is a structural interface
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/333">#333</a>: handle structural overload operator methods
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/332">#332</a>: fix issues with operator overloading relating to structural interfaces
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/290">#290</a>: address lag in intellij editor after adding errors
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/328">#328</a>: editing a graphql file in IntelliJ causes some graphql types not to resolve
