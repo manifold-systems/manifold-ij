@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.intellij.util.SlowOperations;
 import manifold.rt.api.util.ManIdentifierUtil;
 import manifold.ij.core.ManProject;
 import manifold.rt.api.util.Pair;
@@ -130,69 +132,71 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
 
   private List<PsiElement> findJavaElements( PsiElement[] element )
   {
-    if( element[0] == null )
-    {
-      return Collections.emptyList();
-    }
-
-    Set<PsiModifierListOwner> javaElems = ResourceToManifoldUtil.findJavaElementsFor( element[0] );
-    if( javaElems.isEmpty() && element[0] instanceof PsiModifierListOwner )
-    {
-      PsiElement target = ManGotoDeclarationHandler.find( (PsiModifierListOwner)element[0] );
-      if( target == null )
+    return SlowOperations.allowSlowOperations( () -> {
+      if( element[0] == null )
       {
         return Collections.emptyList();
       }
-      PsiFile containingFile = target.getContainingFile();
-      PsiElement elemAt = containingFile instanceof PsiPlainTextFile ? target : containingFile.findElementAt( target.getTextOffset() );
-      while( elemAt != null && !(elemAt instanceof PsiNamedElement) )
-      {
-        elemAt = elemAt.getParent();
-      }
-      if( elemAt != null )
-      {
-        // Make sure we rename the terminal target e.g., using the "JS GraphQL" plugin a query field is actually a ref to a field def
-        elemAt = getTerminalTarget( elemAt, new HashSet<>() );
 
-        element[0] = elemAt;
-        javaElems = ResourceToManifoldUtil.findJavaElementsFor( element[0] );
-        if( javaElems.isEmpty() )
+      Set<PsiModifierListOwner> javaElems = ResourceToManifoldUtil.findJavaElementsFor( element[0] );
+      if( javaElems.isEmpty() && element[0] instanceof PsiModifierListOwner )
+      {
+        PsiElement target = ManGotoDeclarationHandler.find( (PsiModifierListOwner)element[0] );
+        if( target == null )
         {
           return Collections.emptyList();
         }
-      }
-    }
-    else if( element[0] instanceof ManifoldPsiClass && ((ManifoldPsiClass)element[0]).getContainingClass() != null )
-    {
-      // handle inner class reference rename e.g., json properties are also inner classes
-
-      PsiElement target = ManGotoDeclarationHandler.find( (ManifoldPsiClass)element[0], (ManifoldPsiClass)element[0] );
-      if( target != null )
-      {
-        PsiElement elemAt = target.getContainingFile().findElementAt( target.getTextOffset() );
+        PsiFile containingFile = target.getContainingFile();
+        PsiElement elemAt = containingFile instanceof PsiPlainTextFile ? target : containingFile.findElementAt( target.getTextOffset() );
+        while( elemAt != null && !(elemAt instanceof PsiNamedElement) )
+        {
+          elemAt = elemAt.getParent();
+        }
         if( elemAt != null )
         {
-          while( elemAt != null && !(elemAt instanceof PsiNamedElement) )
-          {
-            elemAt = elemAt.getParent();
-          }
-
           // Make sure we rename the terminal target e.g., using the "JS GraphQL" plugin a query field is actually a ref to a field def
-          if( elemAt != null )
-          {
-            elemAt = getTerminalTarget( elemAt, new HashSet<>() );
-          }
+          elemAt = getTerminalTarget( elemAt, new HashSet<>() );
 
           element[0] = elemAt;
+          javaElems = ResourceToManifoldUtil.findJavaElementsFor( element[0] );
+          if( javaElems.isEmpty() )
+          {
+            return Collections.emptyList();
+          }
         }
       }
-    }
-    else if( element[0] instanceof PsiPlainTextFile || element[0] instanceof PsiPlainText )
-    {
-      element[0] = element[0] instanceof PsiPlainText ? element[0].getContainingFile() : element[0];
-      element[0] = findFakePlainTextElement( (PsiPlainTextFile)element[0] );
-    }
-    return javaElems.stream().map( e -> (PsiElement)e ).collect( Collectors.toList() );
+      else if( element[0] instanceof ManifoldPsiClass && ((ManifoldPsiClass)element[0]).getContainingClass() != null )
+      {
+        // handle inner class reference rename e.g., json properties are also inner classes
+
+        PsiElement target = ManGotoDeclarationHandler.find( (ManifoldPsiClass)element[0], (ManifoldPsiClass)element[0] );
+        if( target != null )
+        {
+          PsiElement elemAt = target.getContainingFile().findElementAt( target.getTextOffset() );
+          if( elemAt != null )
+          {
+            while( elemAt != null && !(elemAt instanceof PsiNamedElement) )
+            {
+              elemAt = elemAt.getParent();
+            }
+
+            // Make sure we rename the terminal target e.g., using the "JS GraphQL" plugin a query field is actually a ref to a field def
+            if( elemAt != null )
+            {
+              elemAt = getTerminalTarget( elemAt, new HashSet<>() );
+            }
+
+            element[0] = elemAt;
+          }
+        }
+      }
+      else if( element[0] instanceof PsiPlainTextFile || element[0] instanceof PsiPlainText )
+      {
+        element[0] = element[0] instanceof PsiPlainText ? element[0].getContainingFile() : element[0];
+        element[0] = findFakePlainTextElement( (PsiPlainTextFile)element[0] );
+      }
+      return javaElems.stream().map( e -> (PsiElement)e ).collect( Collectors.toList() );
+    } );
   }
 
   @NotNull
