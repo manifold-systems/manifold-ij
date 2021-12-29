@@ -36,8 +36,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
+
+import com.intellij.util.SlowOperations;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.FileUtil;
@@ -130,14 +131,26 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 
       private void selectNameWithoutExtension()
       {
-        EventQueue.invokeLater( () -> {
+        EventQueue.invokeLater( () -> SlowOperations.allowSlowOperations( () -> {
           Editor editor = getNameSuggestionsField().getEditor();
           if( editor == null )
           {
             return;
           }
 
-          PsiClass psiClass = findPsiClass( (PsiFileSystemItem)element, ManProject.getModule( Objects.requireNonNull( ModuleUtilCore.findModuleForPsiElement( element ) ) ) );
+          Module moduleForPsiElement = ModuleUtilCore.findModuleForPsiElement( element );
+          if( moduleForPsiElement == null )
+          {
+            return;
+          }
+
+          ManModule module = ManProject.getModule( moduleForPsiElement );
+          if( module == null )
+          {
+            return;
+          }
+
+          PsiClass psiClass = findPsiClass( (PsiFileSystemItem)element, module );
           if( psiClass != null )
           {
             String className = psiClass.getName();
@@ -159,7 +172,7 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
             editor.getSelectionModel().setSelection( 0, pos );
             editor.getCaretModel().moveToOffset( pos );
           }
-        } );
+        } ) );
 
       }
 
@@ -298,6 +311,11 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
         }
 
         ManModule module = ManProject.getModule( ijModule );
+        if( module == null )
+        {
+          return;
+        }
+
         PsiClass psiClass = findPsiClass( (PsiFileSystemItem)element, module );
         if( psiClass == null )
         {
