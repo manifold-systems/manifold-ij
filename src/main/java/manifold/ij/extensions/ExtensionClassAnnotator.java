@@ -22,6 +22,8 @@ import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.TypeConversionUtil;
 import java.lang.reflect.Modifier;
 import java.util.List;
+
+import com.intellij.util.SlowOperations;
 import manifold.ExtIssueMsg;
 import manifold.api.fs.IFile;
 import manifold.api.type.ITypeManifold;
@@ -226,10 +228,12 @@ public class ExtensionClassAnnotator implements Annotator
 
   public static boolean isStructuralInterface( PsiClass iface )
   {
-    PsiModifierList modifierList = iface == null ? null : iface.getModifierList();
-    return modifierList != null &&
-      (modifierList.findAnnotation( Structural.class.getName() ) != null ||
-        isInterfaceMadeStructuralByExtension( iface ));
+    return SlowOperations.allowSlowOperations( () -> {
+      PsiModifierList modifierList = iface == null ? null : iface.getModifierList();
+      return modifierList != null &&
+        (modifierList.findAnnotation( Structural.class.getName() ) != null ||
+          isInterfaceMadeStructuralByExtension( iface ));
+    } );
   }
 
   private void verifyPackage( PsiElement element, AnnotationHolder holder )

@@ -484,7 +484,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
             }
             if( !isStructuralType( param.getTypeElement() ) )
             {
-              if( !param.getType().isAssignableFrom( argTypes[i] ) )
+              if( argTypes[i] == null || !param.getType().isAssignableFrom( argTypes[i] ) )
               {
                 return true;
               }

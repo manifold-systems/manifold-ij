@@ -1,5 +1,6 @@
 package manifold.ij.extensions;
 
+import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Ref;
@@ -68,6 +69,11 @@ public class ManJavaResolveCache extends JavaResolveCache
     if( !isManifoldExtEnabled( expr ) )
     {
       // manifold-ext-rt is not used in the expr's module
+      return super.getType( expr, f );
+    }
+
+    if( DumbService.isDumb( expr.getProject() ) )
+    {
       return super.getType( expr, f );
     }
 
@@ -317,6 +323,11 @@ public class ManJavaResolveCache extends JavaResolveCache
   @Nullable
   private static PsiType getBinaryOperationReturnType( String opName, PsiType left, PsiType right, PsiMethod[] members, PsiExpression context )
   {
+    if( left == null || right == null )
+    {
+      return null;
+    }
+
     int paramCount = opName.equals( COMPARE_TO_USING ) || opName.equals( INDEXED_SET ) ? 2 : 1;
     for( PsiMethod m : members )
     {
@@ -362,6 +373,7 @@ public class ManJavaResolveCache extends JavaResolveCache
         {
           parameterizedParam = paramType;
         }
+
         if( parameterizedParam.isAssignableFrom( right ) )
         {
           substitutor = substitutor == null ? getMemberSubstitutor( left, m ) : substitutor;
