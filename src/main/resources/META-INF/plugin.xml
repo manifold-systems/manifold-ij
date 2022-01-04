@@ -231,6 +231,10 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:</h3>
 <h4>
+<a href="https://github.com/manifold-systems/manifold/issues/337">#337</a>: Support structural interface implementation via Extension Class without having to manually create an IProxyFactory service impl
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/336">#336</a>: IntelliJ plugin: performing a clean build from maven/gradle tool causes perpetual refresh in UI
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/334">#334</a>: handle case with ReflectUtil.invokeDefault() where the receiving default method has param type that is a structural interface
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/333">#333</a>: handle structural overload operator methods

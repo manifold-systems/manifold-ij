@@ -66,7 +66,10 @@ public class ReparseUtil
         () -> {
           if( !project.isDisposed() )
           {
-            FileContentUtil.reparseFiles( project, getOpenJavaFiles( project ), false );
+            // reparse open files (except module-info.java files because that causes infinite reset)
+            Collection<? extends VirtualFile> openJavaFiles = getOpenJavaFiles( project ).stream()
+              .filter( vf -> !vf.getName().toLowerCase().endsWith( "module-info.java" ) ).collect( Collectors.toSet() );
+            FileContentUtil.reparseFiles( project, openJavaFiles, false );
           }
         } ) );
   }
