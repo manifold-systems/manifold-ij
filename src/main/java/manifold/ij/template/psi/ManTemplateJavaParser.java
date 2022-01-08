@@ -6,6 +6,7 @@ import com.intellij.lang.PsiParser;
 import com.intellij.lang.java.parser.ExpressionParser;
 import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.lang.java.parser.JavaParserUtil;
+import com.intellij.lexer.Lexer;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.roots.LanguageLevelProjectExtension;
 import com.intellij.pom.java.LanguageLevel;
@@ -15,7 +16,7 @@ import com.intellij.psi.tree.IElementType;
 import java.util.Collections;
 import java.util.List;
 import manifold.ext.rt.api.Jailbreak;
-import manifold.ij.core.ManExpressionParser;
+import manifold.ij.extensions.ManPsiBuilderImpl;
 import manifold.ij.template.IManTemplateOffsets;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,7 +36,10 @@ public class ManTemplateJavaParser implements PsiParser
     List<Integer> directiveOffsets = getDirectiveOffsets( builder );
     MyStatementParser stmtParser = new MyStatementParser( javaParser, this, exprOffsets, directiveOffsets );
     javaParser.myStatementParser = stmtParser;
-    javaParser.myExpressionParser = new ManExpressionParser( javaParser ); // for binding expressions
+
+    //note, not using ManExpressionParser here because the binding expr stuff blows up with adjacdent expressions in templates
+    javaParser.myExpressionParser = new ExpressionParser( javaParser ); //new ManExpressionParser( javaParser, true ); // for binding expressions
+
     while( !builder.eof() )
     {
       int offset = builder.getCurrentOffset();
@@ -107,19 +111,46 @@ public class ManTemplateJavaParser implements PsiParser
 
   private List<Integer> getExpressionOffsets( @NotNull PsiBuilder builder )
   {
-    PsiFile psiFile = builder.getUserDataUnprotected( FileContextUtil.CONTAINING_FILE_KEY );
+    if( builder instanceof ManPsiBuilderImpl )
+    {
+      Lexer lexer = ((ManPsiBuilderImpl)builder).getLexer();
+      if( lexer instanceof ManTemplateJavaLexer )
+      {
+        return ((ManTemplateJavaLexer)lexer).getExprOffsets();
+      }
+    }
+
+    PsiFile psiFile = builder.getUserData( FileContextUtil.CONTAINING_FILE_KEY );
     return psiFile == null ? Collections.emptyList() : psiFile.getUserData( IManTemplateOffsets.EXPR_OFFSETS );
   }
 
   private List<Integer> getDirectiveOffsets( @NotNull PsiBuilder builder )
   {
-    PsiFile psiFile = builder.getUserDataUnprotected( FileContextUtil.CONTAINING_FILE_KEY );
+    if( builder instanceof ManPsiBuilderImpl )
+    {
+      Lexer lexer = ((ManPsiBuilderImpl)builder).getLexer();
+      if( lexer instanceof ManTemplateJavaLexer )
+      {
+        return ((ManTemplateJavaLexer)lexer).getDirectiveOffsets();
+      }
+    }
+
+    PsiFile psiFile = builder.getUserData( FileContextUtil.CONTAINING_FILE_KEY );
     return psiFile == null ? Collections.emptyList() : psiFile.getUserData( IManTemplateOffsets.DIRECTIVE_OFFSETS );
   }
 
   private List<Integer> getStatementOffsets( @NotNull PsiBuilder builder )
   {
-    PsiFile psiFile = builder.getUserDataUnprotected( FileContextUtil.CONTAINING_FILE_KEY );
+    if( builder instanceof ManPsiBuilderImpl )
+    {
+      Lexer lexer = ((ManPsiBuilderImpl)builder).getLexer();
+      if( lexer instanceof ManTemplateJavaLexer )
+      {
+        return ((ManTemplateJavaLexer)lexer).getStmtOffsets();
+      }
+    }
+
+    PsiFile psiFile = builder.getUserData( FileContextUtil.CONTAINING_FILE_KEY );
     return psiFile == null ? Collections.emptyList() : psiFile.getUserData( IManTemplateOffsets.STMT_OFFSETS );
   }
 }
