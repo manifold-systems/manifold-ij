@@ -4,6 +4,7 @@ import com.intellij.codeInsight.daemon.JavaErrorBundle;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.WhitespacesBinders;
 import com.intellij.lang.java.parser.DeclarationParser;
+import com.intellij.lang.java.parser.ExpressionParser;
 import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.lang.java.parser.StatementParser;
 import com.intellij.pom.java.LanguageLevel;
@@ -14,6 +15,7 @@ import com.intellij.psi.impl.source.tree.JavaElementType;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.ILazyParseableElementType;
 import com.intellij.psi.tree.TokenSet;
+import manifold.ext.rt.api.Jailbreak;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -204,7 +206,7 @@ public class ManStatementParser extends StatementParser {
     }
 
     PsiBuilder.Marker pos = builder.mark();
-    PsiBuilder.Marker expr = ((ManExpressionParser)myParser.getExpressionParser()).parseAssignment(builder, 0, true);
+    PsiBuilder.Marker expr = parseAssignmentExpr( builder, true );
 
     if (expr != null) {
       int count = 1;
@@ -213,7 +215,7 @@ public class ManStatementParser extends StatementParser {
       while (builder.getTokenType() == JavaTokenType.COMMA) {
         PsiBuilder.Marker commaPos = builder.mark();
         builder.advanceLexer();
-        PsiBuilder.Marker expr1 = ((ManExpressionParser)myParser.getExpressionParser()).parseAssignment(builder, 0, true);
+        PsiBuilder.Marker expr1 = parseAssignmentExpr( builder, true );
         if (expr1 == null) {
           commaPos.rollbackTo();
           break;
@@ -257,13 +259,21 @@ public class ManStatementParser extends StatementParser {
 
     if (expr != null) {
       PsiBuilder.Marker statement = builder.mark();
-      ((ManExpressionParser)myParser.getExpressionParser()).parseAssignment(builder, 0, false);
+      parseAssignmentExpr( builder, false );
       semicolon(builder);
       done(statement, JavaElementType.EXPRESSION_STATEMENT);
       return statement;
     }
 
     return null;
+  }
+
+  private PsiBuilder.Marker parseAssignmentExpr( PsiBuilder builder, boolean lhs )
+  {
+    @Jailbreak ExpressionParser exprParser = myParser.getExpressionParser();
+    return exprParser instanceof ManExpressionParser
+     ? ((ManExpressionParser)exprParser).parseAssignment( builder, 0, lhs )
+      : exprParser.parseAssignment( builder, 0 );
   }
 
   private static boolean isStmtYieldToken(@NotNull PsiBuilder builder, IElementType tokenType) {

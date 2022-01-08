@@ -45,6 +45,14 @@ public class ManTemplateDataElementType extends TemplateDataElementType
     return ManTemplateJavaLanguage.INSTANCE;
   }
 
+  // must override this for "old" deprecated behavior
+  protected void appendCurrentTemplateToken(@NotNull StringBuilder result,
+                                            @NotNull CharSequence buf,
+                                            @NotNull Lexer lexer,
+                                            @NotNull TemplateDataElementType.RangeCollector collector) {
+    result.append(buf, lexer.getTokenStart(), lexer.getTokenEnd());
+  }
+
   private CharSequence createTemplateText( @NotNull CharSequence sourceCode,
                                            @NotNull Lexer baseLexer,
                                            @NotNull RangeCollector outerRangesCollector,
