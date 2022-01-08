@@ -42,7 +42,7 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
   private static final ConcurrentMap<String, TemplateDataElementType> TEMPLATE_DATA_TO_LANG = ContainerUtil.newConcurrentMap();
   private static final ConcurrentMap<String, TemplateDataElementType> TEMPLATE_JAVA_TO_LANG = ContainerUtil.newConcurrentMap();
 
-  private static TemplateDataElementType getTemplateDataElementType( Language lang )
+  private static TemplateDataElementType getOrCreateTemplateDataElementType( Language lang )
   {
     TemplateDataElementType result = TEMPLATE_DATA_TO_LANG.get( lang.getID() );
 
@@ -55,7 +55,7 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
 
     return prevValue == null ? created : prevValue;
   }
-  private static TemplateDataElementType getTemplateJavaElementType( Language lang )
+  private static TemplateDataElementType getOrCreateTemplateJavaElementType( Language lang )
   {
     TemplateDataElementType result = TEMPLATE_JAVA_TO_LANG.get( lang.getID() );
 
@@ -63,18 +63,11 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
     {
       return result;
     }
-    TemplateDataElementType created = createTemplateDataElementType( lang );
+    TemplateDataElementType created = new ManTemplateDataElementType( "ManTL_Java", lang, CONTENT );
     TemplateDataElementType prevValue = TEMPLATE_JAVA_TO_LANG.putIfAbsent( lang.getID(), created );
 
     return prevValue == null ? created : prevValue;
   }
-
-  @NotNull
-  private static TemplateDataElementType createTemplateDataElementType( Language lang )
-  {
-    return new ManTemplateDataElementType( "ManTL_Java", lang, CONTENT );
-  }
-
 
   ManTemplateFileViewProvider( PsiManager manager, VirtualFile file, boolean physical, Language baseLanguage )
   {
@@ -188,11 +181,11 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
   {
     if( lang.is( ManTemplateJavaLanguage.INSTANCE ) )
     {
-      return getTemplateJavaElementType( getBaseLanguage() );
+      return getOrCreateTemplateJavaElementType( getBaseLanguage() );
     }
     else if( lang.is( getTemplateDataLanguage() ) )
     {
-      return getTemplateDataElementType( getBaseLanguage() );
+      return getOrCreateTemplateDataElementType( getBaseLanguage() );
     }
     else
     {
@@ -212,13 +205,13 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
     if( lang.is( ManTemplateJavaLanguage.INSTANCE ) )
     {
       PsiFileImpl file = (PsiFileImpl)parserDefinition.createFile( this );
-      file.setContentElementType( getTemplateJavaElementType( getBaseLanguage() ) );
+      file.setContentElementType( getContentElementType( lang ) );
       return file;
     }
     else if( lang.is( getTemplateDataLanguage() ) )
     {
       PsiFileImpl file = (PsiFileImpl)parserDefinition.createFile( this );
-      file.setContentElementType( getTemplateDataElementType( getBaseLanguage() ) );
+      file.setContentElementType( getContentElementType( lang ) );
       return file;
     }
     else if( lang.isKindOf( getBaseLanguage() ) )

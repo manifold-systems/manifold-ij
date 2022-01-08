@@ -59,8 +59,26 @@ class ManTemplateJavaLexer extends DelegateLexer
 
     ManTemplateJavaFile psiFile = (ManTemplateJavaFile)SharedImplUtil.getContainingFile( chameleon );
     _exprOffsets = psiFile.getUserData( IManTemplateOffsets.EXPR_OFFSETS );
+    _exprOffsets = _exprOffsets == null ? Collections.emptyList() : _exprOffsets;
     _stmtOffsets = psiFile.getUserData( IManTemplateOffsets.STMT_OFFSETS );
+    _stmtOffsets = _stmtOffsets == null ? Collections.emptyList() : _stmtOffsets;
     _directiveOffsets = psiFile.getUserData( IManTemplateOffsets.DIRECTIVE_OFFSETS );
+    _directiveOffsets = _directiveOffsets == null ? Collections.emptyList() : _directiveOffsets;
+  }
+
+  public List<Integer> getExprOffsets()
+  {
+    return _exprOffsets;
+  }
+
+  public List<Integer> getStmtOffsets()
+  {
+    return _stmtOffsets;
+  }
+
+  public List<Integer> getDirectiveOffsets()
+  {
+    return _directiveOffsets;
   }
 
   @Override

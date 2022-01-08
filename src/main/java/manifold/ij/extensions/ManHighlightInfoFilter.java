@@ -6,6 +6,8 @@ import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.source.PsiJavaFileBaseImpl;
+import com.intellij.psi.impl.source.html.HtmlFileImpl;
 import com.intellij.psi.impl.source.tree.java.PsiArrayAccessExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiAssignmentExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
@@ -14,12 +16,15 @@ import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiUtil;
 import java.util.List;
+
+import manifold.api.fs.def.JavaFileImpl;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.core.ManPsiPostfixExpressionImpl;
 import manifold.ij.core.ManPsiPrefixExpressionImpl;
 import manifold.ij.psi.ManLightMethodBuilder;
+import manifold.ij.template.psi.ManTemplateJavaFile;
 import manifold.ij.util.ManPsiUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -79,6 +84,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     if( filterArrayIndexIsOutOfBounds( hi, file ) )
+    {
+      return false;
+    }
+
+    if( filterTemplateUnnecessarySemicolon( hi, file ) )
     {
       return false;
     }
@@ -177,6 +187,13 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     return true;
+  }
+
+  private boolean filterTemplateUnnecessarySemicolon( HighlightInfo hi, PsiFile file )
+  {
+    String description = hi.getDescription();
+    return (file instanceof ManTemplateJavaFile || !(file instanceof PsiJavaFileBaseImpl)) &&
+      description.contains( "Unnecessary semicolon" );
   }
 
   // Operator overloading: Filter warning messages like "Number objects are compared using '==', not 'equals()'"
