@@ -12,6 +12,8 @@ import com.intellij.openapi.vfs.impl.local.LocalFileSystemImpl;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+
+import com.intellij.testFramework.LightVirtualFile;
 import manifold.api.fs.IDirectory;
 import manifold.api.fs.IResource;
 import manifold.api.fs.ResourcePath;
@@ -49,12 +51,12 @@ public abstract class IjResource implements IResource
       {
         return new IjDirectory( getFileSystem(), _virtualFile.getParent() );
       }
-      return null;
+      if( !(_virtualFile instanceof LightVirtualFile) || _path.length() <= 3 )
+      {
+        return null;
+      }
     }
-    else
-    {
-      return getFileSystem().getIDirectory( _path.substring( 0, _path.lastIndexOf( '/' ) ) );
-    }
+    return getFileSystem().getIDirectory( _path.substring( 0, _path.lastIndexOf( '/' ) ) );
   }
 
   @Override

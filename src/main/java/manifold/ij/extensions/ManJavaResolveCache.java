@@ -18,9 +18,7 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.util.Function;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
@@ -51,6 +49,7 @@ public class ManJavaResolveCache extends JavaResolveCache
     put( JavaTokenType.MINUSMINUS, "dec" );
     // note ==, !=, >, >=, <, <=  are covered via IComparableWith**
   }};
+  private static ThreadLocal<Set<PsiExpression>> _threadLocalVisited = ThreadLocal.withInitial( () -> new HashSet<>() );
 
   public ManJavaResolveCache( Project p )
   {
@@ -115,78 +114,91 @@ public class ManJavaResolveCache extends JavaResolveCache
       return null;
     }
 
-    PsiElement opChild = getOpChild( (CompositeElement)expr );
-    IElementType op = opChild == null ? null : ((PsiJavaToken)opChild).getTokenType();
-    String opName = op == null ? null : BINARY_OP_TO_NAME.get( op );
-    if( opName == null )
+    Set<PsiExpression> visited = _threadLocalVisited.get();
+    if( visited.contains( expr ) )
     {
-      if( op == null ) // binding expr
+      return null;
+    }
+    visited.add( expr );
+    try
+    {
+      PsiElement opChild = getOpChild( (CompositeElement)expr );
+      IElementType op = opChild == null ? null : ((PsiJavaToken)opChild).getTokenType();
+      String opName = op == null ? null : BINARY_OP_TO_NAME.get( op );
+      if( opName == null )
       {
-        if( isParentBindingExpr( expr.getParent() ) )
+        if( op == null ) // binding expr
         {
-          // ignore child binding expressions of the root binding expression
-          // (note this is only because we haven't yet figured out how to replace the tree inside getOrCreate())
+          if( isParentBindingExpr( expr.getParent() ) )
+          {
+            // ignore child binding expressions of the root binding expression
+            // (note this is only because we haven't yet figured out how to replace the tree inside getOrCreate())
+            return null;
+          }
+          //return CachedBindingPsiType.getOrCreate( expr )._type;
+          PsiBinaryExpression newExpr = new IjBinder( (PsiBinaryExpression)expr ).bind( getBindingOperands( expr, new ArrayList<>() ) );
+          return newExpr == null ? null : newExpr.getType();
+        }
+        if( isComparableOperator( op ) )
+        {
+          opName = COMPARE_TO_USING;
+        }
+        else
+        {
           return null;
         }
-        //return CachedBindingPsiType.getOrCreate( expr )._type;
-        PsiBinaryExpression newExpr = new IjBinder( (PsiBinaryExpression)expr ).bind( getBindingOperands( expr, new ArrayList<>() ) );
-        return newExpr == null ? null : newExpr.getType();
       }
-      if( isComparableOperator( op ) )
-      {
-        opName = COMPARE_TO_USING;
-      }
-      else
+
+      PsiExpression lOperand = expr instanceof PsiBinaryExpression
+        ? ((PsiBinaryExpression)expr).getLOperand()
+        : ((PsiAssignmentExpression)expr).getLExpression();
+      if( lOperand == expr )
       {
         return null;
       }
-    }
 
-    PsiExpression lOperand = expr instanceof PsiBinaryExpression
-      ? ((PsiBinaryExpression)expr).getLOperand()
-      : ((PsiAssignmentExpression)expr).getLExpression();
-    if( lOperand == expr )
-    {
-      return null;
-    }
-
-    PsiType left = lOperand.getType();
-    if( left == null )
-    {
-      return null;
-    }
-
-    PsiExpression rOperand = expr instanceof PsiBinaryExpression
-      ? ((PsiBinaryExpression)expr).getROperand()
-      : ((PsiAssignmentExpression)expr).getRExpression();
-    if( rOperand == null || rOperand == expr )
-    {
-      return null;
-    }
-
-    PsiType right = rOperand.getType();
-    if( right == null ||
-      left instanceof PsiPrimitiveType && right instanceof PsiPrimitiveType )
-    {
-      return null;
-    }
-
-    PsiType type = getBinaryType( opName, left, right, expr );
-    if( type == null && isCommutative( op ) )
-    {
-      type = getBinaryType( opName, right, left, expr );
-    }
-    else if( type == null && opName.equals( COMPARE_TO_USING ) &&
-      !(left instanceof PsiPrimitiveType) && isRelationalOperator( op ) )
-    {
-      // Support > >= < <= on any Comparable implementor
-      type = getBinaryType( COMPARE_TO, left, right, expr );
-      if( type != null && type.equals( PsiType.INT ) )
+      PsiType left = lOperand.getType();
+      if( left == null )
       {
-        type = PsiType.BOOLEAN;
+        return null;
       }
+
+      PsiExpression rOperand = expr instanceof PsiBinaryExpression
+        ? ((PsiBinaryExpression)expr).getROperand()
+        : ((PsiAssignmentExpression)expr).getRExpression();
+      if( rOperand == null || rOperand == expr )
+      {
+        return null;
+      }
+
+      PsiType right = rOperand.getType();
+      if( right == null ||
+        left instanceof PsiPrimitiveType && right instanceof PsiPrimitiveType )
+      {
+        return null;
+      }
+
+      PsiType type = getBinaryType( opName, left, right, expr );
+      if( type == null && isCommutative( op ) )
+      {
+        type = getBinaryType( opName, right, left, expr );
+      }
+      else if( type == null && opName.equals( COMPARE_TO_USING ) &&
+        !(left instanceof PsiPrimitiveType) && isRelationalOperator( op ) )
+      {
+        // Support > >= < <= on any Comparable implementor
+        type = getBinaryType( COMPARE_TO, left, right, expr );
+        if( type != null && type.equals( PsiType.INT ) )
+        {
+          type = PsiType.BOOLEAN;
+        }
+      }
+      return type;
     }
-    return type;
+    finally
+    {
+      visited.remove( expr );
+    }
   }
 
   private static boolean isParentBindingExpr( PsiElement expr )
