@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This class applies to an entire bulid (both incremental and full), it contains aggregated information for the
+ * This class applies to an entire build (both incremental and full), it contains aggregated information for the
  * currentJPS build.
  * <p/>
  * Note, this class is accessed reflectively from the JavacPlugin.
@@ -39,7 +39,7 @@ public class IjChangedResourceFiles
   /**
    * @return  Map keyed by resource file to the set of qualified class names, including inner classes, that were
    * compiled/generated as a product of the manifold type[s] produced from the file. This map corresponds with the
-   * entire build or rebuild.  This map is used to maintain JPS bookeeping to crosstabulate class file and
+   * entire build or rebuild.  This map is used to maintain JPS bookkeeping to cross-tabulate class file and
    * resource/source file e.g., to know which .class files to delete/update for an incremental build, which facilitates
    * hotswap debugging.
    */
