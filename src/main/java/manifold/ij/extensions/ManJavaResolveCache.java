@@ -1,26 +1,27 @@
 package manifold.ij.extensions;
 
-import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Ref;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.impl.source.resolve.JavaResolveCache;
+import com.intellij.psi.impl.source.resolve.graphInference.PsiPolyExpressionUtil;
 import com.intellij.psi.impl.source.tree.ChildRole;
 import com.intellij.psi.impl.source.tree.CompositeElement;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
+import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.scope.ElementClassHint;
 import com.intellij.psi.scope.NameHint;
 import com.intellij.psi.scope.PsiScopeProcessor;
 import com.intellij.psi.scope.util.PsiScopesUtil;
 import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.util.Function;
 
 import java.util.*;
 
-import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.internal.javac.AbstractBinder.Node;
 import org.jetbrains.annotations.NotNull;
@@ -65,17 +66,16 @@ public class ManJavaResolveCache extends JavaResolveCache
       return super.getType( expr, f );
     }
 
-    if( !isManifoldExtEnabled( expr ) )
-    {
-      // manifold-ext-rt is not used in the expr's module
-      return super.getType( expr, f );
+    boolean prohibitCaching = MethodCandidateInfo.isOverloadCheck() && PsiPolyExpressionUtil.isPolyExpression(expr);
+    if (prohibitCaching) {
+      return getTypeDirectly( f, expr );
     }
 
-    if( DumbService.isDumb( expr.getProject() ) )
-    {
-      return super.getType( expr, f );
-    }
+    return CachedValuesManager.getProjectPsiDependentCache(expr, param -> getTypeDirectly( f, param ) );
+  }
 
+  private <T extends PsiExpression> PsiType getTypeDirectly( @NotNull Function<? super T, ? extends PsiType> f, T expr )
+  {
     if( expr instanceof PsiBinaryExpression ||
       expr instanceof PsiAssignmentExpression )
     {
@@ -86,7 +86,7 @@ public class ManJavaResolveCache extends JavaResolveCache
       }
     }
 
-    return super.getType( expr, f );
+    return f.fun( expr );
   }
 
   static boolean isBindingExpression( final PsiExpression expr )
@@ -101,19 +101,8 @@ public class ManJavaResolveCache extends JavaResolveCache
     return op == null;
   }
 
-  static boolean isManifoldExtEnabled( PsiElement elem )
-  {
-    ManModule manModule = ManProject.getModule( elem );
-    return manModule == null || manModule.isExtEnabled();
-  }
-
   static PsiType getTypeForOverloadedBinaryOperator( final PsiExpression expr )
   {
-    if( !isManifoldExtEnabled( expr ) )
-    {
-      return null;
-    }
-
     Set<PsiExpression> visited = _threadLocalVisited.get();
     if( visited.contains( expr ) )
     {

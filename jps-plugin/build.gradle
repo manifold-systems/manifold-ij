@@ -25,6 +25,10 @@ dependencies {
   manifoldAll group: 'systems.manifold', name: 'manifold-all', version: manifoldVersion
 }
 
+buildSearchableOptions {
+  enabled = false
+}
+
 runIde {
   enabled = false
 }

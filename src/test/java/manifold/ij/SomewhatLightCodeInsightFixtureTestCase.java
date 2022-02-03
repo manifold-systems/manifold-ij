@@ -28,6 +28,8 @@ import com.intellij.testFramework.fixtures.JavaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TestFixtureBuilder;
 import com.intellij.testFramework.fixtures.impl.TempDirTestFixtureImpl;
 import java.io.File;
+
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -120,7 +122,19 @@ public abstract class SomewhatLightCodeInsightFixtureTestCase extends UsefulTest
     super.setUp();
 
     IdeaTestFixtureFactory factory = IdeaTestFixtureFactory.getFixtureFactory();
-    TestFixtureBuilder<IdeaProjectTestFixture> fixtureBuilder = factory.createLightFixtureBuilder( getProjectDescriptor() );
+    TestFixtureBuilder<IdeaProjectTestFixture> fixtureBuilder;
+//    if( VersionComparatorUtil.compare( ApplicationInfo.getInstance().getStrictVersion(), "2022.1.1" ) >= 0 )
+    try
+    {
+      // IJ v. 2022.x
+      fixtureBuilder = factory.createLightFixtureBuilder( getProjectDescriptor(), "hi" );
+    }
+    catch( Throwable t )
+    {
+      fixtureBuilder = (TestFixtureBuilder<IdeaProjectTestFixture>)ReflectUtil.method(
+        factory, "createLightFixtureBuilder", LightProjectDescriptor.class )
+        .invoke( getProjectDescriptor() );
+    }
     IdeaProjectTestFixture fixture = fixtureBuilder.getFixture();
     myFixture = JavaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture( fixture, new TempDirTestFixtureImpl() );
 

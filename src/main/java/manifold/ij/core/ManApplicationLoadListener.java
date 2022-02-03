@@ -17,6 +17,8 @@ import com.intellij.psi.impl.java.stubs.JavaLiteralExpressionElementType;
 import com.intellij.psi.impl.java.stubs.JavaStubElementTypes;
 import com.intellij.psi.impl.source.tree.JavaElementType;
 import com.intellij.psi.tree.IElementType;
+
+import java.nio.file.Path;
 import java.util.function.Supplier;
 
 import com.intellij.util.messages.MessageBusConnection;
@@ -40,7 +42,13 @@ public class ManApplicationLoadListener implements ApplicationLoadListener
 {
   private static volatile boolean Initialized = false;
 
-  @Override
+  // @Override in version 2022.x
+  public void beforeApplicationLoaded( @NotNull Application application, @NotNull Path configPath )
+  {
+    overrideJavaParserStuff();
+    listenToProjectOpenClose();
+  }
+  // @Override in versions *prior* to 2022.x
   public void beforeApplicationLoaded( @NotNull Application application, @NotNull String configPath )
   {
     overrideJavaParserStuff();
