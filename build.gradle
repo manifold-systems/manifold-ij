@@ -123,6 +123,10 @@ publishPlugin {
   password = System.getenv('JB_PUBLISH_PASS')
 }
 
+buildSearchableOptions {
+  enabled = false
+}
+
 test {
   //uncomment below to show stdout/stderr in console
   //testLogging.showStandardStreams = true
