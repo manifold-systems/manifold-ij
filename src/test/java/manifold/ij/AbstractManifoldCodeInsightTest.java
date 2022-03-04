@@ -26,8 +26,13 @@ import manifold.util.JreUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class AbstractManifoldCodeInsightTest extends SomewhatLightCodeInsightFixtureTestCase
+public class AbstractManifoldCodeInsightTest extends SomewhatLightCodeInsightFixtureTestCase
 {
+  // make test suite happy
+  public void testNothing()
+  {
+  }
+
   @Override
   protected void setUp() throws Exception
   {
