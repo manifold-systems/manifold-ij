@@ -258,6 +258,8 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:</h3>
 <h4>
+The Manifold IntelliJ plugin is FREE now :)
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/338">#338</a>: fix ManTL template issues that have piled up with recent JetBrains platform updates
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/337">#337</a>: Support structural interface implementation via Extension Class without having to manually create an IProxyFactory service impl
