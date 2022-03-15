@@ -68,7 +68,7 @@ public class CreateManifoldTemplateAction extends CreateFileFromTemplateAction
   {
     super( ManBundle.message( "new.template.menu.action.text" ),
       ManBundle.message( "new.template.menu.action.description" ),
-      IconLoader.getIcon( "/manifold/ij/icons/manifold.png" ) );
+      IconLoader.getIcon( "/manifold/ij/icons/manifold.png", CreateManifoldTemplateAction.class ) );
   }
 
   @Override

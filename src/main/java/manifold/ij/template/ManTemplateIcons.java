@@ -24,5 +24,5 @@ import javax.swing.Icon;
 
 public class ManTemplateIcons
 {
-  public static final Icon FILE = IconLoader.getIcon( "/manifold/ij/icons/manifold.png" );
+  public static final Icon FILE = IconLoader.getIcon( "/manifold/ij/icons/manifold.png", ManTemplateIcons.class );
 }

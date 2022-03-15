@@ -74,7 +74,7 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
   {
     super( ManBundle.message( "new.ext.method.class.menu.action.text" ),
       ManBundle.message( "new.ext.method.class.menu.action.description" ),
-      IconLoader.getIcon( "/manifold/ij/icons/manifold.png" ) );
+      IconLoader.getIcon( "/manifold/ij/icons/manifold.png", CreateExtensionMethodsClassAction.class ) );
   }
 
   @Override

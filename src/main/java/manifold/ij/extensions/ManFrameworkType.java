@@ -54,6 +54,6 @@ public class ManFrameworkType extends FrameworkTypeEx
   @Override
   public Icon getIcon()
   {
-    return IconLoader.getIcon( "/manifold/ij/icons/manifold.png" );
+    return IconLoader.getIcon( "/manifold/ij/icons/manifold.png", getClass() );
   }
 }
