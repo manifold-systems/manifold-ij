@@ -270,7 +270,8 @@ public class ManProject
     
     _manInUse = ManLibraryChecker.instance().isUsingManifoldJars( _ijProject );
 
-    licenseCheck();
+// plugin is free now
+//    licenseCheck();
 
     if( !_manInUse )
     {
