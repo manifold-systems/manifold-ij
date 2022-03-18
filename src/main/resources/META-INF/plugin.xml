@@ -239,7 +239,9 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
     <![CDATA[
 <h3>Fixes & Features:</h3>
 <h4>
-The Manifold IntelliJ plugin is FREE now :)
+The Manifold IntelliJ plugin is FREE now :)<br>
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/345">#345</a>: Allow Jailbreak to work when casting
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/338">#338</a>: fix ManTL template issues that have piled up with recent JetBrains platform updates
 <br>

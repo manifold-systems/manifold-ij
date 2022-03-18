@@ -71,6 +71,11 @@ public class ManPsiResolveHelperImpl extends PsiResolveHelperImpl
     {
       type = ((PsiNewExpression)place.getContext()).getType();
     }
+    else if( place.getContext() instanceof PsiReferenceExpression )
+    {
+      PsiExpression qualifier = ((PsiReferenceExpression)place.getContext()).getQualifierExpression();
+      type = qualifier == null ? null : qualifier.getType();
+    }
 
     accessible = isJailbreakType( type );
 
