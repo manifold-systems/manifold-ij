@@ -115,10 +115,24 @@ public class ManResolveCache extends ResolveCache
           if( accessible == null || !accessible )
           {
             PsiReferenceExpression refExpr = (PsiReferenceExpression)ref;
-            if( refExpr.getQualifier() instanceof PsiReferenceExpression )
+            PsiElement qualifier = refExpr.getQualifier();
+            PsiType type = null;
+            if( qualifier instanceof PsiExpression )
             {
-              PsiType type = ((PsiReferenceExpression)refExpr.getQualifier()).getType();
+              type = ((PsiExpression)qualifier).getType();
+              if( isJailbreakType( type ) )
+              {
+                info.myAccessible = true;
+              }
+            }
 
+            while( qualifier instanceof PsiParenthesizedExpression )
+            {
+              qualifier = ((PsiParenthesizedExpression)qualifier).getExpression();
+            }
+
+            if( qualifier instanceof PsiReferenceExpression )
+            {
               if( refExpr instanceof PsiReferenceExpressionImpl )
               {
                 // field is not accessible, maybe it's an inferred property that matches an existing field and the
@@ -130,16 +144,10 @@ public class ManResolveCache extends ResolveCache
                   return resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
                 }
               }
-
-              if( isJailbreakType( type ) )
-              {
-                info.myAccessible = true;
-              }
             }
-            else if( refExpr.getQualifier() instanceof PsiMethodCallExpressionImpl )
+            else if( qualifier instanceof PsiMethodCallExpressionImpl )
             {
-              PsiMethodCallExpressionImpl qualifier = (PsiMethodCallExpressionImpl)refExpr.getQualifier();
-              String referenceName = qualifier.getMethodExpression().getReferenceName();
+              String referenceName = ((PsiMethodCallExpressionImpl)qualifier).getMethodExpression().getReferenceName();
               if( referenceName != null && referenceName.equals( "jailbreak" ) )
               {
                 // special case for jailbreak() extension
@@ -147,7 +155,6 @@ public class ManResolveCache extends ResolveCache
               }
               else
               {
-                PsiType type = refExpr.getType();
                 if( type != null && type.findAnnotation( Jailbreak.class.getTypeName() ) != null )
                 {
                   info.myAccessible = true;
@@ -155,6 +162,7 @@ public class ManResolveCache extends ResolveCache
               }
             }
           }
+
           if( info instanceof MethodCandidateInfo )
           {
             handleMethodSelfTypes( (MethodCandidateInfo)info, ref );
