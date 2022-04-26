@@ -44,6 +44,7 @@ import manifold.api.gen.SrcParameter;
 import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
+import manifold.ext.rt.api.ThisClass;
 import manifold.rt.api.Array;
 import manifold.api.type.ITypeManifold;
 import manifold.rt.api.SourcePosition;
@@ -406,7 +407,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     {
       PsiParameter[] extParams = m.getParameterList().getParameters();
       PsiParameter[] plantedParams = plantedMethod.getParameterList().getParameters();
-      int offset = getParamOffset( m );
+      int offset = getParamOffset( extParams );
       if( extParams.length - offset == plantedParams.length )
       {
         for( int i = offset; i < extParams.length; i++ )
@@ -426,12 +427,18 @@ public class ManAugmentProvider extends PsiAugmentProvider
     return null;
   }
 
-  private int getParamOffset( PsiMethod m )
+  private int getParamOffset( PsiParameter[] params )
   {
-    boolean isStaticExtension = Arrays.stream( m.getModifierList().getAnnotations() )
+    if( params.isEmpty() )
+    {
+      return 0;
+    }
+    boolean skipFirstParam = Arrays.stream( params[0].getAnnotations() )
       .anyMatch( anno ->
-        anno.getQualifiedName() != null && anno.getQualifiedName().equals( Extension.class.getTypeName() ) );
-    return isStaticExtension ? 0 : 1;
+        anno.getQualifiedName() != null &&
+          (anno.getQualifiedName().equals( This.class.getTypeName() ) ||
+           anno.getQualifiedName().equals( ThisClass.class.getTypeName() )) );
+    return skipFirstParam ? 1 : 0;
   }
 
   private void addModifier( PsiMethod psiMethod, ManLightMethodBuilder method, String modifier )
@@ -486,10 +493,11 @@ public class ManAugmentProvider extends PsiAugmentProvider
       srcMethod.addTypeVar( typeVar );
     }
 
+    boolean hasThisClassAnnotation = hasThisClassAnnotation( method );
     List<SrcParameter> params = method.getParameters();
-    for( int i = isInstanceExtensionMethod ? 1 : 0; i < params.size(); i++ )
+    for( int i = (isInstanceExtensionMethod || hasThisClassAnnotation) ? 1 : 0; i < params.size(); i++ )
     {
-      // exclude This param
+      // exclude @This or @ThisClass param
 
       SrcParameter param = params.get( i );
       srcMethod.addParam( param.getSimpleName(), param.getType() );
@@ -546,7 +554,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return true;
     }
 
-    return hasThisAnnotation( method, extendedType );
+    return hasThisAnnotation( method, extendedType ) || hasThisClassAnnotation( method );
   }
 
   private boolean isInstanceExtensionMethod( AbstractSrcMethod<?> method, String extendedType )
@@ -572,6 +580,20 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return false;
     }
     return param.getType().getName().equals( extendedType ) || isArrayExtension( param, extendedType );
+  }
+  private boolean hasThisClassAnnotation( AbstractSrcMethod<?> method )
+  {
+    List<SrcParameter> params = method.getParameters();
+    if( params.size() == 0 )
+    {
+      return false;
+    }
+    SrcParameter param = params.get( 0 );
+    if( !param.hasAnnotation( ThisClass.class ) )
+    {
+      return false;
+    }
+    return param.getType().getName().equals( Class.class.getTypeName() );
   }
 
   private boolean isArrayExtension( SrcParameter param, String extendedType )

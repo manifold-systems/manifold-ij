@@ -47,6 +47,7 @@ import java.util.List;
 import manifold.ExtIssueMsg;
 import manifold.ext.rt.api.Self;
 import manifold.ext.rt.api.This;
+import manifold.ext.rt.api.ThisClass;
 import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 
@@ -183,22 +184,21 @@ public class SelfUsageAnnotator implements Annotator
 
   private boolean verifySelfTypeSameAsEnclosing( PsiAnnotation psiAnno, AnnotationHolder holder, PsiType type, PsiMember member )
   {
-    if( !member.hasModifier( JvmModifier.STATIC ) )
-    {
-      // @Self is on an Instance method or field
-
-      PsiClass containingClass = ManifoldPsiClassAnnotator.getContainingClass( psiAnno );
-      verifyTypeSameAsEnclosingClass( psiAnno, type, containingClass, holder, false );
-      return true;
-    }
-    else if( member instanceof PsiMethod && isExtensionMethod( (PsiMethod)member ) )
+    if( member.hasModifier( JvmModifier.STATIC ) && member instanceof PsiMethod &&
+      isExtensionMethod( (PsiMethod)member ) )
     {
       // @Self is on an Extension method
 
       verifyTypeSameAsEnclosingClass( psiAnno, type, findExtendedClass( (PsiMethod)member ), holder, true );
-      return true;
     }
-    return false;
+    else
+    {
+      // @Self is on a normal method or field
+
+      PsiClass containingClass = ManifoldPsiClassAnnotator.getContainingClass( psiAnno );
+      verifyTypeSameAsEnclosingClass( psiAnno, type, containingClass, holder, false );
+    }
+    return true;
   }
 
   private PsiClass findExtendedClass( PsiMethod method )
@@ -222,7 +222,8 @@ public class SelfUsageAnnotator implements Annotator
       {
         PsiModifierList modifierList = param.getModifierList();
         if( modifierList != null &&
-            modifierList.findAnnotation( This.class.getName() ) != null )
+          (modifierList.findAnnotation( This.class.getName() ) != null ||
+            modifierList.findAnnotation( ThisClass.class.getName() ) != null) )
         {
           return true;
         }

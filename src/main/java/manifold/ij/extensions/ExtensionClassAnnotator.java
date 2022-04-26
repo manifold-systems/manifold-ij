@@ -50,6 +50,7 @@ import manifold.ext.ExtensionManifold;
 import manifold.ext.rt.api.Extension;
 import manifold.ext.rt.api.Structural;
 import manifold.ext.rt.api.This;
+import manifold.ext.rt.api.ThisClass;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
@@ -115,12 +116,17 @@ public class ExtensionClassAnnotator implements Annotator
     {
       PsiParameter param = parameters[i];
       PsiModifierList modifierList = param.getModifierList();
-      if( modifierList != null && modifierList.findAnnotation( This.class.getName() ) != null )
+      boolean This;
+      if( modifierList != null &&
+        ((This = (modifierList.findAnnotation( This.class.getName() ) != null)) ||
+          modifierList.findAnnotation( ThisClass.class.getName() ) != null) )
       {
         thisAnnoFound = true;
 
         if( i != 0 )
         {
+          // @This and @ThisClass must be on first parameter
+
           TextRange range = new TextRange( param.getTextRange().getStartOffset(),
                                            param.getTextRange().getEndOffset() );
           holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_THIS_FIRST.get() )
@@ -132,8 +138,10 @@ public class ExtensionClassAnnotator implements Annotator
         {
           PsiClass extendClassSym = JavaPsiFacade.getInstance( element.getProject() )
             .findClass( extendedClassName, GlobalSearchScope.allScope( element.getProject() ) );
-          if( extendedClassName.equals( Array.class.getTypeName() ) )
+          if( This && extendedClassName.equals( Array.class.getTypeName() ) )
           {
+            // @This must have Object type for array extension
+
             if( !(param.getType() instanceof PsiClassType) || !((PsiClassType)param.getType()).getName().equals( Object.class.getSimpleName() ) )
             {
               TextRange range = new TextRange( param.getTextRange().getStartOffset(),
@@ -143,16 +151,37 @@ public class ExtensionClassAnnotator implements Annotator
                 .create();
             }
           }
-          else if( extendClassSym != null &&
+          else if( This && extendClassSym != null &&
               !isStructuralInterface( extendClassSym ) && // an extended class could be made a structural interface which results in Object as @This param, ignore this
               !isAssignableFromRaw( element.getProject(), extendClassSym, param.getType() ) &&
               (ManifoldPsiClassAnnotator.getContainingClass( extendClassSym ) == null || !isEnclosing( extendClassSym, param )) ) // handle inner class extensions
           {
+            // @This must have enclosing class type
+
             TextRange range = new TextRange( param.getTextRange().getStartOffset(),
                                              param.getTextRange().getEndOffset() );
             holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_EXPECTING_TYPE_FOR_THIS.get( extendedClassName ) )
               .range( range )
               .create();
+          }
+          else if( !This && extendClassSym != null )
+          {
+            // @ThisClass must have Class type
+
+            boolean valid = param.getType() instanceof PsiClassType;
+            if( valid )
+            {
+              PsiClass psiClass = PsiTypesUtil.getPsiClass( param.getType() );
+              valid = psiClass != null && Class.class.getName().equals( psiClass.getQualifiedName() );
+            }
+            if( !valid )
+            {
+              TextRange range = new TextRange( param.getTextRange().getStartOffset(),
+                param.getTextRange().getEndOffset() );
+              holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_EXPECTING_CLASS_TYPE_FOR_THISCLASS.get( extendedClassName ) )
+                .range( range )
+                .create();
+            }
           }
         }
       }
@@ -161,6 +190,8 @@ public class ExtensionClassAnnotator implements Annotator
                Modifier.isPublic( (int)modifiers ) &&
                getRawTypeName( param ).equals( extendedClassName ) )
       {
+        // Warn if it looks like @This is missing
+
         TextRange range = new TextRange( param.getTextRange().getStartOffset(),
                                          param.getTextRange().getEndOffset() );
         holder.newAnnotation( HighlightSeverity.WARNING, ExtIssueMsg.MSG_MAYBE_MISSING_THIS.get() )
@@ -435,7 +466,8 @@ public class ExtensionClassAnnotator implements Annotator
       PsiModifierList mods = (PsiModifierList)element;
       PsiAnnotation annotation;
       if( (annotation = mods.findAnnotation( Extension.class.getName() )) != null ||
-          (annotation = mods.findAnnotation( This.class.getName() )) != null)
+          (annotation = mods.findAnnotation( This.class.getName() )) != null ||
+          (annotation = mods.findAnnotation( ThisClass.class.getName() )) != null)
       {
         TextRange range = new TextRange( annotation.getTextRange().getStartOffset(),
                                          annotation.getTextRange().getEndOffset() );
