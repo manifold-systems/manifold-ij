@@ -27,37 +27,8 @@ public class JailbreakUsageAnnotator implements Annotator
       return;
     }
 
-    prohibitCompoundAssignmentUse( element, holder );
     prohibitPostfixAssignmentUse( element, holder );
     prohibitPrefixAssignmentUse( element, holder );
-  }
-
-  private void prohibitCompoundAssignmentUse( PsiElement element, AnnotationHolder holder )
-  {
-    if( !(element instanceof PsiAssignmentExpression) )
-    {
-      return;
-    }
-
-    PsiExpression lhs = ((PsiAssignmentExpression)element).getLExpression();
-    if( !(lhs instanceof PsiReferenceExpression) )
-    {
-      return;
-    }
-
-    PsiExpression qualifier = ((PsiReferenceExpression)lhs).getQualifierExpression();
-    if( qualifier == null || qualifier.getType() == null ||
-        qualifier.getType().findAnnotation( Jailbreak.class.getTypeName() ) == null )
-    {
-      return;
-    }
-
-    if( ((PsiAssignmentExpression)element).getOperationTokenType() != JavaTokenType.EQ )
-    {
-      holder.newAnnotation( HighlightSeverity.ERROR, ExtIssueMsg.MSG_COMPOUND_OP_NOT_ALLOWED_REFLECTION.get() )
-        .range( ((PsiAssignmentExpression)element).getOperationSign().getTextRange() )
-        .create();
-    }
   }
 
   private void prohibitPostfixAssignmentUse( PsiElement element, AnnotationHolder holder )

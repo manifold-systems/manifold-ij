@@ -25,6 +25,7 @@ import manifold.ext.ExtensionManifold;
 import manifold.ext.rt.api.Extension;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ext.rt.api.This;
+import manifold.ext.rt.api.ThisClass;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.util.ReflectUtil;
@@ -120,7 +121,9 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
       for( PsiParameter psiParam : method.getParameterList().getParameters() )
       {
         PsiModifierList modifierList = psiParam.getModifierList();
-        if( modifierList != null && modifierList.findAnnotation( This.class.getName() ) != null )
+        if( modifierList != null &&
+          (modifierList.findAnnotation( This.class.getName() ) != null ||
+            modifierList.findAnnotation( ThisClass.class.getName() ) != null) )
         {
           String fqn = getExtendedFqn( extensionClass );
           PsiClass extendedClass = fqn == null
