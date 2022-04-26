@@ -11,6 +11,7 @@ import com.intellij.psi.PsiParameter;
 import manifold.ExtIssueMsg;
 import manifold.ext.rt.api.Extension;
 import manifold.ext.rt.api.This;
+import manifold.ext.rt.api.ThisClass;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.ManPsiUtil;
 import org.jetbrains.annotations.NotNull;
@@ -83,7 +84,8 @@ public class MiscAnnotator implements Annotator
     {
       PsiModifierList modifierList = param.getModifierList();
       if( modifierList != null &&
-          modifierList.findAnnotation( This.class.getName() ) != null )
+        (modifierList.findAnnotation( This.class.getName() ) != null ||
+          modifierList.findAnnotation( ThisClass.class.getName() ) != null) )
       {
         return true;
       }

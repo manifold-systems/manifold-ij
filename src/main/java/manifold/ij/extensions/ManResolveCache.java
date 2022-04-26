@@ -235,10 +235,10 @@ public class ManResolveCache extends ResolveCache
   private void handleMethodSelfTypes( MethodCandidateInfo info, PsiPolyVariantReference ref )
   {
     PsiMethod method = info.getElement();
-    if( isStatic( method ) )
-    {
-      return;
-    }
+//    if( isStatic( method ) )
+//    {
+//      return;
+//    }
 
     if( !hasSelfAnnotation( method ) )
     {
