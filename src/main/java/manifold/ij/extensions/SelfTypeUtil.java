@@ -1,25 +1,11 @@
 package manifold.ij.extensions;
 
 import com.intellij.lang.jvm.annotation.JvmAnnotationConstantValue;
-import com.intellij.psi.EmptySubstitutor;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiArrayType;
-import com.intellij.psi.PsiCapturedWildcardType;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiElementFactory;
-import com.intellij.psi.PsiExpression;
-import com.intellij.psi.PsiPrimitiveType;
-import com.intellij.psi.PsiReferenceExpression;
-import com.intellij.psi.PsiSubstitutor;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeMapper;
-import com.intellij.psi.PsiTypeParameter;
-import com.intellij.psi.PsiWildcardType;
-import com.intellij.psi.TypeAnnotationProvider;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.impl.source.PsiImmediateClassType;
+import com.intellij.psi.impl.source.tree.java.PsiReferenceExpressionImpl;
+import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.refactoring.util.RefactoringChangeUtil;
 import com.intellij.util.ArrayUtil;
 import java.util.Arrays;
@@ -68,8 +54,15 @@ public class SelfTypeUtil
     else
     {
       qualifierType = qualifier.getType();
+      if( qualifierType == null && qualifier instanceof PsiReferenceExpressionImpl )
+      {
+        PsiElement element = ((PsiReferenceExpressionImpl)qualifier).resolve();
+        if( element instanceof PsiClass )
+        {
+          qualifierType = PsiTypesUtil.getClassType( (PsiClass)element );
+        }
+      }
     }
-
     return type.accept( new SelfReplacer( qualifierType ) );
   }
 

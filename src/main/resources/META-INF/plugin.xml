@@ -1,3 +1,22 @@
+<!--
+  ~ /*
+  ~  * Copyright (c) 2022 - Manifold Systems LLC
+  ~  *
+  ~  * Licensed under the Apache License, Version 2.0 (the "License");
+  ~  * you may not use this file except in compliance with the License.
+  ~  * You may obtain a copy of the License at
+  ~  *
+  ~  *       http://www.apache.org/licenses/LICENSE-2.0
+  ~  *
+  ~  * Unless required by applicable law or agreed to in writing, software
+  ~  * distributed under the License is distributed on an "AS IS" BASIS,
+  ~  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  * See the License for the specific language governing permissions and
+  ~  * limitations under the License.
+  ~  */
+  ~
+  -->
+
 <idea-plugin>
   <id>manifold.ij</id>
   <name>Manifold</name>
@@ -240,6 +259,14 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
 <h3>Fixes & Features:</h3>
 <h4>
 The Manifold IntelliJ plugin is FREE now :)<br>
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/355">#355</a>: fix instanceof Pattern Matching within if-statement condition (Cannot Find Symbol)
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/351">#351</a>: Increment/decrement operators on properties cause compiler exception in Java 11+
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/349">#349</a>: Support non-public extension methods
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/348">#348</a>: @ThisClass extension method receiver, provides the calling class of static method
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/345">#345</a>: Allow Jailbreak to work when casting
 <br>
