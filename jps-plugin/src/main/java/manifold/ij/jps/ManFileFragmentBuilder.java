@@ -41,8 +41,11 @@ import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.messages.ProgressMessage;
 
 /**
- * Registers fragment .class files to correspond with enclosing .java file so that .class files are cleaned between
- * builds.
+ * Registers fragment .class files (and tuple .class files) to correspond with enclosing .java file so that .class files
+ * are cleaned between builds.
+ * <p/>
+ * Note, this builder covers more than fragments. It generally handles types that are defined withing .java files, which
+ * at this time includes fragments and tuples.
  */
 public class ManFileFragmentBuilder extends ModuleLevelBuilder
 {
@@ -109,7 +112,7 @@ public class ManFileFragmentBuilder extends ModuleLevelBuilder
   @Override
   public String getPresentableName()
   {
-    return "File Fragment Builder";
+    return "File fragment builder";
   }
 
   @Override

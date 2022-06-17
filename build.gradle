@@ -21,7 +21,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.util.concurrent.TimeUnit
 
 plugins {
-  id 'org.jetbrains.intellij' version '1.5.3'
+  id 'org.jetbrains.intellij' version '1.5.2'
 }
 
 description = 'Manifold :: IJ'

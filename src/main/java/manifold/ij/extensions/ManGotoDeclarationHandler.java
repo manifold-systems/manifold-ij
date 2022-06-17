@@ -198,8 +198,9 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     }
 
     if( facade != null && !facade.getRawFiles().isEmpty() &&
-        DarkJavaTypeManifold.FILE_EXTENSIONS.stream()
-          .anyMatch( ext -> ext.equalsIgnoreCase( facade.getRawFiles().get( 0 ).getVirtualFile().getExtension() ) ) )
+      facade.getRawFiles().get( 0 ).getVirtualFile() != null &&
+      DarkJavaTypeManifold.FILE_EXTENSIONS.stream()
+        .anyMatch( ext -> ext.equalsIgnoreCase( facade.getRawFiles().get( 0 ).getVirtualFile().getExtension() ) ) )
     {
       // DarkJava is Java
       return facade.getRawFiles().get( 0 ).findElementAt( resolve.getTextOffset() );

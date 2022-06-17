@@ -22,17 +22,16 @@ package manifold.ij.extensions;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiMethodReferenceExpression;
-import com.intellij.psi.PsiModifierList;
-import com.intellij.psi.PsiParameter;
+import com.intellij.psi.*;
 import manifold.ExtIssueMsg;
+import manifold.api.util.IssueMsg;
 import manifold.ext.rt.api.Extension;
 import manifold.ext.rt.api.This;
 import manifold.ext.rt.api.ThisClass;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.ManPsiUtil;
+import manifold.internal.javac.ManAttr;
+import manifold.rt.api.util.ManClassUtil;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -49,6 +48,38 @@ public class MiscAnnotator implements Annotator
     }
 
     verifyMethodRefNotExtension( element, holder );
+    verifyMethodDefNotAbstractAuto( element, holder );
+  }
+
+  private void verifyMethodDefNotAbstractAuto( PsiElement element, AnnotationHolder holder )
+  {
+    if( !(element instanceof PsiMethod) )
+    {
+      return;
+    }
+
+    PsiMethod meth = (PsiMethod)element;
+    if( isAutoMethod( meth.getReturnTypeElement() ) &&
+      meth.getModifierList().hasModifierProperty( PsiModifier.ABSTRACT ) )
+    {
+      // 'auto' return type inference not allowed on abstract methods
+
+      holder.newAnnotation( HighlightSeverity.ERROR,
+          IssueMsg.MSG_AUTO_CANNOT_RETURN_AUTO_FROM_ABSTRACT_METHOD.get() )
+        .range( meth.getReturnTypeElement().getTextRange() )
+        .create();
+    }
+  }
+
+  private boolean isAutoMethod( PsiTypeElement typeElement )
+  {
+    if( typeElement == null )
+    {
+      return false;
+    }
+    String fqn = typeElement.getText();
+    return fqn.equals( ManClassUtil.getShortClassName( ManAttr.AUTO_TYPE ) ) ||
+      fqn.equals( ManAttr.AUTO_TYPE );
   }
 
   private void verifyMethodRefNotExtension( PsiElement element, AnnotationHolder holder )

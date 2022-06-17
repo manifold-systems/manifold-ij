@@ -49,7 +49,17 @@ public class ManPsiAssignmentExpressionImpl extends PsiAssignmentExpressionImpl 
     {
       return null;
     }
-    return JavaResolveCache.getInstance( getProject() ).getType( this, e -> lExpression.getType() );
+    return JavaResolveCache.getInstance( getProject() ).getType( this, e -> {
+      try
+      {
+        return lExpression.getType();
+      }
+      catch( PsiInvalidElementAccessException ieae )
+      {
+        // we make all the proper checks in the if-statement above, how this becomes invalid is a mystery
+        return null;
+      }
+    } );
   }
 
   @Override
