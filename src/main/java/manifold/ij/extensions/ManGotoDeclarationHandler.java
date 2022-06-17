@@ -179,6 +179,7 @@ public class ManGotoDeclarationHandler extends GotoDeclarationHandlerBase
     }
 
     if( facade != null && !facade.getRawFiles().isEmpty() &&
+      facade.getRawFiles().get( 0 ).getVirtualFile() != null &&
         DarkJavaTypeManifold.FILE_EXTENSIONS.stream()
           .anyMatch( ext -> ext.equalsIgnoreCase( facade.getRawFiles().get( 0 ).getVirtualFile().getExtension() ) ) )
     {

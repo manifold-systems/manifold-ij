@@ -7,7 +7,6 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiJavaFileBaseImpl;
-import com.intellij.psi.impl.source.html.HtmlFileImpl;
 import com.intellij.psi.impl.source.tree.java.PsiArrayAccessExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiAssignmentExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
@@ -17,7 +16,6 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiUtil;
 import java.util.List;
 
-import manifold.api.fs.def.JavaFileImpl;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
@@ -26,6 +24,8 @@ import manifold.ij.core.ManPsiPrefixExpressionImpl;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.template.psi.ManTemplateJavaFile;
 import manifold.ij.util.ManPsiUtil;
+import manifold.internal.javac.ManAttr;
+import manifold.rt.api.util.ManClassUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -89,6 +89,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     if( filterTemplateUnnecessarySemicolon( hi, file ) )
+    {
+      return false;
+    }
+
+    if( filterCallToToStringOnArray( hi, file ) )
     {
       return false;
     }
@@ -172,6 +177,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     if( filterAnyAnnoTypeError( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterIncompatibleReturnType( hi, elem, firstElem ) )
     {
       return false;
     }
@@ -320,17 +330,31 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterArrayTypeExpected( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
   {
     PsiArrayAccessExpressionImpl arrayAccess;
-    return elem.getParent() instanceof PsiArrayAccessExpressionImpl &&
-      (arrayAccess = (PsiArrayAccessExpressionImpl)elem.getParent()) != null &&
+    return (arrayAccess = getArrayAccessExpression( elem )) != null &&
       hi.getDescription().startsWith( "Array type expected" ) &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_GET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
   }
+
+  private PsiArrayAccessExpressionImpl getArrayAccessExpression( PsiElement elem )
+  {
+    if( elem == null )
+    {
+      return null;
+    }
+
+    if( elem instanceof PsiArrayAccessExpressionImpl )
+    {
+      return (PsiArrayAccessExpressionImpl)elem;
+    }
+
+    return getArrayAccessExpression( elem.getParent() );
+  }
+
   private boolean filterVariableExpected( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
   {
     PsiArrayAccessExpressionImpl arrayAccess;
-    return elem.getParent() instanceof PsiArrayAccessExpressionImpl &&
-      (arrayAccess = (PsiArrayAccessExpressionImpl)elem.getParent()) != null &&
+    return (arrayAccess = getArrayAccessExpression( elem )) != null &&
       hi.getDescription().startsWith( "Variable expected" ) &&
       arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_SET,
@@ -344,16 +368,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    PsiElement elem = file.findElementAt( hi.getStartOffset() );
-    while( elem != null && !(elem instanceof PsiArrayAccessExpressionImpl) )
-    {
-      elem = elem.getParent();
-    }
-    if( elem == null )
+    PsiArrayAccessExpressionImpl arrayAccess = getArrayAccessExpression( file.findElementAt( hi.getStartOffset() ) );
+    if( arrayAccess == null )
     {
       return false;
     }
-    PsiArrayAccessExpressionImpl arrayAccess = (PsiArrayAccessExpressionImpl)elem;
     return arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_GET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
@@ -366,6 +385,14 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return elem instanceof PsiAnnotation &&
       hi.getDescription().startsWith( "Incompatible types" ) &&
       hi.getDescription().contains( manifold.rt.api.anno.any.class.getTypeName() );
+  }
+
+  private boolean filterIncompatibleReturnType( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    // filter method override "incompatible return type" error involving 'auto'
+
+    return elem.getText().equals( ManClassUtil.getShortClassName( ManAttr.AUTO_TYPE ) ) &&
+      hi.getDescription().contains( "incompatible return type" );
   }
 
   private boolean filterUnclosedComment( HighlightInfo hi, PsiElement firstElem )
@@ -386,6 +413,20 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       {
         ManModule manModule = ManProject.getModule( fileModule );
         return manModule.isExceptionsEnabled();
+      }
+    }
+    return false;
+  }
+
+  private boolean filterCallToToStringOnArray( @NotNull HighlightInfo hi, @Nullable PsiFile file )
+  {
+    if( hi.getDescription().contains( "Call to 'toString()' on array" ) )
+    {
+      Module fileModule = ManProject.getIjModule( file );
+      if( fileModule != null )
+      {
+        ManModule manModule = ManProject.getModule( fileModule );
+        return manModule.isExtEnabled();
       }
     }
     return false;

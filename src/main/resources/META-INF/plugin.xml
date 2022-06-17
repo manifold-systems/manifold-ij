@@ -241,6 +241,14 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
 <h4>
 The Manifold IntelliJ plugin is FREE now :)<br>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/375">#375</a>: Policy change: support only LTS versions of JDKs and the latest release
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/373">#373</a>: New Feature: multiple return types via `auto` and enhanced tuple expressions
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/372">#372</a>: New Feature: type-safe tuple expressions
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/371">#371</a>: New Feature: `auto` type inference for local vars, fields, and method return types
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/355">#355</a>: fix instanceof Pattern Matching within if-statement condition (Cannot Find Symbol)
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/351">#351</a>: Increment/decrement operators on properties cause compiler exception in Java 11+

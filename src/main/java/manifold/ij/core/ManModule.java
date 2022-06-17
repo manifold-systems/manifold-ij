@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import manifold.api.fs.IDirectory;
@@ -77,6 +78,27 @@ public class ManModule extends SimpleModule
   {
     return _typeManifoldClassLoader != null &&
       Arrays.stream( _typeManifoldClassLoader.getURLs() ).anyMatch( url -> url.toString().contains( jarName ) );
+  }
+
+  public void runWithLoader( Runnable code )
+  {
+    runWithLoader( () -> {code.run(); return null;});
+  }
+  public <R> R runWithLoader( Callable<R> code )
+  {
+    ClassLoader prior = Thread.currentThread().getContextClassLoader();
+    if( _typeManifoldClassLoader != null )
+    {
+      Thread.currentThread().setContextClassLoader( _typeManifoldClassLoader );
+    }
+    try
+    {
+      return code.call();
+    }
+    finally
+    {
+      Thread.currentThread().setContextClassLoader( prior );
+    }
   }
 
   @Override
@@ -250,19 +272,7 @@ public class ManModule extends SimpleModule
   public void loadRegistered( Set<ITypeManifold> sps )
   {
     initializeModuleClassLoader();
-    ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
-    if( _typeManifoldClassLoader != null )
-    {
-      Thread.currentThread().setContextClassLoader( _typeManifoldClassLoader );
-    }
-    try
-    {
-      super.loadRegistered( sps );
-    }
-    finally
-    {
-      Thread.currentThread().setContextClassLoader( oldLoader );
-    }
+    runWithLoader( () -> super.loadRegistered( sps ) );
   }
 
   private void initializeModuleClassLoader()

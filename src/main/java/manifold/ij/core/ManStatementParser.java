@@ -525,7 +525,15 @@ public class ManStatementParser extends StatementParser
   private PsiBuilder.Marker parseReturnStatement(PsiBuilder builder) {
     PsiBuilder.Marker statement = builder.mark();
     builder.advanceLexer();
-    myParser.getExpressionParser().parse(builder);
+    ExpressionParser expressionParser = myParser.getExpressionParser();
+    if( expressionParser instanceof ManExpressionParser )
+    {
+      ((ManExpressionParser)expressionParser).parseTupleOrExpr( builder, false );
+    }
+    else
+    {
+      expressionParser.parse( builder );
+    }
     semicolon(builder);
     done(statement, JavaElementType.RETURN_STATEMENT);
     return statement;
