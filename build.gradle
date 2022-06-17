@@ -124,7 +124,7 @@ runIde {
 
 patchPluginXml {
   sinceBuild = '213.0'
-  untilBuild = '221.*'
+  untilBuild = '222.*'
 }
 
 buildSearchableOptions {
