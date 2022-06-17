@@ -763,7 +763,6 @@ public class ManExpressionParser extends ExpressionParser {
 
   private PsiBuilder.Marker parseTupleOrLambdaOrParens( PsiBuilder builder, int mode )
   {
-    builder.setDebugMode( true );
     if( !BitUtil.isSet( mode, FORBID_LAMBDA_MASK ) )
     {
       final PsiBuilder.Marker lambda = parseLambdaAfterParenth( builder );
