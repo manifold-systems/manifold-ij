@@ -29,6 +29,7 @@ import static com.intellij.lang.PsiBuilderUtil.advance;
 import static com.intellij.lang.java.parser.JavaParserUtil.*;
 import static com.intellij.lang.java.parser.JavaParserUtil.emptyElement;
 import static com.intellij.psi.impl.source.tree.JavaElementType.BINARY_EXPRESSION;
+import static manifold.ij.core.ManElementType.TUPLE_VALUE_EXPRESSION;
 
 //Manifold: replace ExpressionsParser with ManExpressionParser to handle "binding" expressions. See parseBinary().
 public class ManExpressionParser extends ExpressionParser {
@@ -668,29 +669,7 @@ public class ManExpressionParser extends ExpressionParser {
     }
 
     if (tokenType == JavaTokenType.LPARENTH) {
-      if (CASE_LABEL.get(builder) != Boolean.TRUE) {
-        final PsiBuilder.Marker lambda = parseLambdaAfterParenth(builder);
-        if (lambda != null) {
-          return lambda;
-        }
-      }
-
-      final PsiBuilder.Marker parenth = builder.mark();
-      builder.advanceLexer();
-
-      final PsiBuilder.Marker inner = parse(builder);
-      if (inner == null) {
-        error(builder, JavaPsiBundle.message("expected.expression"));
-      }
-
-      if (!expect(builder, JavaTokenType.RPARENTH)) {
-        if (inner != null) {
-          error(builder, JavaPsiBundle.message("expected.rparen"));
-        }
-      }
-
-      parenth.done(JavaElementType.PARENTH_EXPRESSION);
-      return parenth;
+      return parseTupleOrLambdaOrParens( builder );
     }
 
     if (TYPE_START.contains(tokenType)) {
@@ -776,6 +755,116 @@ public class ManExpressionParser extends ExpressionParser {
     }
 
     return null;
+  }
+
+  private PsiBuilder.Marker parseTupleOrLambdaOrParens( PsiBuilder builder )
+  {
+    if (CASE_LABEL.get(builder) != Boolean.TRUE) {
+      final PsiBuilder.Marker lambda = parseLambdaAfterParenth(builder);
+      if (lambda != null) {
+        return lambda;
+      }
+    }
+
+    return parseTupleOrExpr( builder, true );
+  }
+
+  PsiBuilder.Marker parseTupleOrExpr( PsiBuilder builder, boolean requireParen )
+  {
+    final PsiBuilder.Marker parenth = builder.mark();
+    if( requireParen )
+    {
+      builder.advanceLexer();
+    }
+    int argCount = 0;
+    boolean colonFound = false;
+    PsiBuilder.Marker argWhole;
+    PsiBuilder.Marker arg;
+    while( true )
+    {
+      argWhole = builder.mark();
+      arg = builder.mark();
+      IElementType tokenType = builder.getTokenType();
+      if( tokenType == JavaTokenType.IDENTIFIER )
+      {
+        builder.advanceLexer();
+        tokenType = builder.getTokenType();
+        if( tokenType == JavaTokenType.COLON )
+        {
+          colonFound = true;
+          arg.drop();
+          builder.advanceLexer();
+          PsiBuilder.Marker labeledValue = parse( builder );
+          if( labeledValue == null )
+          {
+            error( builder, JavaPsiBundle.message( "expected.expression" ) );
+          }
+        }
+        else
+        {
+          arg.rollbackTo();
+          arg = parse( builder );
+          if( arg == null )
+          {
+            error( builder, JavaPsiBundle.message( "expected.expression" ) );
+          }
+        }
+      }
+      else
+      {
+        arg.rollbackTo();
+        arg = parse( builder );
+        if( arg == null )
+        {
+          error( builder, JavaPsiBundle.message( "expected.expression" ) );
+        }
+      }
+
+      tokenType = builder.getTokenType();
+
+      argCount++;
+
+      boolean comma = tokenType == JavaTokenType.COMMA;
+
+      if( argCount > 1 || colonFound || comma )
+      {
+        argWhole.done( TUPLE_VALUE_EXPRESSION );
+      }
+      else
+      {
+        argWhole.drop();
+      }
+
+      if( !comma )
+      {
+        break;
+      }
+
+      builder.advanceLexer();
+    }
+    if( requireParen && !expect( builder, JavaTokenType.RPARENTH ) )
+    {
+      if( argCount > 0 )
+      {
+        error( builder, JavaPsiBundle.message( "expected.rparen" ) );
+      }
+    }
+
+    if( requireParen )
+    {
+      parenth.done( argCount > 1 || colonFound ? ManElementType.TUPLE_EXPRESSION : JavaElementType.PARENTH_EXPRESSION );
+      return parenth;
+    }
+    else if( argCount > 1 || colonFound )
+    {
+      parenth.done( ManElementType.TUPLE_EXPRESSION );
+      return parenth;
+    }
+    else
+    {
+      parenth.drop();
+      return arg;
+    }
   }
 
   @NotNull

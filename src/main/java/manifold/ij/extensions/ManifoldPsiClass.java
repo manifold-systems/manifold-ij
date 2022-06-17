@@ -64,6 +64,14 @@ public class ManifoldPsiClass extends LightClass
         file.putUserData( ModuleUtil.KEY_MODULE, manModule.getIjModule() );
       }
     }
+    if( _files.isEmpty )
+    {
+      PsiFile containingFile = delegate.getContainingFile();
+      if( containingFile != null )
+      {
+        _files.add( containingFile );
+      }
+    }
     if( getContainingClass() == null )
     {
       delegate.getContainingFile().putUserData( KEY_MANIFOLD_PSI_CLASS, this );

@@ -149,7 +149,12 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
                                                             Key<CachedValue<List<E>>> key,
                                                             Consumer<LinkedHashMap<String, PsiMember>> augmenter )
   {
-    return CachedValuesManager.getCachedValue( psiClass, key, () -> {
+    return CachedValuesManager.getCachedValue( psiClass, key, () -> getListResult( psiClass, augmenter ) );
+  }
+
+  @NotNull
+  private static <E extends PsiElement> CachedValueProvider.Result<List<E>> getListResult( PsiExtensibleClass psiClass, Consumer<LinkedHashMap<String, PsiMember>> augmenter )
+  {
       LinkedHashMap<String, PsiMember> augFeatures = new LinkedHashMap<>();
       augmenter.accept( augFeatures );
       Set<PsiElement> hierarchy = new LinkedHashSet<>();
@@ -159,14 +164,13 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
       //noinspection unchecked
       return new CachedValueProvider.Result<>(
         new ArrayList<E>( (Collection<E>)augFeatures.values() ), hierarchy.toArray() );
-    } );
   }
 
   /**
    * Add the containing PsiFiles for the properties. This is necessary when inferring properties for a projected class
    * from a type manifold; changes to the corresponding resource files should invalidate the cache.
    */
-  private void addFilesOfNavigationElements( LinkedHashMap<String, PsiMember> augFeatures, Set<PsiElement> hierarchy )
+  private static void addFilesOfNavigationElements( LinkedHashMap<String, PsiMember> augFeatures, Set<PsiElement> hierarchy )
   {
     augFeatures.values().forEach( feature -> {
       PsiElement navigationElement = feature.getNavigationElement();
