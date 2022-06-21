@@ -260,6 +260,8 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
 <h4>
 The Manifold IntelliJ plugin is FREE now :)<br>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/376">#376</a>: Support an explicit typed variable having an implicit typed initializer expression
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/375">#375</a>: Policy change: support only LTS versions of JDKs and the latest release
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/373">#373</a>: New Feature: multiple return types via `auto` and enhanced tuple expressions
