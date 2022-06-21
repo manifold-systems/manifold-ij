@@ -820,7 +820,7 @@ public class ManExpressionParser extends ExpressionParser {
       {
         arg.rollbackTo();
         arg = parse( builder );
-        if( arg == null )
+        if( arg == null && requireParen )
         {
           error( builder, JavaPsiBundle.message( "expected.expression" ) );
         }
