@@ -690,6 +690,12 @@ public class ManAugmentProvider extends PsiAugmentProvider
   @Override
   protected boolean canInferType( @NotNull PsiTypeElement typeElement )
   {
+    if( !ManProject.isManifoldInUse( typeElement ) )
+    {
+      // Manifold jars are not used in the project
+      return false;
+    }
+
     String fqn = typeElement.getText();
     return fqn.equals( ManClassUtil.getShortClassName( ManAttr.AUTO_TYPE ) ) ||
       fqn.equals( ManAttr.AUTO_TYPE );
