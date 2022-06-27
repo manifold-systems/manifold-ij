@@ -176,13 +176,11 @@ public class ManApplicationLoadListener implements ApplicationLoadListener
 
   private void replaceJavaExpressionParser()
   {
-    ReflectUtil.field( JavaParser.INSTANCE, "myExpressionParser" ).set( new ManExpressionParser( JavaParser.INSTANCE ) );
+    ReflectUtil.field( JavaParser.class, "INSTANCE" ).setStatic( new ManJavaParser() );
     ReflectUtil.field( JavaElementType.BINARY_EXPRESSION, "myConstructor" ).set( (Supplier<?>)ManPsiBinaryExpressionImpl::new );
     ReflectUtil.field( JavaElementType.PREFIX_EXPRESSION, "myConstructor" ).set( (Supplier<?>)ManPsiPrefixExpressionImpl::new );
     ReflectUtil.field( JavaElementType.POSTFIX_EXPRESSION, "myConstructor" ).set( (Supplier<?>)ManPsiPostfixExpressionImpl::new );
     ReflectUtil.field( JavaElementType.ASSIGNMENT_EXPRESSION, "myConstructor" ).set( (Supplier<?>)ManPsiAssignmentExpressionImpl::new );
     ReflectUtil.field( JavaElementType.ARRAY_ACCESS_EXPRESSION, "myConstructor" ).set( (Supplier<?>)ManPsiArrayAccessExpressionImpl::new );
-
-    ReflectUtil.field( JavaParser.INSTANCE, "myStatementParser" ).set( new ManStatementParser( JavaParser.INSTANCE ) );
   }
 }

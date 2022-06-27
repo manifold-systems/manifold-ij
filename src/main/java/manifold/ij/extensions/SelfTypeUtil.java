@@ -143,8 +143,12 @@ public class SelfTypeUtil
               newType = ((PsiArrayType)newType).getComponentType();
 //            }
           }
-          PsiTypeParameter typeVar = psiClass.getTypeParameters()[i];
-          substitutor = substitutor.put( typeVar, newType );
+          PsiTypeParameter[] typeParameters = psiClass.getTypeParameters();
+          if( typeParameters.length > i ) // accounts for errant case where type doesn't have all its params
+          {
+            PsiTypeParameter typeVar = typeParameters[i];
+            substitutor = substitutor.put( typeVar, newType );
+          }
           i++;
         }
         classType = new PsiImmediateClassType( resolve.getElement(), substitutor );

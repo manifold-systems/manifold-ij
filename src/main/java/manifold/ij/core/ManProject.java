@@ -130,7 +130,7 @@ public class ManProject
     }
 
     ManProject manProject = getProject( project );
-    if( manProject == null )
+    if( manProject == null || !manProject.isManifoldInUse() )
     {
       return null;
     }
