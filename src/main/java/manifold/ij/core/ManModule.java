@@ -53,6 +53,7 @@ import manifold.ext.IExtensionClassProducer;
 import manifold.ij.fs.IjFile;
 import manifold.internal.host.SimpleModule;
 import manifold.strings.StringLiteralTemplateProcessor;
+import manifold.util.NecessaryEvilUtil;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -291,6 +292,7 @@ public class ManModule extends SimpleModule
   public void loadRegistered( Set<ITypeManifold> sps )
   {
     initializeModuleClassLoader();
+    NecessaryEvilUtil.bypassJava9Security( true );
     runWithLoader( () -> super.loadRegistered( sps ) );
   }
 
