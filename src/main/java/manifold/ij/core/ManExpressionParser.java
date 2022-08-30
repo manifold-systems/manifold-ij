@@ -33,6 +33,7 @@ import java.util.function.Function;
 
 import com.intellij.util.BitUtil;
 import manifold.ext.rt.api.Jailbreak;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.PropertyKey;
@@ -229,25 +230,6 @@ public class ManExpressionParser extends ExpressionParser {
     }
   }
 
-  @Nullable
-  private PsiBuilder.Marker parsePattern(final PsiBuilder builder) {
-    PsiBuilder.Marker pattern = builder.mark();
-    PsiBuilder.Marker patternVariable = builder.mark();
-    PsiBuilder.Marker type = myParser.getReferenceParser().parseType(builder, ReferenceParser.EAT_LAST_DOT | ReferenceParser.WILDCARD);
-    if (type == null) {
-      patternVariable.drop();
-      pattern.drop();
-      return null;
-    }
-    if (!expect(builder, JavaTokenType.IDENTIFIER)) {
-      patternVariable.drop();
-    } else {
-      patternVariable.done(JavaElementType.PATTERN_VARIABLE);
-    }
-    pattern.done(JavaElementType.TYPE_TEST_PATTERN);
-    return pattern;
-  }
-
   //Manifold: modify parseBinary() to handle binding expressions
   @Nullable
   private PsiBuilder.Marker parseBinary( final PsiBuilder builder, final ExprType type, final TokenSet ops, final int mode) {
@@ -395,8 +377,7 @@ public class ManExpressionParser extends ExpressionParser {
           expression.done(toCreate);
           return expression;
         }
-        @Jailbreak PatternParser patternParser = myParser.getPatternParser();
-        patternParser.parsePrimaryPattern(builder);
+        parsePrimaryPattern( builder );
       } else {
         final PsiBuilder.Marker right = parseExpression(builder, ExprType.SHIFT, mode);
         if (right == null) {
@@ -411,6 +392,23 @@ public class ManExpressionParser extends ExpressionParser {
     }
 
     return left;
+  }
+
+  //Manifold: IJ 2022.2.1 adds a boolean param to PatternParser#parsePrimaryPattern()
+  private void parsePrimaryPattern( PsiBuilder builder )
+  {
+    PatternParser patternParser = myParser.getPatternParser();
+    ReflectUtil.LiveMethodRef parsePrimaryPattern = ReflectUtil.WithNull.method(
+      patternParser, "parsePrimaryPattern", PsiBuilder.class, boolean.class );
+    if( parsePrimaryPattern != null )
+    {
+      parsePrimaryPattern.invoke( builder, false );
+    }
+    else
+    {
+      // prior to 2022.2.1 no boolean param
+      ReflectUtil.method( patternParser, "parsePrimaryPattern", PsiBuilder.class ).invoke( builder );
+    }
   }
 
   @Nullable
