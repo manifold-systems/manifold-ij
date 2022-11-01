@@ -59,8 +59,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ManApplicationLoadListener implements ApplicationLoadListener
 {
-  private static volatile boolean Initialized = false;
-
   // @Override in version 2022.x
   public void beforeApplicationLoaded( @NotNull Application application, @NotNull Path configPath )
   {
@@ -100,14 +98,15 @@ public class ManApplicationLoadListener implements ApplicationLoadListener
     connection.subscribe( ProjectManager.TOPIC,
       new ProjectManagerListener()
       {
-        @Override
-        public void projectOpened( @NotNull Project project )
-        {
-          initForAllProjects();
-
-          StartupManagerEx.getInstance( project ).registerStartupActivity( () ->
-            ApplicationManager.getApplication().runReadAction( () -> ManProject.manProjectFrom( project ).projectOpened() ) );
-        }
+//jetbrains deprecated, see ManStartupActivity
+//        @Override
+//        public void projectOpened( @NotNull Project project )
+//        {
+//          initForAllProjects();
+//
+//          StartupManagerEx.getInstance( project ).registerStartupActivity( () ->
+//            ApplicationManager.getApplication().runReadAction( () -> ManProject.manProjectFrom( project ).projectOpened() ) );
+//        }
 
         @Override
         public void projectClosed( @NotNull Project project )
@@ -120,37 +119,6 @@ public class ManApplicationLoadListener implements ApplicationLoadListener
         }
       } );
   }
-
-  /**
-   * Note the timing of calling this method is critical.  It must happen *after* the application has loaded, but before
-   * the first project loads. This used to happen during {@link com.intellij.openapi.components.ProjectComponent#initComponent},
-   * however JetBrains has deprecated components and there is no equivalent listener event (as far as I know).
-   */
-  public void initForAllProjects()
-  {
-    if( !Initialized )
-    {
-      synchronized( this )
-      {
-        if( !Initialized )
-        {
-          Initialized = true;
-          registerAnnotatorWithAllLanguages();
-        }
-      }
-    }
-  }
-
-  private void registerAnnotatorWithAllLanguages()
-  {
-    // effectively adds annotator to ALL languages
-    LanguageAnnotators.INSTANCE.addExplicitExtension( Language.ANY, new ManifoldPsiClassAnnotator() );
-
-    // add brace matcher to templates
-    LanguageBraceMatching.INSTANCE.addExplicitExtension( ManTemplateLanguage.INSTANCE,
-      new PairedBraceMatcherAdapter( new ManTemplateBraceMatcher(), ManTemplateLanguage.INSTANCE ) );
-  }
-
 
   /**
    * Override Java String literals to handle fragments

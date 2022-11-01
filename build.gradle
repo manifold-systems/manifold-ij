@@ -21,13 +21,13 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.util.concurrent.TimeUnit
 
 plugins {
-  id 'org.jetbrains.intellij' version '1.5.2'
+  id 'org.jetbrains.intellij' version '1.10.0-SNAPSHOT'
 }
 
 description = 'Manifold :: IJ'
 
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
@@ -43,9 +43,11 @@ allprojects {
     if(!System.getenv('CI')) {
       mavenLocal()
     }
-    mavenLocal()
     mavenCentral()
-    maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+    maven {
+      url 'https://oss.sonatype.org/content/repositories/snapshots/'
+    }
+    gradlePluginPortal()
   }
 
   // this test block fixes an IJ 2021.3 issue where it won't run tests
@@ -123,8 +125,8 @@ runIde {
 }
 
 patchPluginXml {
-  sinceBuild = '213.0'
-  untilBuild = '222.*'
+  sinceBuild = '223.0'
+  untilBuild = '223.*'
 }
 
 buildSearchableOptions {

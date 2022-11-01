@@ -17,5 +17,14 @@
  *
  */
 
+pluginManagement {
+    repositories {
+        maven {
+            url 'https://oss.sonatype.org/content/repositories/snapshots/'
+        }
+        gradlePluginPortal()
+    }
+}
+
 rootProject.name = 'manifold-ij'
 include 'jps-plugin'

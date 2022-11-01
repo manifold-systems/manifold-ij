@@ -31,6 +31,7 @@ import com.intellij.psi.impl.source.tree.java.PsiReferenceExpressionImpl;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.stubs.StubTextInconsistencyException;
 import com.intellij.psi.util.*;
 
 import java.util.*;
@@ -103,7 +104,18 @@ public class ManResolveCache extends ResolveCache
       return results;
     }
 
-    results = super.resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
+    try
+    {
+      results = super.resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
+    }
+    catch( StubTextInconsistencyException stie )
+    {
+      //todo: on the surface these don't appear to have any impact. _shrug_
+      // In any case tracking this down is a lost cause due to ProcessCanceledException, it's brutal. Maybe find a way to raise the timeout?
+      // For now avoiding the exception as it unnecessarily alarms users.
+      return ResolveResult.EMPTY_ARRAY;
+    }
+
     for( ResolveResult result: results )
     {
       if( result instanceof CandidateInfo )
