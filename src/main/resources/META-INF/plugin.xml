@@ -256,9 +256,16 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
 
   <change-notes>
     <![CDATA[
-<h3>Fixes & Features:</h3>
+<h3>Change notes:</h3>
 <h4>
-The Manifold IntelliJ plugin is FREE now :)<br>
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/393">#393</a>: Java 17+: fix $ escape char for string templates
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/392">#392</a>: Cast as raw generic type
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/387">#387</a>: Tree is null for module-info file, do not process
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/380">#380</a>: Fix regression involving fields as structurally equivalent to get/set methods
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/382">#382</a>: Fix instanceof pattern matching issue related to parser changes in latest IntelliJ release
 <br>
