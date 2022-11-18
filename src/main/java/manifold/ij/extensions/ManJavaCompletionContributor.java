@@ -19,14 +19,15 @@
 
 package manifold.ij.extensions;
 
-import com.intellij.codeInsight.completion.CompletionContributor;
-import com.intellij.codeInsight.completion.CompletionParameters;
-import com.intellij.codeInsight.completion.CompletionResult;
-import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
+import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.module.Module;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.light.LightRecordField;
+import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Consumer;
 import manifold.ij.core.ManModule;
@@ -50,8 +51,38 @@ public class ManJavaCompletionContributor extends CompletionContributor
       return;
     }
 
+    // Record fields are treated as public val properties
+    addRecordFields( parameters.getPosition(), result );
+
     result.runRemainingContributors( parameters, new MyConsumer( parameters, result ) );
     result.stopHere();
+  }
+
+  private void addRecordFields( @NotNull PsiElement position, CompletionResultSet result )
+  {
+    PsiElement parent = position.getParent();
+    if( parent instanceof PsiReferenceExpression )
+    {
+      PsiReferenceExpression ref = (PsiReferenceExpression)parent;
+      PsiElement qualifier = ref.getQualifier();
+      PsiType type = qualifier instanceof PsiReferenceExpression ? ((PsiReferenceExpression)qualifier).getType() : null;
+      if( type instanceof PsiClassReferenceType )
+      {
+        PsiClassReferenceType refType = (PsiClassReferenceType)type;
+        PsiClass psiClass = refType.resolve();
+        if( psiClass != null && psiClass.isRecord() )
+        {
+          for( PsiField c : psiClass.getFields() )
+          {
+            if( c instanceof LightRecordField )
+            {
+              result.addElement( LookupElementBuilder.create( c )
+                .withIcon( AllIcons.Nodes.PropertyRead ) );
+            }
+          }
+        }
+      }
+    }
   }
 
   static class MyConsumer implements Consumer<CompletionResult>
