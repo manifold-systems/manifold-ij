@@ -23,6 +23,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.light.LightRecordMember;
 import manifold.ext.props.rt.api.get;
 import manifold.ext.props.rt.api.set;
 import manifold.ext.props.rt.api.val;
@@ -105,6 +106,11 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if( filterRecordComponentPrivateAccess( hi, firstElem ) )
+    {
+      return false;
+    }
+
     return true;
   }
 
@@ -124,6 +130,22 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
 
     // 'final' applies to getter/setter *methods*, read-only properties declared as @val are "final"
     return !isReadOnly( field );
+  }
+
+  private boolean filterRecordComponentPrivateAccess( HighlightInfo hi, PsiElement firstElem )
+  {
+    String msg = hi.getDescription();
+    if( !msg.contains( " has private access" ) )
+    {
+      return false;
+    }
+
+    PsiElement expr = firstElem.getParent();
+    if( expr instanceof PsiReferenceExpression )
+    {
+      return ((PsiReferenceExpression)expr).resolve() instanceof LightRecordMember;
+    }
+    return false;
   }
 
   private boolean filterAbstractError( HighlightInfo hi, PsiElement firstElem )

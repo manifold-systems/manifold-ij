@@ -25,6 +25,7 @@ import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.impl.source.PsiJavaFileBaseImpl;
 import com.intellij.psi.impl.source.tree.java.PsiArrayAccessExpressionImpl;
 import com.intellij.psi.impl.source.tree.java.PsiAssignmentExpressionImpl;
@@ -201,6 +202,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     if( filterIncompatibleReturnType( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterForeachExpressionErrors( hi, elem, firstElem ) )
     {
       return false;
     }
@@ -412,6 +418,49 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
     return elem.getText().equals( ManClassUtil.getShortClassName( ManAttr.AUTO_TYPE ) ) &&
       hi.getDescription().contains( "incompatible return type" );
+  }
+
+  private boolean filterForeachExpressionErrors( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    if( !hi.getDescription().contains( "foreach not applicable to type" ) )
+    {
+      return false;
+    }
+
+    PsiForeachStatement foreachStmt = getForeachStmt( elem );
+    if( foreachStmt != null )
+    {
+      PsiExpression expr = foreachStmt.getIteratedValue();
+      if( expr.getType() instanceof PsiClassReferenceType refType )
+      {
+        PsiClass psiClass = refType.resolve();
+        if( psiClass != null )
+        {
+          for( PsiMethod m: psiClass.findMethodsByName( "iterator", true ) )
+          {
+            if( !m.hasParameters() && m.getReturnType() != null )
+            {
+              //## todo: determine the parameterized return type and match it against the foreach stmt's var type
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  private PsiForeachStatement getForeachStmt( PsiElement elem )
+  {
+    if( elem == null )
+    {
+      return null;
+    }
+    if( elem instanceof PsiForeachStatement )
+    {
+      return (PsiForeachStatement)elem;
+    }
+    return getForeachStmt( elem.getParent() );
   }
 
   private boolean filterUnclosedComment( HighlightInfo hi, PsiElement firstElem )
