@@ -259,6 +259,8 @@ a discussion, ask questions, provide feedback, etc. Someone is usually there to 
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/402">#402</a>: IntelliJ plugin: Exception when using tuple expressions without adding manifold-tuple/manifold-tuple-rt
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/396">#396</a>: Handle expression in foreach stmt where the expression type structurally implements Iterator and a class extension exists that makes Iterable structural
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/395">#395</a>: Support property inference on record types
@@ -492,8 +494,6 @@ Other minor fixes and improvements.
 
     <projectService serviceInterface="com.intellij.psi.impl.source.resolve.JavaResolveCache"
                     serviceImplementation="manifold.ij.extensions.ManJavaResolveCache" overrides="true"/>
-
-    <postStartupActivity implementation="manifold.ij.core.ManStartupActivity"/>
 
     <!--  These application service overrides facilitate file fragments -->
     <applicationService serviceInterface="com.intellij.lang.DefaultASTFactory"

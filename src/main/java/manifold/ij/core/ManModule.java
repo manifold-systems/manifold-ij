@@ -73,6 +73,7 @@ public class ManModule extends SimpleModule
   private LocklessLazyVar<Boolean> _isExceptionsEnabled;
   private LocklessLazyVar<Boolean> _isPreprocessorEnabled;
   private LocklessLazyVar<Boolean> _isPropertiesEnabled;
+  private LocklessLazyVar<Boolean> _isTuplesEnabled;
 
   ManModule( ManProject manProject, Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePath, List<IDirectory> outputPath, List<IDirectory> excludedDirs )
   {
@@ -92,6 +93,7 @@ public class ManModule extends SimpleModule
     _isExceptionsEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-exceptions" ) || hasJar( "manifold-all" ) );
     _isPreprocessorEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-preprocessor" ) || hasJar( "manifold-all" ) );
     _isPropertiesEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-props" ) || hasJar( "manifold-all" ) );
+    _isTuplesEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-tuple" ) || hasJar( "manifold-all" ) );
   }
 
   private boolean hasJar( String jarName )
@@ -462,6 +464,11 @@ public class ManModule extends SimpleModule
   public boolean isPropertiesEnabled()
   {
     return _isPropertiesEnabled.get();
+  }
+
+  public boolean isTuplesEnabled()
+  {
+    return _isTuplesEnabled.get();
   }
 
   public boolean isPluginArgEnabled( String pluginArg )

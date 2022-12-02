@@ -28,7 +28,9 @@ import manifold.api.util.IssueMsg;
 import manifold.ext.rt.api.Extension;
 import manifold.ext.rt.api.This;
 import manifold.ext.rt.api.ThisClass;
+import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.ij.core.ManPsiTupleExpression;
 import manifold.ij.util.ManPsiUtil;
 import manifold.internal.javac.ManAttr;
 import manifold.rt.api.util.ManClassUtil;
@@ -49,6 +51,26 @@ public class MiscAnnotator implements Annotator
 
     verifyMethodRefNotExtension( element, holder );
     verifyMethodDefNotAbstractAuto( element, holder );
+    verifyTuplesEnabled( element, holder );
+  }
+
+  private void verifyTuplesEnabled( PsiElement element, AnnotationHolder holder )
+  {
+    if( !(element instanceof ManPsiTupleExpression) )
+    {
+      return;
+    }
+
+    ManModule module = ManProject.getModule( element );
+    if( module != null && !module.isTuplesEnabled() )
+    {
+      // the module is not using manifold-tuple
+
+      holder.newAnnotation( HighlightSeverity.ERROR,
+          "Add manifold-tuple dependency to enable tuple expressions" )
+        .range( element.getTextRange() )
+        .create();
+    }
   }
 
   private void verifyMethodDefNotAbstractAuto( PsiElement element, AnnotationHolder holder )
