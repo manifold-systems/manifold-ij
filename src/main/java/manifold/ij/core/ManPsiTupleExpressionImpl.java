@@ -76,6 +76,17 @@ public class ManPsiTupleExpressionImpl extends ExpressionPsiElement implements M
       return null;
     }
 
+    if( ManProject.getModule( this ) == null )
+    {
+      return null;
+    }
+
+    ManModule module = ManProject.getModule( this );
+    if( module != null && !module.isTuplesEnabled() )
+    {
+      return null;
+    }
+
     String pkg = ManClassUtil.getPackage( topLevelClass.getQualifiedName() );
     String tupleTypeName = ManPsiUtil.runInTypeManifoldLoader( this,
       () -> ITupleTypeProvider.INSTANCE.get().makeType( pkg, makeTupleFieldMap() ) );
