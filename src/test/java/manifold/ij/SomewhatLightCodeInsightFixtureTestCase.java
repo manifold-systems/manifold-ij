@@ -127,7 +127,10 @@ public abstract class SomewhatLightCodeInsightFixtureTestCase extends UsefulTest
     try
     {
       // IJ v. 2022.x
-      fixtureBuilder = factory.createLightFixtureBuilder( getProjectDescriptor(), "hi" );
+//      fixtureBuilder = factory.createLightFixtureBuilder( getProjectDescriptor(), "hi" );
+      fixtureBuilder = (TestFixtureBuilder<IdeaProjectTestFixture>)ReflectUtil.method(
+          factory, "createLightFixtureBuilder", LightProjectDescriptor.class, String.class )
+        .invoke( getProjectDescriptor(), "hi" );
     }
     catch( Throwable t )
     {
