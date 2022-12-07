@@ -215,6 +215,10 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/404">#404</a>: Using ReflectUtil with JDK 19 cannot set value on static final field on an interface
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/403">#403</a>: Extension methods on inner classes not working in some cases
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/402">#402</a>: IntelliJ plugin: Exception when using tuple expressions without adding manifold-tuple/manifold-tuple-rt
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/396">#396</a>: Handle expression in foreach stmt where the expression type structurally implements Iterator and a class extension exists that makes Iterable structural
