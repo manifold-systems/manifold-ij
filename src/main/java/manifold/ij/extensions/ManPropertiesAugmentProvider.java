@@ -42,6 +42,7 @@ import manifold.ij.psi.ManLightModifierListImpl;
 import manifold.ij.psi.ManPsiElementFactory;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -168,21 +169,55 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
                                                             Key<CachedValue<List<E>>> key,
                                                             Consumer<LinkedHashMap<String, PsiMember>> augmenter )
   {
-    return CachedValuesManager.getCachedValue( psiClass, key, () -> getListResult( psiClass, augmenter ) );
+    return CachedValuesManager.getCachedValue( psiClass, key, new MyCachedValueProvider<E>( psiClass, augmenter ) );
   }
 
-  @NotNull
-  private static <E extends PsiElement> CachedValueProvider.Result<List<E>> getListResult( PsiExtensibleClass psiClass, Consumer<LinkedHashMap<String, PsiMember>> augmenter )
+  private static class MyCachedValueProvider<X extends PsiElement> implements CachedValueProvider<List<X>>
   {
-    LinkedHashMap<String, PsiMember> augFeatures = new LinkedHashMap<>();
-    augmenter.accept( augFeatures );
-    Set<PsiElement> hierarchy = new LinkedHashSet<>();
-    hierarchy.add( psiClass );
-    hierarchy.addAll( Arrays.asList( psiClass.getSupers() ) );
-    addFilesOfNavigationElements( augFeatures, hierarchy );
-    //noinspection unchecked
-    return new CachedValueProvider.Result<>(
-      new ArrayList<E>( (Collection<E>)augFeatures.values() ), hierarchy.toArray() );
+    private final SmartPsiElementPointer<PsiExtensibleClass> _psiClassPointer;
+    private final Consumer<LinkedHashMap<String, PsiMember>> _augmenter;
+
+    public MyCachedValueProvider( PsiExtensibleClass psiClass, Consumer<LinkedHashMap<String, PsiMember>> augmenter )
+    {
+      _psiClassPointer = SmartPointerManager.createPointer( psiClass );
+      _augmenter = augmenter;
+    }
+
+    @Override
+    public @Nullable Result<List<X>> compute()
+    {
+      LinkedHashMap<String, PsiMember> augFeatures = new LinkedHashMap<>();
+      _augmenter.accept( augFeatures );
+      Set<PsiElement> hierarchy = new LinkedHashSet<>();
+      PsiExtensibleClass psiClass = _psiClassPointer.getElement();
+      if( psiClass == null )
+      {
+        return new CachedValueProvider.Result<>( Collections.emptyList() );
+      }
+
+      hierarchy.add( psiClass );
+      hierarchy.addAll( Arrays.asList( psiClass.getSupers() ) );
+      addFilesOfNavigationElements( augFeatures, hierarchy );
+      //noinspection unchecked
+      return new CachedValueProvider.Result<>(
+        new ArrayList<X>( (Collection<X>)augFeatures.values() ), hierarchy.toArray() );
+    }
+
+    @Override
+    public int hashCode()
+    {
+      return Objects.hashCode( _psiClassPointer.getElement() );
+    }
+
+    @Override
+    public boolean equals( Object obj )
+    {
+      if( obj instanceof MyCachedValueProvider<?> )
+      {
+        return Objects.equals( ((MyCachedValueProvider<?>)obj)._psiClassPointer.getElement(), _psiClassPointer.getElement() );
+      }
+      return false;
+    }
   }
 
   /**
