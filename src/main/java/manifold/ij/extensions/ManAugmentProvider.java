@@ -30,6 +30,7 @@ import com.intellij.openapi.util.ModificationTracker;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.psi.augment.PsiAugmentProvider;
+import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.impl.source.resolve.graphInference.InferenceSession;
 import com.intellij.psi.impl.source.resolve.graphInference.PsiPolyExpressionUtil;
 import com.intellij.psi.infos.MethodCandidateInfo;
@@ -80,7 +81,7 @@ import static manifold.api.type.ContributorKind.Supplemental;
 public class ManAugmentProvider extends PsiAugmentProvider
 {
   static final Key<List<String>> KEY_MAN_INTERFACE_EXTENSIONS = new Key<>( "MAN_INTERFACE_EXTENSIONS" );
-  static final Key<CachedValue<? extends PsiElement>> KEY_CACHED_AUGMENTS = new Key<>( "CACHED_AUGMENTS" );
+  static final Key<CachedValue<List<PsiMethod>>> KEY_CACHED_AUGMENTS = new Key<>( "CACHED_AUGMENTS" );
 
   private final Map<Project, ExtensionClassPsiListener> _mapExtClassListeners = new ConcurrentHashMap<>();
 
@@ -110,12 +111,12 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return Collections.emptyList();
     }
 
-    if( !(element instanceof PsiClass) || !element.isValid() || !PsiMethod.class.isAssignableFrom( cls ) )
+    if( !(element instanceof PsiExtensibleClass) || !element.isValid() || !PsiMethod.class.isAssignableFrom( cls ) )
     {
       return Collections.emptyList();
     }
 
-    PsiClass psiClass = (PsiClass)element;
+    PsiExtensibleClass psiClass = (PsiExtensibleClass)element;
 
     if( psiClass.getLanguage() != JavaLanguage.INSTANCE &&
       psiClass.getLanguage().getBaseLanguage() != JavaLanguage.INSTANCE )
@@ -129,16 +130,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
       return Collections.emptyList();
     }
 
-    String name = ((PsiClass)element).getName();
-    if( name != null && name.equals( "__Array__" ) )
-    {
-      className = Array.class.getTypeName();
-    }
-
-    String fqnClass = className;
-
-    Project project = psiClass.getProject();
-    addPsiExtensionChangeListener( project );
+    addPsiExtensionChangeListener( psiClass.getProject() );
 
 //Without caching:
 //    LinkedHashMap<String, PsiMethod> augFeatures = new LinkedHashMap<>();
@@ -146,16 +138,24 @@ public class ManAugmentProvider extends PsiAugmentProvider
 //    return new ArrayList<>( (Collection<? extends E>) augFeatures.values() );
 
 //With caching:
-    ReflectUtil.FieldRef DO_CHECKS = ReflectUtil.field( "com.intellij.util.CachedValueStabilityChecker", "DO_CHECKS" );
-    try { if( (boolean)DO_CHECKS.getStatic() ) DO_CHECKS.setStatic( false ); } catch( Throwable ignore ){}
     //noinspection unchecked
     return CachedValuesManager.getCachedValue( psiClass,
       (Key)KEY_CACHED_AUGMENTS,
       (CachedValueProvider<List<E>>)() -> {
+        String fqn = ((PsiClass)element).getName();
+        if( fqn != null && fqn.equals( "__Array__" ) )
+        {
+          fqn = Array.class.getTypeName();
+        }
+        else
+        {
+          fqn = ((PsiExtensibleClass)element).getQualifiedName();
+        }
+
         LinkedHashMap<String, PsiMethod> augFeatures = new LinkedHashMap<>();
-        List<Object> dependencies = new ArrayList<>( addMethods( fqnClass, psiClass, augFeatures ) );
+        List<Object> dependencies = new ArrayList<>( addMethods( fqn, psiClass, augFeatures ) );
         dependencies.add( psiClass );
-        dependencies.add( new MyModificationTracker( fqnClass, project ) );
+        dependencies.add( new MyModificationTracker( fqn, psiClass.getProject() ) );
         //noinspection unchecked
         return new CachedValueProvider.Result<>(
           new ArrayList<E>( (Collection<E>)augFeatures.values() ), dependencies.toArray() );

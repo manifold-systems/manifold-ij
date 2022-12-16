@@ -215,6 +215,10 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/406">#406</a>: IntelliJ plugin: "Incorrect CachedValue use:" errors reported with property and extension caching
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/405">#405</a>: IntelliJ plugin: many issues in latest 2022.3 release with renaming files/elements, other related issues
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/404">#404</a>: Using ReflectUtil with JDK 19 cannot set value on static final field on an interface
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/403">#403</a>: Extension methods on inner classes not working in some cases
@@ -465,6 +469,8 @@ Other minor fixes and improvements.
 
 <!--    disabled indefinitely, inconsistent wrt downloading manifold etc.  -->
 <!--    <frameworkSupport implementation="manifold.ij.extensions.ManSupportProvider"/>-->
+
+    <postStartupActivity implementation="manifold.ij.core.ManStartupActivity" order="first"/>
 
 <!--    <framework.type implementation="manifold.ij.extensions.ManFrameworkType"/>-->
     <java.elementFinder implementation="manifold.ij.extensions.ManTypeFinder" order="first, before java"/>
