@@ -340,7 +340,7 @@ public class ManResolveCache extends ResolveCache
 
     for( PsiTypeParameter tv: refMethod.getTypeParameters() )
     {
-      method.withTypeParameter( tv );
+      method.withTypeParameterDirect( tv );
     }
 
     PsiParameter[] parameters = refMethod.getParameterList().getParameters();
