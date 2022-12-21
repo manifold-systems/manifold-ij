@@ -27,6 +27,7 @@ import com.intellij.psi.impl.CheckUtil;
 import com.intellij.psi.impl.light.*;
 import com.intellij.util.IncorrectOperationException;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import manifold.ij.core.ManModule;
 import org.jetbrains.annotations.NotNull;
@@ -36,8 +37,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ManLightMethodBuilderImpl extends LightMethodBuilder implements ManLightMethodBuilder
 {
-  private ManModule _module;
-  private Set<ManModule> _modules;
+  private final ManModule _module;
+  private final Set<ManModule> _modules;
   private LightIdentifier _nameIdentifier;
   private ASTNode _astNode;
 
@@ -133,10 +134,18 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
     return this;
   }
 
+//  @Override
+//  public ManLightMethodBuilder withTypeParameter( PsiTypeParameter typeParameter )
+//  {
+//    addTypeParameter( typeParameter );
+//    return this;
+//  }
+
   @Override
-  public ManLightMethodBuilder withTypeParameter( PsiTypeParameter typeParameter )
+  public ManLightMethodBuilder withTypeParameterDirect( PsiTypeParameter typeParameter )
   {
-    addTypeParameter( typeParameter );
+    LightTypeParameterListBuilder typeParameterList = (LightTypeParameterListBuilder)getTypeParameterList();
+    Objects.requireNonNull( typeParameterList ).addParameter( typeParameter );
     return this;
   }
 

@@ -215,6 +215,12 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/409">#409</a>: Intellij plugin: fix generic extension method type parameter inference regression
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/408">#408</a>: Support Valhalla EA Jdk releases
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/407">#407</a>: Fix compile error using latest JDK 20 EA release (build 28)
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/406">#406</a>: IntelliJ plugin: "Incorrect CachedValue use:" errors reported with property and extension caching
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/405">#405</a>: IntelliJ plugin: many issues in latest 2022.3 release with renaming files/elements, other related issues

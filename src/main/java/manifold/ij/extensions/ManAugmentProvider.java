@@ -363,7 +363,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
 
       for( PsiTypeParameter tv : refMethod.getTypeParameters() )
       {
-        method.withTypeParameter( tv );
+        method.withTypeParameterDirect( tv );
       }
 
       PsiParameter[] parameters = refMethod.getParameterList().getParameters();
