@@ -475,10 +475,10 @@ Other minor fixes and improvements.
 
 <!--    disabled indefinitely, inconsistent wrt downloading manifold etc.  -->
 <!--    <frameworkSupport implementation="manifold.ij.extensions.ManSupportProvider"/>-->
+<!--    <framework.type implementation="manifold.ij.extensions.ManFrameworkType"/>-->
 
     <postStartupActivity implementation="manifold.ij.core.ManStartupActivity" order="first"/>
 
-<!--    <framework.type implementation="manifold.ij.extensions.ManFrameworkType"/>-->
     <java.elementFinder implementation="manifold.ij.extensions.ManTypeFinder" order="first, before java"/>
     <java.shortNamesCache implementation="manifold.ij.extensions.ManShortNamesCache"/>
     <gotoDeclarationHandler implementation="manifold.ij.extensions.ManGotoDeclarationHandler"/>
