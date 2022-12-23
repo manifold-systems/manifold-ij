@@ -215,6 +215,8 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/400">#400</a>: Support getter/setter extension methods as property access for manifold-props
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/409">#409</a>: Intellij plugin: fix generic extension method type parameter inference regression
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/408">#408</a>: Support Valhalla EA Jdk releases
