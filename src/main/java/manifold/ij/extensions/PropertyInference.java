@@ -22,6 +22,7 @@ package manifold.ij.extensions;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.util.Key;
 import com.intellij.psi.*;
+import com.intellij.psi.augment.PsiAugmentProvider;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.util.PsiUtil;
 import manifold.ext.props.rt.api.*;
@@ -31,6 +32,7 @@ import manifold.ij.psi.ManPsiElementFactory;
 import manifold.rt.api.util.ManStringUtil;
 import manifold.rt.api.util.Pair;
 import manifold.rt.api.util.ReservedWordMapping;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
@@ -66,7 +68,7 @@ class PropertyInference
   {
     Map<String, Set<PropAttrs>> fromGetter = new HashMap<>();
     Map<String, Set<PropAttrs>> fromSetter = new HashMap<>();
-    for( PsiMethod psiMethod : psiClass.getOwnMethods() )
+    for( PsiMethod psiMethod : getMethodsForClass( psiClass ) )
     {
       gatherCandidates( psiMethod, fromGetter, fromSetter );
     }
@@ -74,6 +76,25 @@ class PropertyInference
     handleVars( fromGetter, fromSetter );
     handleVals( fromGetter, fromSetter );
     handleWos( fromGetter, fromSetter );
+  }
+
+  @NotNull
+  private static List<PsiMethod> getMethodsForClass( PsiExtensibleClass psiClass )
+  {
+    List<PsiMethod> methods = new ArrayList<>( psiClass.getOwnMethods() );
+
+    // add extension methods, we need any potential getter/setter extension methods
+    for( @NotNull PsiAugmentProvider p: PsiAugmentProvider.EP_NAME.getPoint().getExtensionList() )
+    {
+      if( p instanceof ManAugmentProvider )
+      {
+        List<PsiMethod> extMethods = ((ManAugmentProvider)p).getAugments( psiClass, PsiMethod.class, null );
+        methods.addAll( extMethods );
+        break;
+      }
+    }
+
+    return methods;
   }
 
   private void gatherCandidates( PsiMethod m, Map<String, Set<PropAttrs>> fromGetter, Map<String, Set<PropAttrs>> fromSetter )
