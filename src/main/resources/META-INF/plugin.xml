@@ -215,6 +215,10 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/412">#412</a>: "Variable expected" error involving multidimensional index operator in assignment
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/411">#411</a>: Intermittent "Incorrect CachedValue use" errors
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/400">#400</a>: Support getter/setter extension methods as property access for manifold-props
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/409">#409</a>: Intellij plugin: fix generic extension method type parameter inference regression
