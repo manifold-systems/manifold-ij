@@ -50,15 +50,14 @@ public class ManPsiAssignmentExpressionImpl extends PsiAssignmentExpressionImpl 
       return null;
     }
     return JavaResolveCache.getInstance( getProject() ).getType( this, e -> {
-      try
+      // must refetch lExpr for caching purposes, do NOT capture lExpression here
+      PsiExpression lExpr = PsiUtil.deparenthesizeExpression( getLExpression() );
+      if( lExpr == null || lExpr.getManager() == null || !lExpr.isValid() ||
+        !(lExpr instanceof PsiReferenceExpression || lExpr instanceof PsiArrayAccessExpression) )
       {
-        return lExpression.getType();
-      }
-      catch( PsiInvalidElementAccessException ieae )
-      {
-        // we make all the proper checks in the if-statement above, how this becomes invalid is a mystery
         return null;
       }
+      return lExpr.getType();
     } );
   }
 
