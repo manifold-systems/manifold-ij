@@ -378,8 +378,13 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterVariableExpected( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
   {
-    PsiArrayAccessExpressionImpl arrayAccess;
-    return (arrayAccess = getArrayAccessExpression( elem )) != null &&
+    PsiArrayAccessExpressionImpl arrayAccess = null;
+    for( PsiElement csr = getArrayAccessExpression( elem ); csr instanceof PsiArrayAccessExpressionImpl; csr = csr.getParent() )
+    {
+      // use outermost index expression e.g., matrix[x][y] = 6
+      arrayAccess = (PsiArrayAccessExpressionImpl)csr;
+    }
+    return arrayAccess != null &&
       hi.getDescription().startsWith( "Variable expected" ) &&
       arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_SET,
