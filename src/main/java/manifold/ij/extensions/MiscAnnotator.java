@@ -19,6 +19,7 @@
 
 package manifold.ij.extensions;
 
+import com.intellij.ide.highlighter.JavaHighlightingColors;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
@@ -35,6 +36,7 @@ import manifold.ij.util.ManPsiUtil;
 import manifold.internal.javac.ManAttr;
 import manifold.rt.api.util.ManClassUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Annotator for miscellaneous errors & warnings
@@ -49,9 +51,46 @@ public class MiscAnnotator implements Annotator
       return;
     }
 
+    highlightAutoAsKeyword( element, holder );
+
     verifyMethodRefNotExtension( element, holder );
     verifyMethodDefNotAbstractAuto( element, holder );
     verifyTuplesEnabled( element, holder );
+  }
+
+  private void highlightAutoAsKeyword( PsiElement element, AnnotationHolder holder )
+  {
+    if( element instanceof PsiJavaCodeReferenceElement )
+    {
+      String text = element.getText();
+      if( !text.equals( "auto" ) && !text.endsWith( ".auto" ) )
+      {
+        return;
+      }
+      if( !isExtEnabled( element ) )
+      {
+        return;
+      }
+
+      @Nullable PsiElement psiClass = ((PsiJavaCodeReferenceElement)element).resolve();
+      if( psiClass instanceof PsiClass )
+      {
+        String qname = ((PsiClass)psiClass).getQualifiedName();
+        if( qname != null && qname.equals( "manifold.ext.rt.api.auto" ) )
+        {
+          holder.newAnnotation( HighlightSeverity.TEXT_ATTRIBUTES, "" )
+            .range( element.getTextRange() )
+            .textAttributes( JavaHighlightingColors.KEYWORD )
+            .create();
+        }
+      }
+    }
+  }
+
+  private static boolean isExtEnabled( PsiElement element )
+  {
+    ManModule module = ManProject.getModule( element );
+    return module != null && module.isExtEnabled();
   }
 
   private void verifyTuplesEnabled( PsiElement element, AnnotationHolder holder )
