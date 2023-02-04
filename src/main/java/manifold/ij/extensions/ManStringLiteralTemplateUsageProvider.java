@@ -110,6 +110,6 @@ public class ManStringLiteralTemplateUsageProvider implements ImplicitUsageProvi
     {
       elem = elem.getParent();
     }
-    return (PsiNamedElement)elem;
+    return elem instanceof PsiNamedElement ? (PsiNamedElement)elem : null;
   }
 }

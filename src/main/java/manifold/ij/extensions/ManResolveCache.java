@@ -21,6 +21,8 @@ package manifold.ij.extensions;
 
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.DumbService;
+import com.intellij.openapi.project.IndexNotReadyException;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.augment.PsiAugmentProvider;
@@ -114,6 +116,13 @@ public class ManResolveCache extends ResolveCache
       // In any case tracking this down is a lost cause due to ProcessCanceledException, it's brutal. Maybe find a way to raise the timeout?
       // For now avoiding the exception as it unnecessarily alarms users.
       return ResolveResult.EMPTY_ARRAY;
+    }
+    catch( IndexNotReadyException inre )
+    {
+      if( manModule != null && DumbService.isDumb( manModule.getIjProject() ) )
+      {
+        return ResolveResult.EMPTY_ARRAY;
+      }
     }
 
     for( ResolveResult result: results )
