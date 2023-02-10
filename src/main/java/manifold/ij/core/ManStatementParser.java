@@ -35,6 +35,7 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.ILazyParseableElementType;
 import com.intellij.psi.tree.TokenSet;
 import manifold.ext.rt.api.Jailbreak;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -292,7 +293,7 @@ public class ManStatementParser extends StatementParser {
     @Jailbreak ExpressionParser exprParser = myParser.getExpressionParser();
     return exprParser instanceof ManExpressionParser
      ? ((ManExpressionParser)exprParser).parseAssignment( builder, 0, lhs )
-      : exprParser.parseAssignment( builder, 0 );
+      : (PsiBuilder.Marker)ReflectUtil.method( exprParser, "parseAssignment", PsiBuilder.class, int.class ).invoke( builder, 0 );
   }
 
   private static boolean isStmtYieldToken(@NotNull PsiBuilder builder, IElementType tokenType) {

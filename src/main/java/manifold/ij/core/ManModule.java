@@ -62,18 +62,19 @@ import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
  */
 public class ManModule extends SimpleModule
 {
-  private ManProject _manProject;
-  private Module _ijModule;
-  private List<Dependency> _dependencies;
-  private List<IDirectory> _excludedDirs;
+  private final ManProject _manProject;
+  private final Module _ijModule;
+  private final List<Dependency> _dependencies;
+  private final List<IDirectory> _excludedDirs;
   private URLClassLoader _typeManifoldClassLoader;
-  private LocklessLazyVar<List<ManModule>> _modulesDependingOnMe;
-  private LocklessLazyVar<Boolean> _isExtEnabled;
-  private LocklessLazyVar<Boolean> _isStringsEnabled;
-  private LocklessLazyVar<Boolean> _isExceptionsEnabled;
-  private LocklessLazyVar<Boolean> _isPreprocessorEnabled;
-  private LocklessLazyVar<Boolean> _isPropertiesEnabled;
-  private LocklessLazyVar<Boolean> _isTuplesEnabled;
+  private final LocklessLazyVar<List<ManModule>> _modulesDependingOnMe;
+  private final LocklessLazyVar<Boolean> _isExtEnabled;
+  private final LocklessLazyVar<Boolean> _isStringsEnabled;
+  private final LocklessLazyVar<Boolean> _isExceptionsEnabled;
+  private final LocklessLazyVar<Boolean> _isPreprocessorEnabled;
+  private final LocklessLazyVar<Boolean> _isPropertiesEnabled;
+  private final LocklessLazyVar<Boolean> _isDelegationEnabled;
+  private final LocklessLazyVar<Boolean> _isTuplesEnabled;
 
   ManModule( ManProject manProject, Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePath, List<IDirectory> outputPath, List<IDirectory> excludedDirs )
   {
@@ -93,6 +94,7 @@ public class ManModule extends SimpleModule
     _isExceptionsEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-exceptions" ) || hasJar( "manifold-all" ) );
     _isPreprocessorEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-preprocessor" ) || hasJar( "manifold-all" ) );
     _isPropertiesEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-props" ) || hasJar( "manifold-all" ) );
+    _isDelegationEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-delegation" ) || hasJar( "manifold-all" ) );
     _isTuplesEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-tuple" ) || hasJar( "manifold-all" ) );
   }
 
@@ -464,6 +466,11 @@ public class ManModule extends SimpleModule
   public boolean isPropertiesEnabled()
   {
     return _isPropertiesEnabled.get();
+  }
+
+  public boolean isDelegationEnabled()
+  {
+    return _isDelegationEnabled.get();
   }
 
   public boolean isTuplesEnabled()

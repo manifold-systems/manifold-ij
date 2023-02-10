@@ -267,6 +267,31 @@ public class ManProject
     return modules.values().stream().anyMatch( m -> m.isPropertiesEnabled() );
   }
 
+  public static boolean isDelegationEnabledInAnyModules( PsiElement element )
+  {
+    ManProject manProject = ManProject.manProjectFrom( element.getProject() );
+    if( manProject == null )
+    {
+      return false;
+    }
+    return manProject.isDelegationEnabledInAnyModules();
+  }
+
+  public boolean isDelegationEnabledInAnyModules()
+  {
+    if( !isManifoldInUse() )
+    {
+      return false;
+    }
+
+    Map<Module, ManModule> modules = getModules();
+    if( modules == null )
+    {
+      return false;
+    }
+    return modules.values().stream().anyMatch( m -> m.isDelegationEnabled() );
+  }
+
   public boolean isPreprocessorEnabledInAnyModules()
   {
     if( !isManifoldInUse() )
