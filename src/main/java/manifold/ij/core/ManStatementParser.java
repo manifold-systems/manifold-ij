@@ -293,8 +293,10 @@ public class ManStatementParser extends StatementParser {
     @Jailbreak ExpressionParser exprParser = myParser.getExpressionParser();
     return exprParser instanceof ManExpressionParser
      ? ((ManExpressionParser)exprParser).parseAssignment( builder, 0, lhs )
-      //todo: in 2023 EA they changed the ExpressionParser, calling parseAssignmentForbiddingLambda() for now
-      : exprParser.parseAssignmentForbiddingLambda( builder );
+      //todo: in 2023 EA they changed the ExpressionParser, calling
+      : exprParser.useNewImplementation
+        ? exprParser.myNewExpressionParser.parse( builder, 0 )
+        : exprParser.myOldExpressionParser.jailbreak().parseAssignment( builder, 0 );
   }
 
   private static boolean isStmtYieldToken(@NotNull PsiBuilder builder, IElementType tokenType) {

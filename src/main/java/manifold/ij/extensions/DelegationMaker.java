@@ -20,9 +20,6 @@
 package manifold.ij.extensions;
 
 import com.intellij.codeInsight.generation.GenerateMembersUtil;
-import com.intellij.diagnostic.PluginException;
-import com.intellij.lang.annotation.AnnotationBuilder;
-import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.lang.jvm.annotation.*;
 import com.intellij.openapi.project.Project;
@@ -55,14 +52,14 @@ public class DelegationMaker
 {
   private static final ThreadLocal<Set<String>> _reenter = ThreadLocal.withInitial( () -> new HashSet<>() );
 
-  private final AnnotationHolder _holder;
+  private final ManDelegationAnnotator.Info _issueInfo;
   private final LinkedHashMap<String, PsiMember> _augFeatures;
   private final PsiExtensibleClass _psiClass;
   private final ClassInfo _classInfo;
 
-  static void checkDelegation( PsiExtensibleClass psiClass, AnnotationHolder holder )
+  static void checkDelegation( PsiExtensibleClass psiClass, ManDelegationAnnotator.Info issueInfo )
   {
-    new DelegationMaker( psiClass, holder ).generateOrCheck();
+    new DelegationMaker( psiClass, issueInfo ).generateOrCheck();
   }
   static void generateMethods( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
   {
@@ -90,9 +87,9 @@ public class DelegationMaker
     }
   }
 
-  private DelegationMaker( PsiExtensibleClass psiClass, AnnotationHolder holder )
+  private DelegationMaker( PsiExtensibleClass psiClass, ManDelegationAnnotator.Info issueInfo )
   {
-    this( psiClass, holder, null );
+    this( psiClass, issueInfo, null );
   }
 
   private DelegationMaker( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
@@ -100,10 +97,10 @@ public class DelegationMaker
     this( psiClass, null, augFeatures );
   }
 
-  private DelegationMaker( PsiExtensibleClass psiClass, AnnotationHolder holder, LinkedHashMap<String, PsiMember> augFeatures )
+  private DelegationMaker( PsiExtensibleClass psiClass, ManDelegationAnnotator.Info issueInfo, LinkedHashMap<String, PsiMember> augFeatures )
   {
     _psiClass = psiClass;
-    _holder = holder;
+    _issueInfo = issueInfo;
     _augFeatures = augFeatures;
     _classInfo = new ClassInfo( psiClass );
   }
@@ -176,15 +173,28 @@ public class DelegationMaker
   private void addLinkedInterfaces( PsiAnnotation linkAnno, ClassInfo classInfo, PsiField field )
   {
     ArrayList<PsiClassType> interfaces = new ArrayList<>();
-    boolean share = getInterfacesFromLinkAnno( linkAnno, interfaces );
-    if( interfaces.isEmpty() )
+    ArrayList<PsiClassType> fromAnno = new ArrayList<>();
+    boolean share = getInterfacesFromLinkAnno( linkAnno, fromAnno );
+    if( fromAnno.isEmpty() )
     {
       interfaces.addAll( getCommonInterfaces( classInfo, field.getType() ) );
+      if( interfaces.isEmpty() )
+      {
+        reportError( field, MSG_NO_INTERFACES.get( field.getType().getPresentableText(), classInfo._classDecl.getQualifiedName() ) );
+      }
     }
-
-    if( interfaces.isEmpty() )
+    else
     {
-      reportError( field, MSG_NO_INTERFACES.get( field.getType().getPresentableText(), classInfo._classDecl.getQualifiedName() ) );
+      for( PsiClassType iface : fromAnno )
+      {
+        Set<PsiClassType> commonInterfaces = getCommonInterfaces( classInfo, iface );
+        if( commonInterfaces.isEmpty() )
+        {
+          reportError( linkAnno, MSG_NO_INTERFACES.get( iface.getPresentableText(), classInfo._classDecl.getQualifiedName() ) );
+        }
+        interfaces.addAll( commonInterfaces );
+      }
+      verifyFieldTypeSatisfiesAnnoTypes( field, interfaces );
     }
 
     if( share )
@@ -195,6 +205,19 @@ public class DelegationMaker
     }
 
     classInfo.getLinks().put( field, new LinkInfo( field, interfaces, share ) );
+  }
+
+  private void verifyFieldTypeSatisfiesAnnoTypes( PsiField field, ArrayList<PsiClassType> interfaces )
+  {
+    for( PsiClassType t: interfaces )
+    {
+      if( !t.isAssignableFrom( field.getType() ) )
+      {
+        PsiTypeElement typeElement = field.getTypeElement();
+        reportError( typeElement == null ? field : typeElement, MSG_FIELD_TYPE_NOT_ASSIGNABLE_TO.get(
+          field.getType().getPresentableText(), t.getPresentableText() ) );
+      }
+    }
   }
 
   private boolean getInterfacesFromLinkAnno( PsiAnnotation linkAnno, ArrayList<PsiClassType> interfaces )
@@ -255,21 +278,21 @@ public class DelegationMaker
     }
   }
 
-  private Set<PsiClassType> getCommonInterfaces( ClassInfo ci, @NotNull PsiType fieldType )
+  private Set<PsiClassType> getCommonInterfaces( ClassInfo ci, @NotNull PsiType fieldIface )
   {
-    if( !(fieldType instanceof PsiClassType) )
+    if( !(fieldIface instanceof PsiClassType) )
     {
       return Collections.emptySet();
     }
 
-    PsiClass fieldPsiClass = ((PsiClassType)fieldType).resolve();
+    PsiClass fieldPsiClass = ((PsiClassType)fieldIface).resolve();
     if( fieldPsiClass == null )
     {
       return Collections.emptySet();
     }
 
     ArrayList<PsiClassType> linkFieldInterfaces = new ArrayList<>();
-    findAllInterfaces( fieldType, new HashSet<>(), linkFieldInterfaces );
+    findAllInterfaces( fieldIface, new HashSet<>(), linkFieldInterfaces );
 
     if( fieldPsiClass.isInterface() && fieldPsiClass.hasAnnotation( Structural.class.getTypeName() ) )
     {
@@ -653,7 +676,7 @@ public class DelegationMaker
 
   private boolean shouldCheck()
   {
-    return _holder != null;
+    return _issueInfo != null;
   }
 
   private void reportError( PsiElement elem, String msg )
@@ -675,18 +698,7 @@ public class DelegationMaker
 
     TextRange range = new TextRange( elem.getTextRange().getStartOffset(),
       elem.getTextRange().getEndOffset() );
-    AnnotationBuilder builder;
-    try
-    {
-      builder = _holder.newAnnotation( severity, msg )
-        .range( range );
-    }
-    catch( PluginException e )
-    {
-      // out of range of element being annotated, oh well
-      return;
-    }
-    builder.create();
+    _issueInfo.addIssue( severity, msg, range );
   }
 
   private class ClassInfo

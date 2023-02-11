@@ -243,9 +243,24 @@ public class ManModule extends SimpleModule
   {
     Set<ITypeManifold> result = Collections.emptySet();
     Module moduleForFile = ModuleUtilCore.findModuleForFile( ((IjFile)file.getPhysicalFile()).getVirtualFile(), project );
-    Collection<ManModule> modules = moduleForFile == null
-                                    ? ManProject.manProjectFrom( project ).getModules().values()
-                                    : ManProject.getModule( moduleForFile )._modulesDependingOnMe.get();
+    Collection<ManModule> modules;
+    if( moduleForFile == null )
+    {
+      modules = ManProject.manProjectFrom( project ).getModules().values();
+    }
+    else
+    {
+      ManModule module = ManProject.getModule( moduleForFile );
+      if( module != null )
+      {
+        modules = module._modulesDependingOnMe.get();
+      }
+      else
+      {
+        return result;
+      }
+    }
+
     for( ManModule m: modules )
     {
       Set<ITypeManifold> res = m.findTypeManifoldsFor( file, include );
