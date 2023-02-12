@@ -46,7 +46,7 @@ public interface ManLightMethodBuilder extends PsiMethod
 
   ManLightMethodBuilder withException( String fqName );
 
-//  ManLightMethodBuilder withTypeParameter( PsiTypeParameter typeParameter );
+  ManLightMethodBuilder withTypeParameter( PsiTypeParameter typeParameter );
   /**
    * Uses {@code typeParameter} directly instead of wrapping it in a light type parameter.
    * This appears to be necessary for most PSI method injection/extension/replacement code

@@ -53,6 +53,8 @@ import static manifold.ij.extensions.DelegationMaker.generateMethods;
  */
 public class ManDelegationAugmentProvider extends PsiAugmentProvider
 {
+  static final Key<CachedValue<List<PsiMethod>>> KEY_CACHED_DELEGATION_AUGMENTS = new Key<>( "KEY_CACHED_DELEGATION_AUGMENTS" );
+
   @SuppressWarnings( "deprecation" )
   @NotNull
   public <E extends PsiElement> List<E> getAugments( @NotNull PsiElement element, @NotNull Class<E> cls )
@@ -101,31 +103,31 @@ public class ManDelegationAugmentProvider extends PsiAugmentProvider
     }
 
 // Not cached:
-    LinkedHashMap<String, PsiMember> augFeatures = new LinkedHashMap<>();
-
-    if( PsiMethod.class.isAssignableFrom( cls ) )
-    {
-      addMethods( psiClass, augFeatures );
-    }
-
-    //noinspection unchecked
-    return new ArrayList<>( (Collection<? extends E>)augFeatures.values() );
-
-// Cached:
-//    ReflectUtil.FieldRef DO_CHECKS = ReflectUtil.field( "com.intellij.util.CachedValueStabilityChecker", "DO_CHECKS" );
-//    try { if( (boolean)DO_CHECKS.getStatic() ) DO_CHECKS.setStatic( false ); } catch( Throwable ignore ){}
+//    LinkedHashSet<PsiMember> augFeatures = new LinkedHashSet<>();
+//
 //    if( PsiMethod.class.isAssignableFrom( cls ) )
 //    {
-//      //noinspection unchecked
-//      return getCachedAugments( psiClass, (Key)KEY_CACHED_PROP_METHOD_AUGMENTS,
-//        augFeatures -> addMethods( psiClass, augFeatures ) );
+//      addMethods( psiClass, augFeatures );
 //    }
-//    return Collections.emptyList();
+//
+//    //noinspection unchecked
+//    return new ArrayList<>( (Collection<? extends E>)augFeatures );
+
+// Cached:
+    ReflectUtil.FieldRef DO_CHECKS = ReflectUtil.field( "com.intellij.util.CachedValueStabilityChecker", "DO_CHECKS" );
+    try { if( (boolean)DO_CHECKS.getStatic() ) DO_CHECKS.setStatic( false ); } catch( Throwable ignore ){}
+    if( PsiMethod.class.isAssignableFrom( cls ) )
+    {
+      //noinspection unchecked
+      return getCachedAugments( psiClass, (Key)KEY_CACHED_DELEGATION_AUGMENTS,
+        augFeatures -> addMethods( psiClass, augFeatures ) );
+    }
+    return Collections.emptyList();
   }
 
   private <E extends PsiElement> List<E> getCachedAugments( PsiExtensibleClass psiClass,
                                                             Key<CachedValue<List<E>>> key,
-                                                            Consumer<LinkedHashMap<String, PsiMember>> augmenter )
+                                                            Consumer<LinkedHashSet<PsiMember>> augmenter )
   {
     return CachedValuesManager.getCachedValue( psiClass, key, new MyCachedValueProvider<E>( psiClass, augmenter ) );
   }
@@ -133,9 +135,9 @@ public class ManDelegationAugmentProvider extends PsiAugmentProvider
   private static class MyCachedValueProvider<X extends PsiElement> implements CachedValueProvider<List<X>>
   {
     private final SmartPsiElementPointer<PsiExtensibleClass> _psiClassPointer;
-    private final Consumer<LinkedHashMap<String, PsiMember>> _augmenter;
+    private final Consumer<LinkedHashSet<PsiMember>> _augmenter;
 
-    public MyCachedValueProvider( PsiExtensibleClass psiClass, Consumer<LinkedHashMap<String, PsiMember>> augmenter )
+    public MyCachedValueProvider( PsiExtensibleClass psiClass, Consumer<LinkedHashSet<PsiMember>> augmenter )
     {
       _psiClassPointer = SmartPointerManager.createPointer( psiClass );
       _augmenter = augmenter;
@@ -144,7 +146,7 @@ public class ManDelegationAugmentProvider extends PsiAugmentProvider
     @Override
     public @Nullable Result<List<X>> compute()
     {
-      LinkedHashMap<String, PsiMember> augFeatures = new LinkedHashMap<>();
+      LinkedHashSet<PsiMember> augFeatures = new LinkedHashSet<>();
       _augmenter.accept( augFeatures );
       Set<PsiElement> hierarchy = new LinkedHashSet<>();
       PsiExtensibleClass psiClass = _psiClassPointer.getElement();
@@ -157,7 +159,7 @@ public class ManDelegationAugmentProvider extends PsiAugmentProvider
       hierarchy.addAll( Arrays.asList( psiClass.getSupers() ) );
       //noinspection unchecked
       return new Result<>(
-        new ArrayList<X>( (Collection<X>)augFeatures.values() ), hierarchy.toArray() );
+        new ArrayList<X>( (Collection<X>)augFeatures ), hierarchy.toArray() );
     }
 
     @Override
@@ -177,7 +179,7 @@ public class ManDelegationAugmentProvider extends PsiAugmentProvider
     }
   }
 
-  private void addMethods( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
+  private void addMethods( PsiExtensibleClass psiClass, LinkedHashSet<PsiMember> augFeatures )
   {
     if( psiClass instanceof ClsClassImpl )
     {

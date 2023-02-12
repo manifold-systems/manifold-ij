@@ -134,12 +134,12 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
     return this;
   }
 
-//  @Override
-//  public ManLightMethodBuilder withTypeParameter( PsiTypeParameter typeParameter )
-//  {
-//    addTypeParameter( typeParameter );
-//    return this;
-//  }
+  @Override
+  public ManLightMethodBuilder withTypeParameter( PsiTypeParameter typeParameter )
+  {
+    addTypeParameter( typeParameter );
+    return this;
+  }
 
   @Override
   public ManLightMethodBuilder withTypeParameterDirect( PsiTypeParameter typeParameter )
@@ -195,6 +195,16 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
   {
     final StringBuilder builder = new StringBuilder();
     builder.append( getAllModifierProperties( (LightModifierList)getModifierList() ) );
+    if( getTypeParameterList().getTypeParameters().length > 0 )
+    {
+      builder.append( '<' );
+      for( PsiTypeParameter p: getTypeParameterList().getTypeParameters() )
+      {
+        builder.append( p.getText() ).append( ',' );
+      }
+      builder.deleteCharAt( builder.length() - 1 );
+      builder.append( '>' );
+    }
     PsiType returnType = getReturnType();
     if( null != returnType )
     {

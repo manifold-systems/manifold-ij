@@ -53,7 +53,7 @@ public class DelegationMaker
   private static final ThreadLocal<Set<String>> _reenter = ThreadLocal.withInitial( () -> new HashSet<>() );
 
   private final ManDelegationAnnotator.Info _issueInfo;
-  private final LinkedHashMap<String, PsiMember> _augFeatures;
+  private final LinkedHashSet<PsiMember> _augFeatures;
   private final PsiExtensibleClass _psiClass;
   private final ClassInfo _classInfo;
 
@@ -61,7 +61,7 @@ public class DelegationMaker
   {
     new DelegationMaker( psiClass, issueInfo ).generateOrCheck();
   }
-  static void generateMethods( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
+  static void generateMethods( PsiExtensibleClass psiClass, LinkedHashSet<PsiMember> augFeatures )
   {
     String qname = psiClass.getQualifiedName();
     if( qname == null )
@@ -92,12 +92,12 @@ public class DelegationMaker
     this( psiClass, issueInfo, null );
   }
 
-  private DelegationMaker( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
+  private DelegationMaker( PsiExtensibleClass psiClass, LinkedHashSet<PsiMember> augFeatures )
   {
     this( psiClass, null, augFeatures );
   }
 
-  private DelegationMaker( PsiExtensibleClass psiClass, ManDelegationAnnotator.Info issueInfo, LinkedHashMap<String, PsiMember> augFeatures )
+  private DelegationMaker( PsiExtensibleClass psiClass, ManDelegationAnnotator.Info issueInfo, LinkedHashSet<PsiMember> augFeatures )
   {
     _psiClass = psiClass;
     _issueInfo = issueInfo;
@@ -107,7 +107,7 @@ public class DelegationMaker
 
   private void generateOrCheck()
   {
-    processPartClass();
+    processLinks();
 
     if( _classInfo.hasLinks() )
     {
@@ -128,20 +128,15 @@ public class DelegationMaker
         {
           for( PsiMethod m : li._generatedMethods )
           {
-            _augFeatures.put( m.getName(), m );
+            _augFeatures.add( m );
           }
         }
       }
     }
   }
 
-  private void processPartClass()
+  private void processLinks()
   {
-    if( !isPartClass( _psiClass ) )
-    {
-      return;
-    }
-
     checkSuperclass( _psiClass );
 
     for( PsiField field : _psiClass.getOwnFields() )
@@ -396,17 +391,34 @@ public class DelegationMaker
     }
     else
     {
-      PsiClassType superClass = getSuperClassType( type );
+      PsiClassType[] superType = psiClass.getExtendsListTypes();
+      PsiClassType superClass = superType.length > 0 ? superType[0] : null;
       if( superClass != null )
       {
         findAllInterfaces( superClass, seen, result );
       }
     }
 
-    List<PsiClassType> superInterfaces = getInterfaces( type );
-    if( superInterfaces != null )
+    PsiClassType[] superInterfaces = psiClass.isInterface()
+      ? psiClass.getExtendsListTypes()
+      : psiClass.getImplementsListTypes();
+    if( superInterfaces.length > 0 )
     {
-      superInterfaces.forEach( superInterface -> findAllInterfaces( superInterface, seen, result ) );
+      for( PsiClassType ifaceType : superInterfaces )
+      {
+        PsiClass psiIface = ifaceType.resolve();
+        if( psiIface != null )
+        {
+          if( type.hasParameters() )
+          {
+            PsiClassType.ClassResolveResult classResolveResult = type.resolveGenerics();
+            PsiSubstitutor substitutor = classResolveResult.getSubstitutor();
+            //substitutor = TypeConversionUtil.getSuperClassSubstitutor( psiIface, psiClass, substitutor );
+            ifaceType = (PsiClassType)substitutor.substitute( ifaceType );
+          }
+          findAllInterfaces( ifaceType, seen, result );
+        }
+      }
     }
   }
 
@@ -480,24 +492,29 @@ public class DelegationMaker
       LinkInfo li = entry.getValue();
       for( PsiClassType iface : li.getInterfaces() )
       {
+        PsiClass psiIface = iface.resolve();
+        String ifaceQname = psiIface == null ? null : psiIface.getQualifiedName();
+        if( ifaceQname == null )
+        {
+          continue;
+        }
+
         for( Map.Entry<MethodSignature, CandidateInfo> sig_candi: map.entrySet() )
         {
           MethodSignature sig = sig_candi.getKey();
           CandidateInfo candi = sig_candi.getValue();
           HierarchicalMethodSignature hsig = (HierarchicalMethodSignature)sig;
-          if( PsiTypesUtil.getClassType( hsig.getMethod().getContainingClass() ).equals( iface ) )
+          PsiClass containingClass = hsig.getMethod().getContainingClass();
+          if( containingClass != null )
           {
-            li.addMethodType( candi );
+            String qname = containingClass.getQualifiedName();
+            if( qname != null && qname.equals( ifaceQname ) &&
+              PsiTypesUtil.getClassType( containingClass ).isAssignableFrom( iface ) )
+            {
+              li.addMethodType( candi );
+            }
           }
-//          if( sig.)
-//          MethodSignature sig = e.getKey();
-//          CandidateInfo candi = e.getValue();
-//          PsiMethod method = (PsiMethod)candi.getElement();
-//          method
         }
-//        psiIface.getOwnMethods().stream()
-//          .filter( m -> !isStatic( m ) )
-//            .forEach( m ->  );
       }
     }
 
@@ -653,6 +670,11 @@ public class DelegationMaker
   private void checkSuperclass( PsiExtensibleClass psiClass )
   {
     if( !shouldCheck() )
+    {
+      return;
+    }
+
+    if( !isPartClass( psiClass ) )
     {
       return;
     }
