@@ -25,11 +25,10 @@ import com.intellij.lang.jvm.annotation.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
-import com.intellij.psi.impl.PsiClassImplUtil;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.util.MethodSignature;
+import com.intellij.psi.util.MethodSignatureUtil;
 import com.intellij.psi.util.PsiTypesUtil;
 import manifold.ext.delegation.DelegationIssueMsg;
 import manifold.ext.delegation.rt.api.link;
@@ -46,7 +45,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static manifold.ext.delegation.DelegationIssueMsg.*;
-import static manifold.ext.delegation.DelegationIssueMsg.MSG_MODIFIER_REDUNDANT_FOR_LINK;
 
 public class DelegationMaker
 {
@@ -61,6 +59,7 @@ public class DelegationMaker
   {
     new DelegationMaker( psiClass, issueInfo ).generateOrCheck();
   }
+
   static void generateMethods( PsiExtensibleClass psiClass, LinkedHashSet<PsiMember> augFeatures )
   {
     String qname = psiClass.getQualifiedName();
@@ -126,10 +125,7 @@ public class DelegationMaker
       {
         for( LinkInfo li : _classInfo.getLinks().values() )
         {
-          for( PsiMethod m : li._generatedMethods )
-          {
-            _augFeatures.add( m );
-          }
+          _augFeatures.addAll( li.getGeneratedMethods() );
         }
       }
     }
@@ -204,7 +200,7 @@ public class DelegationMaker
 
   private void verifyFieldTypeSatisfiesAnnoTypes( PsiField field, ArrayList<PsiClassType> interfaces )
   {
-    for( PsiClassType t: interfaces )
+    for( PsiClassType t : interfaces )
     {
       if( !t.isAssignableFrom( field.getType() ) )
       {
@@ -225,7 +221,7 @@ public class DelegationMaker
 
     boolean share = false;
     int i = 0;
-    for( JvmAnnotationAttribute entry: args )
+    for( JvmAnnotationAttribute entry : args )
     {
       String argSym = entry.getAttributeName();
       @Nullable JvmAnnotationAttributeValue value = entry.getAttributeValue();
@@ -296,10 +292,19 @@ public class DelegationMaker
       return new HashSet<>( linkFieldInterfaces );
     }
 
-    return ci.getInterfaces().stream()
-      .filter( i1 -> linkFieldInterfaces.stream()
-        .anyMatch( i2 -> i1.isAssignableFrom( i2 ) ) )
-      .collect( Collectors.toSet() );
+    Set<PsiClassType> set = new HashSet<>();
+    for( PsiClassType i1 : ci.getInterfaces() )
+    {
+      for( PsiClassType i2 : linkFieldInterfaces )
+      {
+        if( i1.isAssignableFrom( i2 ) )
+        {
+          set.add( i1 );
+          break;
+        }
+      }
+    }
+    return set;
   }
 
   private void linkInterfaces( LinkInfo li )
@@ -426,7 +431,7 @@ public class DelegationMaker
   {
     Map<PsiClassType, Set<LinkInfo>> interfaceToLinks = new HashMap<>();
 
-    for( Map.Entry<PsiField, LinkInfo> entry: ci.getLinks().entrySet() )
+    for( Map.Entry<PsiField, LinkInfo> entry : ci.getLinks().entrySet() )
     {
       LinkInfo li = entry.getValue();
       for( PsiClassType iface : ci.getInterfaces() )
@@ -439,7 +444,7 @@ public class DelegationMaker
       }
     }
 
-    for( Map.Entry<PsiClassType, Set<LinkInfo>> entry: interfaceToLinks.entrySet() )
+    for( Map.Entry<PsiClassType, Set<LinkInfo>> entry : interfaceToLinks.entrySet() )
     {
       PsiClassType iface = entry.getKey();
       Set<LinkInfo> lis = entry.getValue();
@@ -449,7 +454,7 @@ public class DelegationMaker
 
         StringBuilder fieldNames = new StringBuilder();
         lis.forEach( li -> fieldNames.append( fieldNames.length() > 0 ? ", " : "" ).append( li._linkField.name ) );
-        for( LinkInfo li: lis )
+        for( LinkInfo li : lis )
         {
           if( !li.isShare() )
           {
@@ -485,70 +490,47 @@ public class DelegationMaker
 
   private void processMethodOverlap( ClassInfo classInfo )
   {
-    Map<MethodSignature, CandidateInfo> map = DelegationUtil.getMapToOverrideImplement( _psiClass, true, true );
-   // Collection<MethodSignature> methodSignaturesToImplement = OverrideImplementExploreUtil.getMethodSignaturesToImplement( _psiClass );
     for( Map.Entry<PsiField, LinkInfo> entry : classInfo.getLinks().entrySet() )
     {
       LinkInfo li = entry.getValue();
       for( PsiClassType iface : li.getInterfaces() )
       {
-        PsiClass psiIface = iface.resolve();
-        String ifaceQname = psiIface == null ? null : psiIface.getQualifiedName();
-        if( ifaceQname == null )
+        PsiClassType.ClassResolveResult ifaceResolve = iface.resolveGenerics();
+        PsiExtensibleClass psiIface = (PsiExtensibleClass)ifaceResolve.getElement();
+        if( psiIface == null )
         {
           continue;
         }
-
-        for( Map.Entry<MethodSignature, CandidateInfo> sig_candi: map.entrySet() )
+        for( PsiMethod m : psiIface.getOwnMethods() )
         {
-          MethodSignature sig = sig_candi.getKey();
-          CandidateInfo candi = sig_candi.getValue();
-          HierarchicalMethodSignature hsig = (HierarchicalMethodSignature)sig;
-          PsiClass containingClass = hsig.getMethod().getContainingClass();
-          if( containingClass != null )
+          if( !m.getModifierList().hasModifierProperty( PsiModifier.STATIC ) )
           {
-            String qname = containingClass.getQualifiedName();
-            if( qname != null && qname.equals( ifaceQname ) &&
-              PsiTypesUtil.getClassType( containingClass ).isAssignableFrom( iface ) )
-            {
-              li.addMethodType( candi );
-            }
+            processMethods( classInfo._classDecl, li, m, ifaceResolve.getSubstitutor() );
           }
         }
       }
     }
 
     // Map method types to links, so we can find overlapping methods
-    Map<PsiMethod, Set<LinkInfo>> mtToDi = new HashMap<>();
+    Map<PsiMethod, Set<LinkInfo>> mtToLi = new HashMap<>();
     for( Map.Entry<PsiField, LinkInfo> entry : classInfo.getLinks().entrySet() )
     {
       LinkInfo li = entry.getValue();
-      li.getMethodTypes()
-          .forEach( m -> {
-            boolean found = false;
-            for( Map.Entry<PsiMethod, Set<LinkInfo>> e : mtToDi.entrySet() )
-            {
-              PsiMethod mm = e.getKey();
-              Set<LinkInfo> links = e.getValue();
-              if( PsiClassImplUtil.isMethodEquivalentTo( (PsiMethod)m.getElement(), mm ) )
-              {
-                links.add( li );
-                found = true;
-                break;
-              }
-            }
-            if( !found )
-            {
-              Set<LinkInfo> set = new HashSet<>();
-              set.add( li );
-              mtToDi.put( (PsiMethod)m.getElement(), set );
-            }
-          } );
+      for( CandidateInfo mt : li.getMethodTypes() )
+      {
+        PsiMethod method = findMethod( mtToLi.keySet(), (PsiMethod)mt.getElement() );
+        if( method == null )
+        {
+          method = (PsiMethod)mt.getElement();
+        }
+        Set<LinkInfo> linkInfos = mtToLi.computeIfAbsent( method, __ -> new HashSet<>() );
+        linkInfos.add( li );
+      }
     }
 
-    for( Map.Entry<PsiMethod, Set<LinkInfo>> entry: mtToDi.entrySet() )
+    for( Map.Entry<PsiMethod, Set<LinkInfo>> entry : mtToLi.entrySet() )
     {
-      PsiMethod m = entry.getKey();
+      PsiMethod mt = entry.getKey();
       Set<LinkInfo> lis = entry.getValue();
       if( lis.size() > 1 )
       {
@@ -557,71 +539,45 @@ public class DelegationMaker
         for( LinkInfo li : lis )
         {
           reportWarning( li.getLinkField(),
-            DelegationIssueMsg.MSG_METHOD_OVERLAP.get( m.getName(), fieldNames ) );
+            MSG_METHOD_OVERLAP.get( mt.getName(), fieldNames ) );
 
           // remove the overlap method type from the link, the delegating class must implement it directly
-          li.getMethodTypes().removeIf( im -> PsiClassImplUtil.isMethodEquivalentTo( (PsiMethod)im.getElement(), m ) );
-//          for( Iterator<PsiGenerationInfo<PsiMethod>> iter = li.getMethodTypes().iterator(); iter.hasNext(); )
-//          {
-//            PsiGenerationInfo<PsiMethod> im = iter.next();
-//            if( PsiClassImplUtil.isMethodEquivalentTo( im.getPsiMember(), m ) )
-//            {
-//              iter.remove();
-//            }
-//          }
+          CandidateInfo candi = li.findMethod( mt );
+          li.getMethodTypes().remove( candi );
         }
       }
     }
   }
 
-//  private void processMethods( PsiExtensibleClass classDecl, LinkInfo li, PsiMethod m )
-//  {
-//    LinkInfo linkInfo = _classInfo.getLinks().get( li._linkField );
-//
-//    linkInfo.addMethodType( m );
-//  }
-
-  private static PsiClassType getSuperClassType( PsiClassType type )
+  private void processMethods( PsiExtensibleClass classDecl, LinkInfo li, PsiMethod m, PsiSubstitutor substitutor )
   {
-    PsiClass psiClass = type.resolve();
-    if( psiClass == null || psiClass.isInterface() ||
-      psiClass.getQualifiedName() == null || psiClass.getQualifiedName().equals( Object.class.getTypeName() ) )
+    if( findMethod( classDecl.getOwnMethods(), m ) != null )
     {
-      return null;
+      // class already implements method
+      return;
     }
 
-    PsiType[] superTypes = type.getSuperTypes();
-    if( superTypes.isEmpty() )
+    LinkInfo linkInfo = _classInfo.getLinks().get( li._linkField );
+    CandidateInfo candi = new CandidateInfo( m, substitutor );
+    if( linkInfo.hasMethod( candi ) )
     {
-      return null;
+      // already defined previously in this link
+      return;
     }
-    return (PsiClassType)superTypes[0];
+    linkInfo.addMethodType( candi );
   }
 
-  private static List<PsiClassType> getInterfaces( PsiClassType type )
+  private PsiMethod findMethod( Iterable<PsiMethod> methods, PsiMethod m )
   {
-    PsiClass psiClass = type.resolve();
-    if( psiClass == null )
+    for( PsiMethod subMethod : methods )
     {
-      return null;
+      if( subMethod.getName().equals( m.getName() ) &&
+        MethodSignatureUtil.areOverrideEquivalent( subMethod, m ) )
+      {
+        return subMethod;
+      }
     }
-
-    PsiType[] superTypes = type.getSuperTypes();
-    if( superTypes.isEmpty() )
-    {
-      return null;
-    }
-    ArrayList<PsiClassType> result = Arrays.stream( superTypes )
-      .filter( t -> t instanceof PsiClassType )
-      .map( t -> (PsiClassType)t )
-      .collect( Collectors.toCollection( () -> new ArrayList<>() ) );
-    PsiClass first = result.get(0).resolve();
-    if( first == null || !first.isInterface() )
-    {
-      // remove super class
-      result.remove( 0 );
-    }
-    return result;
+    return null;
   }
 
   private void checkModifiersAndApplyDefaults( PsiField varDecl, PsiExtensibleClass classDecl )
@@ -633,13 +589,14 @@ public class DelegationMaker
     }
 
     PsiModifierList modifiers = varDecl.getModifierList();
-    if( modifiers.hasModifierProperty( PsiModifier.PUBLIC ) || modifiers.hasModifierProperty( PsiModifier.PROTECTED ) )
+    if( modifiers != null &&
+      (modifiers.hasModifierProperty( PsiModifier.PUBLIC ) || modifiers.hasModifierProperty( PsiModifier.PROTECTED )) )
     {
       reportError( varDecl.getModifierList(), MSG_MODIFIER_NOT_ALLOWED_HERE.get(
-        modifiers.hasModifierProperty( PsiModifier.PUBLIC ) ? PsiModifier.PUBLIC : PsiModifier.PROTECTED) );
+        modifiers.hasModifierProperty( PsiModifier.PUBLIC ) ? PsiModifier.PUBLIC : PsiModifier.PROTECTED ) );
     }
 
-    if( modifiers.hasModifierProperty( PsiModifier.PRIVATE ) )
+    if( modifiers != null && modifiers.hasModifierProperty( PsiModifier.PRIVATE ) )
     {
       reportWarning( varDecl.getModifierList(), MSG_MODIFIER_REDUNDANT_FOR_LINK.get( PsiModifier.PRIVATE ) );
     }
@@ -650,7 +607,7 @@ public class DelegationMaker
       //varDecl.getModifiers().flags |= PRIVATE;
     }
 
-    if( modifiers.hasModifierProperty( PsiModifier.FINAL ) )
+    if( modifiers != null && modifiers.hasModifierProperty( PsiModifier.FINAL ) )
     {
       reportWarning( varDecl.getModifierList(), MSG_MODIFIER_REDUNDANT_FOR_LINK.get( PsiModifier.FINAL ) );
     }
@@ -757,14 +714,14 @@ public class DelegationMaker
     }
   }
 
-  private class LinkInfo
+  private static class LinkInfo
   {
     private final PsiField _linkField;
 
     private final ArrayList<PsiMethod> _generatedMethods;
     private final Set<CandidateInfo> _methodTypes;
-    private ArrayList<PsiClassType> _interfaces;
-    private boolean _share;
+    private final ArrayList<PsiClassType> _interfaces;
+    private final boolean _share;
 
     LinkInfo( PsiField linkField, ArrayList<PsiClassType> linkedInterfaces, boolean share )
     {
@@ -804,29 +761,29 @@ public class DelegationMaker
     {
       return _methodTypes;
     }
+
     void addMethodType( CandidateInfo m )
     {
-//      Set<PsiMethodMember> methodMember = Collections.singleton( new PsiMethodMember( m ) );
-//      List<PsiGenerationInfo<PsiMethod>> prototypes = OverrideImplementUtil.overrideOrImplementMethods( _psiClass, methodMember, false, false );
-//
-//      if( prototypes.isEmpty )
-//      {
-//        return;
-//      }
-//
-//      PsiGenerationInfo<PsiMethod> prototypeMethod = prototypes.get( 0 );
-//      if( hasMethodType( prototypeMethod ) )
-//      {
-//        throw new IllegalStateException();
-//      }
-//
-//      _methodTypes.add( prototypeMethod );
       _methodTypes.add( m );
     }
-//    boolean hasMethodType( PsiGenerationInfo<PsiMethod> method )
-//    {
-//      return _methodTypes.stream().anyMatch( m -> PsiClassImplUtil.isMethodEquivalentTo( m.getPsiMember(), method.getPsiMember() ) );
-//    }
-  }
 
+    public boolean hasMethod( CandidateInfo candi )
+    {
+      return _methodTypes.stream().anyMatch( m -> areOverrideEquivalent( candi, m ) );
+    }
+
+    private boolean areOverrideEquivalent( CandidateInfo candi, CandidateInfo m )
+    {
+      return ((PsiMethod)candi.getElement()).getName().equals( ((PsiMethod)m.getElement()).getName() ) &&
+        MethodSignatureUtil.areOverrideEquivalent( (PsiMethod)m.getElement(), (PsiMethod)candi.getElement() );
+    }
+
+    public CandidateInfo findMethod( PsiMethod method )
+    {
+      return _methodTypes.stream()
+        .filter( m -> method.getName().equals( ((PsiMethod)m.getElement()).getName() ) &&
+          MethodSignatureUtil.areOverrideEquivalent( (PsiMethod)m.getElement(), method ) )
+        .findFirst().orElse( null );
+    }
+  }
 }
