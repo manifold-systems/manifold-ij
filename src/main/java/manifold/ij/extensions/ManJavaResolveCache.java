@@ -196,9 +196,9 @@ public class ManJavaResolveCache extends JavaResolveCache
       {
         // Support > >= < <= on any Comparable implementor
         type = getBinaryType( COMPARE_TO, left, right, expr );
-        if( type != null && type.equals( PsiType.INT ) )
+        if( type != null && type.equals( PsiTypes.intType() ) )
         {
-          type = PsiType.BOOLEAN;
+          type = PsiTypes.booleanType();
         }
       }
       return type;

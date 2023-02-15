@@ -36,7 +36,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -642,7 +641,7 @@ class PropertyInference
   private PropAttrs derivePropertyNameFromGetter( PsiMethod m )
   {
     if( m.getReturnType() == null ||
-      PsiType.VOID.equals( m.getReturnType() ) || m.getParameterList().getParametersCount() > 0 )
+      PsiTypes.voidType().equals( m.getReturnType() ) || m.getParameterList().getParametersCount() > 0 )
     {
       return null;
     }

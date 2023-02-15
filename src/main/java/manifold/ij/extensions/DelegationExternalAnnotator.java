@@ -36,7 +36,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ManDelegationAnnotator extends ExternalAnnotator<PsiFile, ManDelegationAnnotator.Info>
+/**
+ * Main delegation annotator for @link using DelegationMaker.checkDelegation(). External annotation required due to the
+ * nature of whole-class analysis.
+ */
+public class DelegationExternalAnnotator extends ExternalAnnotator<PsiFile, DelegationExternalAnnotator.Info>
 {
   @Nullable
   @Override

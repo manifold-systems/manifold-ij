@@ -386,7 +386,7 @@ class PropertyMaker
     String methodName = getSetterName();
     return factory.createLightMethod( ManProject.getModule( _psiClass ), _psiClass.getManager(), methodName, modifierList )
       .withParameter( "value", _field.getType() )
-      .withMethodReturnType( PsiType.VOID )
+      .withMethodReturnType( PsiTypes.voidType() )
       .withContainingClass( _psiClass )
       .withNavigationElement( _field );
   }
@@ -774,7 +774,7 @@ class PropertyMaker
   private String getGetterName( @SuppressWarnings( "SameParameterValue" ) boolean isOk )
   {
     String name = _field.getName();
-    if( isOk && PsiType.BOOLEAN.equals( _field.getType() ) )
+    if( isOk && PsiTypes.booleanType().equals( _field.getType() ) )
     {
       if( startsWithIs( name ) )
       {

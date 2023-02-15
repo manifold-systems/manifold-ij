@@ -50,12 +50,12 @@ public class DelegationMaker
 {
   private static final ThreadLocal<Set<String>> _reenter = ThreadLocal.withInitial( () -> new HashSet<>() );
 
-  private final ManDelegationAnnotator.Info _issueInfo;
+  private final DelegationExternalAnnotator.Info _issueInfo;
   private final LinkedHashSet<PsiMember> _augFeatures;
   private final PsiExtensibleClass _psiClass;
   private final ClassInfo _classInfo;
 
-  static void checkDelegation( PsiExtensibleClass psiClass, ManDelegationAnnotator.Info issueInfo )
+  static void checkDelegation( PsiExtensibleClass psiClass, DelegationExternalAnnotator.Info issueInfo )
   {
     new DelegationMaker( psiClass, issueInfo ).generateOrCheck();
   }
@@ -86,7 +86,7 @@ public class DelegationMaker
     }
   }
 
-  private DelegationMaker( PsiExtensibleClass psiClass, ManDelegationAnnotator.Info issueInfo )
+  private DelegationMaker( PsiExtensibleClass psiClass, DelegationExternalAnnotator.Info issueInfo )
   {
     this( psiClass, issueInfo, null );
   }
@@ -96,7 +96,7 @@ public class DelegationMaker
     this( psiClass, null, augFeatures );
   }
 
-  private DelegationMaker( PsiExtensibleClass psiClass, ManDelegationAnnotator.Info issueInfo, LinkedHashSet<PsiMember> augFeatures )
+  private DelegationMaker( PsiExtensibleClass psiClass, DelegationExternalAnnotator.Info issueInfo, LinkedHashSet<PsiMember> augFeatures )
   {
     _psiClass = psiClass;
     _issueInfo = issueInfo;
@@ -647,7 +647,7 @@ public class DelegationMaker
     }
   }
 
-  private static boolean isPartClass( PsiExtensibleClass psiClass )
+  public static boolean isPartClass( PsiExtensibleClass psiClass )
   {
     PsiAnnotation partAnno = psiClass.getAnnotation( part.class.getTypeName() );
     return partAnno != null;
