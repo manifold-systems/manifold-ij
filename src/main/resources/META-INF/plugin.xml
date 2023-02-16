@@ -215,6 +215,18 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/423">#423</a>: Add support for forwarding and delegation
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/421">#421</a>: IntelliJ plugin: auto, like var, should be highlighted as a keyword
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/418">#418</a>: Compiling from IntelliJ can cause UnsupportedClassVersionError using the preprocessor and using pre-JDK 17
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/417">#417</a>: Class cannot be converted Issue
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/416">#416</a>: Unqualified static varargs extension method call results in compiler error
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/414">#414</a>: Using JDK 17+ in preview mode + using an annotation processor causes NPE
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/412">#412</a>: "Variable expected" error involving multidimensional index operator in assignment
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/411">#411</a>: Intermittent "Incorrect CachedValue use" errors
@@ -490,12 +502,15 @@ Other minor fixes and improvements.
     <gotoDeclarationHandler implementation="manifold.ij.extensions.ManGotoDeclarationHandler"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManAugmentProvider"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManPropertiesAugmentProvider"/>
+    <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManDelegationAugmentProvider"/>
     <methodReferencesSearch implementation="manifold.ij.extensions.ExtensionMethodUsageSearcher"/>
     <lang.parserDefinition language="JAVA" implementationClass="manifold.ij.extensions.ManJavaParserDefinition" order="first"/>
+    <externalAnnotator language="JAVA" implementationClass="manifold.ij.extensions.DelegationExternalAnnotator"/>
     <externalAnnotator language="JAVA" implementationClass="manifold.ij.extensions.ManPreprocessorAnnotator" order="last"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionClassAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionMethodCallSiteAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.PropertiesAnnotator"/>
+    <annotator language="JAVA" implementationClass="manifold.ij.extensions.DelegationAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.SelfUsageAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.JailbreakUsageAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.MiscAnnotator"/>

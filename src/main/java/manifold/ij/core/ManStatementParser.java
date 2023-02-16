@@ -35,6 +35,7 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.ILazyParseableElementType;
 import com.intellij.psi.tree.TokenSet;
 import manifold.ext.rt.api.Jailbreak;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

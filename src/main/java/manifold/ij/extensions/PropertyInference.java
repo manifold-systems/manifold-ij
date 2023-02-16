@@ -36,7 +36,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Consumer;
 
