@@ -215,6 +215,18 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/423">#423</a>: Add support for forwarding and delegation
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/421">#421</a>: IntelliJ plugin: auto, like var, should be highlighted as a keyword
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/418">#418</a>: Compiling from IntelliJ can cause UnsupportedClassVersionError using the preprocessor and using pre-JDK 17
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/417">#417</a>: Class cannot be converted Issue
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/416">#416</a>: Unqualified static varargs extension method call results in compiler error
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/414">#414</a>: Using JDK 17+ in preview mode + using an annotation processor causes NPE
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/412">#412</a>: "Variable expected" error involving multidimensional index operator in assignment
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/411">#411</a>: Intermittent "Incorrect CachedValue use" errors
