@@ -215,6 +215,14 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/449">#449</a>: Remedy a java symbol resolve issue where a field and an inner class share the same name
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/446">#446</a>: Use MathContext.128 for big decimal division
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/436">#436</a>: Fix mapstruct handling of default interface methods
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/422">#422</a>: Fix self type bug with arrays
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/423">#423</a>: Add support for forwarding and delegation
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/421">#421</a>: IntelliJ plugin: auto, like var, should be highlighted as a keyword
