@@ -27,10 +27,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.impl.source.PsiJavaFileBaseImpl;
-import com.intellij.psi.impl.source.tree.java.PsiArrayAccessExpressionImpl;
-import com.intellij.psi.impl.source.tree.java.PsiAssignmentExpressionImpl;
-import com.intellij.psi.impl.source.tree.java.PsiBinaryExpressionImpl;
-import com.intellij.psi.impl.source.tree.java.PsiLocalVariableImpl;
+import com.intellij.psi.impl.source.tree.java.*;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiUtil;
@@ -207,6 +204,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     if( filterForeachExpressionErrors( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterInnerClassReferenceError( hi, elem, firstElem ) )
     {
       return false;
     }
@@ -423,6 +425,61 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
     return elem.getText().equals( ManClassUtil.getShortClassName( ManAttr.AUTO_TYPE ) ) &&
       hi.getDescription().contains( "incompatible return type" );
+  }
+
+  private boolean filterInnerClassReferenceError( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    // filter "Non-static field 'x' cannot be referenced from a static context" when 'x' is a valid inner class
+
+    String desc = hi.getDescription();
+    if( elem instanceof PsiReferenceExpressionImpl )
+    {
+      if( desc.startsWith( "Non-static field" ) && desc.contains( "cannot be referenced from a static context" ) )
+      {
+        return isInnerClass( (PsiReferenceExpressionImpl)elem, firstElem );
+      }
+      else if( desc.contains( "Static method may be invoked on containing interface class only" ) ||
+        desc.contains( "Expected class or package" ) )
+      {
+        PsiElement parent = elem.getParent().getParent();
+        if( parent instanceof PsiReferenceExpression )
+        {
+          PsiElement ref = parent.getFirstChild();
+          if( ref instanceof PsiReferenceExpression )
+          {
+            return isInnerClass( (PsiReferenceExpressionImpl)ref, ((PsiReferenceExpressionImpl)ref).getReferenceNameElement() );
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  private static boolean isInnerClass( PsiReferenceExpressionImpl elem, PsiElement firstElem )
+  {
+    PsiReferenceExpressionImpl refExpr = elem;
+    PsiElement qualifier = refExpr.getQualifier();
+    if( qualifier instanceof PsiReferenceExpression )
+    {
+      PsiReference ref = refExpr.getQualifier().getReference();
+      if( ref != null )
+      {
+        PsiElement qualRef = ref.resolve();
+        if( qualRef instanceof PsiClass )
+        {
+          for( PsiClass innerClass : ((PsiClass)qualRef).getInnerClasses() )
+          {
+            String typeName = innerClass.getName();
+            if( typeName != null && typeName.equals( firstElem.getText() ) )
+            {
+              // ref is inner class
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
   }
 
   private boolean filterForeachExpressionErrors( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
