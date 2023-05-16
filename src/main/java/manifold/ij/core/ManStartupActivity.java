@@ -25,26 +25,31 @@ import com.intellij.lang.LanguageAnnotators;
 import com.intellij.lang.LanguageBraceMatching;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import kotlin.Unit;
+import kotlin.coroutines.Continuation;
 import manifold.ij.extensions.ManifoldPsiClassAnnotator;
 import manifold.ij.template.ManTemplateBraceMatcher;
 import manifold.ij.template.ManTemplateLanguage;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class ManStartupActivity implements com.intellij.openapi.startup.StartupActivity
+public class ManStartupActivity implements com.intellij.openapi.startup.ProjectActivity
 {
   private static volatile boolean Initialized = false;
 
+  @Nullable
   @Override
-  public void runActivity( @NotNull Project project )
+  public Object execute( @NotNull Project project, @NotNull Continuation<? super Unit> continuation )
   {
     initForAllProjects();
 
     ApplicationManager.getApplication().runReadAction( () -> ManProject.manProjectFrom( project ).projectOpened() );
+    return null;
   }
 
   /**
    * Note the timing of calling this method is critical.  It must happen *after* the application has loaded, but before
-   * the first project loads. This used to happen during {@link com.intellij.openapi.components.ProjectComponent#initComponent},
+   * the first project loads. This used to happen during com.intellij.openapi.components.ProjectComponent#initComponent,
    * however JetBrains has deprecated components and there is no equivalent listener event (as far as I know).
    */
   public void initForAllProjects()

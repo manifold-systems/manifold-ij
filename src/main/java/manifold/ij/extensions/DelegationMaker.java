@@ -220,14 +220,18 @@ public class DelegationMaker
     }
 
     boolean share = false;
-    int i = 0;
-    for( JvmAnnotationAttribute entry : args )
+    for( int i = 0; i < args.size(); i++ )
     {
+      JvmAnnotationAttribute entry = args.get( i );
+
       String argSym = entry.getAttributeName();
       @Nullable JvmAnnotationAttributeValue value = entry.getAttributeValue();
+      if( value == null )
+      {
+        continue;
+      }
       if( argSym.equals( "share" ) )
       {
-        //noinspection ConstantConditions
         Boolean val = (Boolean)((JvmAnnotationConstantValue)value).getConstantValue();
         share = val != null && val;
       }
@@ -249,7 +253,6 @@ public class DelegationMaker
       {
         throw new IllegalStateException();
       }
-      i++;
     }
     return share;
   }
