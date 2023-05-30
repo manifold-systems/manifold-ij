@@ -31,7 +31,6 @@ import com.intellij.util.PathsList;
 import java.awt.EventQueue;
 import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,12 +75,12 @@ public class ManLibraryChecker
         if( projectJarOlderThanPluginJar( project ) )
         {
           MessageUtil.showWarning( project,
-            "Some of your project's <b>Manifold</b> dependencies are missing or out of date and\n" +
-            "may not be compatible with the newer Manifold IntelliJ IDEA plugin you are using.\n" +
+            "Some of your project's <b>Manifold</b> dependencies are out of date and may\n" +
+            "not be compatible with the newer Manifold IntelliJ IDEA plugin you are using.\n" +
             "\n" +
             "Please add or update Manifold libraries in your project to at least version: <b>" + getVersionFromPlugin() + "</b>.\n" +
             "\n" +
-            "Visit <a href=\"http://manifold.systems/docs.html#setup\">Setup</a> to learn more about configuring Manifold libraries in your project." );
+            "Visit <a href=\"https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold#projects\">Projects</a> to learn more about configuring Manifold libraries in your project." );
         }
       } );
   }
@@ -128,14 +127,14 @@ public class ManLibraryChecker
     String pluginVer = getVersionFromPlugin();
     if( pluginVer == null )
     {
-      // can't find plugin jars
+      // can't find plugin jars, should be here though because this method s/b called only when the plugin is detected
       return false;
     }
     String projectVer = getVersionFromProject( project );
     if( projectVer == null )
     {
-      // missing Manifold jars
-      return false; // was `true`, but see https://github.com/manifold-systems/manifold/issues/55
+      // no Manifold jars, they should be there because this method s/b called only when a project uses manifold jars
+      return false;
     }
     if( pluginVer.equals( projectVer ) )
     {
@@ -151,12 +150,14 @@ public class ManLibraryChecker
 
   private int compareComps( List<Integer> pluginComps, List<Integer> projectComps )
   {
+    if( pluginComps.size() != projectComps.size() )
+    {
+      // don't try to compare versions with different formats
+      return 0;
+    }
+
     for( int i = 0; i < pluginComps.size(); i++ )
     {
-      if( projectComps.size() == i )
-      {
-        return 1;
-      }
       int result = pluginComps.get( i ) - projectComps.get( i );
       if( result != 0 )
       {
@@ -184,8 +185,16 @@ public class ManLibraryChecker
     {
       return null;
     }
-    File file = new File( manifoldJarsInProject.get( 0 ) );
-    return getVersionFromJarName( file.getName() );
+    for( String jarPath : manifoldJarsInProject )
+    {
+      File file = new File( jarPath );
+      String version = getVersionFromJarName( file.getName() );
+      if( !version.isEmpty() )
+      {
+        return version;
+      }
+    }
+    return null;
   }
 
   private String getVersionFromPlugin()
@@ -211,7 +220,7 @@ public class ManLibraryChecker
           }
         }
       }
-      if( name != null && name.contains( "manifold-" ) && !name.contains( "manifold-ij-" ) )
+      if( name != null && name.contains( "manifold-rt-" ) )
       {
         String version = getVersionFromJarName( name );
         if( !version.isEmpty() && Character.isDigit( version.charAt( 0 ) ) )
@@ -268,18 +277,24 @@ public class ManLibraryChecker
   private String getVersionFromJarName( String fileName )
   {
     StringBuilder version = new StringBuilder();
+    boolean dotSeen = false;
     for( int i = 0; i < fileName.length(); i++ )
     {
       char c = fileName.charAt( i );
       if( Character.isDigit( c ) )
       {
+        if( dotSeen )
+        {
+          version.append( '.' );
+          dotSeen = false;
+        }
         version.append( c );
       }
       else if( version.length() > 0 )
       {
-        if( c == '.' )
+        if( !dotSeen && c == '.' )
         {
-          version.append( c );
+          dotSeen = true;
         }
         else
         {
@@ -320,7 +335,7 @@ public class ManLibraryChecker
       String extension = path.getExtension();
       if( extension != null &&
           extension.equalsIgnoreCase( "jar" ) &&
-          path.getNameWithoutExtension().contains( "manifold" ) )
+          path.getNameWithoutExtension().contains( "manifold-" ) )
       {
         try
         {
@@ -337,9 +352,9 @@ public class ManLibraryChecker
             file = new File( new URL( path.getUrl() ).getFile() );
           }
 
-          try
+          try( JarFile jarFile = new JarFile( file.getAbsoluteFile() ) )
           {
-            Manifest manifest = new JarFile( file.getAbsoluteFile() ).getManifest();
+            Manifest manifest = jarFile.getManifest();
             Attributes attributes = manifest.getMainAttributes();
             String vendor = attributes.getValue( "Implementation-Vendor-Id" );
             if( vendor != null && vendor.trim().equals( "systems.manifold" ) )
