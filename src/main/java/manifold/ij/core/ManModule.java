@@ -54,6 +54,7 @@ import manifold.ij.fs.IjFile;
 import manifold.internal.host.SimpleModule;
 import manifold.strings.StringLiteralTemplateProcessor;
 import manifold.util.NecessaryEvilUtil;
+import manifold.util.ReflectUtil;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -325,8 +326,40 @@ public class ManModule extends SimpleModule
 
     URL[] urls = classpath.stream().map( dir -> dir.toURI().toURL() ).toArray( URL[]::new );
 
-    // note this classloader is used exclusively for finding a loading type manifold services
-    _typeManifoldClassLoader = new URLClassLoader( urls, getClass().getClassLoader() );
+    // note this classloader is used exclusively for finding and loading type manifold services
+    _typeManifoldClassLoader =
+      new URLClassLoader( urls, getClass().getClassLoader() )
+      {
+        /**
+         * Total hack to avoid Jar-hell with IJ's PathClassLoader, a parent loader in the chain. For example, if a project
+         * uses manifold-sql with H2, those jars must load in this URLClassLoader so manifold-sql can do its thing. However,
+         * since IJ apparently uses part of H2 internally, its PathClassLoader, being a parent loader of this loader, will
+         * load H2 classes, which are probably not from the same version of H2, etc. Therefore, overloading loadClass()
+         * here for non-manifold classes ensures that ij's loader won't interfere with dependencies of manifold classes.
+         */
+        @Override
+        protected Class<?> loadClass( String name, boolean resolve ) throws ClassNotFoundException
+        {
+          ClassLoader parent = null;
+          try
+          {
+            if( !name.startsWith( "manifold." ) ) // if( name.startsWith( "org.h2." ) )
+            {
+              // jump over PathClassLoader to the great-grandfather since none of these classes should have a dependency on IJ classes
+              parent = (ClassLoader)ReflectUtil.field( this, "parent" ).get();
+              ReflectUtil.field( this, "parent" ).set( ClassLoader.getPlatformClassLoader() );
+            }
+            return super.loadClass( name, resolve );
+          }
+          finally
+          {
+            if( !name.startsWith( "manifold." ) )
+            {
+              ReflectUtil.field( this, "parent" ).set( parent );
+            }
+          }
+        }
+      };
   }
 
   @Override

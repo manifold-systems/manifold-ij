@@ -32,13 +32,18 @@ import manifold.preprocessor.definitions.Definitions;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * For preprocessor.  When a build.properties files is saved, open Java files reparse.
+ * For preprocessor and dbconfig.  When a build.properties or *.dbconfig file is saved, open Java files reparse.
+ *
+ * todo: make the conditions for reparsing, currently dbconfig and build.properties, pluggable.
+ * todo: even better: if manifold IModel had concept of model dependencies, we could determine exactly the set of files
+ *  that need to reparse instead of reparsing everything. We could also reparse non-open files, because we need to if the
+ *  file was opened then closed because IJ does not retokenize when reopening a file.
  */
-class BuildPropertiesFilePersistenceListener implements FileDocumentManagerListener
+class ReparseFileTrigger implements FileDocumentManagerListener
 {
-  private Project _ijProject;
+  private final Project _ijProject;
 
-  BuildPropertiesFilePersistenceListener( Project ijProject )
+  ReparseFileTrigger( Project ijProject )
   {
     _ijProject = ijProject;
   }
@@ -46,30 +51,30 @@ class BuildPropertiesFilePersistenceListener implements FileDocumentManagerListe
   @Override
   public void beforeDocumentSaving( @NotNull Document document )
   {
-    reparseFiles( document );
+    maybeReparseOpenJavaFiles( document );
   }
 
   @Override
   public void fileContentReloaded( @NotNull VirtualFile file, @NotNull Document document )
   {
-    reparseFiles( document );
+    maybeReparseOpenJavaFiles( document );
   }
 
   @Override
   public void fileContentLoaded( @NotNull VirtualFile file, @NotNull Document document )
   {
-    reparseFiles( document );
+    maybeReparseOpenJavaFiles( document );
   }
 
-  private void reparseFiles( @NotNull Document document )
+  private void maybeReparseOpenJavaFiles( @NotNull Document document )
   {
-    if( isBuildProperties( document ) )
+    if( shouldReparse( document ) )
     {
       ReparseUtil.reparseOpenJavaFiles( _ijProject );
     }
   }
 
-  private boolean isBuildProperties( Document document )
+  private boolean shouldReparse( Document document )
   {
     VirtualFile vfile = FileDocumentManager.getInstance().getFile( document );
     if( vfile == null || vfile instanceof LightVirtualFile )
@@ -85,7 +90,17 @@ class BuildPropertiesFilePersistenceListener implements FileDocumentManagerListe
       PsiFile psiFile = PsiDocumentManager.getInstance( _ijProject ).getPsiFile( document );
       if( psiFile != null )
       {
-        return Definitions.BUILD_PROPERTIES.equalsIgnoreCase( vfile.getName() );
+        String fileExt = vfile.getExtension();
+        if( fileExt != null && fileExt.equalsIgnoreCase( "dbconfig" ) )
+        {
+          // DbConfig file changed
+          return true;
+        }
+        else if( Definitions.BUILD_PROPERTIES.equalsIgnoreCase( vfile.getName() ) )
+        {
+          // Build.properties file changed
+          return true;
+        }
       }
     }
     catch( Throwable ignore )

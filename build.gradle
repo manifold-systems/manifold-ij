@@ -94,6 +94,10 @@ dependencies {
   manifoldAll group: 'systems.manifold', name: 'manifold-all', version: manifoldVersion
   manifoldEp group: 'systems.manifold', name: 'manifold-ext-producer-sample', version: manifoldVersion
 
+  // this is for manifold-sql where use of hikari brings in slf4j
+  // if we don't add the nop here, hikari's exception logging looks like unhandled exceptions that IJ reports as manifold errors
+  //implementation 'org.slf4j:slf4j-api:2.07'
+
   implementation project('jps-plugin')
 }
 
@@ -122,7 +126,7 @@ runIde {
   minHeapSize = '1g'
   maxHeapSize = '4g'
 // uncomment to override the ide that is run
-//  ideDir = new File("C:\\Program Files\\JetBrains\\IntelliJ IDEA Community Edition 2023.1.1")
+//  ideDir = new File("C:\\Program Files\\JetBrains\\IntelliJ IDEA 2023.1.2")
 }
 
 patchPluginXml {

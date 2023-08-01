@@ -19,10 +19,7 @@
 
 package manifold.ij.extensions;
 
-import com.intellij.lang.annotation.Annotation;
-import com.intellij.lang.annotation.AnnotationHolder;
-import com.intellij.lang.annotation.Annotator;
-import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.lang.annotation.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.impl.DocumentMarkupModel;
@@ -36,8 +33,11 @@ import java.util.Locale;
 import java.util.Set;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
+import javax.tools.JavaFileObject;
 
 import com.intellij.util.SmartList;
+import manifold.api.fs.IFileFragment;
+import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 
@@ -61,12 +61,65 @@ public class ManifoldPsiClassAnnotator implements Annotator
       return;
     }
 
-    Set<PsiClass> psiClasses =  ResourceToManifoldUtil.findPsiClass( element.getContainingFile() );
-    Set<Diagnostic> reported = new HashSet<>();
-    psiClasses.forEach( psiClass -> annotate( psiClass, element, holder, reported ) );
+    if( element instanceof PsiFileFragment )
+    {
+      highlightFragment( (PsiFileFragment)element, holder );
+    }
+    else
+    {
+      Set<PsiClass> psiClasses = ResourceToManifoldUtil.findPsiClass( element.getContainingFile() );
+      Set<Diagnostic<? extends JavaFileObject>> reported = new HashSet<>();
+      psiClasses.forEach( psiClass -> annotate( psiClass, element, holder, reported ) );
+    }
   }
 
-  private void annotate( PsiClass psiClass, PsiElement element, AnnotationHolder holder, Set<Diagnostic> reported )
+  private void highlightFragment( @NotNull PsiFileFragment fragmentFile, @NotNull AnnotationHolder holder )
+  {
+    ManModule manMod = ManProject.getModule( fragmentFile );
+    IFileFragment fragment = fragmentFile.getFragment();
+    if( manMod != null && fragment != null )
+    {
+      String[] fqns = manMod.getTypesForFile( fragment );
+      for( String fqn: fqns )
+      {
+        PsiClass psiClass = ManifoldPsiClassCache.getPsiClass( manMod, fqn );
+        if( psiClass instanceof ManifoldPsiClass && ((ManifoldPsiClass)psiClass).isFragment() )
+        {
+          DiagnosticCollector<JavaFileObject> issues = ((ManifoldPsiClass)psiClass).getIssues();
+          if( issues == null )
+          {
+            break;
+          }
+
+//          PsiFile containingFile = fragmentFile.getContainingFile();
+          Set<Diagnostic<JavaFileObject>> reported = new HashSet<>();
+          for( Diagnostic<? extends JavaFileObject> issue : issues.getDiagnostics() )
+          {
+            if( !reported.contains( issue ) )
+            {
+              boolean created;
+//              if( containingFile instanceof PsiPlainTextFile )
+//              {
+                created = createIssueOnTextRange( holder, issue );
+//              }
+//              else
+//              {
+//                created = createIssueOnElement( holder, issue, element );
+//              }
+              if( created )
+              {
+                reported.add( (Diagnostic<JavaFileObject>)issue );
+              }
+            }
+          }
+          break;
+        }
+      }
+    }
+  }
+
+
+  private void annotate( PsiClass psiClass, PsiElement element, AnnotationHolder holder, Set<Diagnostic<? extends JavaFileObject>> reported )
   {
     PsiFile containingFile = element.getContainingFile();
     if( PsiErrorClassUtil.isErrorClass( psiClass ) && element instanceof PsiFileSystemItem )
@@ -89,26 +142,26 @@ public class ManifoldPsiClassAnnotator implements Annotator
     {
       // IJ doesn't clear previously added annotations, so we do this bullshit
 
-      ApplicationManager.getApplication().invokeLater( () -> {
-        Project project = containingFile.getProject();
-        Document document = PsiDocumentManager.getInstance( project ).getDocument( containingFile );
-        if( document != null )
-        {
-          MarkupModel markupModel = DocumentMarkupModel.forDocument( document, project, false );
-          markupModel.removeAllHighlighters();
-        }
-      } );
+      if( ApplicationManager.getApplication().isDispatchThread() )
+      {
+        removeAllHighlighters( containingFile );
+      }
+      else
+      {
+        ApplicationManager.getApplication().invokeLater( () -> {
+          removeAllHighlighters( containingFile );
+        } );
+      }
     }
 
-    DiagnosticCollector issues = ((ManifoldPsiClass)psiClass).getIssues();
+    DiagnosticCollector<JavaFileObject> issues = ((ManifoldPsiClass)psiClass).getIssues();
     if( issues == null )
     {
       return;
     }
 
-    for( Object obj : issues.getDiagnostics() )
+    for( Diagnostic<? extends JavaFileObject> issue : issues.getDiagnostics() )
     {
-      Diagnostic issue = (Diagnostic)obj;
       if( !reported.contains( issue ) )
       {
         boolean created;
@@ -128,7 +181,18 @@ public class ManifoldPsiClassAnnotator implements Annotator
     }
   }
 
-  private boolean createIssueOnTextRange( AnnotationHolder holder, Diagnostic issue )
+  private static void removeAllHighlighters( PsiFile containingFile )
+  {
+    Project project = containingFile.getProject();
+    Document document = PsiDocumentManager.getInstance( project ).getDocument( containingFile );
+    if( document != null )
+    {
+      MarkupModel markupModel = DocumentMarkupModel.forDocument( document, project, false );
+      markupModel.removeAllHighlighters();
+    }
+  }
+
+  private boolean createIssueOnTextRange( AnnotationHolder holder, Diagnostic<? extends JavaFileObject> issue )
   {
     TextRange range = new TextRange( (int)issue.getStartPosition(), (int)issue.getEndPosition() );
     String message = makeMessage( issue );
@@ -159,7 +223,7 @@ public class ManifoldPsiClassAnnotator implements Annotator
     return true;
   }
 
-  private boolean createIssueOnElement( AnnotationHolder holder, Diagnostic issue, PsiElement element )
+  private boolean createIssueOnElement( AnnotationHolder holder, Diagnostic<? extends JavaFileObject> issue, PsiElement element )
   {
     if( element.getTextOffset() > issue.getStartPosition() ||
         element.getTextOffset() + element.getTextLength() <= issue.getStartPosition() )
@@ -221,7 +285,7 @@ public class ManifoldPsiClassAnnotator implements Annotator
   }
 
   @NotNull
-  private String makeMessage( Diagnostic issue )
+  private String makeMessage( Diagnostic<? extends JavaFileObject> issue )
   {
     return issue.getMessage( Locale.getDefault() );
   }

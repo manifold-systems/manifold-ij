@@ -30,6 +30,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilerPaths;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.fileEditor.*;
+import com.intellij.openapi.fileEditor.ex.FileEditorWithProvider;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.module.ModuleUtil;
@@ -44,7 +45,6 @@ import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.libraries.Library;
-import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.PsiElement;
@@ -650,7 +650,7 @@ public class ManProject
   private void addBuildPropertiesFilePersistenceListener()
   {
     _permanentProjectConnection.subscribe( AppTopics.FILE_DOCUMENT_SYNC,
-      new BuildPropertiesFilePersistenceListener( _ijProject ) );
+      new ReparseFileTrigger( _ijProject ) );
   }
 
   private void addModuleClasspathListener()
@@ -667,11 +667,11 @@ public class ManProject
    */
   private void addFileOpenedListener()
   {
-    _permanentProjectConnection.subscribe( FileEditorManagerListener.FILE_EDITOR_MANAGER,
-      new FileEditorManagerListener()
+    _permanentProjectConnection.subscribe( FileOpenedSyncListener.TOPIC,
+      new FileOpenedSyncListener()
       {
         @Override
-        public void fileOpenedSync( @NotNull FileEditorManager source, @NotNull VirtualFile file, @NotNull Pair<FileEditor[], FileEditorProvider[]> editors )
+        public void fileOpenedSync( @NotNull FileEditorManager source, @NotNull VirtualFile file, @NotNull List<FileEditorWithProvider> editors )
         {
           if( !isManifoldInUse() )
           {

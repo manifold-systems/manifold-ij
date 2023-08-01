@@ -22,14 +22,19 @@ package manifold.ij.extensions;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageUtil;
 import com.intellij.lang.java.JavaLanguage;
+import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
+import com.intellij.openapi.fileTypes.LanguageFileType;
+import com.intellij.openapi.fileTypes.ex.FileTypeIdentifiableByVirtualFile;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.InjectedLanguagePlaces;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.LanguageInjector;
 import com.intellij.psi.PsiLanguageInjectionHost;
 import com.intellij.psi.impl.source.tree.java.PsiLiteralExpressionImpl;
+import com.intellij.psi.injection.ReferenceInjector;
 import com.intellij.psi.tree.IElementType;
+import com.intellij.testFramework.LightVirtualFile;
 import manifold.ij.core.ManProject;
 import manifold.internal.javac.FragmentProcessor;
 import manifold.internal.javac.HostKind;
@@ -68,7 +73,56 @@ public class ManStringFragmentInjector implements LanguageInjector
 
   private Language getLanguageFromExt( String ext )
   {
-    return LanguageUtil.getFileTypeLanguage( FileTypeManager.getInstance().getFileTypeByExtension( ext ) );
+    ReferenceInjector injector = ReferenceInjector.findById( ext );
+    if( injector != null )
+    {
+      return injector.toLanguage();
+    }
+
+    Language fileTypeLanguage = LanguageUtil.getFileTypeLanguage( FileTypeManager.getInstance().getFileTypeByExtension( ext ) );
+    if( fileTypeLanguage != null )
+    {
+      return fileTypeLanguage;
+    }
+
+    LightVirtualFile virtualFileNamedAsLanguageId = new LightVirtualFile( ext );
+    LightVirtualFile virtualFileWithLanguageIdAsExtension = new LightVirtualFile( "textmate." + ext );
+    for( FileType fileType : FileTypeManager.getInstance().getRegisteredFileTypes() )
+    {
+      if( fileType instanceof LanguageFileType &&
+        fileType instanceof FileTypeIdentifiableByVirtualFile fileTypeByVf )
+      {
+        if( fileTypeByVf.isMyFileType( virtualFileNamedAsLanguageId ) ||
+            fileTypeByVf.isMyFileType( virtualFileWithLanguageIdAsExtension ) )
+        {
+          return ((LanguageFileType)fileType).getLanguage();
+        }
+      }
+    }
+
+    return null;
+  }
+
+  public static Language getLanguageByString(@NotNull String languageId) {
+    ReferenceInjector injector = ReferenceInjector.findById(languageId);
+    if (injector != null) return injector.toLanguage();
+    FileTypeManager fileTypeManager = FileTypeManager.getInstance();
+    FileType fileType = fileTypeManager.getFileTypeByExtension(languageId);
+    if (fileType instanceof LanguageFileType) {
+      return ((LanguageFileType)fileType).getLanguage();
+    }
+
+    LightVirtualFile virtualFileNamedAsLanguageId = new LightVirtualFile(languageId);
+    LightVirtualFile virtualFileWithLanguageIdAsExtension = new LightVirtualFile("textmate." + languageId);
+    for (FileType registeredFileType : fileTypeManager.getRegisteredFileTypes()) {
+      if (registeredFileType instanceof FileTypeIdentifiableByVirtualFile &&
+        registeredFileType instanceof LanguageFileType &&
+        (((FileTypeIdentifiableByVirtualFile)registeredFileType).isMyFileType(virtualFileNamedAsLanguageId) ||
+          ((FileTypeIdentifiableByVirtualFile)registeredFileType).isMyFileType(virtualFileWithLanguageIdAsExtension))) {
+        return ((LanguageFileType)registeredFileType).getLanguage();
+      }
+    }
+    return null;
   }
 
   private HostKind getStringKind( @NotNull PsiLanguageInjectionHost host )
