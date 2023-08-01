@@ -215,6 +215,10 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/467">#467</a>: IntelliJ plugin: support error/warning highlights in fragments (in prep for manifold-sql)
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/466">#466</a>: IntelliJ plugin: Deprecated class usage results in compilation error in IntelliJ IDEA
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/451">#451</a>: IntelliJ plugin: Invalid warning message re older manifold version in project than in intellij plugin
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/449">#449</a>: Remedy a java symbol resolve issue where a field and an inner class share the same name
