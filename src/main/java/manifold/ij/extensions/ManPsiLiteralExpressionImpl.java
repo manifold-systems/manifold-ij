@@ -97,6 +97,10 @@ public class ManPsiLiteralExpressionImpl extends PsiLiteralExpressionImpl
               if( value != null )
               {
                 String fqn = getFragmentValueFqn( value );
+                if( fqn == null )
+                {
+                  return null;
+                }
                 return JavaPsiFacade.getInstance( getProject() ).getParserFacade().createTypeFromText( fqn, this );
               }
             }
@@ -127,7 +131,7 @@ public class ManPsiLiteralExpressionImpl extends PsiLiteralExpressionImpl
     }
     else
     {
-      SmartPsiElementPointer container = (SmartPsiElementPointer)fragment.getContainer();
+      MaybeSmartPsiElementPointer container = (MaybeSmartPsiElementPointer)fragment.getContainer();
       if( container != null )
       {
         PsiElement elem = container.getElement();
@@ -146,7 +150,9 @@ public class ManPsiLiteralExpressionImpl extends PsiLiteralExpressionImpl
     String fqn = null;
     if( value instanceof PsiReferenceExpression )
     {
-      fqn = ((PsiField)((PsiReferenceExpression)value).resolve()).computeConstantValue().toString();
+      PsiField resolvedField = (PsiField)((PsiReferenceExpression)value).resolve();
+      Object resolvedRef = resolvedField == null ? null : resolvedField.computeConstantValue();
+      fqn = resolvedRef == null ? null : resolvedRef.toString();
     }
     else if( value instanceof PsiLiteralExpression )
     {

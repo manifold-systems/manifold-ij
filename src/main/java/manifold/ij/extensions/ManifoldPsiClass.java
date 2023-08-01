@@ -31,18 +31,18 @@ import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.Navigatable;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.light.LightClass;
 import com.intellij.psi.impl.smartPointers.SmartPointerManagerImpl;
 import com.intellij.psi.util.ClassUtil;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.swing.Icon;
 import javax.tools.DiagnosticCollector;
+import javax.tools.JavaFileObject;
+
 import manifold.api.fs.IFile;
 import manifold.api.fs.IFileFragment;
 import manifold.ij.core.ManModule;
@@ -52,24 +52,19 @@ public class ManifoldPsiClass extends LightClass
 {
   public static final Key<ManifoldPsiClass> KEY_MANIFOLD_PSI_CLASS = new Key<>( "Facade" );
 
-  private List<PsiFile> _files;
-  private List<IFile> _ifiles;
-  private String _fqn;
-  private ManModule _manModule;
-  private DiagnosticCollector _issues;
+  private final List<SmartPsiElementPointer<PsiFile>> _files;
+  private final List<IFile> _ifiles;
+  private final String _fqn;
+  private final ManModule _manModule;
+  private final DiagnosticCollector<JavaFileObject> _issues;
 
-  public ManifoldPsiClass( PsiClass delegate, ManModule module, List<IFile> files, String fqn, DiagnosticCollector issues )
+  public ManifoldPsiClass( PsiClass delegate, ManModule module, List<IFile> files, String fqn, DiagnosticCollector<JavaFileObject> issues )
   {
     super( delegate );
 
-    initialize( delegate, module, files, fqn, issues );
-  }
-
-  public void initialize( PsiClass delegate, ManModule manModule, List<IFile> files, String fqn, DiagnosticCollector issues )
-  {
     _ifiles = files;
     _fqn = fqn;
-    _manModule = manModule;
+    _manModule = module;
     _issues = issues;
     PsiManager manager = PsiManagerImpl.getInstance( delegate.getProject() );
     _files = new ArrayList<>( _ifiles.size() );
@@ -79,8 +74,11 @@ public class ManifoldPsiClass extends LightClass
       if( vfile != null && vfile.isValid() )
       {
         PsiFile file = manager.findFile( vfile );
-        _files.add( file );
-        file.putUserData( ModuleUtil.KEY_MODULE, manModule.getIjModule() );
+        if( file != null )
+        {
+          _files.add( SmartPointerManager.createPointer( file ) );
+          file.putUserData( ModuleUtil.KEY_MODULE, module.getIjModule() );
+        }
       }
     }
     if( _files.isEmpty )
@@ -88,7 +86,7 @@ public class ManifoldPsiClass extends LightClass
       PsiFile containingFile = delegate.getContainingFile();
       if( containingFile != null )
       {
-        _files.add( containingFile );
+        _files.add( SmartPointerManager.createPointer( containingFile ) );
       }
     }
     if( getContainingClass() == null )
@@ -112,8 +110,8 @@ public class ManifoldPsiClass extends LightClass
     {
       if( file instanceof IFileFragment )
       {
-        Object container = ((IFileFragment)file).getContainer();
-        if( !(container instanceof PsiFileFragment) )
+        MaybeSmartPsiElementPointer container = (MaybeSmartPsiElementPointer)((IFileFragment)file).getContainer();
+        if( container == null || !(container.getElement() instanceof PsiFileFragment) )
         {
           continue;
         }
@@ -129,7 +127,8 @@ public class ManifoldPsiClass extends LightClass
           }
           if( elem != null )
           {
-            ((IFileFragment)file).setContainer( SmartPointerManagerImpl.createPointer( elem ) );
+            ((IFileFragment)file).setContainer(
+              new MaybeSmartPsiElementPointer( SmartPointerManagerImpl.createPointer( elem ) ) );
           }
         }
       }
@@ -186,7 +185,7 @@ public class ManifoldPsiClass extends LightClass
 
   public List<PsiFile> getRawFiles()
   {
-    return _files;
+    return _files.stream().map( f -> f.getElement() ).collect( Collectors.toList() );
   }
 
   public List<IFile> getFiles()
@@ -220,13 +219,13 @@ public class ManifoldPsiClass extends LightClass
   public String getText()
   {
     //todo: handle multiple files somehow
-    return _files.isEmpty() ? "" : _files.get( 0 ).getText();
+    return _files.isEmpty() ? "" : getRawFiles().get( 0 ).getText();
   }
 
   @Override
   public PsiElement getNavigationElement()
   {
-    return _files.isEmpty() ? null : _files.get( 0 ).getNavigationElement();
+    return _files.isEmpty() ? null : getRawFiles().get( 0 ).getNavigationElement();
   }
 
 //  @Override
@@ -238,7 +237,7 @@ public class ManifoldPsiClass extends LightClass
   @Override
   public Icon getIcon( int flags )
   {
-    return _files.isEmpty() ? null : _files.get( 0 ).getIcon( flags );
+    return _files.isEmpty() ? null : getRawFiles().get( 0 ).getIcon( flags );
   }
 
   @Override
@@ -252,7 +251,7 @@ public class ManifoldPsiClass extends LightClass
     return _manModule.getIjModule();
   }
 
-  public DiagnosticCollector getIssues()
+  public DiagnosticCollector<JavaFileObject> getIssues()
   {
     return _issues;
   }

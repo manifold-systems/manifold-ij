@@ -29,6 +29,7 @@ import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.PsiFileFactoryImpl;
@@ -36,6 +37,7 @@ import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.PsiModificationTrackerImpl;
 import com.intellij.psi.search.GlobalSearchScope;
 
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.tools.DiagnosticCollector;
@@ -47,19 +49,18 @@ import manifold.api.host.AbstractTypeSystemListener;
 import manifold.api.host.Dependency;
 import manifold.api.host.RefreshRequest;
 import manifold.api.type.ITypeManifold;
-import manifold.ij.android.BuildVariantSymbols;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
-import manifold.ij.util.ReparseUtil;
+import manifold.ij.fs.IjFile;
 import manifold.internal.javac.FragmentProcessor;
 import manifold.api.util.cache.FqnCache;
 import manifold.api.util.cache.FqnCacheNode;
 import manifold.api.util.cache.IllegalTypeNameException;
-import manifold.preprocessor.definitions.ServiceDefinitions;
 import manifold.util.concurrent.ConcurrentHashSet;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jps.model.java.JavaResourceRootType;
 
 
 import static manifold.api.type.ContributorKind.*;
@@ -129,7 +130,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
   {
     if( file instanceof IFileFragment )
     {
-      SmartPsiElementPointer<?> container = (SmartPsiElementPointer<?>)((IFileFragment)file).getContainer();
+      MaybeSmartPsiElementPointer container = (MaybeSmartPsiElementPointer)((IFileFragment)file).getContainer();
       if( container == null )
       {
         return true;
@@ -292,6 +293,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       String result = "";
       DiagnosticCollector<JavaFileObject> issues = new DiagnosticCollector<>();
       String topLevelFqn = null;
+      boolean isTestContent = false;
       for( ITypeManifold tm : tms )
       {
         // MUST start with top-level class, otherwise the classes enclosing an inner class will have null userData
@@ -306,10 +308,12 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
         }
         found = tm;
         result = tm.contribute( null, topLevelFqn, false, result, issues );
+
+        isTestContent = isTestContent( module, topLevelFqn, isTestContent, tm );
       }
 
       ManModule actualModule = (ManModule)found.getModule();
-      PsiClass delegate = createPsiClass( actualModule, topLevelFqn, result );
+      PsiClass delegate = createPsiClass( actualModule, topLevelFqn, isTestContent, result );
       cacheAll( delegate, actualModule, found, issues );
     }
 
@@ -320,6 +324,16 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       fqnPsiCache.add( fqn );
     }
     return fqnPsiCache.getNode( fqn );
+  }
+
+  private static boolean isTestContent( ManModule module, String topLevelFqn, boolean isTestContent, ITypeManifold tm )
+  {
+    return isTestContent || tm.findFilesForType( topLevelFqn ).stream()
+      .map( file -> file instanceof IFileFragment ? file.getPhysicalFile() : file )
+      .map( file -> ((IjFile)file).getVirtualFile() )
+      .filter( vfile -> vfile != null )
+      .anyMatch( virtualFile -> ModuleRootManager.getInstance(
+        module.getIjModule() ).getFileIndex().isInTestSourceContent( virtualFile ) );
   }
 
   public static String findTopLevelFqn( ITypeManifold tm, String fqn )
@@ -370,7 +384,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     PsiManager.getInstance( ijProject ).addPsiTreeChangeListener( new PsiTreeChangeHandler(), ijProject );
   }
 
-  private PsiClass createPsiClass( ManModule module, String fqn, String source )
+  private PsiClass createPsiClass( ManModule module, String fqn, boolean isTestContent, String source )
   {
     //System.out.println( "NEW: " + fqn + "  MODULE: " + module.getName() );
     ////new Exception().fillInStackTrace().printStackTrace();
@@ -382,7 +396,33 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     {
       return PsiErrorClassUtil.create( module.getIjProject(), new RuntimeException( "Invalid class: " + fqn ) );
     }
+    ensurePackageExistsOnDisk( module, classes, isTestContent );
     return classes[0];
+  }
+
+  /**
+   * Ensure the directory structure mirroring the package exists on disk. Otherwise, code completion and such do not work.
+   * This is probably a bug in IJ, but I'm working around it.
+   */
+  private static void ensurePackageExistsOnDisk( ManModule module, PsiClass[] classes, boolean isTestContent )
+  {
+    if( classes[0] == null )
+    {
+      return;
+    }
+
+    JavaResourceRootType rootType = isTestContent ? JavaResourceRootType.TEST_RESOURCE : JavaResourceRootType.RESOURCE;
+    List<VirtualFile> sourceRoots = ModuleRootManager.getInstance( module.getIjModule() ).getSourceRoots( rootType );
+    for( VirtualFile sourceRoot : sourceRoots )
+    {
+      if( sourceRoot.isDirectory() )
+      {
+        String rootPath = sourceRoot.getPath();
+        String packageName = ((PsiClassOwner)classes[0].getContainingFile()).getPackageName();
+        packageName = packageName.replace( '.', '/' );
+        new File( rootPath, packageName ).mkdirs();
+      }
+    }
   }
 
   private PsiJavaFile createDummyJavaFile( String type, ManModule module, PsiManager manager, final String text )

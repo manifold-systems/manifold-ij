@@ -30,6 +30,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilerPaths;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.fileEditor.*;
+import com.intellij.openapi.fileEditor.ex.FileEditorWithProvider;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.module.ModuleUtil;
@@ -650,7 +651,7 @@ public class ManProject
   private void addBuildPropertiesFilePersistenceListener()
   {
     _permanentProjectConnection.subscribe( AppTopics.FILE_DOCUMENT_SYNC,
-      new BuildPropertiesFilePersistenceListener( _ijProject ) );
+      new ReparseFileTrigger( _ijProject ) );
   }
 
   private void addModuleClasspathListener()

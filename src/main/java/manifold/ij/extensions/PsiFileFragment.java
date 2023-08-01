@@ -21,6 +21,7 @@ package manifold.ij.extensions;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.PsiBuilderFactory;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiJavaFile;
 import java.util.Set;
@@ -78,8 +79,9 @@ interface PsiFileFragment extends ASTNode, PsiElement
     FragmentProcessor.Fragment f = fragmentProcessor.parseFragment( 0, hostText, style );
     if( f != null )
     {
+      Project project = containingFile.getProject();
       FileFragmentImpl fragment = new FileFragmentImpl( f.getScope(), f.getName(), f.getExt(), style,
-        FileUtil.toIFile( containingFile.getProject(), FileUtil.toVirtualFile( containingFile ) ),
+        FileUtil.toIFile( project, FileUtil.toVirtualFile( containingFile ) ),
         f.getOffset(), f.getContent().length(), f.getContent() );
 
       // must add a callback for the offset because this element's parent chain is not connected yet
@@ -99,7 +101,7 @@ interface PsiFileFragment extends ASTNode, PsiElement
       }
 
       setFragment( fragment );
-      fragment.setContainer( this );
+      fragment.setContainer( new MaybeSmartPsiElementPointer( this ) );
       deletedFragment( ManProject.manProjectFrom( containingFile.getProject() ), fragment );
       createdFragment( ManProject.manProjectFrom( containingFile.getProject() ), fragment );
       ReparseUtil.rerunAnnotators( containingFile );
