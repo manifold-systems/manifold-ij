@@ -4,7 +4,7 @@ public class ExerciseFragments
 {
   public void testInComment()
   {
-    /*[>MyProps.properties<]
+    /*[MyProps.properties/]
     foo=bar
     hi=hello
     */

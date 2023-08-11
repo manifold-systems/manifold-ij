@@ -48,7 +48,8 @@ interface PsiFileFragment extends ASTNode, PsiElement
 
   default void handleFragments()
   {
-    if( !getText().contains( "[>" ) )
+    if( !getText().contains( FragmentProcessor.FRAGMENT_START ) ||
+      !getText().contains( FragmentProcessor.FRAGMENT_END ) )
     {
       // not a fragment
       return;

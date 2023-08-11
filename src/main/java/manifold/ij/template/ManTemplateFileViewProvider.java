@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+import manifold.internal.javac.FragmentProcessor;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -142,11 +143,11 @@ public class ManTemplateFileViewProvider extends MultiplePsiFilesPerDocumentFile
 
       VirtualFileWindow fileWindow = (VirtualFileWindow)vfile;
       String text = ((Place) ReflectUtil.method( fileWindow.getDocumentWindow(), "getShreds" ).invoke()).get( 0 ).getHost().getText();
-      int start = text.indexOf( "[>" );
+      int start = text.indexOf( FragmentProcessor.FRAGMENT_START );
       if( start >= 0 )
       {
-        String fragmentName = text.substring( start + 2 );
-        int end = fragmentName.indexOf( "<]" );
+        String fragmentName = text.substring( start + FragmentProcessor.FRAGMENT_START.length() );
+        int end = fragmentName.indexOf( FragmentProcessor.FRAGMENT_END );
         if( end > 0 )
         {
           fragmentName = fragmentName.substring( 0, end );
