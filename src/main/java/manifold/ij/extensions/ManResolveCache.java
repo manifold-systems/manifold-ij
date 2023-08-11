@@ -119,10 +119,7 @@ public class ManResolveCache extends ResolveCache
     }
     catch( IndexNotReadyException inre )
     {
-      if( manModule != null && DumbService.isDumb( manModule.getIjProject() ) )
-      {
-        return ResolveResult.EMPTY_ARRAY;
-      }
+      return ResolveResult.EMPTY_ARRAY;
     }
 
     for( ResolveResult result: results )
