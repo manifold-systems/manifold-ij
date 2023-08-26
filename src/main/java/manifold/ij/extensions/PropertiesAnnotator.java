@@ -204,12 +204,16 @@ public class PropertiesAnnotator implements Annotator
       {
         if( isWriteOnlyProperty( expr, (PsiField)resolve, PsiUtil.getTopLevelClass( element ) ) )
         {
-          TextRange range = new TextRange( expr.getTextRange().getStartOffset(),
-            expr.getTextRange().getEndOffset() );
-          holder.newAnnotation( HighlightSeverity.ERROR,
-            MSG_CANNOT_ACCESS_WRITEONLY_PROPERTY.get( ((PsiField)resolve).getName() ) )
-            .range( range )
-            .create();
+          PsiClass containingClass = PsiUtil.getTopLevelClass( expr );
+          if( containingClass != PsiUtil.getTopLevelClass( resolve ) )
+          {
+            TextRange range = new TextRange( expr.getTextRange().getStartOffset(),
+              expr.getTextRange().getEndOffset() );
+            holder.newAnnotation( HighlightSeverity.ERROR,
+                MSG_CANNOT_ACCESS_WRITEONLY_PROPERTY.get( ((PsiField)resolve).getName() ) )
+              .range( range )
+              .create();
+          }
         }
       }
     }
