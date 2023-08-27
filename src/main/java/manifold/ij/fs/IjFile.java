@@ -64,6 +64,14 @@ public class IjFile extends IjResource implements IFile
   @Override
   public InputStream openInputStream() throws IOException
   {
+    if( _virtualFile != null &&
+      (getExtension().equalsIgnoreCase( "jar" ) ||
+        getExtension().equalsIgnoreCase( "zip" ) ||
+        getExtension().equalsIgnoreCase( "class" )) )
+    {
+      return new ByteArrayInputStream( _virtualFile.contentsToByteArray() );
+    }
+
     String temporaryBuffer = getTemporaryBuffer( this );
     if( temporaryBuffer != null )
     {

@@ -81,7 +81,7 @@ public class ManifoldPsiClass extends LightClass
         }
       }
     }
-    if( _files.isEmpty )
+    if( _files.isEmpty() )
     {
       PsiFile containingFile = delegate.getContainingFile();
       if( containingFile != null )
@@ -237,7 +237,12 @@ public class ManifoldPsiClass extends LightClass
   @Override
   public Icon getIcon( int flags )
   {
-    return _files.isEmpty() ? null : getRawFiles().get( 0 ).getIcon( flags );
+    if( _files.isEmpty() )
+    {
+      return null;
+    }
+    PsiFile psiFile = getRawFiles().get( 0 );
+    return psiFile == null ? null : psiFile.getIcon( flags );
   }
 
   @Override
