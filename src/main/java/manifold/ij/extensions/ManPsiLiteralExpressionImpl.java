@@ -22,25 +22,14 @@ package manifold.ij.extensions;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.JavaTokenType;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiAnnotationMemberValue;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiLiteralExpression;
-import com.intellij.psi.PsiReferenceExpression;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.SmartPsiElementPointer;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.PsiImplUtil;
 import com.intellij.psi.impl.java.stubs.impl.PsiLiteralStub;
 import com.intellij.psi.impl.source.tree.java.PsiLiteralExpressionImpl;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.tree.IElementType;
 import manifold.api.fs.IFileFragment;
+import manifold.ij.util.ReparseUtil;
 import manifold.rt.api.FragmentValue;
 import org.jetbrains.annotations.NotNull;
 
@@ -105,10 +94,15 @@ public class ManPsiLiteralExpressionImpl extends PsiLiteralExpressionImpl
               }
             }
           }
-          // Don't know the type **yet**, another thread is likely processing the new type.
-          // By observation, it appears returning `null` from this method is like saying "I don't know yet, ask again
-          // later", which is the desired behavior.
-          return null;
+          else
+          {
+            // The type has likely been invalidated by IJ, for instance by refreshing the build (maven/gradle).
+            // Force the enclosing file to reparse so the string literal can reestablish the fragment type. Note "reparse"
+            // here includes retokenization, which is necessary to trigger the handleFragments() method.
+            ReparseUtil.instance().reparseFile( getProject(), getContainingFile().getVirtualFile() );
+//            ((ManPsiBuilderImpl.ManPsiStringLiteral)token).handleFragments();
+            return null;
+          }
         }
       }
     }

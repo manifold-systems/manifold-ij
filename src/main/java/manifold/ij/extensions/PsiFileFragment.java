@@ -21,10 +21,12 @@ package manifold.ij.extensions;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.PsiBuilderFactory;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiJavaFile;
 import java.util.Set;
+
 import manifold.api.fs.IFileFragment;
 import manifold.api.fs.def.FileFragmentImpl;
 import manifold.api.type.ITypeManifold;
@@ -103,9 +105,12 @@ interface PsiFileFragment extends ASTNode, PsiElement
 
       setFragment( fragment );
       fragment.setContainer( new MaybeSmartPsiElementPointer( this ) );
-      deletedFragment( ManProject.manProjectFrom( containingFile.getProject() ), fragment );
-      createdFragment( ManProject.manProjectFrom( containingFile.getProject() ), fragment );
-      ReparseUtil.rerunAnnotators( containingFile );
+
+      ApplicationManager.getApplication().runReadAction( () -> {
+        deletedFragment( ManProject.manProjectFrom( containingFile.getProject() ), fragment );
+        createdFragment( ManProject.manProjectFrom( containingFile.getProject() ), fragment );
+      } );
+      ReparseUtil.instance().rerunAnnotators( containingFile );
     }
   }
 

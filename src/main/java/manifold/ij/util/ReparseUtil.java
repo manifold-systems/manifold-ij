@@ -22,7 +22,7 @@ package manifold.ij.util;
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerEx;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.impl.EditorHistoryManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -30,16 +30,46 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiInvalidElementAccessException;
 import com.intellij.util.FileContentUtil;
 import com.intellij.util.FileContentUtilCore;
-import java.util.Arrays;
+
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import manifold.ij.core.ManProject;
+import manifold.util.concurrent.ConcurrentHashSet;
 import org.jetbrains.annotations.NotNull;
 
 public class ReparseUtil
 {
-  public static void rerunAnnotators( @NotNull PsiFile psiFile )
+  private static ReparseUtil INSTANCE = null;
+
+  public static ReparseUtil instance()
+  {
+    return INSTANCE == null ? INSTANCE = new ReparseUtil() : INSTANCE;
+  }
+
+  private final Set<Project> _reparsingProjects;
+  private final Set<VirtualFile> _repsarsingFiles;
+
+  private ReparseUtil()
+  {
+    _reparsingProjects = new ConcurrentHashSet<>();
+    _repsarsingFiles = new ConcurrentHashSet<>();
+  }
+
+  public boolean isReparsing( Project project )
+  {
+    return _reparsingProjects.contains( project );
+  }
+
+  public boolean isReparsing( VirtualFile file )
+  {
+    return _repsarsingFiles.contains( file );
+  }
+
+  public void rerunAnnotators( @NotNull PsiFile psiFile )
   {
     ApplicationManager.getApplication().invokeLater(
       () -> {
@@ -58,15 +88,19 @@ public class ReparseUtil
       } );
   }
 
-  public static void reparseOpenJavaFilesForAllProjects()
+  public void reparseOpenJavaFilesForAllProjects()
   {
     for( Project project: ProjectManager.getInstance().getOpenProjects() )
     {
-      reparseOpenJavaFiles( project );
+      reparseRecentJavaFiles( project );
     }
   }
 
-  public static void reparseOpenJavaFiles( @NotNull Project project )
+  public void reparseRecentJavaFiles( @NotNull Project project )
+  {
+    reparseRecentJavaFiles( project, false );
+  }
+  public void reparseRecentJavaFiles( @NotNull Project project, boolean force )
   {
     if( project.isDisposed() )
     {
@@ -74,36 +108,97 @@ public class ReparseUtil
     }
 
     ManProject manProject = ManProject.manProjectFrom( project );
-    if( manProject == null || !manProject.isPreprocessorEnabledInAnyModules() )
+    if( manProject == null ||
+      !force && !manProject.isPreprocessorEnabledInAnyModules() ||
+      isReparsing( project ) )
     {
       // manifold-preprocessor is not used in this project, no need to reparse
       return;
     }
 
-    ApplicationManager.getApplication().invokeLater(
-      () -> ApplicationManager.getApplication().runReadAction(
+    _reparsingProjects.add( project ); // add here to prevent more reparse calls before invokeLater is processed
+    try
+    {
+      ApplicationManager.getApplication().invokeLater(
         () -> {
-          if( !project.isDisposed() )
+          try
           {
-            // reparse open files (except module-info.java files because that causes infinite reset)
-            Collection<? extends VirtualFile> openJavaFiles = getOpenJavaFiles( project ).stream()
-              .filter( vf -> !vf.getName().toLowerCase().endsWith( "module-info.java" ) ).collect( Collectors.toSet() );
-            FileContentUtil.reparseFiles( project, openJavaFiles, false );
+            ApplicationManager.getApplication().runReadAction(
+              () -> {
+                if( !project.isDisposed() )
+                {
+                  // reparse recent files (except module-info.java files because that causes infinite reset)
+                  Collection<? extends VirtualFile> openJavaFiles = getRecentJavaFiles( project ).stream()
+                    .filter( vf -> !vf.getName().toLowerCase().endsWith( "module-info.java" ) )
+                    .limit( 25 )
+                    .collect( Collectors.toSet() );
+                  FileContentUtil.reparseFiles( project, openJavaFiles, false );
+                }
+              } );
           }
-        } ) );
+          finally
+          {
+            _reparsingProjects.remove( project );
+          }
+        } );
+    }
+    catch( Throwable t )
+    {
+      // if invokeLater() throws before it runs
+      _reparsingProjects.remove( project );
+    }
   }
 
-  public static void reparseFile( @NotNull VirtualFile file )
+  public void reparseFile( @NotNull Project project, @NotNull VirtualFile file )
   {
-    ApplicationManager.getApplication().invokeLater(
-      () -> ApplicationManager.getApplication().runReadAction(
-        () -> FileContentUtilCore.reparseFiles( file ) ) );
+    if( isReparsing( project ) || isReparsing( file ) )
+    {
+      return;
+    }
+
+    _repsarsingFiles.add( file ); // add here to prevent more reparse calls before invokeLater is processed
+    try
+    {
+      ApplicationManager.getApplication().invokeLater(
+        () -> {
+          try
+          {
+            ApplicationManager.getApplication().runReadAction(
+              () -> {
+                if( !project.isDisposed() )
+                {
+                  FileContentUtilCore.reparseFiles( file );
+                }
+              } );
+          }
+          finally
+          {
+            _repsarsingFiles.remove( file );
+          }
+        } );
+    }
+    catch( Throwable t )
+    {
+      _repsarsingFiles.remove( file );
+    }
   }
 
-  private static Collection<? extends VirtualFile> getOpenJavaFiles( Project project )
+  private static Collection<? extends VirtualFile> getRecentJavaFiles( Project project )
   {
-    return Arrays.stream( FileEditorManager.getInstance( project ).getOpenFiles() )
-      .filter( vfile -> "java".equalsIgnoreCase( vfile.getExtension() ) )
-      .collect( Collectors.toSet() );
+    List<VirtualFile> historyFiles = EditorHistoryManager.getInstance( project ).getFileList();
+    List<VirtualFile> recentFiles = new ArrayList<>();
+    for( int i = historyFiles.size() - 1; i >= 0; i-- )
+    {
+      VirtualFile vfile = historyFiles.get( i );
+      if( "java".equalsIgnoreCase( vfile.getExtension() ) )
+      {
+        recentFiles.add( vfile );
+      }
+    }
+    return recentFiles;
+// used to return open java files, but if a file is opened in an editor then closed, it still needs to be reparsed, hence the change to using recent files
+//    return Arrays.stream( FileEditorManager.getInstance( project ).getOpenFiles() )
+//      .filter( vfile -> "java".equalsIgnoreCase( vfile.getExtension() ) )
+//      .collect( Collectors.toSet() );
   }
 }

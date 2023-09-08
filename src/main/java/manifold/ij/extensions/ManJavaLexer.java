@@ -94,7 +94,7 @@ public class ManJavaLexer extends LexerBase
   {
     PREPROCESSOR_DUMB_MODE.get()[0] = dumbMode;
     PropertiesComponent.getInstance().setValue( MANIFOLD_PREPROCESSOR_DUMB_MODE, dumbMode );
-    ReparseUtil.reparseOpenJavaFilesForAllProjects();
+    ReparseUtil.instance().reparseOpenJavaFilesForAllProjects();
   }
 
   public ManJavaLexer( @NotNull LanguageLevel level )

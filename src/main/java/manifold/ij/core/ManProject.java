@@ -416,9 +416,7 @@ public class ManProject
       ServiceDefinitions.REGISTERED_SYMBOL_PROVIDERS.clear();
 
       // retokenize open files in case the build variant changed
-      ReparseUtil.reparseOpenJavaFiles( getNativeProject() );
-
-      //todo: a file that was opened and then closed needs to be retokenized as well
+      ReparseUtil.instance().reparseRecentJavaFiles( getNativeProject() );
     }
   }
 
@@ -692,7 +690,7 @@ public class ManProject
             {
               // force retokenziation of files with #if in case the environment or other conditions have changed
               // while the file was closed (IJ caches tokenization and won't retokenize unless forced)
-              ReparseUtil.reparseFile( file );
+              ReparseUtil.instance().reparseFile( psiFile.getProject(), file );
             }
           }
         }

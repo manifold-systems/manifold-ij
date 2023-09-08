@@ -52,6 +52,7 @@ import manifold.api.type.ITypeManifold;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
+import manifold.ij.util.ReparseUtil;
 import manifold.internal.javac.FragmentProcessor;
 import manifold.api.util.cache.FqnCache;
 import manifold.api.util.cache.FqnCacheNode;
@@ -507,8 +508,15 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
   @Override
   public void refreshed()
   {
+    if( ReparseUtil.instance().isReparsing( getProject().getNativeProject() ) )
+    {
+      return;
+    }
+
     _filePathToPsi = new ConcurrentHashMap<>();
     _fqnPsiCachePerModule.clear();
+    // necessary for fragment classes and preprocessor usage
+    ReparseUtil.instance().reparseRecentJavaFiles( getProject().getNativeProject(), true );
   }
 
   private class PsiTreeChangeHandler extends PsiTreeChangeAdapter

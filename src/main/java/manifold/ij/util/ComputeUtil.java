@@ -50,14 +50,14 @@ public class ComputeUtil
         PsiType type = ((PsiLiteralExpression)detachedValue).getType();
         if( type instanceof PsiPrimitiveType )
         {
-          return computePrimitiveValue( ((PsiPrimitiveType)type).getName(), value.getLiteralValue() );
+          return ((PsiLiteralExpression)detachedValue).getValue();
         }
         else if( type instanceof PsiClassReferenceType )
         {
           int dims = type.getArrayDimensions();
           if( dims > 0 )
           {
-            //## todo
+            return ((PsiLiteralExpression)detachedValue).getValue();
           }
           else
           {

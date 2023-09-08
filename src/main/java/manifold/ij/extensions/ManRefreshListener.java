@@ -177,8 +177,14 @@ public class ManRefreshListener
         // at least notify the module containing the file (e.g., for extensions classes)
         Set<String> fqnByModule = new LinkedHashSet<>();
         ManModule manModule = ManProject.getModule( moduleForFile );
-        manModule.addFromPath( file, fqnByModule );
-        notify( manModule, file, fqnByModule, kind );
+        if( manModule != null )
+        {
+          manModule.addFromPath( file, fqnByModule );
+          if( !fqnByModule.isEmpty() )
+          {
+            notify( manModule, file, fqnByModule, kind );
+          }
+        }
       }
       return;
     }

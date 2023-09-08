@@ -70,7 +70,7 @@ class ReparseFileTrigger implements FileDocumentManagerListener
   {
     if( shouldReparse( document ) )
     {
-      ReparseUtil.reparseOpenJavaFiles( _ijProject );
+      ReparseUtil.instance().reparseRecentJavaFiles( _ijProject );
     }
   }
 
