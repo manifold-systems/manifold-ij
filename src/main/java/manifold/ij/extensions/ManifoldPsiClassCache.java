@@ -30,6 +30,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.util.text.Strings;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.PsiFileFactoryImpl;
@@ -62,6 +63,8 @@ import manifold.util.concurrent.ConcurrentWeakHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.model.java.JavaResourceRootType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import static manifold.api.type.ContributorKind.*;
@@ -72,8 +75,10 @@ import static manifold.api.type.ContributorKind.*;
  */
 public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 {
+  private static final Logger LOGGER = LoggerFactory.getLogger( ManifoldPsiClassCache.class );
+
   private final ManProject _project;
-  private Set<Project> _addedListeners;
+  private final Set<Project> _addedListeners;
   private final ThreadLocal<Set<String>> _shortCircuit;
   private ConcurrentHashMap<String, PsiClass> _filePathToPsi;
   private final Map<ManModule, FqnCache<ManifoldPsiClass>> _fqnPsiCachePerModule;
@@ -288,6 +293,18 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
   {
     Set<ITypeManifold> tms = module.findTypeManifoldsFor( fqn, tm -> tm.getContributorKind() == Primary ||
                                                                      tm.getContributorKind() == Partial );
+    if( tms.isEmpty() )
+    {
+      // fqn could be a fragment name, renew it, and try again
+      FragmentCache.instance().shakeBake( module.getIjProject(), fqn );
+      tms = module.findTypeManifoldsFor( fqn, tm -> tm.getContributorKind() == Primary ||
+        tm.getContributorKind() == Partial );
+      if( !tms.isEmpty() )
+      {
+        LOGGER.info( "Found '" + fqn + "' after shakeBake()" );
+      }
+    }
+
     ITypeManifold found = null;
     if( !tms.isEmpty() )
     {
@@ -508,15 +525,11 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
   @Override
   public void refreshed()
   {
-    if( ReparseUtil.instance().isReparsing( getProject().getNativeProject() ) )
-    {
-      return;
-    }
-
     _filePathToPsi = new ConcurrentHashMap<>();
     _fqnPsiCachePerModule.clear();
-    // necessary for fragment classes and preprocessor usage
-    ReparseUtil.instance().reparseRecentJavaFiles( getProject().getNativeProject(), true );
+
+    // reparse all files that have at least one embedded fragment, otherwise types will re-resolve normally
+    FragmentCache.instance().reparseAll( getProject().getNativeProject() );
   }
 
   private class PsiTreeChangeHandler extends PsiTreeChangeAdapter
@@ -530,15 +543,21 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
     @Override
     public void propertyChanged( @NotNull PsiTreeChangeEvent event )
     {
-      PsiFile file = event.getFile();
       String propertyName = event.getPropertyName();
-      if( file == null &&
-          (propertyName == null
-           || propertyName.equals( PsiTreeChangeEvent.PROP_FILE_TYPES )
-//           || propertyName.equals( PsiTreeChangeEvent.PROP_UNLOADED_PSI )
-           || propertyName.equals( PsiTreeChangeEvent.PROP_ROOTS )) )
+
+      if( event.getFile() != null )
+      {
+        return;
+      }
+
+//      if( Strings.areSameInstance( propertyName, PsiTreeChangeEvent.PROP_FILE_TYPES ) )
+//      {
+//        refreshed();
+//      }
+      if( Strings.areSameInstance( propertyName, PsiTreeChangeEvent.PROP_ROOTS ) )
       {
         refreshed();
+      //  ReparseUtil.instance().reparseRecentJavaFiles( getProject().getNativeProject(), true );
       }
     }
   }

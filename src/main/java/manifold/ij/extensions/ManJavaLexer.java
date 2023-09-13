@@ -273,8 +273,9 @@ public class ManJavaLexer extends LexerBase
 
   private void makeDirective()
   {
-    if( isDumbPreprocessorMode() )
+    if( _chameleon == null || isDumbPreprocessorMode() )
     {
+      // note the `_chamelion == null` check fixes an issue when an opening multiline comment proceeds a preprocessor directive
       makeDumbDirective();
     }
     else

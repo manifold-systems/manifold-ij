@@ -96,7 +96,7 @@ dependencies {
 
   // this is for manifold-sql where use of hikari brings in slf4j
   // if we don't add the nop here, hikari's exception logging looks like unhandled exceptions that IJ reports as manifold errors
-  //implementation 'org.slf4j:slf4j-api:2.07'
+  implementation 'org.slf4j:slf4j-api:2.0.3'
 
   implementation project('jps-plugin')
 }

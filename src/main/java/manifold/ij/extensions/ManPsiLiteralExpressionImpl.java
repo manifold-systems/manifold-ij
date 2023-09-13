@@ -97,10 +97,7 @@ public class ManPsiLiteralExpressionImpl extends PsiLiteralExpressionImpl
           else
           {
             // The type has likely been invalidated by IJ, for instance by refreshing the build (maven/gradle).
-            // Force the enclosing file to reparse so the string literal can reestablish the fragment type. Note "reparse"
-            // here includes retokenization, which is necessary to trigger the handleFragments() method.
-            ReparseUtil.instance().reparseFile( getProject(), getContainingFile().getVirtualFile() );
-//            ((ManPsiBuilderImpl.ManPsiStringLiteral)token).handleFragments();
+            // Note, the ManifoldPsiClassCache will re-resolve this via FragmentCache#shakeBake()
             return null;
           }
         }
