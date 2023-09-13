@@ -215,6 +215,28 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/495">#495</a>: IntelliJ pugin: Improve performance and stability of manifold fragments in IntelliJ
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/494">#494</a>: IntelliJ plugin: Fix fragment error reporting
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/489">#489</a>: Fix "cannot implement" interface error using delegation with @link in JDK 21
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/488">#488</a>: Fix tuple expr passed directly as argument to method (was broken in jdk 11+)
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/483">#483</a>: Unintended behavior for manifold-prop annotation parameters 
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/479">#479</a>: Unintended behavior when using both manifold-delegation and manifold-props
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/478">#478</a>: Support abstract enum methods with manifold-ext
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/477">#477</a>: Field access from inside the class on a @set field
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/476">#476</a>: Fix issue with using annotation processors e.g., lombok, mixed with manifold
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/474">#474</a>: Fix regression in 2023.1.15 where new fragment delimiters can interfere with string templates
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/364">#364</a>: Add @Expires annotation to prevent extension methods from duplicating JDK methods
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/473">#473</a>: Change fragment delimiters
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/471">#471</a>: Change return type to be compatible with SequencedCollection#reversed
