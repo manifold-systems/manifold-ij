@@ -93,46 +93,6 @@ public class ManifoldPsiClass extends LightClass
     {
       delegate.getContainingFile().putUserData( KEY_MANIFOLD_PSI_CLASS, this );
     }
-    reassignFragmentContainer();
-  }
-
-  /**
-   * Update the PsiComment hosting the fragment
-   */
-  private void reassignFragmentContainer()
-  {
-    if( !isFragment() )
-    {
-      return;
-    }
-
-    for( IFile file: _ifiles )
-    {
-      if( file instanceof IFileFragment )
-      {
-        MaybeSmartPsiElementPointer container = (MaybeSmartPsiElementPointer)((IFileFragment)file).getContainer();
-        if( container == null || !(container.getElement() instanceof PsiFileFragment) )
-        {
-          continue;
-        }
-        ((IFileFragment)file).setContainer( null );
-
-        PsiFile psiFile = PsiManager.getInstance( getProject() ).findFile( ((IjFile)file.getPhysicalFile()).getVirtualFile() );
-        if( psiFile != null )
-        {
-          PsiElement elem = psiFile.findElementAt( ((IFileFragment)file).getOffset() );
-          while( elem != null && !(elem instanceof PsiFileFragment) )
-          {
-            elem = elem.getParent();
-          }
-          if( elem != null )
-          {
-            ((IFileFragment)file).setContainer(
-              new MaybeSmartPsiElementPointer( SmartPointerManagerImpl.createPointer( elem ) ) );
-          }
-        }
-      }
-    }
   }
 
   @Override

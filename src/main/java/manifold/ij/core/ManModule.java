@@ -432,16 +432,24 @@ public class ManModule extends SimpleModule
         String fqn = src.relativePath( file.getParent() );
         String baseName = ManIdentifierUtil.makeIdentifier( file.getBaseName() );
         fqn = fqn.length() == 0 ? baseName : fqn.replace( '/', '.' ) + '.' + baseName;
-        for( ITypeManifold sp : getTypeManifolds() )
+        for( ITypeManifold tm : getTypeManifolds() )
         {
-          if( sp instanceof ResourceFileTypeManifold && sp.handlesFile( file ) )
+          if( tm instanceof ResourceFileTypeManifold && tm.handlesFile( file ) )
           {
-            fqn = ((ResourceFileTypeManifold)sp).getTypeNameForFile( fqn, file );
-            if( fqn != null )
+            try
             {
-              result.add( fqn );
+              fqn = ((ResourceFileTypeManifold)tm).getTypeNameForFile( fqn, file );
+              if( fqn != null )
+              {
+                result.add( fqn );
+              }
+              break outer;
             }
-            break outer;
+            catch( Exception ignore )
+            {
+              // parse exceptions may result from calling getTypeNameForFile
+              return;
+            }
           }
         }
         result.add( fqn );

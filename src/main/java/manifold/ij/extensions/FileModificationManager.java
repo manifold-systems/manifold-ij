@@ -47,6 +47,7 @@ import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
 import manifold.ij.util.DelayedRunner;
 import manifold.ij.util.FileUtil;
+import manifold.ij.util.ReparseUtil;
 
 public class FileModificationManager implements PsiDocumentTransactionListener, BulkFileListener
 {
@@ -148,6 +149,11 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
   private void _before( final List<? extends VFileEvent> events )
   {
     if( _project.isDisposed() )
+    {
+      return;
+    }
+
+    if( ReparseUtil.instance().isReparsing( _project ) )
     {
       return;
     }

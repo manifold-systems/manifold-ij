@@ -94,7 +94,7 @@ public class ManJavaLexer extends LexerBase
   {
     PREPROCESSOR_DUMB_MODE.get()[0] = dumbMode;
     PropertiesComponent.getInstance().setValue( MANIFOLD_PREPROCESSOR_DUMB_MODE, dumbMode );
-    ReparseUtil.reparseOpenJavaFilesForAllProjects();
+    ReparseUtil.instance().reparseOpenJavaFilesForAllProjects();
   }
 
   public ManJavaLexer( @NotNull LanguageLevel level )
@@ -273,8 +273,9 @@ public class ManJavaLexer extends LexerBase
 
   private void makeDirective()
   {
-    if( isDumbPreprocessorMode() )
+    if( _chameleon == null || isDumbPreprocessorMode() )
     {
+      // note the `_chamelion == null` check fixes an issue when an opening multiline comment proceeds a preprocessor directive
       makeDumbDirective();
     }
     else
