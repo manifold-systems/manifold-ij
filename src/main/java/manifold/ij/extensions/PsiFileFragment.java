@@ -21,10 +21,12 @@ package manifold.ij.extensions;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.PsiBuilderFactory;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiJavaFile;
 import java.util.Set;
+
 import manifold.api.fs.IFileFragment;
 import manifold.api.fs.def.FileFragmentImpl;
 import manifold.api.type.ITypeManifold;
@@ -48,6 +50,10 @@ interface PsiFileFragment extends ASTNode, PsiElement
 
   default void handleFragments()
   {
+    handleFragments( null );
+  }
+  default void handleFragments( PsiJavaFile containingFile )
+  {
     if( !getText().contains( FragmentProcessor.FRAGMENT_START ) ||
       !getText().contains( FragmentProcessor.FRAGMENT_END ) )
     {
@@ -61,17 +67,22 @@ interface PsiFileFragment extends ASTNode, PsiElement
       return;
     }
 
-    ManPsiBuilderFactoryImpl manBuilderFactory = (ManPsiBuilderFactoryImpl)PsiBuilderFactory.getInstance();
-    ASTNode buildingNode = manBuilderFactory.peekNode();
-    if( buildingNode == null )
-    {
-      return;
-    }
-
-    PsiJavaFile containingFile = ManPsiBuilderFactoryImpl.getPsiFile( buildingNode );
     if( containingFile == null )
     {
-      return;
+      // containingFile is null when tokenizing
+
+      ManPsiBuilderFactoryImpl manBuilderFactory = (ManPsiBuilderFactoryImpl)PsiBuilderFactory.getInstance();
+      ASTNode buildingNode = manBuilderFactory.peekNode();
+      if( buildingNode == null )
+      {
+        return;
+      }
+
+      containingFile = ManPsiBuilderFactoryImpl.getPsiFile( buildingNode );
+      if( containingFile == null )
+      {
+        return;
+      }
     }
 
     String hostText = getText();
@@ -97,15 +108,33 @@ interface PsiFileFragment extends ASTNode, PsiElement
       ITypeManifold tm = tms.stream().findFirst().orElse( null );
       if( tm == null )
       {
-        //## todo: add compile warning
+        //## todo: add compile warning in annotator
         return;
       }
 
       setFragment( fragment );
-      fragment.setContainer( new MaybeSmartPsiElementPointer( this ) );
-      deletedFragment( ManProject.manProjectFrom( containingFile.getProject() ), fragment );
-      createdFragment( ManProject.manProjectFrom( containingFile.getProject() ), fragment );
-      ReparseUtil.rerunAnnotators( containingFile );
+      MaybeSmartPsiElementPointer<PsiFileFragment> psiFileFragmentPointer = new MaybeSmartPsiElementPointer<>( this );
+      fragment.setContainer( psiFileFragmentPointer );
+
+      // Cache this to handle cases where the ManifoldPsiClassCache is refreshed e.g., after a maven/gradle refresh.
+      // Since the token for the string literal or comment must be reparsed/tokenized when changed, the cache will always
+      // be current.
+      FragmentCache.instance().add( psiFileFragmentPointer );
+
+      PsiJavaFile finalContainingFile = containingFile;
+      // note, this must be posted to the event thread so as not to hold this element's lock while indirectly accessing
+      // ManifoldPsiClassCache's monitor, otherwise deadlock will result
+      ApplicationManager.getApplication().invokeLater( () ->
+        ApplicationManager.getApplication().runReadAction( () -> {
+          deletedFragment( ManProject.manProjectFrom( finalContainingFile.getProject() ), fragment );
+          createdFragment( ManProject.manProjectFrom( finalContainingFile.getProject() ), fragment );
+        } ) );
+//todo: need to do this, but it bogs down the editor's background processing, cpu fan is constant, takes a while to finish error feedback traffic light, etc.
+      if( this instanceof ManDefaultASTFactoryImpl.ManPsiCommentImpl )
+      {
+        // necessary when renaming a file fragment's type
+        ReparseUtil.instance().rerunAnnotators( containingFile );
+      }
     }
   }
 

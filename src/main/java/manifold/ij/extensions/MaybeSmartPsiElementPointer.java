@@ -23,32 +23,68 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.impl.smartPointers.SmartPointerManagerImpl;
 
-public class MaybeSmartPsiElementPointer
+import java.util.Objects;
+
+public class MaybeSmartPsiElementPointer<E extends PsiElement>
 {
-  private Object _element;
+  // timeout for an element that remains invalid
+  private static final int TIMEOUT = 1000 * 60 * 2; // 2 minutes
 
-  public MaybeSmartPsiElementPointer( PsiElement element )
+  private E _element;
+  private SmartPsiElementPointer<E> _smartPointer;
+  private final long _timestamp;
+
+  public MaybeSmartPsiElementPointer( E element )
   {
     _element = element;
+    _smartPointer = null;
+    _timestamp = System.currentTimeMillis();
   }
-  public MaybeSmartPsiElementPointer( SmartPsiElementPointer<?> element )
+  public MaybeSmartPsiElementPointer( SmartPsiElementPointer<E> element )
   {
-    _element = element;
+    _smartPointer = element;
+    _element = null;
+    _timestamp = -1;
   }
 
-  public PsiElement getElement()
+  public E getElement()
   {
-    if( _element instanceof SmartPsiElementPointer )
+    if( _smartPointer != null )
     {
-      return ((SmartPsiElementPointer<?>)_element).getElement();
+      return _smartPointer.getElement();
     }
 
-    if( _element != null && ((PsiElement)_element).isValid() )
+    if( !_element.isValid() )
     {
-      _element = SmartPointerManagerImpl.createPointer( (PsiElement)_element );
-      return getElement();
+      // an element may be temporarily invalid e.g., not fully connected to tree yet.
+      // let callers handle this state, see isPermanentlyInvalid() below
+      return _element;
     }
 
-    return (PsiElement)_element;
+    _smartPointer = SmartPointerManagerImpl.createPointer( _element );
+    _element = null;
+    return getElement();
+  }
+
+  public boolean isPermanentlyInvalid()
+  {
+    return _element != null && !_element.isValid() &&
+      System.currentTimeMillis() - _timestamp > TIMEOUT;
+  }
+
+  @Override
+  public boolean equals( Object o )
+  {
+    if( this == o ) return true;
+    if( o == null || getClass() != o.getClass() ) return false;
+    MaybeSmartPsiElementPointer<?> that = (MaybeSmartPsiElementPointer<?>)o;
+    return _smartPointer != null && Objects.equals( _smartPointer, that._smartPointer ) ||
+      _element != null && Objects.equals( _element, that._element );
+  }
+
+  @Override
+  public int hashCode()
+  {
+    return _smartPointer != null ? Objects.hash( _smartPointer ) : Objects.hash( _element );
   }
 }
