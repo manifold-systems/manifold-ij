@@ -99,7 +99,7 @@ public class ManPsiBuilderFactoryImpl extends PsiBuilderFactoryImpl
     if( lexer instanceof JavaLexer )
     {
       // Replace lexer to handle Preprocessor
-      lexer = new ManJavaLexer( (JavaLexer)lexer );
+      lexer = new ManJavaLexer( (JavaLexer)lexer, PsiUtil.getLanguageLevel( project ) );
     }
     else if( lexer == null )
     {

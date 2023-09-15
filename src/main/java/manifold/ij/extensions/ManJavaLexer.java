@@ -32,6 +32,9 @@ import com.intellij.util.text.CharArrayUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntStack;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.util.ReparseUtil;
 import manifold.preprocessor.PreprocessorParser;
@@ -59,7 +62,12 @@ public class ManJavaLexer extends LexerBase
   private static final LocklessLazyVar<boolean[]> PREPROCESSOR_DUMB_MODE = LocklessLazyVar.make( () ->
     new boolean[] {PropertiesComponent.getInstance().getBoolean( MANIFOLD_PREPROCESSOR_DUMB_MODE )} );
 
+  private static final int STATE_DEFAULT = 0;
+  private static final int STATE_TEXT_BLOCK_TEMPLATE = 1;
+
   private final com.intellij.lang.java.lexer.@Jailbreak _JavaLexer _flexLexer;
+  private final boolean myStringTemplates;
+  private final IntStack myStateStack = new IntArrayList(1);
   private CharSequence _buffer;
   private @Nullable char[] _bufferArray;
   private int _bufferIndex;
@@ -68,6 +76,9 @@ public class ManJavaLexer extends LexerBase
   private IElementType _tokenType;
   private SmartPsiElementPointer<PsiJavaFile> _psiFile;
   private ASTNode _chameleon;
+  /** The length of the last valid unicode escape (6 or greater), or 1 when no unicode escape was found. */
+  private int mySymbolLength = 1;
+
 
   private final List<SourceStatement> _visibleStmts = new ArrayList<>();
   private final LocklessLazyVar<Definitions> _definitions = LocklessLazyVar.make( () -> {
@@ -100,11 +111,13 @@ public class ManJavaLexer extends LexerBase
   public ManJavaLexer( @NotNull LanguageLevel level )
   {
     _flexLexer = new com.intellij.lang.java.lexer.@Jailbreak _JavaLexer( level );
+    myStringTemplates = level.isAtLeast( LanguageLevel.JDK_21_PREVIEW );
   }
 
-  public ManJavaLexer( @Jailbreak JavaLexer lexer )
+  public ManJavaLexer( @Jailbreak JavaLexer lexer, @NotNull LanguageLevel level )
   {
     _flexLexer = lexer.myFlexLexer;
+    myStringTemplates = level.isAtLeast( LanguageLevel.JDK_21_PREVIEW );
   }
 
   public void setChameleon( ASTNode chameleon )
@@ -130,6 +143,8 @@ public class ManJavaLexer extends LexerBase
     _bufferEndOffset = endOffset;
     _tokenType = null;
     _tokenEndOffset = startOffset;
+    mySymbolLength = 1;
+    myStateStack.push(initialState);
     _flexLexer.reset( _buffer, startOffset, endOffset, 0 );
   }
 
@@ -181,7 +196,7 @@ public class ManJavaLexer extends LexerBase
 
     _bufferIndex = _tokenEndOffset;
 
-    char c = charAt( _bufferIndex );
+    char c = locateCharAt( _bufferIndex );
     switch( c )
     {
       case ' ':
@@ -193,38 +208,71 @@ public class ManJavaLexer extends LexerBase
         _tokenEndOffset = getWhitespaces( _bufferIndex + 1 );
         break;
 
+      case '{':
+        if (myStringTemplates) {
+          int count = myStateStack.topInt() >> 16;
+          if (count > 0) myStateStack.push((myStateStack.popInt() & STATE_TEXT_BLOCK_TEMPLATE) | ((count + 1) << 16));
+        }
+        _tokenType = JavaTokenType.LBRACE;
+        _tokenEndOffset = _bufferIndex + mySymbolLength;
+        break;
+      case '}':
+        if (myStringTemplates) {
+          int count = myStateStack.topInt() >> 16;
+          if (count > 0) {
+            if (count != 1) {
+              myStateStack.push((myStateStack.popInt() & STATE_TEXT_BLOCK_TEMPLATE) | ((count - 1) << 16));
+            }
+            else {
+              int state = myStateStack.popInt();
+              if (myStateStack.isEmpty()) myStateStack.push(STATE_DEFAULT);
+              if ((state & STATE_TEXT_BLOCK_TEMPLATE) != 0) {
+                boolean fragment = locateLiteralEnd(_bufferIndex + mySymbolLength, LiteralType.TEXT_BLOCK);
+                _tokenType = fragment ? JavaTokenType.TEXT_BLOCK_TEMPLATE_MID : JavaTokenType.TEXT_BLOCK_TEMPLATE_END;
+              }
+              else {
+                boolean fragment = locateLiteralEnd(_bufferIndex + mySymbolLength, LiteralType.STRING);
+                _tokenType = fragment ? JavaTokenType.STRING_TEMPLATE_MID : JavaTokenType.STRING_TEMPLATE_END;
+              }
+              break;
+            }
+          }
+        }
+        _tokenType = JavaTokenType.RBRACE;
+        _tokenEndOffset = _bufferIndex + mySymbolLength;
+        break;
       case '/':
         if( _bufferIndex + 1 >= _bufferEndOffset )
         {
           _tokenType = JavaTokenType.DIV;
           _tokenEndOffset = _bufferEndOffset;
         }
-        else
-        {
-          char nextChar = charAt( _bufferIndex + 1 );
-          if( nextChar == '/' )
-          {
+        else {
+          int l1 = mySymbolLength;
+          char nextChar = locateCharAt(_bufferIndex + l1);
+          if (nextChar == '/') {
             _tokenType = JavaTokenType.END_OF_LINE_COMMENT;
-            _tokenEndOffset = getLineTerminator( _bufferIndex + 2 );
+            _tokenEndOffset = getLineTerminator(_bufferIndex + l1 + mySymbolLength);
           }
-          else if( nextChar == '*' )
-          {
-            if( _bufferIndex + 2 >= _bufferEndOffset ||
-                (charAt( _bufferIndex + 2 )) != '*' ||
-                (_bufferIndex + 3 < _bufferEndOffset &&
-                 (charAt( _bufferIndex + 3 )) == '/') )
-            {
+          else if (nextChar == '*') {
+            int l2 = mySymbolLength;
+            if (_bufferIndex + l1 + l2 < _bufferEndOffset && locateCharAt(_bufferIndex + l1 + l2) == '*') {
+              int l3 = mySymbolLength;
+              if (_bufferIndex + l1 + l2 + l3 < _bufferEndOffset && locateCharAt(_bufferIndex + l1 + l2 + l3) == '/') {
+                _tokenType = JavaTokenType.C_STYLE_COMMENT;
+                _tokenEndOffset = _bufferIndex + l1 + l2 + l3 + mySymbolLength;
+              }
+              else {
+                _tokenType = JavaDocElementType.DOC_COMMENT;
+                _tokenEndOffset = getClosingComment(_bufferIndex + l1 + l2 + l3);
+              }
+            }
+            else {
               _tokenType = JavaTokenType.C_STYLE_COMMENT;
-              _tokenEndOffset = getClosingComment( _bufferIndex + 2 );
-            }
-            else
-            {
-              _tokenType = JavaDocElementType.DOC_COMMENT;
-              _tokenEndOffset = getClosingComment( _bufferIndex + 3 );
+              _tokenEndOffset = getClosingComment(_bufferIndex + l1 + l2 + mySymbolLength);
             }
           }
-          else
-          {
+          else {
             flexLocateToken();
           }
         }
@@ -232,21 +280,25 @@ public class ManJavaLexer extends LexerBase
 
       case '\'':
         _tokenType = JavaTokenType.CHARACTER_LITERAL;
-        _tokenEndOffset = getClosingQuote( _bufferIndex + 1, c );
+        locateLiteralEnd(_bufferIndex + mySymbolLength, LiteralType.CHAR);
         break;
 
       case '"':
-        if( TEXT_BLOCK_LITERAL != null && // non-null if IJ >= 2019.2
-            _bufferIndex + 2 < _bufferEndOffset &&
-            charAt( _bufferIndex + 2 ) == '"' && charAt( _bufferIndex + 1 ) == '"' )
-        {
-          _tokenType = TEXT_BLOCK_LITERAL;
-          _tokenEndOffset = getTextBlockEnd( _bufferIndex + 2 );
+        int l1 = mySymbolLength;
+        if (_bufferIndex + l1 < _bufferEndOffset && locateCharAt(_bufferIndex + l1) == '"') {
+          int l2 = mySymbolLength;
+          if (_bufferIndex + l1 + l2 < _bufferEndOffset && locateCharAt(_bufferIndex + l1 + l2) == '"') {
+            boolean fragment = locateLiteralEnd(_bufferIndex + l1 + l2 + mySymbolLength, LiteralType.TEXT_BLOCK);
+            _tokenType = fragment ? JavaTokenType.TEXT_BLOCK_TEMPLATE_BEGIN : JavaTokenType.TEXT_BLOCK_LITERAL;
+          }
+          else {
+            _tokenType = JavaTokenType.STRING_LITERAL;
+            _tokenEndOffset = _bufferIndex + l1 + l2;
+          }
         }
-        else
-        {
-          _tokenType = JavaTokenType.STRING_LITERAL;
-          _tokenEndOffset = getClosingQuote( _bufferIndex + 1, c );
+        else {
+          boolean fragment = locateLiteralEnd(_bufferIndex + l1, LiteralType.STRING);
+          _tokenType = fragment ? JavaTokenType.STRING_TEMPLATE_BEGIN : JavaTokenType.STRING_LITERAL;
         }
         break;
 //
@@ -415,16 +467,16 @@ public class ManJavaLexer extends LexerBase
     }
 
     int pos = offset;
-    char c = charAt( pos );
+    char c = locateCharAt( pos );
 
     while( c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' )
     {
-      pos++;
+      pos += mySymbolLength;
       if( pos == _bufferEndOffset )
       {
         return pos;
       }
-      c = charAt( pos );
+      c = locateCharAt( pos );
     }
 
     return pos;
@@ -438,7 +490,7 @@ public class ManJavaLexer extends LexerBase
     }
 
     int pos = offset;
-    char c = charAt( pos );
+    char c = locateCharAt( pos );
 
     while( c == ' ' || c == '\t' )
     {
@@ -447,7 +499,7 @@ public class ManJavaLexer extends LexerBase
       {
         return pos;
       }
-      c = charAt( pos );
+      c = locateCharAt( pos );
     }
 
     return pos;
@@ -499,7 +551,7 @@ public class ManJavaLexer extends LexerBase
     }
 
     int pos = offset;
-    char c = charAt( pos );
+    char c = locateCharAt( pos );
 
     while( true )
     {
@@ -510,7 +562,7 @@ public class ManJavaLexer extends LexerBase
         {
           return _bufferEndOffset;
         }
-        c = charAt( pos );
+        c = locateCharAt( pos );
       }
 
       if( c == '\\' )
@@ -520,7 +572,7 @@ public class ManJavaLexer extends LexerBase
         {
           return _bufferEndOffset;
         }
-        c = charAt( pos );
+        c = locateCharAt( pos );
         if( c == '\n' || c == '\r' )
         {
           continue;
@@ -530,7 +582,7 @@ public class ManJavaLexer extends LexerBase
         {
           return _bufferEndOffset;
         }
-        c = charAt( pos );
+        c = locateCharAt( pos );
       }
       else if( c == quoteChar )
       {
@@ -546,51 +598,81 @@ public class ManJavaLexer extends LexerBase
     return pos + 1;
   }
 
-  private int getTextBlockEnd( int offset )
-  {
+  /**
+   * @param offset  the offset to start.
+   * @param literalType  the type of string literal.
+   * @return {@code true} if this is a string template fragment, {@code false} otherwise.
+   */
+  private boolean locateLiteralEnd(int offset, LiteralType literalType) {
     int pos = offset;
 
-    while( (pos = getClosingQuote( pos + 1, '"' )) < _bufferEndOffset )
-    {
-      if( pos + 1 < _bufferEndOffset && charAt( pos + 1 ) == '"' && charAt( pos ) == '"' )
-      {
-        pos += 2;
-        break;
-      }
-    }
+    while (pos < _bufferEndOffset) {
+      char c = locateCharAt(pos);
 
-    return pos;
+      if (c == '\\') {
+        pos += mySymbolLength;
+        // on (encoded) backslash we also need to skip the next symbol (e.g. \\u005c" is translated to \")
+        if (pos < _bufferEndOffset) {
+          if (locateCharAt(pos) == '{' && myStringTemplates && literalType != LiteralType.CHAR) {
+            pos += mySymbolLength;
+            _tokenEndOffset = pos;
+            if (myStateStack.topInt() == 0) myStateStack.popInt();
+            if (literalType == LiteralType.TEXT_BLOCK) {
+              myStateStack.push(STATE_TEXT_BLOCK_TEMPLATE | (1 << 16));
+            }
+            else {
+              myStateStack.push(STATE_DEFAULT | (1 << 16));
+            }
+            return true;
+          }
+        }
+      }
+      else if (c == literalType.c) {
+        if (literalType == LiteralType.TEXT_BLOCK) {
+          if ((pos += mySymbolLength) < _bufferEndOffset && locateCharAt(pos) == '"') {
+            if ((pos += mySymbolLength) < _bufferEndOffset && locateCharAt(pos) == '"') {
+              _tokenEndOffset = pos + mySymbolLength;
+              return false;
+            }
+          }
+          continue;
+        }
+        else {
+          _tokenEndOffset = pos + mySymbolLength;
+          return false;
+        }
+      }
+      else if ((c == '\n' || c == '\r') && mySymbolLength == 1 && literalType != LiteralType.TEXT_BLOCK) {
+        _tokenEndOffset = pos;
+        return false;
+      }
+      pos += mySymbolLength;
+    }
+    _tokenEndOffset = pos;
+    return false;
   }
 
   private int getClosingComment( int offset )
   {
     int pos = offset;
 
-    while( pos < _bufferEndOffset - 1 )
-    {
-      char c = charAt( pos );
-      if( c == '*' && (charAt( pos + 1 )) == '/' )
-      {
-        break;
-      }
-      pos++;
+    while (pos < _bufferEndOffset) {
+      char c = locateCharAt(pos);
+      pos += mySymbolLength;
+      if (c == '*' && pos < _bufferEndOffset && locateCharAt(pos) == '/') break;
     }
 
-    return pos + 2;
+    return pos + mySymbolLength;
   }
 
   private int getLineTerminator( int offset )
   {
     int pos = offset;
 
-    while( pos < _bufferEndOffset )
-    {
-      char c = charAt( pos );
-      if( c == '\r' || c == '\n' )
-      {
-        break;
-      }
-      pos++;
+    while (pos < _bufferEndOffset) {
+      char c = locateCharAt(pos);
+      if (c == '\r' || c == '\n') break;
+      pos += mySymbolLength;
     }
 
     return pos;
@@ -599,6 +681,33 @@ public class ManJavaLexer extends LexerBase
   private char charAt( int position )
   {
     return _bufferArray != null ? _bufferArray[position] : _buffer.charAt( position );
+  }
+
+  private char locateCharAt(int offset) {
+    mySymbolLength = 1;
+    char first = charAt(offset);
+    if (first != '\\') return first;
+    int pos = offset + 1;
+    if (pos < _bufferEndOffset && charAt(pos) == '\\') return first;
+    boolean escaped = true;
+    int i = offset;
+    while (--i >= 0 && charAt(i) == '\\') escaped = !escaped;
+    if (!escaped) return first;
+    if (pos < _bufferEndOffset && charAt(pos) != 'u') return first;
+    //noinspection StatementWithEmptyBody
+    while (++pos < _bufferEndOffset && charAt(pos) == 'u');
+    if (pos + 3 >= _bufferEndOffset) return first;
+    int result = 0;
+    for (int max = pos + 4; pos < max; pos++) {
+      result <<= 4;
+      char c = charAt(pos);
+      if ('0' <= c && c <= '9') result += c - '0';
+      else if ('a' <= c && c <= 'f') result += (c - 'a') + 10;
+      else if ('A' <= c && c <= 'F') result += (c - 'A') + 10;
+      else return first;
+    }
+    mySymbolLength = pos - offset;
+    return (char)result;
   }
 
   @NotNull
@@ -614,4 +723,12 @@ public class ManJavaLexer extends LexerBase
     return _bufferEndOffset;
   }
 
+  enum LiteralType {
+    STRING('"'), CHAR('\''), TEXT_BLOCK('"');
+
+    final char c;
+    LiteralType(char c) {
+      this.c = c;
+    }
+  }
 }
