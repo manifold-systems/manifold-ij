@@ -130,8 +130,8 @@ runIde {
 }
 
 patchPluginXml {
-  sinceBuild = '231.0'
-  untilBuild = '232.*'
+  listProductsReleases.sinceVersion = '2023.2.2'
+  listProductsReleases.untilVersion = '2023.3.*'
 }
 
 buildSearchableOptions {
