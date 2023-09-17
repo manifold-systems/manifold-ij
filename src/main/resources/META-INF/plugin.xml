@@ -215,8 +215,6 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/497">#497</a>: IntelliJ pugin: Complete JDK 21 support
-<br>
 <a href="https://github.com/manifold-systems/manifold/issues/495">#495</a>: IntelliJ pugin: Improve performance and stability of manifold fragments in IntelliJ
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/494">#494</a>: IntelliJ plugin: Fix fragment error reporting
