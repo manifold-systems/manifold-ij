@@ -537,10 +537,8 @@ Other minor fixes and improvements.
 
 <!--    disabled indefinitely, inconsistent wrt downloading manifold etc.  -->
 <!--    <frameworkSupport implementation="manifold.ij.extensions.ManSupportProvider"/>-->
+
 <!--    <framework.type implementation="manifold.ij.extensions.ManFrameworkType"/>-->
-
-    <postStartupActivity implementation="manifold.ij.core.ManStartupActivity" order="first"/>
-
     <java.elementFinder implementation="manifold.ij.extensions.ManTypeFinder" order="first, before java"/>
     <java.shortNamesCache implementation="manifold.ij.extensions.ManShortNamesCache"/>
     <gotoDeclarationHandler implementation="manifold.ij.extensions.ManGotoDeclarationHandler"/>
@@ -586,6 +584,12 @@ Other minor fixes and improvements.
     <!-- ManJavaSyntaxHighlighterFactory exists solely so we can include '$' as an escapable for String literal templates
          see ManJavaFileHighlighter -->
     <lang.syntaxHighlighterFactory language="JAVA" implementationClass="manifold.ij.extensions.ManJavaSyntaxHighlighterFactory" order="first"/>
+
+    <!--
+    This key is necessary to allow SlowOperations to ignore a bit of slowness caused by fragment reparsing/caching.
+    See references to "maifold.fragments" in code.
+     -->
+    <registryKey key="ide.slow.operations.assertion.manifold.fragments" description="Slow operation" defaultValue="false"/>
 
     <!-- This enables the ManBuilderService and dynamically configures the classpath (includes manifold-jps-plugin.jar etc.) -->
     <buildProcess.parametersProvider implementation="manifold.ij.jps.ManBuildClasspathProvider"/>
