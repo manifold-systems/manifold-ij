@@ -78,7 +78,7 @@ public class MiscAnnotator implements Annotator
         String qname = ((PsiClass)psiClass).getQualifiedName();
         if( qname != null && qname.equals( "manifold.ext.rt.api.auto" ) )
         {
-          holder.newAnnotation( HighlightSeverity.TEXT_ATTRIBUTES, "" )
+          holder.newAnnotation( HighlightSeverity.INFORMATION, "" )
             .range( element.getTextRange() )
             .textAttributes( JavaHighlightingColors.KEYWORD )
             .create();

@@ -20,12 +20,14 @@
 package manifold.ij.extensions;
 
 
+import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.util.FileContentUtilCore;
+import com.intellij.util.SlowOperations;
 import manifold.api.fs.IFileFragment;
 import manifold.util.concurrent.ConcurrentHashSet;
 
@@ -188,21 +190,25 @@ public class FragmentCache
 
             updateCache();
 
-            Set<PsiFile> files = new HashSet<>();
-            ConcurrentHashMap<String, MaybeSmartPsiElementPointer<PsiFileFragment>> projCache = _cache.get( project );
-            for( MaybeSmartPsiElementPointer<PsiFileFragment> value : projCache.values() )
+            // note see ide.slow.operations.assertion.manifold.fragments registrykey defined in plugin.xml
+            try( AccessToken ignore = SlowOperations.allowSlowOperations( "manifold.fragments" ) )
             {
-              PsiFileFragment psiFileFragment = value.getElement();
-              if( psiFileFragment != null )
+              Set<PsiFile> files = new HashSet<>();
+              ConcurrentHashMap<String, MaybeSmartPsiElementPointer<PsiFileFragment>> projCache = _cache.get( project );
+              for( MaybeSmartPsiElementPointer<PsiFileFragment> value : projCache.values() )
               {
-                PsiFile containingFile = psiFileFragment.getContainingFile();
-                if( containingFile.getProject() == project )
+                PsiFileFragment psiFileFragment = value.getElement();
+                if( psiFileFragment != null )
                 {
-                  files.add( containingFile );
+                  PsiFile containingFile = psiFileFragment.getContainingFile();
+                  if( containingFile.getProject() == project )
+                  {
+                    files.add( containingFile );
+                  }
                 }
               }
+              FileContentUtilCore.reparseFiles( files.stream().map( f -> f.getVirtualFile() ).collect( Collectors.toList() ) );
             }
-            FileContentUtilCore.reparseFiles( files.stream().map( f -> f.getVirtualFile() ).collect( Collectors.toList() ) );
           } );
         }
         finally
