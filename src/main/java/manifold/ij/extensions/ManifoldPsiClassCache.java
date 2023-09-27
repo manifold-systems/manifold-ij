@@ -187,6 +187,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       }
       catch( Exception e )
       {
+        LOGGER.error( "Exception creating manifold Psi class '" + fqn + "'", e );
         return PsiErrorClassUtil.create( module.getIjProject(), e );
       }
       return node == null ? null : node.getUserData();

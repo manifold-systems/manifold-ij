@@ -587,6 +587,12 @@ Other minor fixes and improvements.
          see ManJavaFileHighlighter -->
     <lang.syntaxHighlighterFactory language="JAVA" implementationClass="manifold.ij.extensions.ManJavaSyntaxHighlighterFactory" order="first"/>
 
+    <!--
+    This key is necessary to allow SlowOperations to ignore a bit of slowness caused by fragment reparsing/caching.
+    See references to "maifold.fragments" in code.
+     -->
+    <registryKey key="ide.slow.operations.assertion.manifold.fragments" description="Slow operation" defaultValue="false"/>
+
     <!-- This enables the ManBuilderService and dynamically configures the classpath (includes manifold-jps-plugin.jar etc.) -->
     <buildProcess.parametersProvider implementation="manifold.ij.jps.ManBuildClasspathProvider"/>
     <compileServer.plugin classpath=""/>
