@@ -21,12 +21,14 @@ package manifold.ij.extensions;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.PsiBuilderFactory;
+import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiJavaFile;
 import java.util.Set;
 
+import com.intellij.util.SlowOperations;
 import manifold.api.fs.IFileFragment;
 import manifold.api.fs.def.FileFragmentImpl;
 import manifold.api.type.ITypeManifold;
@@ -126,8 +128,11 @@ interface PsiFileFragment extends ASTNode, PsiElement
       // ManifoldPsiClassCache's monitor, otherwise deadlock will result
       ApplicationManager.getApplication().invokeLater( () ->
         ApplicationManager.getApplication().runReadAction( () -> {
-          deletedFragment( ManProject.manProjectFrom( finalContainingFile.getProject() ), fragment );
-          createdFragment( ManProject.manProjectFrom( finalContainingFile.getProject() ), fragment );
+          // note see ide.slow.operations.assertion.manifold.fragments registrykey defined in plugin.xml
+          try( AccessToken ignore = SlowOperations.startSection( "manifold.fragments" ) ) {
+            deletedFragment( ManProject.manProjectFrom( finalContainingFile.getProject() ), fragment );
+            createdFragment( ManProject.manProjectFrom( finalContainingFile.getProject() ), fragment );
+          } 
         } ) );
 //todo: need to do this, but it bogs down the editor's background processing, cpu fan is constant, takes a while to finish error feedback traffic light, etc.
       if( this instanceof ManDefaultASTFactoryImpl.ManPsiCommentImpl )
