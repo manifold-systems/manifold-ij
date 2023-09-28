@@ -128,7 +128,7 @@ runIde {
 }
 
 patchPluginXml {
-  sinceBuild = '213.0'
+  sinceBuild = '213'
   untilBuild = '222.*'
 }
 
