@@ -129,7 +129,7 @@ interface PsiFileFragment extends ASTNode, PsiElement
       ApplicationManager.getApplication().invokeLater( () ->
         ApplicationManager.getApplication().runReadAction( () -> {
           // note see ide.slow.operations.assertion.manifold.fragments registrykey defined in plugin.xml
-          try( AccessToken ignore = SlowOperations.startSection( "manifold.fragments" ) ) {
+          try( AccessToken ignore = SlowOperations.allowSlowOperations( "manifold.fragments" ) ) {
             deletedFragment( ManProject.manProjectFrom( finalContainingFile.getProject() ), fragment );
             createdFragment( ManProject.manProjectFrom( finalContainingFile.getProject() ), fragment );
           } 

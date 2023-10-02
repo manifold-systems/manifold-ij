@@ -24,6 +24,7 @@
 package manifold.ij.extensions;
 
 import com.intellij.injected.editor.VirtualFileWindow;
+import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.DumbService;
@@ -41,6 +42,8 @@ import com.intellij.psi.impl.PsiDocumentTransactionListener;
 import com.intellij.testFramework.LightVirtualFile;
 import java.io.File;
 import java.util.List;
+
+import com.intellij.util.SlowOperations;
 import manifold.api.fs.IFile;
 import manifold.api.fs.IResource;
 import manifold.ij.core.ManProject;
@@ -215,7 +218,10 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
         }
         else if( isMoveOrRename( event ) )
         {
-          processRenameAfter( event );
+          try( AccessToken ignore = SlowOperations.allowSlowOperations( "manifold.fragments" ) )
+          {
+            processRenameAfter( event );
+          }
         }
         else // modified
         {

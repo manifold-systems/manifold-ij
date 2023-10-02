@@ -190,7 +190,7 @@ public class FragmentCache
             updateCache();
 
             // note see ide.slow.operations.assertion.manifold.fragments registrykey defined in plugin.xml
-            try( AccessToken ignore = SlowOperations.startSection( "manifold.fragments" ) )
+            try( AccessToken ignore = SlowOperations.allowSlowOperations( "manifold.fragments" ) )
             {
               Set<PsiFile> files = new HashSet<>();
               ConcurrentHashMap<String, MaybeSmartPsiElementPointer<PsiFileFragment>> projCache = _cache.get( project );
