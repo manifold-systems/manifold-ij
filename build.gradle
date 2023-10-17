@@ -21,7 +21,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.util.concurrent.TimeUnit
 
 plugins {
-  id 'org.jetbrains.intellij' version '1.10.1'
+  id 'org.jetbrains.intellij' version '1.16.0'
 }
 
 description = 'Manifold :: IJ'
@@ -119,7 +119,7 @@ String getIjVersion() {
 intellij {
   pluginName = project.name
   version = getIjVersion()
-  plugins = ['java']//, 'com.intellij.lang.jsgraphql:3.0.0']
+  plugins = ['com.intellij.java'] //, 'com.intellij.lang.jsgraphql:3.0.0']
 }
 
 runIde {
@@ -131,8 +131,8 @@ runIde {
 
 patchPluginXml {
   // Get build numbers from https://www.jetbrains.com/idea/download/other.html
-  sinceBuild = '232.9921.47' //2023.2.2
-  untilBuild = '233.*'       //2023.3.*
+  sinceBuild = '233'   //2023.3
+  untilBuild = '233.*' //2023.3.*
 }
 
 buildSearchableOptions {

@@ -12,7 +12,7 @@ targetCompatibility = JavaVersion.VERSION_1_8
 intellij {
 //  type = 'JPS'
   version = defaultIjVersion // e.g.,'2018.2.4'. Alternatively, the precise API level is OK too: 'IC-143.2370.31'
-  plugins = ['java'] //include PsiViewer & GraphQL JS in sandbox
+  plugins = ['com.intellij.java'] //include PsiViewer & GraphQL JS in sandbox
 }
 
 dependencies {

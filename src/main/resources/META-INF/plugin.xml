@@ -215,6 +215,8 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/516">#516</a>: Fix NoClassDefFoundError: com/intellij/lang/java/parser/BasicStatementParser (affected IJ versions: 2023.2.2, 2023.2.3)
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/497">#497</a>: IntelliJ pugin: Complete JDK 21 support
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/495">#495</a>: IntelliJ pugin: Improve performance and stability of manifold fragments in IntelliJ
