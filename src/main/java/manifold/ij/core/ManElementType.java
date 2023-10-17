@@ -29,24 +29,14 @@ import manifold.util.ReflectUtil;
 
 import java.util.function.Supplier;
 
-import static com.intellij.psi.impl.source.BasicJavaElementType.BASIC_DUMMY_ELEMENT;
 import static com.intellij.psi.impl.source.tree.ElementType.EXPRESSION_BIT_SET;
 
 public interface ManElementType extends JavaElementType
 {
-  boolean IS_2023_3_0__OR_LATER = ApplicationInfo.getInstance().getBuild().compareTo( BuildNumber.fromString( "233.8264.8" ) ) >= 0;
-  IElementType TUPLE_VALUE_EXPRESSION = IS_2023_3_0__OR_LATER
-    ? (IElementType)ReflectUtil.constructor(
-        JavaElementType.class.getTypeName() + "\$JavaCompositeElementType", String.class, Supplier.class, IElementType.class )
-        .newInstance( "TUPLE_VALUE_EXPRESSION", (Supplier<?>)() -> new ManPsiTupleValueExpressionImpl(), BASIC_DUMMY_ELEMENT )
-    : (IElementType)ReflectUtil.constructor(
+  IElementType TUPLE_VALUE_EXPRESSION = (IElementType)ReflectUtil.constructor(
         JavaElementType.class.getTypeName() + "\$JavaCompositeElementType", String.class, Supplier.class )
         .newInstance( "TUPLE_VALUE_EXPRESSION", (Supplier<?>)() -> new ManPsiTupleValueExpressionImpl() );
-  IElementType TUPLE_EXPRESSION = IS_2023_3_0__OR_LATER
-    ? (IElementType)ReflectUtil.constructor(
-        JavaElementType.class.getTypeName() + "\$JavaCompositeElementType", String.class, Supplier.class, IElementType.class )
-        .newInstance( "TUPLE_EXPRESSION", (Supplier<?>)() -> new ManPsiTupleExpressionImpl(), BASIC_DUMMY_ELEMENT )
-    : (IElementType)ReflectUtil.constructor(
+  IElementType TUPLE_EXPRESSION = (IElementType)ReflectUtil.constructor(
         JavaElementType.class.getTypeName() + "\$JavaCompositeElementType", String.class, Supplier.class )
         .newInstance( "TUPLE_EXPRESSION", (Supplier<?>)() -> new ManPsiTupleExpressionImpl() );
 
