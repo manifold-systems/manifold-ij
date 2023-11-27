@@ -28,7 +28,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiJavaFile;
 import java.util.Set;
 
-import com.intellij.util.SlowOperations;
 import manifold.api.fs.IFileFragment;
 import manifold.api.fs.def.FileFragmentImpl;
 import manifold.api.type.ITypeManifold;
@@ -36,6 +35,7 @@ import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.FileUtil;
 import manifold.ij.util.ReparseUtil;
+import manifold.ij.util.SlowOperationsUtil;
 import manifold.internal.javac.FragmentProcessor;
 import manifold.internal.javac.HostKind;
 
@@ -129,10 +129,10 @@ interface PsiFileFragment extends ASTNode, PsiElement
       ApplicationManager.getApplication().invokeLater( () ->
         ApplicationManager.getApplication().runReadAction( () -> {
           // note see ide.slow.operations.assertion.manifold.fragments registrykey defined in plugin.xml
-          try( AccessToken ignore = SlowOperations.allowSlowOperations( "manifold.fragments" ) ) {
-            deletedFragment( ManProject.manProjectFrom( finalContainingFile.getProject() ), fragment );
-            createdFragment( ManProject.manProjectFrom( finalContainingFile.getProject() ), fragment );
-          } 
+          SlowOperationsUtil.allowSlowOperation( "manifold.fragments", () -> {
+              deletedFragment( ManProject.manProjectFrom( finalContainingFile.getProject() ), fragment );
+              createdFragment( ManProject.manProjectFrom( finalContainingFile.getProject() ), fragment );
+            } );
         } ) );
 //todo: need to do this, but it bogs down the editor's background processing, cpu fan is constant, takes a while to finish error feedback traffic light, etc.
       if( this instanceof ManDefaultASTFactoryImpl.ManPsiCommentImpl )

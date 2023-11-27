@@ -57,10 +57,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import com.intellij.util.SlowOperations;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.FileUtil;
+import manifold.ij.util.SlowOperationsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -150,7 +150,7 @@ public class RenameTypeManifoldFileProcessor extends RenamePsiFileProcessor
 
       private void selectNameWithoutExtension()
       {
-        EventQueue.invokeLater( () -> SlowOperations.allowSlowOperations( () -> {
+        EventQueue.invokeLater( () -> SlowOperationsUtil.allowSlowOperation( "manifold.generic", () -> {
           Editor editor = getNameSuggestionsField().getEditor();
           if( editor == null )
           {
