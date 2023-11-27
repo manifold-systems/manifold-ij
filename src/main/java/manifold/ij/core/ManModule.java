@@ -168,6 +168,11 @@ public class ManModule extends SimpleModule
     return getProject().getFileSystem();
   }
 
+  public ClassLoader getTypeManifoldClassLoader()
+  {
+    return _typeManifoldClassLoader;
+  }
+
   public final Set<ITypeManifold> super_findTypeManifoldsFor( String fqn, Predicate<ITypeManifold> predicate )
   {
     return super.findTypeManifoldsFor( fqn, predicate );
@@ -327,8 +332,9 @@ public class ManModule extends SimpleModule
     URL[] urls = classpath.stream().map( dir -> dir.toURI().toURL() ).toArray( URL[]::new );
 
     // note this classloader is used exclusively for finding and loading type manifold services
+    ClassLoader pluginLoader = getClass().getClassLoader();
     _typeManifoldClassLoader =
-      new URLClassLoader( urls, getClass().getClassLoader() )
+      new URLClassLoader( urls, pluginLoader )
       {
         /**
          * Total hack to avoid Jar-hell with IJ's PathClassLoader, a parent loader in the chain. For example, if a project
@@ -340,14 +346,16 @@ public class ManModule extends SimpleModule
         @Override
         protected Class<?> loadClass( String name, boolean resolve ) throws ClassNotFoundException
         {
-          ClassLoader parent = null;
           try
           {
             if( !name.startsWith( "manifold." ) ) // if( name.startsWith( "org.h2." ) )
             {
               // jump over PathClassLoader to the great-grandfather since none of these classes should have a dependency on IJ classes
-              parent = (ClassLoader)ReflectUtil.field( this, "parent" ).get();
               ReflectUtil.field( this, "parent" ).set( ClassLoader.getPlatformClassLoader() );
+            }
+            else
+            {
+              ReflectUtil.field( this, "parent" ).set( pluginLoader );
             }
             return super.loadClass( name, resolve );
           }
@@ -355,7 +363,7 @@ public class ManModule extends SimpleModule
           {
             if( !name.startsWith( "manifold." ) )
             {
-              ReflectUtil.field( this, "parent" ).set( parent );
+              ReflectUtil.field( this, "parent" ).set( pluginLoader );
             }
           }
         }
