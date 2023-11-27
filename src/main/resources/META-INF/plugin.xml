@@ -592,6 +592,11 @@ Other minor fixes and improvements.
     See references to "maifold.fragments" in code.
      -->
     <registryKey key="ide.slow.operations.assertion.manifold.fragments" description="Slow operation" defaultValue="false"/>
+    <!--
+    This key is necessary to allow SlowOperations to ignore various bits of code that are hard to refactor into background thread logic.
+    See references to "maifold.generic" in code.
+     -->
+    <registryKey key="ide.slow.operations.assertion.manifold.generic" description="Slow operation" defaultValue="false"/>
 
     <!-- This enables the ManBuilderService and dynamically configures the classpath (includes manifold-jps-plugin.jar etc.) -->
     <buildProcess.parametersProvider implementation="manifold.ij.jps.ManBuildClasspathProvider"/>

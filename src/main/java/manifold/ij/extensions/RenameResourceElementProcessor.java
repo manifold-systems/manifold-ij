@@ -56,7 +56,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.intellij.util.SlowOperations;
+import manifold.ij.util.SlowOperationsUtil;
 import manifold.rt.api.util.ManIdentifierUtil;
 import manifold.ij.core.ManProject;
 import manifold.rt.api.util.Pair;
@@ -151,7 +151,7 @@ public class RenameResourceElementProcessor extends RenamePsiElementProcessor
 
   private List<PsiElement> findJavaElements( PsiElement[] element )
   {
-    return SlowOperations.allowSlowOperations( () -> {
+    return SlowOperationsUtil.allowSlowOperation( "manifold.generic", () -> {
       if( element[0] == null )
       {
         return Collections.emptyList();

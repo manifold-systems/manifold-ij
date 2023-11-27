@@ -62,6 +62,7 @@ import manifold.ij.core.ManLibraryChecker;
 import manifold.ij.core.ManProject;
 import manifold.ij.extensions.StubBuilder;
 import manifold.ij.util.ManBundle;
+import manifold.ij.util.SlowOperationsUtil;
 import manifold.rt.api.Array;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
@@ -82,39 +83,41 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
   {
     super.update( e );
 
-    boolean enabled;
-    final DataContext dataContext = e.getDataContext();
+    SlowOperationsUtil.allowSlowOperation( "manifold.generic", () -> {
+      boolean enabled;
+      final DataContext dataContext = e.getDataContext();
 
-    Object[] data = LangDataKeys.SELECTED_ITEMS.getData( dataContext );
-    if( data == null || data.length != 1 )
-    {
-      enabled = false;
-    }
-    else
-    {
-      final IdeView view = LangDataKeys.IDE_VIEW.getData( dataContext );
-      if( view == null )
+      Object[] data = LangDataKeys.SELECTED_ITEMS.getData( dataContext );
+      if( data == null || data.length != 1 )
       {
         enabled = false;
       }
       else
       {
-        final Project project = PlatformDataKeys.PROJECT.getData( dataContext );
-
-        final PsiDirectory dir = view.getOrChooseDirectory();
-        if( dir == null || project == null )
+        final IdeView view = LangDataKeys.IDE_VIEW.getData( dataContext );
+        if( view == null )
         {
           enabled = false;
         }
         else
         {
-          PsiPackage pkg = JavaDirectoryService.getInstance().getPackage( dir );
-          ProjectFileIndex projectFileIndex = ProjectRootManager.getInstance( project ).getFileIndex();
-          enabled = pkg != null && projectFileIndex.isUnderSourceRootOfType( dir.getVirtualFile(), JavaModuleSourceRootTypes.SOURCES );
+          final Project project = PlatformDataKeys.PROJECT.getData( dataContext );
+
+          final PsiDirectory dir = view.getOrChooseDirectory();
+          if( dir == null || project == null )
+          {
+            enabled = false;
+          }
+          else
+          {
+            PsiPackage pkg = JavaDirectoryService.getInstance().getPackage( dir );
+            ProjectFileIndex projectFileIndex = ProjectRootManager.getInstance( project ).getFileIndex();
+            enabled = pkg != null && projectFileIndex.isUnderSourceRootOfType( dir.getVirtualFile(), JavaModuleSourceRootTypes.SOURCES );
+          }
         }
       }
-    }
-    e.getPresentation().setEnabled( enabled );
+      e.getPresentation().setEnabled( enabled );
+    } );
   }
 
   public void actionPerformed( @NotNull AnActionEvent e )

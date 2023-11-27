@@ -68,12 +68,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.intellij.util.SlowOperations;
 import manifold.api.fs.IFile;
 import manifold.api.fs.IFileFragment;
 import manifold.api.type.ContributorKind;
 import manifold.api.type.ITypeManifold;
 import manifold.ij.psi.ManLightFieldBuilder;
+import manifold.ij.util.SlowOperationsUtil;
 import manifold.rt.api.SourcePosition;
 import manifold.rt.api.TypeReference;
 import manifold.ext.IExtensionClassProducer;
@@ -159,7 +159,7 @@ public class ResourceToManifoldUtil
     }
 
     // wrapping call in allowSlowOperations(), otherwise IJ throws an exception about slowness, can't make it faster or perform in background for now
-    return SlowOperations.allowSlowOperations( () -> findJavaElementsFor( element, new HashSet<>() ) );
+    return SlowOperationsUtil.allowSlowOperation( "manifold.generic", () -> findJavaElementsFor( element, new HashSet<>() ) );
   }
   private static Set<PsiModifierListOwner> findJavaElementsFor( @NotNull PsiElement element, Set<PsiElement> visited )
   {

@@ -24,6 +24,7 @@
 package manifold.ij.extensions;
 
 import com.intellij.injected.editor.VirtualFileWindow;
+import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.DumbService;
@@ -41,6 +42,7 @@ import com.intellij.psi.impl.PsiDocumentTransactionListener;
 import com.intellij.testFramework.LightVirtualFile;
 import java.io.File;
 import java.util.List;
+
 import manifold.api.fs.IFile;
 import manifold.api.fs.IResource;
 import manifold.ij.core.ManProject;
@@ -48,6 +50,7 @@ import manifold.ij.fs.IjFile;
 import manifold.ij.util.DelayedRunner;
 import manifold.ij.util.FileUtil;
 import manifold.ij.util.ReparseUtil;
+import manifold.ij.util.SlowOperationsUtil;
 
 public class FileModificationManager implements PsiDocumentTransactionListener, BulkFileListener
 {
@@ -215,7 +218,8 @@ public class FileModificationManager implements PsiDocumentTransactionListener, 
         }
         else if( isMoveOrRename( event ) )
         {
-          processRenameAfter( event );
+          SlowOperationsUtil.allowSlowOperation( "manifold.fragments",
+            () -> processRenameAfter( event ) );
         }
         else // modified
         {
