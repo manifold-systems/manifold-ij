@@ -54,6 +54,7 @@ import manifold.ext.rt.api.ThisClass;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
+import manifold.ij.util.SlowOperationsUtil;
 import manifold.rt.api.Array;
 import org.jetbrains.annotations.NotNull;
 
@@ -278,7 +279,7 @@ public class ExtensionClassAnnotator implements Annotator
 
   public static boolean isStructuralInterface( PsiClass iface )
   {
-    return SlowOperations.allowSlowOperations( () -> {
+    return SlowOperationsUtil.allowSlowOperation( "manifold.generic", () -> {
       PsiModifierList modifierList = iface == null ? null : iface.getModifierList();
       return modifierList != null &&
         (modifierList.findAnnotation( Structural.class.getName() ) != null ||

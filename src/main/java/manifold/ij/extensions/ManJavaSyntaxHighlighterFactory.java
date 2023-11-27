@@ -34,6 +34,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.JavaPsiImplementationHelper;
 import com.intellij.psi.impl.compiled.ClsFileImpl;
+import manifold.ij.util.SlowOperationsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,7 +50,11 @@ public class ManJavaSyntaxHighlighterFactory extends SyntaxHighlighterFactory im
   @NotNull
   public SyntaxHighlighter getSyntaxHighlighter( @Nullable Project project, @Nullable VirtualFile file )
   {
-    return new ManJavaFileHighlighter( project == null ? LanguageLevel.HIGHEST : JavaPsiImplementationHelper.getInstance( project ).getEffectiveLanguageLevel( file ) );
+    return new ManJavaFileHighlighter( project == null
+      ? LanguageLevel.HIGHEST
+      // very difficult to make this faster or run outside the EDT
+      : SlowOperationsUtil.allowSlowOperation( "manifold.generic",
+          () -> JavaPsiImplementationHelper.getInstance( project ).getEffectiveLanguageLevel( file ) ) );
   }
 
   /**

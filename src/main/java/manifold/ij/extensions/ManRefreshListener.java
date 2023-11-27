@@ -46,6 +46,7 @@ import manifold.ext.IExtensionClassProducer;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
+import manifold.ij.util.SlowOperationsUtil;
 
 public class ManRefreshListener
 {
@@ -150,6 +151,11 @@ public class ManRefreshListener
   }
 
   private void notify( IResource res, RefreshKind kind  )
+  {
+    SlowOperationsUtil.allowSlowOperation( "manifold.generic", () -> _notify( res, kind ) );
+  }
+
+  private void _notify( IResource res, RefreshKind kind  )
   {
     if( !(res instanceof IFile) )
     {
