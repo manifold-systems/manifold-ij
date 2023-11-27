@@ -21,10 +21,7 @@ package manifold.ij.extensions;
 
 import com.intellij.ide.highlighter.JavaFileHighlighter;
 import com.intellij.lang.java.JavaParserDefinition;
-import com.intellij.lexer.HtmlHighlightingLexer;
-import com.intellij.lexer.LayeredLexer;
-import com.intellij.lexer.Lexer;
-import com.intellij.lexer.StringLiteralLexer;
+import com.intellij.lexer.*;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.JavaDocTokenType;
 import com.intellij.psi.JavaTokenType;
@@ -68,7 +65,7 @@ public class ManJavaFileHighlighter extends JavaFileHighlighter
         new IElementType[]{JavaTokenType.CHARACTER_LITERAL}, IElementType.EMPTY_ARRAY );
 
       LayeredLexer docLexer = new LayeredLexer( JavaParserDefinition.createDocLexer( languageLevel ) );
-      HtmlHighlightingLexer htmlLexer = new HtmlHighlightingLexer( null );
+      HtmlLexer htmlLexer = new HtmlLexer( true );
       htmlLexer.setHasNoEmbeddments( true );
       docLexer.registerLayer( htmlLexer, JavaDocTokenType.DOC_COMMENT_DATA );
       registerSelfStoppingLayer( docLexer, new IElementType[]{JavaDocElementType.DOC_COMMENT}, IElementType.EMPTY_ARRAY );

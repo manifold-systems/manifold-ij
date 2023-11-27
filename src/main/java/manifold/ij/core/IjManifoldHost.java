@@ -20,15 +20,18 @@
 package manifold.ij.core;
 
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.util.PsiUtil;
+import manifold.api.fs.IFile;
 import manifold.api.fs.IFileFragment;
 import manifold.api.fs.IFileSystem;
 import manifold.api.host.IModule;
 import manifold.api.host.ITypeSystemListener;
+import manifold.ij.fs.IjFile;
 import manifold.internal.host.AbstractManifoldHost;
 import manifold.internal.javac.JavaParser;
 
@@ -53,6 +56,21 @@ public class IjManifoldHost extends AbstractManifoldHost
   public IFileSystem getFileSystem()
   {
     return _project.getFileSystem();
+  }
+
+  @Override
+  public ClassLoader getClassLoaderForFile( IFile file )
+  {
+    Module module = ModuleUtilCore.findModuleForFile( ((IjFile)file).getVirtualFile(), getProject().getNativeProject() );
+    if( module != null )
+    {
+      ManModule manModule = ManProject.getModule( module );
+      if( manModule != null )
+      {
+        return manModule.getTypeManifoldClassLoader();
+      }
+    }
+    return null;
   }
 
   @Override

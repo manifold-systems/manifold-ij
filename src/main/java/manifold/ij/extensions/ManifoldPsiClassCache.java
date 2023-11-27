@@ -75,7 +75,7 @@ import static manifold.api.type.ContributorKind.*;
  */
 public class ManifoldPsiClassCache extends AbstractTypeSystemListener
 {
-  private static final Logger LOGGER = LoggerFactory.getLogger( ManifoldPsiClassCache.class );
+  //private static final Logger LOGGER = LoggerFactory.getLogger( ManifoldPsiClassCache.class );
 
   private final ManProject _project;
   private final Set<Project> _addedListeners;
@@ -187,7 +187,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
       }
       catch( Exception e )
       {
-        LOGGER.error( "Exception creating manifold Psi class '" + fqn + "'", e );
+        //LOGGER.error( "Exception creating manifold Psi class '" + fqn + "'", e );
         return PsiErrorClassUtil.create( module.getIjProject(), e );
       }
       return node == null ? null : node.getUserData();
@@ -302,7 +302,7 @@ public class ManifoldPsiClassCache extends AbstractTypeSystemListener
         tm.getContributorKind() == Partial );
       if( !tms.isEmpty() )
       {
-        LOGGER.info( "Found '" + fqn + "' after shakeBake()" );
+        //LOGGER.info( "Found '" + fqn + "' after shakeBake()" );
       }
     }
 
