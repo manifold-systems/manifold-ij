@@ -23,8 +23,7 @@ import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.search.GlobalSearchScope;
+
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -48,11 +47,9 @@ import manifold.api.type.ITypeManifold;
 import manifold.api.type.ResourceFileTypeManifold;
 import manifold.api.type.TypeName;
 import manifold.rt.api.util.ManIdentifierUtil;
-import manifold.exceptions.CheckedExceptionSuppressor;
 import manifold.ext.IExtensionClassProducer;
 import manifold.ij.fs.IjFile;
 import manifold.internal.host.SimpleModule;
-import manifold.strings.StringLiteralTemplateProcessor;
 import manifold.util.NecessaryEvilUtil;
 import manifold.util.ReflectUtil;
 import manifold.util.concurrent.LocklessLazyVar;
@@ -166,6 +163,11 @@ public class ManModule extends SimpleModule
   public IFileSystem getFileSystem()
   {
     return getProject().getFileSystem();
+  }
+
+  public ClassLoader getTypeManifoldClassLoader()
+  {
+    return _typeManifoldClassLoader;
   }
 
   public final Set<ITypeManifold> super_findTypeManifoldsFor( String fqn, Predicate<ITypeManifold> predicate )
@@ -327,8 +329,9 @@ public class ManModule extends SimpleModule
     URL[] urls = classpath.stream().map( dir -> dir.toURI().toURL() ).toArray( URL[]::new );
 
     // note this classloader is used exclusively for finding and loading type manifold services
+    ClassLoader pluginLoader = getClass().getClassLoader();
     _typeManifoldClassLoader =
-      new URLClassLoader( urls, getClass().getClassLoader() )
+      new URLClassLoader( urls, pluginLoader )
       {
         /**
          * Total hack to avoid Jar-hell with IJ's PathClassLoader, a parent loader in the chain. For example, if a project
@@ -340,14 +343,16 @@ public class ManModule extends SimpleModule
         @Override
         protected Class<?> loadClass( String name, boolean resolve ) throws ClassNotFoundException
         {
-          ClassLoader parent = null;
           try
           {
             if( !name.startsWith( "manifold." ) ) // if( name.startsWith( "org.h2." ) )
             {
               // jump over PathClassLoader to the great-grandfather since none of these classes should have a dependency on IJ classes
-              parent = (ClassLoader)ReflectUtil.field( this, "parent" ).get();
               ReflectUtil.field( this, "parent" ).set( ClassLoader.getPlatformClassLoader() );
+            }
+            else
+            {
+              ReflectUtil.field( this, "parent" ).set( pluginLoader );
             }
             return super.loadClass( name, resolve );
           }
@@ -355,7 +360,7 @@ public class ManModule extends SimpleModule
           {
             if( !name.startsWith( "manifold." ) )
             {
-              ReflectUtil.field( this, "parent" ).set( parent );
+              ReflectUtil.field( this, "parent" ).set( pluginLoader );
             }
           }
         }

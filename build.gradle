@@ -126,7 +126,7 @@ runIde {
   minHeapSize = '1g'
   maxHeapSize = '4g'
 // uncomment to override the ide that is run
-//  ideDir = new File("C:\\Program Files\\JetBrains\\IntelliJ IDEA 2023.2.2")
+  ideDir = new File("C:\\Program Files\\JetBrains\\IntelliJ IDEA 2023.2.2")
 }
 
 patchPluginXml {
