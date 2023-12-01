@@ -75,6 +75,7 @@ import manifold.ij.license.CheckLicense;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.util.MessageUtil;
 import manifold.ij.util.ReparseUtil;
+import manifold.ij.util.SlowOperationsUtil;
 import manifold.preprocessor.definitions.ServiceDefinitions;
 import manifold.util.concurrent.ConcurrentWeakHashMap;
 import manifold.util.concurrent.LockingLazyVar;
@@ -148,6 +149,10 @@ public class ManProject
   }
 
   public static Module getIjModule( PsiElement element )
+  {
+    return SlowOperationsUtil.allowSlowOperation( "manifold.generic", () -> _getIjModule( element ) );
+  }
+  private static Module _getIjModule( PsiElement element )
   {
     Module module = ModuleUtil.findModuleForPsiElement( element );
     if( module != null )

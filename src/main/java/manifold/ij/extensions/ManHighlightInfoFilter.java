@@ -240,8 +240,10 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     {
       String description = hi.getDescription();
       if( description != null &&
-          (description.contains( "compared using '=='" ) ||
-           description.contains( "compared using '!='" )) )
+        ((description.contains( "compared using '=='" ) ||
+           description.contains( "compared using '!='" )) ||
+         (description.contains( "使用 '==' 而不是" ) ||
+           description.contains( "使用 '!=' 而不是" ))) )
       {
         PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
         if( firstElem != null )
@@ -264,7 +266,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     if( hi != null )
     {
       String description = hi.getDescription();
-      if( description != null && description.contains( "can be replaced with" ) )
+      if( description != null && description.contains( "can be replaced with" ) ||
+          description != null && description.contains( "可被替换为" ) )
       {
         PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
         while( !(firstElem instanceof PsiBinaryExpressionImpl)  )
@@ -290,8 +293,9 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     if( hi != null )
     {
       String description = hi.getDescription();
-      if( description != null && description.startsWith( "Casting '" ) &&
-          description.endsWith( "will produce 'ClassCastException' for any non-null value" ) )
+      if( description != null && (description.startsWith( "Casting '" ) || description.startsWith( "将 '" )) &&
+        (description.endsWith( "will produce 'ClassCastException' for any non-null value" ) ||
+         description.endsWith( "会为任意非 null 值生成 'ClassCastException'" )) )
       {
         PsiTypeElement typeElem = findTypeElement( file.findElementAt( hi.getStartOffset() ) );
         return isStructuralType( typeElem );
@@ -358,7 +362,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     PsiArrayAccessExpressionImpl arrayAccess;
     return (arrayAccess = getArrayAccessExpression( elem )) != null &&
-      hi.getDescription().startsWith( "Array type expected" ) &&
+      (hi.getDescription().startsWith( "Array type expected" ) || hi.getDescription().startsWith( "应为数组类型" )) &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_GET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
   }
@@ -387,7 +391,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       arrayAccess = (PsiArrayAccessExpressionImpl)csr;
     }
     return arrayAccess != null &&
-      hi.getDescription().startsWith( "Variable expected" ) &&
+      (hi.getDescription().startsWith( "Variable expected" ) || hi.getDescription().startsWith( "应为变量" )) &&
       arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_SET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
@@ -395,7 +399,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterArrayIndexIsOutOfBounds( HighlightInfo hi, PsiFile file )
   {
     String description = hi.getDescription();
-    if( description == null || !description.startsWith( "Array index is out of bounds" ) )
+    if( description == null ||
+        !description.startsWith( "Array index is out of bounds" ) && !description.startsWith( "数组索引超出范围" ) )
     {
       return false;
     }
@@ -415,7 +420,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     // for use with properties e.g., @val(annos = @Foo) String name;
 
     return elem instanceof PsiAnnotation &&
-      hi.getDescription().startsWith( "Incompatible types" ) &&
+      (hi.getDescription().startsWith( "Incompatible types" ) || hi.getDescription().startsWith( "不兼容的类型" )) &&
       hi.getDescription().contains( manifold.rt.api.anno.any.class.getTypeName() );
   }
 
@@ -424,7 +429,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     // filter method override "incompatible return type" error involving 'auto'
 
     return elem.getText().equals( ManClassUtil.getShortClassName( ManAttr.AUTO_TYPE ) ) &&
-      hi.getDescription().contains( "incompatible return type" );
+      (hi.getDescription().contains( "incompatible return type" ) || hi.getDescription().contains( "返回类型不兼容" ));
   }
 
   private boolean filterInnerClassReferenceError( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
@@ -536,7 +541,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterUnhandledCheckedExceptions( @NotNull HighlightInfo hi, @Nullable PsiFile file )
   {
     // Note the message can be singular or plural e.g., "Unhandled exception[s]:"
-    if( hi.getDescription().contains( "Unhandled exception" ) )
+    if( hi.getDescription().contains( "Unhandled exception" ) ||
+        hi.getDescription().contains( "未处理的异常" ) || hi.getDescription().contains( "未处理 异常" ) )
     {
       Module fileModule = ManProject.getIjModule( file );
       if( fileModule != null )
@@ -564,7 +570,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterCannotAssignToFinalIfJailbreak( HighlightInfo hi, PsiElement firstElem )
   {
-    if( !hi.getDescription().startsWith( "Cannot assign a value to final variable" ) )
+    if( !hi.getDescription().startsWith( "Cannot assign a value to final variable" ) &&
+        !hi.getDescription().startsWith( "无法将值赋给 final 变量" ) )
     {
       return false;
     }
