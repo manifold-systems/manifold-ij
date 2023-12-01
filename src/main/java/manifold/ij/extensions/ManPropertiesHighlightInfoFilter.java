@@ -117,7 +117,8 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterCannotAssignToFinalError( HighlightInfo hi, PsiElement firstElem )
   {
     String msg = hi.getDescription();
-    if( !msg.startsWith( "Cannot assign a value to final variable" ) )
+    if( !msg.startsWith( "Cannot assign a value to final variable" ) &&
+        !msg.startsWith( "无法将值赋给 final 变量" ) )
     {
       return false;
     }
@@ -163,7 +164,8 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterFinalError( HighlightInfo hi, PsiElement firstElem )
   {
     String msg = hi.getDescription();
-    if( !(msg.startsWith( "Variable" ) && msg.endsWith( "might not have been initialized" )) )
+    if( !((msg.startsWith( "Variable" ) || msg.startsWith( "变量" )) &&
+      (msg.endsWith( "might not have been initialized" ) || msg.endsWith( "可能尚未初始化" ))) )
     {
       return false;
     }
@@ -253,6 +255,7 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterIllegalReferenceTo_var( @NotNull HighlightInfo hi )
   {
-    return hi.getDescription().equals( "Illegal reference to restricted type 'var'" );
+    return hi.getDescription().equals( "Illegal reference to restricted type 'var'" ) ||
+           hi.getDescription().equals( "非法引用受限类型 'var'" );
   }
 }
