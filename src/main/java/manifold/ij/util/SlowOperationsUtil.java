@@ -21,6 +21,7 @@ package manifold.ij.util;
 
 import com.intellij.openapi.application.AccessToken;
 import com.intellij.util.SlowOperations;
+import manifold.util.ManExceptionUtil;
 
 import java.util.concurrent.Callable;
 
@@ -39,7 +40,8 @@ public class SlowOperationsUtil
     }
     catch( Exception e )
     {
-      throw new RuntimeException( e );
+      // must not wrap in RuntimeException e.g., ProcessCanceledException must flow through for handling by IJ
+      throw ManExceptionUtil.unchecked( e );
     }
   }
 }
