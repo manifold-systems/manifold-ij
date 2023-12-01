@@ -215,11 +215,21 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/531">#531</a>: Fix ProcessCanceledExceptions, forward exceptions directly during "slow operations" handling, esp. ProcessCanceledException
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/529">#529</a>: Suppress error/warning messages in Chinese as well as English, translate/map message filters to Chinese (Simplified) Language Pack.
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/528">#528</a>: Use private tags to execute "slow operations", centralize how/where these are executed
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/525">#525</a>: Preprocessor: Enable IDE to use SymbolProviders according to module dependencies
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/520">#520</a>: Provide error message when attempting to use a method ref for a method returning `auto`, must use lambda in this case (for now)
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/516">#516</a>: Fix NoClassDefFoundError: com/intellij/lang/java/parser/BasicStatementParser (affected IJ versions: 2023.2.2, 2023.2.3)
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/497">#497</a>: IntelliJ pugin: Complete JDK 21 support
+<a href="https://github.com/manifold-systems/manifold/issues/497">#497</a>: IntelliJ plugin: Complete JDK 21 support
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/495">#495</a>: IntelliJ pugin: Improve performance and stability of manifold fragments in IntelliJ
+<a href="https://github.com/manifold-systems/manifold/issues/495">#495</a>: IntelliJ plugin: Improve performance and stability of manifold fragments in IntelliJ
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/494">#494</a>: IntelliJ plugin: Fix fragment error reporting
 <br>
