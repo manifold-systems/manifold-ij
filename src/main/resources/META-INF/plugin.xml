@@ -215,6 +215,8 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/532">#532</a>: Intellij plugin: string template processing is disabled in annotations due to wide usage of ${} templating in many annotation libraries
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/531">#531</a>: Fix ProcessCanceledExceptions, forward exceptions directly during "slow operations" handling, esp. ProcessCanceledException
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/529">#529</a>: Suppress error/warning messages in Chinese as well as English, translate/map message filters to Chinese (Simplified) Language Pack.
