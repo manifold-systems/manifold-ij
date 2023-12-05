@@ -64,7 +64,7 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
       return;
     }
 
-    if( isStringLiteralTemplatesDisabled( stringLiteral ) )
+    if( isStringLiteralTemplatesDisabled( stringLiteral, ManProject.getModule( stringLiteral ) ) )
     {
       return;
     }
@@ -105,14 +105,13 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
     return false;
   }
 
-  private boolean isStringLiteralTemplatesDisabled( PsiElement elem )
+  private boolean isStringLiteralTemplatesDisabled( PsiElement elem, ManModule module )
   {
     if( elem == null )
     {
       return false;
     }
 
-    ManModule module = ManProject.getModule( elem );
     if( module != null && !module.isStringsEnabled() )
     {
       return true;
@@ -136,12 +135,18 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
     }
 
     PsiElement parent = elem.getParent();
+    if( parent instanceof PsiAnnotation )
+    {
+      // string templates disabled in annotations because too many annotations allow ${} templating
+      return true;
+    }
+
     if( parent == null || parent instanceof PsiJavaFile )
     {
       return false;
     }
 
-    return isStringLiteralTemplatesDisabled( elem.getParent() );
+    return isStringLiteralTemplatesDisabled( elem.getParent(), module );
   }
 
   private PsiLiteralExpressionImpl getJavaStringLiteral( @NotNull PsiLanguageInjectionHost host )
