@@ -115,12 +115,15 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if( filterUpdatedButNeverQueried( hi, file ) )
+    {
+      return false;
+    }
+
     if( hi.getSeverity() != HighlightSeverity.ERROR )
     {
       return true;
     }
-
-
     //
     // Handle only Errors...
     //
@@ -422,6 +425,49 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return elem instanceof PsiAnnotation &&
       (hi.getDescription().startsWith( "Incompatible types" ) || hi.getDescription().startsWith( "不兼容的类型" )) &&
       hi.getDescription().contains( manifold.rt.api.anno.any.class.getTypeName() );
+  }
+
+  private boolean filterUpdatedButNeverQueried( HighlightInfo hi, PsiFile file )
+  {
+    // for use with string templates when variable is referenced in the string
+
+    PsiElement elem = file.findElementAt( hi.getStartOffset() );
+    if( elem == null )
+    {
+      return false;
+    }
+
+    if( hi.getDescription().contains( "updated, but never queried" ) ||
+      (hi.getDescription().contains( "changed" ) && hi.getDescription().contains( "is never used" )) )
+    {
+      ManStringLiteralTemplateUsageProvider finder = new ManStringLiteralTemplateUsageProvider();
+      elem = resolveRef( elem ); // mainly for "is never used" case
+      if( elem == null )
+      {
+        return false;
+      }
+      return finder.isImplicitUsage( elem );
+    }
+
+    return false;
+  }
+
+  @Nullable
+  private static PsiElement resolveRef( PsiElement elem )
+  {
+    if( elem instanceof PsiIdentifier )
+    {
+      PsiElement parent = elem.getParent();
+      if( parent instanceof PsiReferenceExpressionImpl )
+      {
+        elem = ((PsiReferenceExpressionImpl)parent).resolve();
+        if( elem == null )
+        {
+          return null;
+        }
+      }
+    }
+    return elem;
   }
 
   private boolean filterIncompatibleReturnType( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
