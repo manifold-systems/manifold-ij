@@ -29,7 +29,7 @@ import com.intellij.psi.impl.source.tree.java.PsiLiteralExpressionImpl;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.tree.IElementType;
 import manifold.api.fs.IFileFragment;
-import manifold.ij.util.ReparseUtil;
+import manifold.ij.util.SlowOperationsUtil;
 import manifold.rt.api.FragmentValue;
 import org.jetbrains.annotations.NotNull;
 
@@ -63,6 +63,10 @@ public class ManPsiLiteralExpressionImpl extends PsiLiteralExpressionImpl
 
   @Override
   public PsiType getType()
+  {
+    return SlowOperationsUtil.allowSlowOperation( "manifold.generic", () -> _getType() );
+  }
+  private PsiType _getType()
   {
     final IElementType type = getLiteralElementType();
     if( type == JavaTokenType.STRING_LITERAL || "TEXT_BLOCK_LITERAL".equals( type.toString() ) )

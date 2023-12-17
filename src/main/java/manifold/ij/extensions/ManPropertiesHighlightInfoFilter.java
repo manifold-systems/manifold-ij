@@ -111,6 +111,11 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if( filterNonFinalFieldInEnumForVal( hi, firstElem ) )
+    {
+      return false;
+    }
+
     return true;
   }
 
@@ -147,6 +152,19 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
       return ((PsiReferenceExpression)expr).resolve() instanceof LightRecordMember;
     }
     return false;
+  }
+
+  private boolean filterNonFinalFieldInEnumForVal( HighlightInfo hi, PsiElement firstElem )
+  {
+    String msg = hi.getDescription();
+    if( !(msg.contains( "Non-final field" ) && msg.contains( "in enum" )) )
+    {
+      return false;
+    }
+
+    // @val fields are already final
+    PsiField field = getPropFieldFromDecl( firstElem );
+    return field != null && isReadOnly( field );
   }
 
   private boolean filterAbstractError( HighlightInfo hi, PsiElement firstElem )

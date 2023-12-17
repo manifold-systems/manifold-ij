@@ -72,7 +72,7 @@ public class ReparseUtil
   public void rerunAnnotators( @NotNull PsiFile psiFile )
   {
     ApplicationManager.getApplication().invokeLater(
-      () -> {
+      () -> SlowOperationsUtil.allowSlowOperation( "manifold.generic", () -> {
         try
         {
           if( DaemonCodeAnalyzerEx.getInstance( psiFile.getProject() ).isHighlightingAvailable( psiFile ) )
@@ -85,7 +85,7 @@ public class ReparseUtil
           // not throwing on purpose,
           ieae.printStackTrace();
         }
-      } );
+      } ) );
   }
 
   public void reparseOpenJavaFilesForAllProjects()
