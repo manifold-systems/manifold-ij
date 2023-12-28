@@ -215,6 +215,10 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/538">#538</a>: Intellij plugin: - do not process a psi element in a file that is not represented by a type manifold
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/535">#535</a>: Intellij plugin: - filter "non-final field 'x' in enum..." on @val
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/533">#533</a>: Intellij plugin: - suppress false positive errors re manifold string templates
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/532">#532</a>: Intellij plugin: string template processing is disabled in annotations due to wide usage of ${} templating in many annotation libraries
