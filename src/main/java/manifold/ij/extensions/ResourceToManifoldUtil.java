@@ -201,8 +201,6 @@ public class ResourceToManifoldUtil
       }
     }
 
-    Set<PsiModifierListOwner> result = new HashSet<>();
-
     Project project = element.getProject();
     ManProject manProject = ManProject.manProjectFrom( project );
     IFile file = fileFromElement( element, manProject );
@@ -210,9 +208,16 @@ public class ResourceToManifoldUtil
     {
       return Collections.emptySet();
     }
+
     Set<ITypeManifold> set = ManModule.findTypeManifoldsForFile( manProject.getNativeProject(), file,
-      tm ->  tm.getContributorKind() == ContributorKind.Primary,
+      tm -> tm.getContributorKind() == ContributorKind.Primary,
       tm -> tm.getContributorKind() == ContributorKind.Primary );
+    if( set.isEmpty() )
+    {
+      return Collections.emptySet();
+    }
+
+    Set<PsiModifierListOwner> result = new HashSet<>();
     for( ITypeManifold tm : set )
     {
       Collection<String> fqns = findTypesForFile( tm, file );

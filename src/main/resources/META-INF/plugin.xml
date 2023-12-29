@@ -215,9 +215,9 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/536">#536</a>: manifold-graphql: override java-graphql ParserOptions which are not applicable to compile-time use e.g., maxTokens
+<a href="https://github.com/manifold-systems/manifold/issues/538">#538</a>: Intellij plugin: do not process a psi element in a file that is not represented by a type manifold
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/535">#535</a>: Intellij plugin: suppress "non-final field 'x' in enum..." issues re @val usage
+<a href="https://github.com/manifold-systems/manifold/issues/535">#535</a>: Intellij plugin: filter "non-final field 'x' in enum..." on @val
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/533">#533</a>: Intellij plugin: suppress false positive errors re manifold string templates
 <br>
