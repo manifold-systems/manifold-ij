@@ -165,7 +165,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    if( filterOperatorMinusCannotBeApplied( hi, elem, firstElem ) )
+    if( filterOperatorCannotBeApplied( hi, elem, firstElem ) )
     {
       return false;
     }
@@ -307,13 +307,17 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return false;
   }
 
-  // allow negation operator overload
-  private boolean filterOperatorMinusCannotBeApplied( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  // allow unary operator overload
+  private boolean filterOperatorCannotBeApplied( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
   {
-    return firstElem instanceof PsiJavaToken && ((PsiJavaToken)firstElem).getTokenType() == JavaTokenType.MINUS &&
+    String description = hi.getDescription();
+    return firstElem instanceof PsiJavaToken &&
+           (((PsiJavaToken)firstElem).getTokenType() == JavaTokenType.MINUS ||
+            ((PsiJavaToken)firstElem).getTokenType() == JavaTokenType.TILDE ||
+            ((PsiJavaToken)firstElem).getTokenType() == JavaTokenType.EXCL) &&
            elem instanceof ManPsiPrefixExpressionImpl &&
-           hi.getDescription().contains( "Operator '-' cannot be applied to" ) &&
-           ((ManPsiPrefixExpressionImpl)elem).getTypeForUnaryMinusOverload() != null;
+           description.contains( "Operator" ) &&  description.contains( "cannot be applied to" ) &&
+           ((ManPsiPrefixExpressionImpl)elem).getTypeForUnaryOverload() != null;
   }
 
   // allow unary inc/dec operator overload
