@@ -33,13 +33,15 @@ import org.jetbrains.annotations.Nullable;
 public class ManPsiPrefixExpressionImpl extends PsiPrefixExpressionImpl implements IManOperatorOverloadReference
 {
   private static final String UNARY_MINUS = "unaryMinus";
+  private static final String UNARY_INV = "inv";
+  private static final String UNARY_NOT = "not";
 
   @Override
   public PsiType getType()
   {
     // Handle negation operator overload
 
-    PsiType type = getTypeForUnaryMinusOverload();
+    PsiType type = getTypeForUnaryOverload();
     if( type != null )
     {
       return type;
@@ -48,10 +50,10 @@ public class ManPsiPrefixExpressionImpl extends PsiPrefixExpressionImpl implemen
     return super.getType();
   }
 
-  public PsiType getTypeForUnaryMinusOverload()
+  public PsiType getTypeForUnaryOverload()
   {
     IElementType op = getOperationTokenType();
-    if( op != JavaTokenType.MINUS )
+    if( op != JavaTokenType.MINUS && op != JavaTokenType.TILDE && op != JavaTokenType.EXCL )
     {
       return null;
     }
@@ -68,11 +70,28 @@ public class ManPsiPrefixExpressionImpl extends PsiPrefixExpressionImpl implemen
       return null;
     }
 
-    return getUnaryMinusType( UNARY_MINUS, operandType );
+    return getOverloadedType( methodName( op ), operandType );
+  }
+
+  private String methodName( IElementType op )
+  {
+    if( op == JavaTokenType.MINUS && op != JavaTokenType.TILDE && op != JavaTokenType.EXCL )
+    {
+      return UNARY_MINUS;
+    }
+    if( op == JavaTokenType.TILDE )
+    {
+      return UNARY_INV;
+    }
+    if( op == JavaTokenType.EXCL )
+    {
+      return UNARY_NOT;
+    }
+    return null;
   }
 
   @Nullable
-  private PsiType getUnaryMinusType( String opName, PsiType operandType )
+  private PsiType getOverloadedType( String opName, PsiType operandType )
   {
     PsiClass psiClassOperand = PsiTypesUtil.getPsiClass( operandType );
     if( psiClassOperand == null )
@@ -139,7 +158,7 @@ public class ManPsiPrefixExpressionImpl extends PsiPrefixExpressionImpl implemen
       getOperationSign(),
       operand.getType(),
       null, this );
-    return method != null || getTypeForUnaryMinusOverload() != null;
+    return method != null || getTypeForUnaryOverload() != null;
   }
 
   public PsiReference getReference() {
@@ -166,7 +185,7 @@ public class ManPsiPrefixExpressionImpl extends PsiPrefixExpressionImpl implemen
       PsiMethod method = ManJavaResolveCache.getBinaryOperatorMethod( getOperationSign(), getOperand().getType(), null, this );
       return method;
     }
-    PsiType typeForUnaryMinusOverload = getTypeForUnaryMinusOverload();
+    PsiType typeForUnaryMinusOverload = getTypeForUnaryOverload();
     if( typeForUnaryMinusOverload != null )
     {
       // todo

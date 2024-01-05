@@ -60,11 +60,29 @@ public class ManJavaResolveCache extends JavaResolveCache
     put( JavaTokenType.ASTERISK, "times" );
     put( JavaTokenType.DIV, "div" );
     put( JavaTokenType.PERC, "rem" );
+
+    put( JavaTokenType.LTLT, "shl" );
+    put( JavaTokenType.GTGT, "shr" );
+    put( JavaTokenType.GTGTGT, "ushr" );
+
+    put( JavaTokenType.AND, "and" );
+    put( JavaTokenType.OR, "or" );
+    put( JavaTokenType.XOR, "xor" );
+
     put( JavaTokenType.PLUSEQ, "plus" );
     put( JavaTokenType.MINUSEQ, "minus" );
     put( JavaTokenType.ASTERISKEQ, "times" );
     put( JavaTokenType.DIVEQ, "div" );
     put( JavaTokenType.PERCEQ, "rem" );
+
+    put( JavaTokenType.LTLTEQ, "shl" );
+    put( JavaTokenType.GTGTEQ, "shr" );
+    put( JavaTokenType.GTGTGTEQ, "ushr" );
+
+    put( JavaTokenType.ANDEQ, "and" );
+    put( JavaTokenType.OREQ, "or" );
+    put( JavaTokenType.XOREQ, "xor" );
+
     put( JavaTokenType.PLUSPLUS, "inc" );
     put( JavaTokenType.MINUSMINUS, "dec" );
     // note ==, !=, >, >=, <, <=  are covered via IComparableWith**
