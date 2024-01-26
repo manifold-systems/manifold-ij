@@ -19,13 +19,8 @@
 
 package manifold.ij.core;
 
-import com.intellij.codeInsight.highlighting.PairedBraceMatcherAdapter;
 import com.intellij.diagnostic.LoadingState;
 import com.intellij.ide.ApplicationLoadListener;
-import com.intellij.ide.startup.StartupManagerEx;
-import com.intellij.lang.Language;
-import com.intellij.lang.LanguageAnnotators;
-import com.intellij.lang.LanguageBraceMatching;
 import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
@@ -41,10 +36,9 @@ import java.nio.file.Path;
 import java.util.function.Supplier;
 
 import com.intellij.util.messages.MessageBusConnection;
+import kotlin.Unit;
+import kotlin.coroutines.Continuation;
 import manifold.ij.extensions.ManJavaLiteralExpressionElementType;
-import manifold.ij.extensions.ManifoldPsiClassAnnotator;
-import manifold.ij.template.ManTemplateBraceMatcher;
-import manifold.ij.template.ManTemplateLanguage;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,6 +53,12 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ManApplicationLoadListener implements ApplicationLoadListener
 {
+  //@Override in version 2024.x
+  public Object beforeApplicationLoaded(Application application, Path configPath, Continuation<? super Unit> continuation)
+  {
+    beforeApplicationLoaded( application, configPath );
+    return null;
+  }
   // @Override in version 2022.x
   public void beforeApplicationLoaded( @NotNull Application application, @NotNull Path configPath )
   {
