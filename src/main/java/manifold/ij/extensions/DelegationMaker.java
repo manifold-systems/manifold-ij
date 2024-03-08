@@ -30,6 +30,7 @@ import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.MethodSignatureUtil;
 import com.intellij.psi.util.PsiTypesUtil;
+import com.intellij.psi.util.TypeConversionUtil;
 import manifold.ext.delegation.DelegationIssueMsg;
 import manifold.ext.delegation.rt.api.link;
 import manifold.ext.delegation.rt.api.part;
@@ -164,8 +165,9 @@ public class DelegationMaker
   private void addLinkedInterfaces( PsiAnnotation linkAnno, ClassInfo classInfo, PsiField field )
   {
     ArrayList<PsiClassType> interfaces = new ArrayList<>();
+    ArrayList<PsiClassType> shared = new ArrayList<>();
     ArrayList<PsiClassType> fromAnno = new ArrayList<>();
-    boolean share = getInterfacesFromLinkAnno( linkAnno, fromAnno );
+    boolean shareAll = getInterfacesFromLinkAnno( linkAnno, fromAnno, shared );
     if( fromAnno.isEmpty() )
     {
       interfaces.addAll( getCommonInterfaces( classInfo, field.getType() ) );
@@ -188,14 +190,14 @@ public class DelegationMaker
       verifyFieldTypeSatisfiesAnnoTypes( field, interfaces );
     }
 
-    if( share )
+    if( shareAll || !shared.isEmpty() )
     {
       //todo:
       // shared links must be final
       //field.getModifiers().flags |= FINAL;
     }
 
-    classInfo.getLinks().put( field, new LinkInfo( field, interfaces, share ) );
+    classInfo.getLinks().put( field, new LinkInfo( field, interfaces, shareAll, shared ) );
   }
 
   private void verifyFieldTypeSatisfiesAnnoTypes( PsiField field, ArrayList<PsiClassType> interfaces )
@@ -211,7 +213,7 @@ public class DelegationMaker
     }
   }
 
-  private boolean getInterfacesFromLinkAnno( PsiAnnotation linkAnno, ArrayList<PsiClassType> interfaces )
+  private boolean getInterfacesFromLinkAnno( PsiAnnotation linkAnno, ArrayList<PsiClassType> interfaces, ArrayList<PsiClassType> share )
   {
     @NotNull List<JvmAnnotationAttribute> args = linkAnno.getAttributes();
     if( args.isEmpty() )
@@ -219,7 +221,7 @@ public class DelegationMaker
       return false;
     }
 
-    boolean share = false;
+    boolean shareAll = false;
     for( int i = 0; i < args.size(); i++ )
     {
       JvmAnnotationAttribute entry = args.get( i );
@@ -230,35 +232,52 @@ public class DelegationMaker
       {
         continue;
       }
-      if( argSym.equals( "share" ) )
+      if( argSym.equals( "shareAll" ) )
       {
         Boolean val = (Boolean)((JvmAnnotationConstantValue)value).getConstantValue();
-        share = val != null && val;
+        shareAll = val != null && val;
+      }
+      else if( argSym.equals( "share" ) )
+      {
+        processClassType( share, value, linkAnno.getParameterList().getAttributes()[i] );
       }
       else if( argSym.equals( "value" ) )
       {
-        if( value instanceof JvmAnnotationClassValue )
-        {
-          processClassType( ((JvmAnnotationClassValue)value).qualifiedName, interfaces, linkAnno.getParameterList().getAttributes()[i] );
-        }
-        if( value instanceof JvmAnnotationArrayValue )
-        {
-          for( JvmAnnotationAttributeValue cls : ((JvmAnnotationArrayValue)value).values )
-          {
-            processClassType( ((JvmAnnotationClassValue)cls).qualifiedName, interfaces, linkAnno.getParameterList().getAttributes()[i] );
-          }
-        }
+        processClassType( interfaces, value, linkAnno.getParameterList().getAttributes()[i] );
       }
       else
       {
-        throw new IllegalStateException();
+        // todo: add compile error here?
       }
     }
-    return share;
+    return shareAll;
+  }
+
+  private void processClassType(ArrayList<PsiClassType> interfaces, JvmAnnotationAttributeValue value, PsiElement expr )
+  {
+    if( value instanceof JvmAnnotationClassValue )
+    {
+      processClassType( ((JvmAnnotationClassValue)value).qualifiedName, interfaces, expr );
+    }
+    if( value instanceof JvmAnnotationArrayValue )
+    {
+      for( JvmAnnotationAttributeValue cls : ((JvmAnnotationArrayValue)value).values )
+      {
+        if( cls instanceof JvmAnnotationClassValue )
+        {
+          processClassType( ((JvmAnnotationClassValue)cls).qualifiedName, interfaces, expr );
+        }
+      }
+    }
   }
 
   private void processClassType( String qname, ArrayList<PsiClassType> interfaces, PsiElement location )
   {
+    if( qname == null )
+    {
+      return;
+    }
+
     Project project = location.getProject();
     PsiClass psiClass = JavaPsiFacade.getInstance( project ).findClass( qname, GlobalSearchScope.allScope( project ) );
     if( psiClass != null && psiClass.isInterface() )
@@ -459,7 +478,7 @@ public class DelegationMaker
         lis.forEach( li -> fieldNames.append( fieldNames.length() > 0 ? ", " : "" ).append( li._linkField.name ) );
         for( LinkInfo li : lis )
         {
-          if( !li.isShare() )
+          if( !li.shares( iface ) )
           {
             if( !isInterfaceShared )
             {
@@ -478,7 +497,7 @@ public class DelegationMaker
   private boolean checkSharedLinks( PsiClassType iface, Set<LinkInfo> lis )
   {
     ArrayList<LinkInfo> sharedLinks = lis.stream()
-      .filter( li -> li.isShare() )
+      .filter( li -> li.shares( iface ) )
       .collect( Collectors.toCollection( () -> new ArrayList<>() ) );
     if( sharedLinks.size() > 1 )
     {
@@ -724,25 +743,22 @@ public class DelegationMaker
     private final ArrayList<PsiMethod> _generatedMethods;
     private final Set<CandidateInfo> _methodTypes;
     private final ArrayList<PsiClassType> _interfaces;
-    private final boolean _share;
+    private final ArrayList<PsiClassType> _shared;
+    private final boolean _shareAll;
 
-    LinkInfo( PsiField linkField, ArrayList<PsiClassType> linkedInterfaces, boolean share )
+    LinkInfo( PsiField linkField, ArrayList<PsiClassType> linkedInterfaces, boolean shareAll, ArrayList<PsiClassType> shared )
     {
       _linkField = linkField;
       _generatedMethods = new ArrayList<>();
       _methodTypes = new HashSet<>();
       _interfaces = new ArrayList<>( linkedInterfaces );
-      _share = share;
+      _shareAll = shareAll;
+      _shared = shared;
     }
 
     public PsiField getLinkField()
     {
       return _linkField;
-    }
-
-    public boolean isShare()
-    {
-      return _share;
     }
 
     public Collection<PsiMethod> getGeneratedMethods()
@@ -787,6 +803,11 @@ public class DelegationMaker
         .filter( m -> method.getName().equals( ((PsiMethod)m.getElement()).getName() ) &&
           MethodSignatureUtil.areOverrideEquivalent( (PsiMethod)m.getElement(), method ) )
         .findFirst().orElse( null );
+    }
+
+    public boolean shares( PsiClassType iface )
+    {
+      return _shareAll || _shared.stream().anyMatch( t -> t.equals( TypeConversionUtil.erasure( iface ) ) );
     }
   }
 }

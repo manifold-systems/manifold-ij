@@ -215,6 +215,29 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/552">#552</a>: manifold-sql: include "fetchBy" methods for all columns, not just the required one
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/551">#551</a>: handle case where an array annotation arg is provided as a List as opposed to an array
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/550">#550</a>: manifold-sql: use "isXxx" for boolean columns
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/549">#549</a>: manifold-delegation: for @link support specifying specific interfaces to share, both share={interface-list} and shareAll=true
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/509">#509</a>: manifold-json: simplify naming scheme from <parent>_Xxx to Xxx_N where N reflects depth
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/548">#548</a>: exclude constructor from record stub generation
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/547">#547</a>: manifold-sql: provide fetchAll methods for schema types
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/546">#546</a>: fix stub generation involving vararg and annotations
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/545">#545</a>: handle case where java 8 jdk does not include javadoc classes
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/541">#541</a>: manifod-graphql: fix withAuthorization()
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/540">#540</a>: IntelliJ plugin: fix string template escape char error
+<br>
+<hr>
 <a href="https://github.com/manifold-systems/manifold/issues/537">#537</a>: Support operator overloading for binary operators (&, |, ^, <<, >>, >>>)
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/428">#428</a>: Support operator overloading for additional unary operators (!, ~)
