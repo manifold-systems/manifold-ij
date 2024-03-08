@@ -22,9 +22,11 @@ package manifold.ij.util;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.impl.PsiClassImplUtil;
 import manifold.ext.rt.api.Structural;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.Callable;
 
@@ -37,6 +39,10 @@ public class ManPsiUtil
                                    : psiClass.getModifierList().findAnnotation( Structural.class.getTypeName() );
     return structuralAnno != null;
   }
+
+    public static boolean isClassEquivalentTo(@NotNull PsiClass aClass, PsiElement another) {
+        return PsiClassImplUtil.isClassEquivalentTo(aClass, another);
+    }
 
   public static void runInTypeManifoldLoader( PsiElement context, Runnable code )
   {
