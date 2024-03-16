@@ -215,6 +215,8 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/555">#555</a>: fix regression that broke compatibility with Lombok
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/552">#552</a>: manifold-sql: include "fetchBy" methods for all columns, not just the required one
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/551">#551</a>: handle case where an array annotation arg is provided as a List as opposed to an array
