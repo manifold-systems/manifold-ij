@@ -215,6 +215,14 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold/issues/564">#564</a>: support more error suppression re operator overloading with the Chinese (Simplified) Language Pack
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/562">#562</a>: manifold-sql: for nullable annotations on accessors take into account pre-commit state of columns
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/561">#561</a>: refine check to prevent string concat on fragments
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/558">#558</a>: manifold-sql: fix NPE corresponding with a "isSameType" error
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/555">#555</a>: fix regression that broke compatibility with Lombok
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/552">#552</a>: manifold-sql: include "fetchBy" methods for all columns, not just the required one
