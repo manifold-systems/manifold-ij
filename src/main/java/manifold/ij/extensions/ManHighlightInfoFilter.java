@@ -316,7 +316,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
             ((PsiJavaToken)firstElem).getTokenType() == JavaTokenType.TILDE ||
             ((PsiJavaToken)firstElem).getTokenType() == JavaTokenType.EXCL) &&
            elem instanceof ManPsiPrefixExpressionImpl &&
-           description.contains( "Operator" ) &&  description.contains( "cannot be applied to" ) &&
+           (description.contains( "Operator" ) && description.contains( "cannot be applied to" ) ||
+            description.contains( "运算符" ) && description.contains( "不能应用于" )) &&
            ((ManPsiPrefixExpressionImpl)elem).getTypeForUnaryOverload() != null;
   }
 
@@ -326,7 +327,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return elem instanceof ManPsiPrefixExpressionImpl &&
            (hi.getDescription().contains( "Operator '-' cannot be applied to" ) ||
             hi.getDescription().contains( "Operator '--' cannot be applied to" ) ||
-            hi.getDescription().contains( "Operator '++' cannot be applied to" )) &&
+            hi.getDescription().contains( "Operator '++' cannot be applied to" ) ||
+
+            hi.getDescription().contains( "运算符 '-' 不能应用于" ) ||
+            hi.getDescription().contains( "运算符 '--' 不能应用于" ) ||
+            hi.getDescription().contains( "运算符 '++' 不能应用于" )) &&
            ((ManPsiPrefixExpressionImpl)elem).isOverloaded();
   }
   private boolean filterPostfixExprCannotBeApplied( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
@@ -334,7 +339,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return isInOverloadPostfixExpr( elem ) &&
            (hi.getDescription().contains( "Operator '-' cannot be applied to" ) ||
             hi.getDescription().contains( "Operator '--' cannot be applied to" ) ||
-            hi.getDescription().contains( "Operator '++' cannot be applied to" ));
+            hi.getDescription().contains( "Operator '++' cannot be applied to" ) ||
+
+            hi.getDescription().contains( "运算符 '-' 不能应用于" ) ||
+            hi.getDescription().contains( "运算符 '--' 不能应用于" ) ||
+            hi.getDescription().contains( "运算符 '++' 不能应用于" ));
   }
 
   private boolean isInOverloadPostfixExpr( PsiElement elem )
@@ -360,7 +369,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterOperatorCannotBeAppliedToWithCompoundAssignmentOperatorOverload( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
   {
     return firstElem.getParent() instanceof PsiAssignmentExpressionImpl &&
-           hi.getDescription().contains( "' cannot be applied to " ) &&  // eg. "Operator '+' cannot be applied to 'java.math.BigDecimal'"
+           (hi.getDescription().contains( "' cannot be applied to " ) ||  // eg. "Operator '+' cannot be applied to 'java.math.BigDecimal'"
+            hi.getDescription().contains( "' 不能应用于 " )) &&  // eg. "运算符 '+' 不能应用于 'java.math.BigDecimal'"
            ManJavaResolveCache.getTypeForOverloadedBinaryOperator( (PsiExpression)firstElem.getParent() ) != null;
   }
 
@@ -369,7 +379,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     PsiArrayAccessExpressionImpl arrayAccess;
     return (arrayAccess = getArrayAccessExpression( elem )) != null &&
-      (hi.getDescription().startsWith( "Array type expected" ) || hi.getDescription().startsWith( "应为数组类型" )) &&
+      (hi.getDescription().startsWith( "Array type expected" ) ||
+       hi.getDescription().startsWith( "应为数组类型" )) &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_GET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
   }
@@ -398,7 +409,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       arrayAccess = (PsiArrayAccessExpressionImpl)csr;
     }
     return arrayAccess != null &&
-      (hi.getDescription().startsWith( "Variable expected" ) || hi.getDescription().startsWith( "应为变量" )) &&
+      (hi.getDescription().startsWith( "Variable expected" ) ||
+       hi.getDescription().startsWith( "应为变量" )) &&
       arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_SET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
@@ -407,7 +419,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     String description = hi.getDescription();
     if( description == null ||
-        !description.startsWith( "Array index is out of bounds" ) && !description.startsWith( "数组索引超出范围" ) )
+        !description.startsWith( "Array index is out of bounds" ) &&
+        !description.startsWith( "数组索引超出范围" ) )
     {
       return false;
     }
@@ -427,7 +440,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     // for use with properties e.g., @val(annos = @Foo) String name;
 
     return elem instanceof PsiAnnotation &&
-      (hi.getDescription().startsWith( "Incompatible types" ) || hi.getDescription().startsWith( "不兼容的类型" )) &&
+      (hi.getDescription().startsWith( "Incompatible types" ) ||
+       hi.getDescription().startsWith( "不兼容的类型" )) &&
       hi.getDescription().contains( manifold.rt.api.anno.any.class.getTypeName() );
   }
 
@@ -479,7 +493,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     // filter method override "incompatible return type" error involving 'auto'
 
     return elem.getText().equals( ManClassUtil.getShortClassName( ManAttr.AUTO_TYPE ) ) &&
-      (hi.getDescription().contains( "incompatible return type" ) || hi.getDescription().contains( "返回类型不兼容" ));
+      (hi.getDescription().contains( "incompatible return type" ) ||
+       hi.getDescription().contains( "返回类型不兼容" ));
   }
 
   private boolean filterInnerClassReferenceError( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
@@ -637,7 +652,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterAmbiguousMethods( HighlightInfo hi, PsiElement elem )
   {
-    if( !hi.getDescription().startsWith( "Ambiguous method call" ) )
+    if( !hi.getDescription().startsWith( "Ambiguous method call" ) &&
+        !hi.getDescription().startsWith( "方法调用不明确" ) )
     {
       return false;
     }
