@@ -233,7 +233,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     String description = hi.getDescription();
     return (file instanceof ManTemplateJavaFile || !(file instanceof PsiJavaFileBaseImpl)) &&
-      description.contains( "Unnecessary semicolon" );
+            (description.contains( "Unnecessary semicolon" ) ||
+             description.contains( "不必要的分号" ));
   }
 
   // Operator overloading: Filter warning messages like "Number objects are compared using '==', not 'equals()'"
@@ -363,7 +364,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterIncompatibleTypesWithCompoundAssignmentOperatorOverload( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
   {
     return elem.getParent() instanceof PsiAssignmentExpressionImpl &&
-           hi.getDescription().contains( "Incompatible types" ) &&
+           (hi.getDescription().contains( "Incompatible types" ) ||
+            hi.getDescription().contains( "不兼容的类型" )) &&
            ManJavaResolveCache.getTypeForOverloadedBinaryOperator( (PsiExpression)elem.getParent() ) != null;
   }
   private boolean filterOperatorCannotBeAppliedToWithCompoundAssignmentOperatorOverload( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
@@ -455,7 +457,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    if( hi.getDescription().contains( "updated, but never queried" ) ||
+    if( (hi.getDescription().contains( "updated, but never queried" ) ||
+         hi.getDescription().contains( "更新，但从未被查询" )) ||
       (hi.getDescription().contains( "changed" ) && hi.getDescription().contains( "is never used" )) )
     {
       ManStringLiteralTemplateUsageProvider finder = new ManStringLiteralTemplateUsageProvider();
@@ -554,7 +557,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterForeachExpressionErrors( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
   {
-    if( !hi.getDescription().contains( "foreach not applicable to type" ) )
+    if( !hi.getDescription().contains( "foreach not applicable to type" ) &&
+        !hi.getDescription().contains( "oreach 不适用于类型" ) )
     {
       return false;
     }
@@ -687,7 +691,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     return firstElem instanceof PsiJavaToken &&
            ((PsiJavaToken)firstElem).getTokenType() == JavaTokenType.STRING_LITERAL &&
-           hi.getDescription().contains( "Illegal escape character" ) &&
+           (hi.getDescription().contains( "Illegal escape character" ) ||
+            hi.getDescription().contains( "字符串文字中的非法转义字符" )) &&
            elem.getText().contains( "\\$" );
   }
 
@@ -726,7 +731,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
         }
       }
     }
-    else if( hi.getDescription().contains( "cannot be applied to" ) )
+    else if( hi.getDescription().contains( "cannot be applied to" ) ||
+             hi.getDescription().contains( "不能应用于" ) )
     {
       PsiMethodCallExpression methodCall = findMethodCall( firstElem );
       if( methodCall != null )
