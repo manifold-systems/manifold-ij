@@ -100,6 +100,13 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
   }
 
   @Override
+  public ManLightMethodBuilder withConstructor( boolean constructor )
+  {
+    setConstructor( constructor );
+    return this;
+  }
+
+  @Override
   public ManLightMethodBuilder withMethodReturnType( PsiType returnType )
   {
     setMethodReturnType( returnType );

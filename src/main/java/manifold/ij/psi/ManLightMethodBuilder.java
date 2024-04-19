@@ -55,6 +55,8 @@ public interface ManLightMethodBuilder extends PsiMethod
 
   ManLightMethodBuilder withAdditionalModule( ManModule module );
 
+  ManLightMethodBuilder withConstructor( boolean constructor );
+
   ManModule getModule();
   Set<ManModule> getModules();
 }

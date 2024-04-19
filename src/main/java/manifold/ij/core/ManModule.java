@@ -75,6 +75,7 @@ public class ManModule extends SimpleModule
   private final LocklessLazyVar<Boolean> _isPreprocessorEnabled;
   private final LocklessLazyVar<Boolean> _isPropertiesEnabled;
   private final LocklessLazyVar<Boolean> _isDelegationEnabled;
+  private final LocklessLazyVar<Boolean> _isTypeAliasEnabled;
   private final LocklessLazyVar<Boolean> _isTuplesEnabled;
 
   ManModule( ManProject manProject, Module ijModule, List<IDirectory> classpath, List<IDirectory> sourcePath, List<IDirectory> outputPath, List<IDirectory> excludedDirs )
@@ -96,6 +97,7 @@ public class ManModule extends SimpleModule
     _isPreprocessorEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-preprocessor" ) || hasJar( "manifold-all" ) );
     _isPropertiesEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-props" ) || hasJar( "manifold-all" ) );
     _isDelegationEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-delegation" ) || hasJar( "manifold-all" ) );
+    _isTypeAliasEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-typealias" ) || hasJar( "manifold-all" ) );
     _isTuplesEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-tuple" ) || hasJar( "manifold-all" ) );
   }
 
@@ -535,6 +537,11 @@ public class ManModule extends SimpleModule
   public boolean isDelegationEnabled()
   {
     return _isDelegationEnabled.get();
+  }
+
+  public boolean isTypeAliasEnabled()
+  {
+    return _isTypeAliasEnabled.get();
   }
 
   public boolean isTuplesEnabled()
