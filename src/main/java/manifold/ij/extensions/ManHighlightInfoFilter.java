@@ -457,16 +457,18 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    if( (hi.getDescription().contains( "updated, but never queried" ) ||
-         hi.getDescription().contains( "更新，但从未被查询" )) ||
-      (hi.getDescription().contains( "changed" ) && hi.getDescription().contains( "is never used" )) )
+    if( (hi.getDescription().contains( "updated, but never queried" ) || hi.getDescription().contains( "更新，但从未被查询" )) ||
+
+        (hi.getDescription().contains( "changed" ) && hi.getDescription().contains( "is never used" )) || //todo: chinese
+
+        (hi.getDescription().startsWith( "The value ") && hi.getDescription().endsWith( "is never used")) ) //todo: chinese
     {
-      ManStringLiteralTemplateUsageProvider finder = new ManStringLiteralTemplateUsageProvider();
-      elem = resolveRef( elem ); // mainly for "is never used" case
+      elem = resolveRef( elem ); // mainly for "is never used" cases
       if( elem == null )
       {
         return false;
       }
+      ManStringLiteralTemplateUsageProvider finder = new ManStringLiteralTemplateUsageProvider();
       return finder.isImplicitUsage( elem );
     }
 
