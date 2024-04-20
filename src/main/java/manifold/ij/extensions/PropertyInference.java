@@ -571,7 +571,7 @@ class PropertyInference
     return null;
   }
 
-  private static class PropAttrs
+  static class PropAttrs
   {
     String _prefix;
     String _name;
@@ -638,7 +638,7 @@ class PropertyInference
     return null;
   }
 
-  private PropAttrs derivePropertyNameFromGetter( PsiMethod m )
+  static PropAttrs derivePropertyNameFromGetter( PsiMethod m )
   {
     if( m.getReturnType() == null ||
       PsiTypes.voidType().equals( m.getReturnType() ) || m.getParameterList().getParametersCount() > 0 )
@@ -650,7 +650,7 @@ class PropertyInference
     return derived == null ? deriveName( m, "is", m.getReturnType() ) : derived;
   }
 
-  private PropAttrs derivePropertyNameFromSetter( PsiMethod m )
+  static PropAttrs derivePropertyNameFromSetter( PsiMethod m )
   {
     //noinspection ConstantConditions
     return m.getParameterList().getParametersCount() != 1
@@ -658,7 +658,7 @@ class PropertyInference
       : deriveName( m, "set", m.getParameterList().getParameter( 0 ).getType() );
   }
 
-  private PropAttrs deriveName( PsiMethod m, String prefix, PsiType type )
+  private static PropAttrs deriveName( PsiMethod m, String prefix, PsiType type )
   {
     String name = m.getName();
     if( name.startsWith( prefix ) )

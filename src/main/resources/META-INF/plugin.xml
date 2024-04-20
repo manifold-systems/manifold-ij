@@ -215,6 +215,8 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+<a href="https://github.com/manifold-systems/manifold-ij/issues/22">#22</a>: account for references to inferred properties as indirect usages of getters/setters
+<br>
 <a href="https://github.com/manifold-systems/manifold/issues/564">#564</a>: support more error suppression re operator overloading with the Chinese (Simplified) Language Pack
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/562">#562</a>: manifold-sql: for nullable annotations on accessors take into account pre-commit state of columns
@@ -607,6 +609,7 @@ Other minor fixes and improvements.
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManPropertiesAugmentProvider"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManDelegationAugmentProvider"/>
     <methodReferencesSearch implementation="manifold.ij.extensions.ExtensionMethodUsageSearcher"/>
+    <methodReferencesSearch implementation="manifold.ij.extensions.InferredPropertyMethodUsageSearcher"/>
     <lang.parserDefinition language="JAVA" implementationClass="manifold.ij.extensions.ManJavaParserDefinition" order="first"/>
     <externalAnnotator language="JAVA" implementationClass="manifold.ij.extensions.DelegationExternalAnnotator"/>
     <externalAnnotator language="JAVA" implementationClass="manifold.ij.extensions.ManPreprocessorAnnotator" order="last"/>
