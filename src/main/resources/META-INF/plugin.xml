@@ -607,6 +607,7 @@ Other minor fixes and improvements.
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManPropertiesAugmentProvider"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManDelegationAugmentProvider"/>
     <methodReferencesSearch implementation="manifold.ij.extensions.ExtensionMethodUsageSearcher"/>
+    <methodReferencesSearch implementation="manifold.ij.extensions.InferredPropertyMethodUsageSearcher"/>
     <lang.parserDefinition language="JAVA" implementationClass="manifold.ij.extensions.ManJavaParserDefinition" order="first"/>
     <externalAnnotator language="JAVA" implementationClass="manifold.ij.extensions.DelegationExternalAnnotator"/>
     <externalAnnotator language="JAVA" implementationClass="manifold.ij.extensions.ManPreprocessorAnnotator" order="last"/>
