@@ -51,6 +51,7 @@ import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
 import manifold.ext.rt.api.ThisClass;
+import manifold.ij.psi.ManExtensionMethodBuilder;
 import manifold.internal.javac.ManAttr;
 import manifold.rt.api.Array;
 import manifold.api.type.ITypeManifold;
@@ -64,7 +65,6 @@ import manifold.ij.fs.IjFile;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManPsiElementFactory;
 import manifold.rt.api.util.ManClassUtil;
-import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -348,14 +348,16 @@ public class ManAugmentProvider extends PsiAugmentProvider
     {
       ManPsiElementFactory manPsiElemFactory = ManPsiElementFactory.instance();
       String methodName = refMethod.getName();
-      ManLightMethodBuilder method = manPsiElemFactory.createLightMethod( manModule, psiClass.getManager(), methodName )
+      PsiMethod navMethod = findExtensionMethodNavigationElement( extClass, refMethod );
+      ManExtensionMethodBuilder method = manPsiElemFactory.createExtensionMethodMethod( manModule, psiClass.getManager(), methodName, navMethod )
         .withMethodReturnType( refMethod.getReturnType() )
         .withContainingClass( psiClass );
-      PsiElement navElem = findExtensionMethodNavigationElement( extClass, refMethod );
-      if( navElem != null )
-      {
-        method.withNavigationElement( navElem );
-      }
+
+// do not add navigation element because PsiExtensionMethod (implemented by ManExtensionMethodBuilder) handles that separately with getTargetMethod(), additionally MethodCallUtils#getParameterForArgument() would fail
+//      if( navMethod != null )
+//      {
+//        method.withNavigationElement( navMethod.getNavigationElement() );
+//      }
 
       copyAnnotations( refMethod, method );
 
@@ -407,7 +409,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     }
   }
 
-  private PsiElement findExtensionMethodNavigationElement( PsiClass extClass, PsiMethod plantedMethod )
+  private PsiMethod findExtensionMethodNavigationElement( PsiClass extClass, PsiMethod plantedMethod )
   {
     PsiMethod[] found = extClass.findMethodsByName( plantedMethod.getName(), false );
     outer:
@@ -429,7 +431,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
             continue outer;
           }
         }
-        return m.getNavigationElement();
+        return m;
       }
     }
     return null;

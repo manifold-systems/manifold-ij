@@ -46,7 +46,7 @@ import manifold.ext.rt.api.Jailbreak;
 import manifold.ext.rt.api.This;
 import manifold.ext.rt.api.ThisClass;
 import manifold.ij.core.ManProject;
-import manifold.ij.psi.ManLightMethodBuilder;
+import manifold.ij.psi.ManExtensionMethodBuilder;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -124,9 +124,9 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
           {
             for( PsiMethod m: extendedClass.findMethodsByName( method.getName(), false ) )
             {
-              if( m instanceof ManLightMethodBuilder )
+              if( m instanceof ManExtensionMethodBuilder)
               {
-                if( PsiUtil.allMethodsHaveSameSignature( new PsiMethod[]{(PsiMethod)m.getNavigationElement(),
+                if( PsiUtil.allMethodsHaveSameSignature( new PsiMethod[]{((ManExtensionMethodBuilder)m).getTargetMethod(),
                       (PsiMethod)method.getNavigationElement()} ) )
                 {
                   return m;
@@ -155,9 +155,9 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
           }
           for( PsiMethod m : extendedClass.findMethodsByName( method.getName(), false ) )
           {
-            if( m instanceof ManLightMethodBuilder )
+            if( m instanceof ManExtensionMethodBuilder )
             {
-              if( PsiUtil.allMethodsHaveSameSignature( new PsiMethod[] {(PsiMethod)m.getNavigationElement(),
+              if( PsiUtil.allMethodsHaveSameSignature( new PsiMethod[] {((ManExtensionMethodBuilder)m).getTargetMethod(),
                     (PsiMethod)method.getNavigationElement()} ) )
               {
                 return m;

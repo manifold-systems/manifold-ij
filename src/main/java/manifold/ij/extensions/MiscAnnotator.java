@@ -26,12 +26,10 @@ import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.psi.*;
 import manifold.ExtIssueMsg;
 import manifold.api.util.IssueMsg;
-import manifold.ext.rt.api.Extension;
-import manifold.ext.rt.api.This;
-import manifold.ext.rt.api.ThisClass;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.core.ManPsiTupleExpression;
+import manifold.ij.psi.ManExtensionMethodBuilder;
 import manifold.ij.util.ManPsiUtil;
 import manifold.internal.javac.ManAttr;
 import manifold.rt.api.util.ManClassUtil;
@@ -200,28 +198,30 @@ public class MiscAnnotator implements Annotator
 
   private boolean isExtensionMethod( PsiMethod method )
   {
-    PsiElement navigationElement = method.getNavigationElement();
-    if( navigationElement instanceof PsiMethod && navigationElement != method )
-    {
-      method = (PsiMethod)navigationElement;
-    }
+    return method instanceof ManExtensionMethodBuilder;
     
-    PsiModifierList methodMods = method.getModifierList();
-    if( methodMods.findAnnotation( Extension.class.getName() ) != null )
-    {
-      return true;
-    }
-
-    for( PsiParameter param: method.getParameterList().getParameters() )
-    {
-      PsiModifierList modifierList = param.getModifierList();
-      if( modifierList != null &&
-        (modifierList.findAnnotation( This.class.getName() ) != null ||
-          modifierList.findAnnotation( ThisClass.class.getName() ) != null) )
-      {
-        return true;
-      }
-    }
-    return false;
+//    PsiElement navigationElement = method.getNavigationElement();
+//    if( navigationElement instanceof PsiMethod && navigationElement != method )
+//    {
+//      method = (PsiMethod)navigationElement;
+//    }
+//
+//    PsiModifierList methodMods = method.getModifierList();
+//    if( methodMods.findAnnotation( Extension.class.getName() ) != null )
+//    {
+//      return true;
+//    }
+//
+//    for( PsiParameter param: method.getParameterList().getParameters() )
+//    {
+//      PsiModifierList modifierList = param.getModifierList();
+//      if( modifierList != null &&
+//        (modifierList.findAnnotation( This.class.getName() ) != null ||
+//          modifierList.findAnnotation( ThisClass.class.getName() ) != null) )
+//      {
+//        return true;
+//      }
+//    }
+//    return false;
   }
 }
