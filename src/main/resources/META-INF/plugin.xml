@@ -215,9 +215,11 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
-<a href="https://github.com/manifold-systems/manifold-ij/issues/22">#22</a>: account for references to inferred properties as indirect usages of getters/setters
+<a href="https://github.com/manifold-systems/manifold-ij/issues/23">#23</a>: IntelliJ plugin: support correct mapping of parameters from extension method call sites to extension impl e.g., for annotation diagnostics
 <br>
-<a href="https://github.com/manifold-systems/manifold/issues/564">#564</a>: support more error suppression re operator overloading with the Chinese (Simplified) Language Pack
+<a href="https://github.com/manifold-systems/manifold-ij/issues/22">#22</a>: IntelliJ plugin: account for references to inferred properties as indirect usages of getters/setters
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/564">#564</a>: IntelliJ plugin: support more error suppression re operator overloading with the Chinese (Simplified) Language Pack
 <br>
 <a href="https://github.com/manifold-systems/manifold/issues/562">#562</a>: manifold-sql: for nullable annotations on accessors take into account pre-commit state of columns
 <br>
