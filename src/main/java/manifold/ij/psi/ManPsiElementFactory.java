@@ -55,4 +55,9 @@ public class ManPsiElementFactory
   {
     return new ManLightMethodImpl( manager, valuesMethod, psiClass );
   }
+
+  public ManExtensionMethodBuilder createExtensionMethodMethod( ManModule manModule, PsiManager manager, String methodName, PsiMethod extMethodImpl )
+  {
+    return new ManExtensionMethodBuilder( manModule, manager, methodName, null, extMethodImpl );
+  }
 }
