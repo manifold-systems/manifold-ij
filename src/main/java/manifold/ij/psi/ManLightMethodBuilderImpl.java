@@ -29,6 +29,8 @@ import com.intellij.util.IncorrectOperationException;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
+
+import manifold.ext.rt.api.Self;
 import manifold.ij.core.ManModule;
 import org.jetbrains.annotations.NotNull;
 
@@ -100,7 +102,7 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
   }
 
   @Override
-  public ManLightMethodBuilder withMethodReturnType( PsiType returnType )
+  public @Self ManLightMethodBuilder withMethodReturnType(PsiType returnType )
   {
     setMethodReturnType( returnType );
     return this;
@@ -128,7 +130,7 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
   }
 
   @Override
-  public ManLightMethodBuilder withContainingClass( PsiClass containingClass )
+  public @Self ManLightMethodBuilder withContainingClass( PsiClass containingClass )
   {
     setContainingClass( containingClass );
     return this;
