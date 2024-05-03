@@ -21,6 +21,7 @@ package manifold.ij.actions;
 
 import com.intellij.codeInsight.lookup.LookupManager;
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Presentation;
@@ -48,7 +49,13 @@ public class ViewJavaSourceAction extends AnAction implements DumbAware
 {
   public ViewJavaSourceAction()
   {
-    super( "Show Java Source", "Show Java Source", AllIcons.Toolwindows.Documentation );
+    super( "Show Java Source", "Show Java source", AllIcons.Toolwindows.Documentation );
+  }
+
+  @Override
+  public @NotNull ActionUpdateThread getActionUpdateThread()
+  {
+    return ActionUpdateThread.BGT;
   }
 
   @Override
@@ -87,6 +94,10 @@ public class ViewJavaSourceAction extends AnAction implements DumbAware
           if( module != null )
           {
             ManModule manModule = ManProject.getModule( module );
+            if( manModule == null )
+            {
+              return null;
+            }
             String[] fqns = manModule.getTypesForFile( FileUtil.toIFile( manModule.getIjProject(), file ) );
             return Arrays.stream( fqns ).filter( fqn -> {
               PsiClass psiClass = ManifoldPsiClassCache.getPsiClass( manModule, fqn );
