@@ -21,11 +21,7 @@ package manifold.ij.actions;
 
 import com.google.common.io.CharSink;
 import com.intellij.ide.IdeView;
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataContext;
-import com.intellij.openapi.actionSystem.LangDataKeys;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
@@ -57,6 +53,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import javax.swing.RootPaneContainer;
+
+import com.intellij.util.indexing.DumbModeAccessType;
 import manifold.ExtIssueMsg;
 import manifold.ij.core.ManLibraryChecker;
 import manifold.ij.core.ManProject;
@@ -73,9 +71,14 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
 {
   public CreateExtensionMethodsClassAction()
   {
-    super( ManBundle.message( "new.ext.method.class.menu.action.text" ),
-      ManBundle.message( "new.ext.method.class.menu.action.description" ),
+    super( ManBundle.message( "new.ext.method.class.menu.action.text" ), ManBundle.message( "new.ext.method.class.menu.action.description" ),
       IconLoader.getIcon( "/manifold/ij/icons/manifold.png", CreateExtensionMethodsClassAction.class ) );
+  }
+
+  @Override
+  public @NotNull ActionUpdateThread getActionUpdateThread()
+  {
+    return ActionUpdateThread.BGT;
   }
 
   @Override
@@ -209,7 +212,12 @@ public class CreateExtensionMethodsClassAction extends AnAction implements DumbA
       fqnExtended = Object.class.getTypeName();
     }
 
-    PsiClass psiExtended = JavaPsiFacade.getInstance( project ).findClass( fqnExtended, GlobalSearchScope.projectScope( project ) );
+    String finalFqnExtended = fqnExtended;
+    // must run with ignoreDumbMode() otherwise results in IndexNotReadyException
+    PsiClass psiExtended = DumbModeAccessType.RELIABLE_DATA_ONLY.ignoreDumbMode( () ->
+      JavaPsiFacade.getInstance( project ).findClass( finalFqnExtended, GlobalSearchScope.projectScope( project ) ) );
+
+//    PsiClass psiExtended = JavaPsiFacade.getInstance( project ).findClass( fqnExtended, GlobalSearchScope.projectScope( project ) );
     if( psiExtended != null &&
         FileIndexUtil.isJavaSourceFile( project, psiExtended.getContainingFile().getVirtualFile() ) &&
         ManProject.getIjModule( psiExtended ) == ManProject.getIjModule( dir ) )
