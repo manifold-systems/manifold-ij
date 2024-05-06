@@ -22,32 +22,41 @@
   <name>Manifold</name>
   <description>
     <![CDATA[
-<p>Manifold is a Java compiler plugin. It supplements Java with:</p>
+<p>Manifold is a Java compiler plugin. Use it to supplement your Java projects with highly productive features.</p>
+
 <ul>
-  <li>Direct, <i>type-safe</i> access to:</li>
-  <ul>
-    <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-sql">SQL <b><i>(New!)</b></a></li>
-    <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-graphql">GraphQL</a></li>
-    <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-json">JSON & JSON Schema</a>, <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-yaml">YAML</a>, <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-xml">XML</a>
-    <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-csv">CSV</a></li>
-    <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-js">JavaScript</a></li>
-    <li>etc.</li>
-  </ul>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extension Methods</a></li>
+<li><p>Advanced compile-time <b>metaprogramming</b> type-safely integrates any kind of data, metadata, or DSL directly into Java.</p></li>
+<ul>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-sql">SQL <b><i>(New!)</i></b></a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-graphql">GraphQL</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-json">JSON & JSON Schema</a>, <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-yaml">YAML</a>, <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-xml">XML</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-csv">CSV</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-js">JavaScript</a></li>
+  <li>etc.</li>
+</ul>
+<p/>
+<li><p>Powerful <b>language enhancements</b> significantly improve developer productivity.</p></li>
+<ul>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extension methods</a></li>
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-delegation">Delegation</a></li>
   <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-props">Properties</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#operator-overloading">Operator Overloading</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions">Unit Expressions</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">A <em>Java</em> Template Engine</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">A Preprocessor</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-tuple">Tuple expressions</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#operator-overloading">Operator overloading</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions">Unit expressions</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">A <em>Java</em> Template engine</a></li>
+  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">A preprocessor</a></li>
   <li>...and more</li>
 </ul>
-<p>All fully supported in <strong>Java 8 - 21</strong> + latest with comprehensive IDE support in <strong>IntelliJ IDEA</strong> and <strong>Android Studio</strong>.
-Manifold consists of a set of modules, one for each feature. Simply add the Manifold dependencies of your choosing to your existing project and begin taking advantage of them.</p>
+</ul>
+
+<p>Each feature is available as a separate dependency. Simply add the Manifold dependencies of your choosing to your existing project and begin taking advantage of them.</p>
+
+<p>All fully supported in <strong>Java 8 - 21</strong> + latest with comprehensive IDE support in <strong>IntelliJ IDEA</strong> and <strong>Android Studio</strong>.</p>
+<hr/>
 <blockquote>
   <p><h2><i>What's new...</i></h2></p>
   <p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-sql/readme.md"<i><h2>Type-safe SQL!</h2></i></a></p>
-  <p>Manifold SQL lets you write native SQL <i>directly</i> and <i>type-safely</i> in your Java code.<br>
+  <p>Manifold SQL lets you write native SQL <i>directly</i> and <i>type-safely</i> in your Java code.</p>
   <ul>
     <li>Query types are instantly available as you type native SQL of any complexity in your Java code</li>
     <li>Schema types are automatically derived from your database, providing type-safe CRUD, decoupled TX, and more</li>
@@ -55,9 +64,10 @@ Manifold consists of a set of modules, one for each feature. Simply add the Mani
   </ul><br>
   <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-sql/readme.md"><img width="80%" height="80%" align="top" src="https://github.com/manifold-systems/manifold/raw/master/docs/images/img_3.png"></a>.
 </blockquote>
+<hr/>
 <h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
 <h3><a href="#meta-programming" id="meta-programming"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold">Meta-programming</a></a></h3>
-<p>Use the framework to gain direct, type-safe access to <em>any</em> type of resource, such as
+<p>Use the framework to directly and type-safely integrate <em>any</em> type of resource, such as
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-sql"><strong>SQL</strong></a>,
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-graphql"><strong>GraphQL</strong></a>,
 <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-json"><strong>JSON</strong></a>,
@@ -96,12 +106,14 @@ User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&q
   .build();
 User.request(&quot;http://api.example.com/users&quot;).postOne(user);
 </code></pre>
+<hr/>
 <h3><a href="#extension-methods" id="extension-methods"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extension Methods</a></a></h3>
 <p>Add your own methods to existing Java classes, even <em>String</em>, <em>List</em>, and <em>File</em>. Eliminate boilerplate code.
 </p>
 <pre><code class="java">String greeting = &quot;hello&quot;;
 greeting.myMethod(); // Add your own methods to String!
 </code></pre>
+<hr/>
 <h3><a href="#delegation" id="delegation"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-delegation">Delegation</a></a></h3>
 <p>Favor composition over inheritance. Use <code>@link</code> and <code>@part</code> for automatic interface implementation forwarding and <em>true</em> delegation.
 </p>
@@ -115,6 +127,7 @@ greeting.myMethod(); // Add your own methods to String!
   // No need to implement MyInterface here, but you can override myInterface as needed
 }
 </code></pre>
+<hr/>
 <h3><a href="#operator-overloading" id="operator-overloading"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#operator-overloading">Operator Overloading</a></a></h3>
 <p>Implement <em>operator</em> methods on any type to directly support arithmetic, relational, and unit operators.</p>
 <pre><code class="java">// BigDecimal expressions
@@ -125,6 +138,7 @@ if (bigDec1 &gt; bigDec2) {
 // Implement operators for any type
 MyType value = myType1 + myType2;
 </code></pre>
+<hr/>
 <h3><a href="#unit-expressions" id="unit-expressions"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions">Unit Expressions</a></a></h3>
 <p>Unit or <em>binding</em> operations are unique to the Manifold framework. They provide a powerfully concise syntax and can be
 applied to a wide range of applications.</p>
@@ -134,6 +148,7 @@ Length distance = 100 mph * 3 hr;
 Force f = 5.2 kg m/s/s; // same as 5.2 N
 Mass infant = 9 lb + 8.71 oz;
 </code></pre>
+<hr/>
 <h3><a href="#ranges" id="ranges"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-collections#ranges">Ranges</a></a></h3>
 <p>Easily work with the <em>Range</em> API using <a href="(https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions)">unit expressions</a>.
 Simply import the <em>RangeFun</em> constants to create ranges.</p>
@@ -148,6 +163,7 @@ for (Mass m: 0kg to 10kg step 22r unit g) {
   out.println(m);
 }
 </code></pre>
+<hr/>
 <h3><a href="#science" id="science"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">Science</a></a></h3>
 <p>Use the <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">manifold-science</a>
 framework to type-safely incorporate units and precise measurements into your applications.</p>
@@ -157,6 +173,7 @@ Velocity rate = 65mph;
 Time time = 1min + 3.7sec;
 Length distance = rate * time;
 </code></pre>
+<hr/>
 <h3><a href="#preprocessor" id="preprocessor"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">Preprocessor</a></a></h3>
 <p>Use familiar directives such as <strong>#define</strong> and <strong>#if</strong> to conditionally compile your Java projects. The preprocessor offers
 a simple and convenient way to support multiple build targets with a single codebase. </p>
@@ -168,6 +185,7 @@ a simple and convenient way to support multiple build targets with a single code
   public void setTime(Calendar time) {...}
 #endif
 </code></pre>
+<hr/>
 <h3><a href="#structural-typing" id="structural-typing"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#structural-interfaces-via-structural">Structural Typing</a></a></h3>
 <p>Unify disparate APIs. Bridge software components you do not control. Access maps through type-safe interfaces. </p>
 <pre><code class="java">Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();
@@ -176,6 +194,7 @@ thing.setFoo(new Foo());
 Foo foo = thing.getFoo();
 out.println(thing.getClass()); // prints &quot;java.util.HashMap&quot;
 </code></pre>
+<hr/>
 <h3><a href="#type-safe-reflection" id="type-safe-reflection"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#type-safe-reflection-via-jailbreak">Type-safe Reflection</a></a></h3>
 <p>Access private features with <b>@Jailbreak</b> to avoid the drudgery and vulnerability of Java reflection. </p>
 <pre><code class="java">@Jailbreak Foo foo = new Foo();
@@ -183,6 +202,7 @@ out.println(thing.getClass()); // prints &quot;java.util.HashMap&quot;
 foo.privateMethod(x, y, z);
 foo.privateField = value;
 </code></pre>
+<hr/>
 <h3><a href="#checked-exception-handling" id="checked-exception-handling"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-exceptions">Checked Exception Handling</a></a></h3>
 <p>You now have an option to make checked exceptions behave like unchecked exceptions!  No more unintended exception
 swallowing. No more <em>try</em>/<em>catch</em>/<em>wrap</em>/<em>rethrow</em> boilerplate!</p>
@@ -191,6 +211,7 @@ List&lt;URL&gt; urls = list
   .map(URL::new) // No need to handle the MalformedURLException!
   .collect(Collectors.toList());
 </code></pre>
+<hr/>
 <h3><a href="#string-templates" id="string-templates"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-strings">String Templates</a></a></h3>
 <p>Embed variables and expressions in String literals, no more clunky string concat! </p>
 <pre><code class="java">int hour = 15;
@@ -199,6 +220,7 @@ String result = &quot;The hour is $hour&quot;; // Yes!!!
 // Use expressions with '${}'
 result = &quot;It is ${hour &gt; 12 ? hour-12 : hour} o'clock&quot;;
 </code></pre>
+<hr/>
 <h3><a href="#a-java-template-engine" id="a-java-template-engine"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">A <em>Java</em> Template Engine</a></a></h3>
 <p>Author template files with the full expressive power of Java, use your templates directly in your code as types.
 Supports type-safe inclusion of other templates, shared layouts, and more. </p>
@@ -220,6 +242,7 @@ String content = abc.example.UserSample.render(users);
 &lt;/body&gt;
 &lt;/html&gt;
 </code></pre>
+<hr/>
     ]]>
   </description>
   <version>This value is patched by the build script</version>
@@ -237,6 +260,7 @@ String content = abc.example.UserSample.render(users);
 <h3>Change notes:</h3>
 <h4>
 <br>
+
 <a href="https://github.com/manifold-systems/manifold-ij/issues/23">#23</a>: IntelliJ plugin: support correct mapping of parameters from extension method call sites to extension impl e.g., for annotation diagnostics
 <br>
 <a href="https://github.com/manifold-systems/manifold-ij/issues/22">#22</a>: IntelliJ plugin: account for references to inferred properties as indirect usages of getters/setters
