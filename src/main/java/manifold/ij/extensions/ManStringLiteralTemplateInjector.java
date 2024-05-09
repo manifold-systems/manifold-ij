@@ -32,6 +32,8 @@ import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiNameValuePair;
 import com.intellij.psi.impl.source.tree.java.PsiLiteralExpressionImpl;
 import java.util.List;
+
+import com.intellij.psi.tree.IElementType;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.ComputeUtil;
@@ -156,7 +158,9 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
            host instanceof PsiLiteralExpressionImpl )
     {
       PsiLiteralExpressionImpl literalExpr = (PsiLiteralExpressionImpl)host;
-      if( literalExpr.getLiteralElementType() == JavaTokenType.STRING_LITERAL )
+      IElementType literalElementType = literalExpr.getLiteralElementType();
+      if( literalElementType == JavaTokenType.STRING_LITERAL ||
+        literalElementType == JavaTokenType.TEXT_BLOCK_LITERAL )
       {
         return literalExpr;
       }
