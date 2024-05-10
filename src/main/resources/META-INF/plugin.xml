@@ -261,6 +261,20 @@ String content = abc.example.UserSample.render(users);
 <h4>
 <br>
 
+<a href="https://github.com/manifold-systems/manifold/issues/585">#585</a>: IntelliJ plugin: update expression parser to support manifold string templates in text blocks
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/579">#579</a>: support private interface methods on class extensions
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/578">#578</a>: handle structural interface parameters in lambda expressions
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/577">#577</a>: integrate automatic structural type checking into compiler & IJ plugin
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/574">#574</a>: IntelliJ plugin: fix several plugin exceptions stemming from "ActionUpdateThread" changes
+<br>
+<a href="https://github.com/manifold-systems/manifold/issues/573">#573</a>: fix issue with using a binding expression in a ternary expression
+<br>
+<a href="https://github.com/manifold-systems/manifold-ij/issues/27">#27</a>: IntelliJ plugin: update statement parser to handle JDK 21 support expr
+<br>
 <a href="https://github.com/manifold-systems/manifold-ij/issues/23">#23</a>: IntelliJ plugin: support correct mapping of parameters from extension method call sites to extension impl e.g., for annotation diagnostics
 <br>
 <a href="https://github.com/manifold-systems/manifold-ij/issues/22">#22</a>: IntelliJ plugin: account for references to inferred properties as indirect usages of getters/setters
