@@ -20,15 +20,12 @@
 package manifold.ij.core;
 
 import com.intellij.codeInsight.daemon.JavaErrorBundle;
-import com.intellij.core.JavaPsiBundle;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.WhitespacesBinders;
 import com.intellij.lang.java.parser.DeclarationParser;
 import com.intellij.lang.java.parser.ExpressionParser;
 import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.lang.java.parser.StatementParser;
-import com.intellij.openapi.util.Pair;
-import com.intellij.pom.java.JavaFeature;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.PsiKeyword;
@@ -47,18 +44,17 @@ import static com.intellij.lang.PsiBuilderUtil.*;
 import static com.intellij.lang.PsiBuilderUtil.expect;
 import static com.intellij.lang.java.parser.JavaParserUtil.*;
 import static com.intellij.lang.java.parser.JavaParserUtil.done;
-import static com.intellij.psi.impl.source.tree.JavaElementType.FOREACH_STATEMENT;
 
 public class ManStatementParser extends StatementParser {
   private static final TokenSet YIELD_STMT_INDICATOR_TOKENS = TokenSet.create(
-    JavaTokenType.PLUS, JavaTokenType.MINUS, JavaTokenType.EXCL, JavaTokenType.TILDE,
+    JavaTokenType.PLUS, JavaTokenType.MINUS, JavaTokenType.EXCL,
+
     JavaTokenType.SUPER_KEYWORD, JavaTokenType.THIS_KEYWORD,
 
     JavaTokenType.TRUE_KEYWORD, JavaTokenType.FALSE_KEYWORD, JavaTokenType.NULL_KEYWORD,
 
     JavaTokenType.STRING_LITERAL, JavaTokenType.INTEGER_LITERAL, JavaTokenType.DOUBLE_LITERAL,
     JavaTokenType.FLOAT_LITERAL, JavaTokenType.LONG_LITERAL, JavaTokenType.CHARACTER_LITERAL,
-    JavaTokenType.TEXT_BLOCK_LITERAL,
 
     JavaTokenType.IDENTIFIER, JavaTokenType.SWITCH_KEYWORD, JavaTokenType.NEW_KEYWORD,
 
@@ -87,7 +83,7 @@ public class ManStatementParser extends StatementParser {
   }
 
   @Nullable
-  public PsiBuilder.Marker parseCodeBlock(@NotNull PsiBuilder builder, boolean isStatement) {
+  public PsiBuilder.Marker parseCodeBlock(PsiBuilder builder, boolean isStatement) {
     if (builder.getTokenType() != JavaTokenType.LBRACE) return null;
     if (isStatement && isParseStatementCodeBlocksDeep(builder)) return parseCodeBlockDeep(builder, false);
     return parseBlockLazy(builder, JavaTokenType.LBRACE, JavaTokenType.RBRACE, JavaElementType.CODE_BLOCK);
@@ -123,7 +119,7 @@ public class ManStatementParser extends StatementParser {
 
       IElementType tokenType = builder.getTokenType();
       if (tokenType == JavaTokenType.RBRACE &&
-          (braceMode == BraceMode.TILL_FIRST || braceMode == BraceMode.TILL_LAST && builder.lookAhead(1) == null)) {
+        (braceMode == BraceMode.TILL_FIRST || braceMode == BraceMode.TILL_LAST && builder.lookAhead(1) == null)) {
         break;
       }
 
@@ -145,7 +141,7 @@ public class ManStatementParser extends StatementParser {
   }
 
   @Nullable
-  public PsiBuilder.Marker parseStatement(@NotNull PsiBuilder builder) {
+  public PsiBuilder.Marker parseStatement(PsiBuilder builder) {
     IElementType tokenType = builder.getTokenType();
     if (tokenType == JavaTokenType.IF_KEYWORD) {
       return parseIfStatement(builder);
@@ -204,14 +200,12 @@ public class ManStatementParser extends StatementParser {
     }
     else if (tokenType == JavaTokenType.IDENTIFIER || tokenType == JavaTokenType.AT) {
       PsiBuilder.Marker refPos = builder.mark();
-      boolean nonSealed = (boolean)ReflectUtil.method( "com.intellij.lang.java.parser.BasicDeclarationParser", "isNonSealedToken", PsiBuilder.class, IElementType.class)
-        .invokeStatic(builder, tokenType);
       myParser.getDeclarationParser().parseAnnotations(builder);
       skipQualifiedName(builder);
       IElementType suspectedLT = builder.getTokenType(), next = builder.lookAhead(1);
       refPos.rollbackTo();
 
-      if (suspectedLT == JavaTokenType.LT || suspectedLT == JavaTokenType.DOT && next == JavaTokenType.AT || nonSealed) {
+      if (suspectedLT == JavaTokenType.LT || suspectedLT == JavaTokenType.DOT && next == JavaTokenType.AT) {
         PsiBuilder.Marker declStatement = builder.mark();
 
         if (myParser.getDeclarationParser().parse(builder, DeclarationParser.Context.CODE_BLOCK) != null) {
@@ -219,11 +213,8 @@ public class ManStatementParser extends StatementParser {
           return declStatement;
         }
 
-        Object type = myParser.getReferenceParser().parseTypeInfo(builder, 0);
-        if (suspectedLT == JavaTokenType.LT && (type == null || !(boolean)ReflectUtil.field( type, "isParameterized" ).get())) {
-          declStatement.rollbackTo();
-        }
-        else if (type == null || builder.getTokenType() != JavaTokenType.DOUBLE_COLON) {
+        PsiBuilder.Marker type = myParser.getReferenceParser().parseType(builder, 0);
+        if (type == null || builder.getTokenType() != JavaTokenType.DOUBLE_COLON) {
           error(builder, JavaErrorBundle.message("expected.identifier"));
           if (type == null) builder.advanceLexer();
           done(declStatement, JavaElementType.DECLARATION_STATEMENT);
@@ -301,17 +292,17 @@ public class ManStatementParser extends StatementParser {
   {
     @Jailbreak ExpressionParser exprParser = myParser.getExpressionParser();
     return exprParser instanceof ManExpressionParser
-     ? ((ManExpressionParser)exprParser).parseAssignment( builder, 0, lhs )
+      ? ((ManExpressionParser)exprParser).parseAssignment( builder, 0, lhs )
       //todo: in 2023 EA they changed the ExpressionParser, calling
       : exprParser.useNewImplementation
-        ? exprParser.myNewExpressionParser.parse( builder, 0 )
-        : exprParser.myOldExpressionParser.jailbreak().parseAssignment( builder, 0 );
+      ? exprParser.myNewExpressionParser.parse( builder, 0 )
+      : exprParser.myOldExpressionParser.jailbreak().parseAssignment( builder, 0 );
   }
 
   private static boolean isStmtYieldToken(@NotNull PsiBuilder builder, IElementType tokenType) {
     if (!(tokenType == JavaTokenType.IDENTIFIER &&
-          PsiKeyword.YIELD.equals(builder.getTokenText()) &&
-          JavaFeature.SWITCH_EXPRESSION.isSufficient(getLanguageLevel(builder)))) {
+      PsiKeyword.YIELD.equals(builder.getTokenText()) &&
+      getLanguageLevel(builder).isAtLeast(LanguageLevel.JDK_14))) {
       return false;
     }
     // we prefer to parse it as yield stmt wherever possible (even in incomplete syntax)
@@ -366,44 +357,6 @@ public class ManStatementParser extends StatementParser {
     return parseExprInParenthWithBlock(builder, JavaElementType.WHILE_STATEMENT, false);
   }
 
-
-  private boolean isRecordPatternInForEach(final PsiBuilder builder) {
-    PsiBuilder.Marker patternStart = (PsiBuilder.Marker)ReflectUtil.method( myParser.getPatternParser(), "preParsePattern", PsiBuilder.class )
-      .invoke(builder);
-    if (patternStart == null) {
-      return false;
-    }
-    if (builder.getTokenType() != JavaTokenType.LPARENTH) {
-      patternStart.rollbackTo();
-      return false;
-    }
-    builder.advanceLexer();
-
-    // we must distinguish a record pattern from method call in for (foo();;)
-    int parenBalance = 1;
-    while (true) {
-      IElementType current = builder.getTokenType();
-      if (current == null) {
-        patternStart.rollbackTo();
-        return false;
-      }
-      if (current == JavaTokenType.LPARENTH) {
-        parenBalance++;
-      }
-      if (current == JavaTokenType.RPARENTH) {
-        parenBalance--;
-        if (parenBalance == 0) {
-          break;
-        }
-      }
-      builder.advanceLexer();
-    }
-    builder.advanceLexer();
-    boolean isRecordPattern = builder.getTokenType() != JavaTokenType.SEMICOLON && builder.getTokenType() != JavaTokenType.DOT;
-    patternStart.rollbackTo();
-    return isRecordPattern;
-  }
-
   @NotNull
   private PsiBuilder.Marker parseForStatement(PsiBuilder builder) {
     PsiBuilder.Marker statement = builder.mark();
@@ -415,26 +368,6 @@ public class ManStatementParser extends StatementParser {
       return statement;
     }
 
-    if (isRecordPatternInForEach(builder)) {
-      myParser.getPatternParser().parsePattern(builder);
-      if (builder.getTokenType() == JavaTokenType.COLON) {
-        return parseForEachFromColon(builder, statement, JavaElementType.FOREACH_PATTERN_STATEMENT);
-      }
-      error(builder, JavaPsiBundle.message("expected.colon"));
-      // recovery: just skip everything until ')'
-      while (true) {
-        IElementType tokenType = builder.getTokenType();
-        if (tokenType == null) {
-          done(statement, JavaElementType.FOREACH_PATTERN_STATEMENT);
-          return statement;
-        }
-        if (tokenType == JavaTokenType.RPARENTH) {
-          return parserForEachFromRparenth(builder, statement, JavaElementType.FOREACH_PATTERN_STATEMENT);
-        }
-        builder.advanceLexer();
-      }
-    }
-
     PsiBuilder.Marker afterParenth = builder.mark();
     PsiBuilder.Marker param = myParser.getDeclarationParser().parseParameter(builder, false, false, true);
     if (param == null || exprType(param) != JavaElementType.PARAMETER || builder.getTokenType() != JavaTokenType.COLON) {
@@ -443,7 +376,7 @@ public class ManStatementParser extends StatementParser {
     }
     else {
       afterParenth.drop();
-      return parseForEachFromColon(builder, statement, JavaElementType.FOREACH_STATEMENT);
+      return parseForEachFromColon(builder, statement);
     }
   }
 
@@ -530,22 +463,18 @@ public class ManStatementParser extends StatementParser {
   }
 
   @NotNull
-  private PsiBuilder.Marker parseForEachFromColon(PsiBuilder builder, PsiBuilder.Marker statement, IElementType foreachStatement) {
+  private PsiBuilder.Marker parseForEachFromColon(PsiBuilder builder, PsiBuilder.Marker statement) {
     builder.advanceLexer();
 
     if (myParser.getExpressionParser().parse(builder) == null) {
       error(builder, JavaErrorBundle.message("expected.expression"));
     }
 
-    return parserForEachFromRparenth(builder, statement, foreachStatement);
-  }
-
-  private PsiBuilder.Marker parserForEachFromRparenth(PsiBuilder builder, PsiBuilder.Marker statement, IElementType forEachType) {
     if (expectOrError(builder, JavaTokenType.RPARENTH, "expected.rparen") && parseStatement(builder) == null) {
-      error(builder, JavaPsiBundle.message("expected.statement"));
+      error(builder, JavaErrorBundle.message("expected.statement"));
     }
 
-    done(statement, forEachType);
+    done(statement, JavaElementType.FOREACH_STATEMENT);
     return statement;
   }
 
@@ -574,43 +503,21 @@ public class ManStatementParser extends StatementParser {
     return parseExprInParenthWithBlock(builder, JavaElementType.SWITCH_STATEMENT, true);
   }
 
-  /**
-   * @return marker and whether it contains expression inside
-   */
-  @NotNull
-  public Pair<PsiBuilder.@Nullable Marker, Boolean> parseCaseLabel(PsiBuilder builder) {
-    if (builder.getTokenType() == JavaTokenType.DEFAULT_KEYWORD) {
-      PsiBuilder.Marker defaultElement = builder.mark();
-      builder.advanceLexer();
-      done(defaultElement, JavaElementType.DEFAULT_CASE_LABEL_ELEMENT);
-      return Pair.create(defaultElement, false);
-    }
-    if (myParser.getPatternParser().isPattern(builder)) {
-      PsiBuilder.Marker pattern = myParser.getPatternParser().parsePattern(builder);
-      return Pair.create(pattern, false);
-    }
-    return Pair.create( (PsiBuilder.Marker)ReflectUtil.method( myParser.getExpressionParser(), "parseAssignmentForbiddingLambda", PsiBuilder.class )
-      .invoke(builder), true);
-  }
-
   private PsiBuilder.Marker parseSwitchLabelStatement(PsiBuilder builder) {
     PsiBuilder.Marker statement = builder.mark();
     boolean isCase = builder.getTokenType() == JavaTokenType.CASE_KEYWORD;
     builder.advanceLexer();
 
     if (isCase) {
-      boolean patternsAllowed = JavaFeature.PATTERNS_IN_SWITCH.isSufficient(getLanguageLevel(builder));
-      PsiBuilder.Marker list = builder.mark();
+      PsiBuilder.Marker expressionList = builder.mark();
       do {
-        Pair<PsiBuilder.Marker, Boolean> markerAndIsExpression = parseCaseLabel(builder);
-        PsiBuilder.Marker caseLabel = markerAndIsExpression.first;
-        if (caseLabel == null) {
-          error(builder, JavaPsiBundle.message(patternsAllowed ? "expected.case.label.element" : "expected.expression"));
+        PsiBuilder.Marker nextExpression = myParser.getExpressionParser().parseCaseLabel(builder);
+        if (nextExpression == null) {
+          error(builder, JavaErrorBundle.message("expected.expression"));
         }
       }
       while (expect(builder, JavaTokenType.COMMA));
-      done(list, JavaElementType.CASE_LABEL_ELEMENT_LIST);
-      parseGuard(builder);
+      done(expressionList, JavaElementType.CASE_LABEL_ELEMENT_LIST);
     }
 
     if (expect(builder, JavaTokenType.ARROW)) {
@@ -645,18 +552,6 @@ public class ManStatementParser extends StatementParser {
     }
 
     return statement;
-  }
-
-  private void parseGuard(PsiBuilder builder) {
-    if (builder.getTokenType() == JavaTokenType.IDENTIFIER && PsiKeyword.WHEN.equals(builder.getTokenText())) {
-      builder.remapCurrentToken(JavaTokenType.WHEN_KEYWORD);
-      builder.advanceLexer();
-      PsiBuilder.Marker guardingExpression = (PsiBuilder.Marker)ReflectUtil.method( myParser.getExpressionParser(), "parseAssignmentForbiddingLambda", PsiBuilder.class )
-        .invoke(builder);
-      if (guardingExpression == null) {
-        error(builder, JavaPsiBundle.message("expected.expression"));
-      }
-    }
   }
 
   @NotNull

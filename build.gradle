@@ -132,7 +132,7 @@ runIde {
 patchPluginXml {
   // Get build numbers from https://www.jetbrains.com/idea/download/other.html
   sinceBuild = '233'   //2023.3
-  untilBuild = '241.*' //2024.1.*
+  untilBuild = '233.*' //2023.3.*
 }
 
 buildSearchableOptions {
