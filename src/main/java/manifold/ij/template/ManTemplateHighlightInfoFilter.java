@@ -34,6 +34,9 @@ import manifold.ij.template.psi.ManTemplateJavaFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ManTemplateHighlightInfoFilter implements HighlightInfoFilter
 {
   @Override
@@ -83,7 +86,9 @@ public class ManTemplateHighlightInfoFilter implements HighlightInfoFilter
       if( isParamsParent( param ) )
       {
         if( hi.getDescription().contains( "never assigned" ) ||
-            hi.getDescription().contains( "but never updated" ) )
+
+            hi.getDescription().contains( "but never updated" ) ||
+            hi.getDescription().contains( "可能尚未初始化" ) )
         {
           return true;
         }
@@ -153,7 +158,9 @@ public class ManTemplateHighlightInfoFilter implements HighlightInfoFilter
     {
       if( isParamsParent( param ) )
       {
-        if( hi.getDescription().contains( "might not have been initialized" ) )
+        String desc = hi.getDescription();
+        if( desc.contains( "might not have been initialized" ) ||
+            desc.contains( "可能尚未初始化" ) )
         {
           return true;
         }

@@ -1,4 +1,4 @@
-/*
+ /*
  *
  *  * Copyright (c) 2022 - Manifold Systems LLC
  *  *
@@ -136,13 +136,16 @@ public class DelegationMaker
   {
     checkSuperclass( _psiClass );
 
-    for( PsiField field : _psiClass.getOwnFields() )
+    PsiVariable[] fields = _psiClass.isRecord()
+      ? _psiClass.getRecordComponents()
+      : _psiClass.getOwnFields().toArray( new PsiVariable[0] );
+    for( PsiVariable field : fields )
     {
       processLinkField( field );
     }
   }
 
-  private void processLinkField( PsiField field )
+  private void processLinkField( PsiVariable field )
   {
     @Nullable PsiAnnotation linkAnno = field.getAnnotation( link.class.getTypeName() );
     if( linkAnno == null )
@@ -162,7 +165,7 @@ public class DelegationMaker
     addLinkedInterfaces( linkAnno, _classInfo, field );
   }
 
-  private void addLinkedInterfaces( PsiAnnotation linkAnno, ClassInfo classInfo, PsiField field )
+  private void addLinkedInterfaces( PsiAnnotation linkAnno, ClassInfo classInfo, PsiVariable field )
   {
     ArrayList<PsiClassType> interfaces = new ArrayList<>();
     ArrayList<PsiClassType> shared = new ArrayList<>();
@@ -200,7 +203,7 @@ public class DelegationMaker
     classInfo.getLinks().put( field, new LinkInfo( field, interfaces, shareAll, shared ) );
   }
 
-  private void verifyFieldTypeSatisfiesAnnoTypes( PsiField field, ArrayList<PsiClassType> interfaces )
+  private void verifyFieldTypeSatisfiesAnnoTypes( PsiVariable field, ArrayList<PsiClassType> interfaces )
   {
     for( PsiClassType t : interfaces )
     {
@@ -348,7 +351,7 @@ public class DelegationMaker
     ManModule manModule = ManProject.getModule( li.getLinkField() );
     ManLightMethodBuilder method = manPsiElemFactory.createLightMethod( manModule, li.getLinkField().getManager(), methodName )
       .withMethodReturnType( refMethod.getReturnType() )
-      .withContainingClass( li.getLinkField().getContainingClass() );
+      .withContainingClass( ((PsiMember)li.getLinkField()).getContainingClass() );
 
     copyModifiers( refMethod, method );
 
@@ -429,22 +432,19 @@ public class DelegationMaker
     PsiClassType[] superInterfaces = psiClass.isInterface()
       ? psiClass.getExtendsListTypes()
       : psiClass.getImplementsListTypes();
-    if( superInterfaces.length > 0 )
+    for( PsiClassType ifaceType : superInterfaces )
     {
-      for( PsiClassType ifaceType : superInterfaces )
+      PsiClass psiIface = ifaceType.resolve();
+      if( psiIface != null )
       {
-        PsiClass psiIface = ifaceType.resolve();
-        if( psiIface != null )
+        if( type.hasParameters() )
         {
-          if( type.hasParameters() )
-          {
-            PsiClassType.ClassResolveResult classResolveResult = type.resolveGenerics();
-            PsiSubstitutor substitutor = classResolveResult.getSubstitutor();
-            //substitutor = TypeConversionUtil.getSuperClassSubstitutor( psiIface, psiClass, substitutor );
-            ifaceType = (PsiClassType)substitutor.substitute( ifaceType );
-          }
-          findAllInterfaces( ifaceType, seen, result );
+          PsiClassType.ClassResolveResult classResolveResult = type.resolveGenerics();
+          PsiSubstitutor substitutor = classResolveResult.getSubstitutor();
+          //substitutor = TypeConversionUtil.getSuperClassSubstitutor( psiIface, psiClass, substitutor );
+          ifaceType = (PsiClassType)substitutor.substitute( ifaceType );
         }
+        findAllInterfaces( ifaceType, seen, result );
       }
     }
   }
@@ -453,7 +453,7 @@ public class DelegationMaker
   {
     Map<PsiClassType, Set<LinkInfo>> interfaceToLinks = new HashMap<>();
 
-    for( Map.Entry<PsiField, LinkInfo> entry : ci.getLinks().entrySet() )
+    for( Map.Entry<PsiVariable, LinkInfo> entry : ci.getLinks().entrySet() )
     {
       LinkInfo li = entry.getValue();
       for( PsiClassType iface : ci.getInterfaces() )
@@ -475,7 +475,7 @@ public class DelegationMaker
         boolean isInterfaceShared = checkSharedLinks( iface, lis );
 
         StringBuilder fieldNames = new StringBuilder();
-        lis.forEach( li -> fieldNames.append( fieldNames.length() > 0 ? ", " : "" ).append( li._linkField.name ) );
+        lis.forEach( li -> fieldNames.append( !fieldNames.isEmpty() ? ", " : "" ).append( li._linkField.getName() ) );
         for( LinkInfo li : lis )
         {
           if( !li.shares( iface ) )
@@ -502,7 +502,7 @@ public class DelegationMaker
     if( sharedLinks.size() > 1 )
     {
       StringBuilder fieldNames = new StringBuilder();
-      sharedLinks.forEach( li -> fieldNames.append( fieldNames.length() > 0 ? ", " : "" ).append( li._linkField.name ) );
+      sharedLinks.forEach( li -> fieldNames.append( !fieldNames.isEmpty() ? ", " : "" ).append( li._linkField.getName() ) );
 
       sharedLinks.forEach( li -> reportError( li.getLinkField(),
         DelegationIssueMsg.MSG_MULTIPLE_SHARING.get( iface.getClassName(), fieldNames ) ) );
@@ -512,7 +512,7 @@ public class DelegationMaker
 
   private void processMethodOverlap( ClassInfo classInfo )
   {
-    for( Map.Entry<PsiField, LinkInfo> entry : classInfo.getLinks().entrySet() )
+    for( Map.Entry<PsiVariable, LinkInfo> entry : classInfo.getLinks().entrySet() )
     {
       LinkInfo li = entry.getValue();
       for( PsiClassType iface : li.getInterfaces() )
@@ -535,7 +535,7 @@ public class DelegationMaker
 
     // Map method types to links, so we can find overlapping methods
     Map<PsiMethod, Set<LinkInfo>> mtToLi = new HashMap<>();
-    for( Map.Entry<PsiField, LinkInfo> entry : classInfo.getLinks().entrySet() )
+    for( Map.Entry<PsiVariable, LinkInfo> entry : classInfo.getLinks().entrySet() )
     {
       LinkInfo li = entry.getValue();
       for( CandidateInfo mt : li.getMethodTypes() )
@@ -557,7 +557,7 @@ public class DelegationMaker
       if( lis.size() > 1 )
       {
         StringBuilder fieldNames = new StringBuilder();
-        lis.forEach( li -> fieldNames.append( fieldNames.length() > 0 ? ", " : "" ).append( li._linkField.name ) );
+        lis.forEach( li -> fieldNames.append( !fieldNames.isEmpty() ? ", " : "" ).append( li._linkField.getName() ) );
         for( LinkInfo li : lis )
         {
           reportWarning( li.getLinkField(),
@@ -602,7 +602,7 @@ public class DelegationMaker
     return null;
   }
 
-  private void checkModifiersAndApplyDefaults( PsiField varDecl, PsiExtensibleClass classDecl )
+  private void checkModifiersAndApplyDefaults( PsiVariable varDecl, PsiExtensibleClass classDecl )
   {
     if( !isPartClass( classDecl ) )
     {
@@ -706,7 +706,7 @@ public class DelegationMaker
   {
     private final PsiExtensibleClass _classDecl;
     private ArrayList<PsiClassType> _interfaces;
-    private final Map<PsiField, LinkInfo> _linkInfos;
+    private final Map<PsiVariable, LinkInfo> _linkInfos;
 
     ClassInfo( PsiExtensibleClass classDecl )
     {
@@ -730,7 +730,7 @@ public class DelegationMaker
       return !_linkInfos.isEmpty();
     }
 
-    Map<PsiField, LinkInfo> getLinks()
+    Map<PsiVariable, LinkInfo> getLinks()
     {
       return _linkInfos;
     }
@@ -738,7 +738,7 @@ public class DelegationMaker
 
   private static class LinkInfo
   {
-    private final PsiField _linkField;
+    private final PsiVariable _linkField;
 
     private final ArrayList<PsiMethod> _generatedMethods;
     private final Set<CandidateInfo> _methodTypes;
@@ -746,7 +746,7 @@ public class DelegationMaker
     private final ArrayList<PsiClassType> _shared;
     private final boolean _shareAll;
 
-    LinkInfo( PsiField linkField, ArrayList<PsiClassType> linkedInterfaces, boolean shareAll, ArrayList<PsiClassType> shared )
+    LinkInfo( PsiVariable linkField, ArrayList<PsiClassType> linkedInterfaces, boolean shareAll, ArrayList<PsiClassType> shared )
     {
       _linkField = linkField;
       _generatedMethods = new ArrayList<>();
@@ -756,7 +756,7 @@ public class DelegationMaker
       _shared = shared;
     }
 
-    public PsiField getLinkField()
+    public PsiVariable getLinkField()
     {
       return _linkField;
     }
