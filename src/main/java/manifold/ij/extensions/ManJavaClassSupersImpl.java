@@ -19,6 +19,7 @@
 
 package manifold.ij.extensions;
 
+import com.intellij.openapi.util.Pair;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.JavaClassSupersImpl;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -28,6 +29,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Override IJ's JavaClassSupersImpl to support structurally assignable types via @Structural
@@ -53,41 +56,57 @@ public class ManJavaClassSupersImpl extends JavaClassSupers
     return superClassSubstitutor;
   }
 
+  private static final ThreadLocal<Set<Pair<PsiClass,PsiClass>>> _visited = ThreadLocal.withInitial( () -> new LinkedHashSet<>() );
   public static boolean isStructurallyAssignable( @NotNull PsiClass superClass, @NotNull PsiClass derivedClass )
   {
-    if( !superClass.isInterface() )
+    Pair<PsiClass, PsiClass> pair = new Pair<>( superClass, derivedClass );
+    if( _visited.get().contains( pair ) )
     {
       return false;
     }
+    _visited.get().add( pair );
 
-    // check for structural assignment, return empty substitutor to affirm, otherwise null
-    outer: for( PsiMethod m: superClass.getAllMethods() )
+    try
     {
-      if( m.hasModifierProperty( PsiModifier.PUBLIC ) &&
-        m.hasModifierProperty( PsiModifier.ABSTRACT ) &&
-        !m.hasModifierProperty( PsiModifier.STATIC ) &&
-        !m.hasModifierProperty( PsiModifier.DEFAULT ) )
+      if( !superClass.isInterface() )
       {
-        for( PsiMethod dm: derivedClass.getAllMethods() )
+        return false;
+      }
+
+      // check for structural assignment, return empty substitutor to affirm, otherwise null
+      outer:
+      for( PsiMethod m : superClass.getAllMethods() )
+      {
+        if( m.hasModifierProperty( PsiModifier.PUBLIC ) &&
+          m.hasModifierProperty( PsiModifier.ABSTRACT ) &&
+          !m.hasModifierProperty( PsiModifier.STATIC ) &&
+          !m.hasModifierProperty( PsiModifier.DEFAULT ) )
         {
-          if( dm.getName().equals( m.getName() ) &&
-            m.hasModifierProperty( PsiModifier.PUBLIC ) &&
-            !m.hasModifierProperty( PsiModifier.STATIC ) )
+          for( PsiMethod dm : derivedClass.getAllMethods() )
           {
-            if( dm.getName().equals( m.getName() ) )
+            if( dm.getName().equals( m.getName() ) &&
+              m.hasModifierProperty( PsiModifier.PUBLIC ) &&
+              !m.hasModifierProperty( PsiModifier.STATIC ) )
             {
-              if( isStructurallyAssignable( dm, m ) )
+              if( dm.getName().equals( m.getName() ) )
               {
-                continue outer;
+                if( isStructurallyAssignable( dm, m ) )
+                {
+                  continue outer;
+                }
               }
             }
           }
+          // no structural match found for method
+          return false;
         }
-        // no structural match found for method
-        return false;
       }
+      return true;
     }
-    return true;
+    finally
+    {
+      _visited.get().remove( pair );
+    }
   }
 
   public static boolean isStructurallyAssignable( @NotNull PsiMethod from, @NotNull PsiMethod to )
