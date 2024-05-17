@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.LanguageLevelProjectExtension;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -20,6 +21,10 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+
+import com.intellij.util.indexing.FileBasedIndex;
+import com.intellij.util.indexing.FileBasedIndexImpl;
+import com.intellij.util.indexing.IndexableFileSet;
 import manifold.internal.runtime.UrlClassLoaderWrapper;
 import manifold.rt.api.util.PathUtil;
 import manifold.util.JreUtil;
@@ -196,6 +201,14 @@ public class AbstractManifoldCodeInsightTest extends SomewhatLightCodeInsightFix
       registerSourceRoot( module.getProject(), srcRoot );
       return srcRoot;
     }
+
+    protected void registerSourceRoot(Project project, VirtualFile srcRoot) {
+      IndexableFileSet indexableFileSet = file -> file.getFileSystem() == srcRoot.getFileSystem() && project.isOpen();
+      FileBasedIndexImpl fileBasedIndex = (FileBasedIndexImpl)FileBasedIndex.getInstance();
+      fileBasedIndex.registerIndexableSet(indexableFileSet, project);
+//      Disposer.register(project, () -> fileBasedIndex.removeIndexableSet(indexableFileSet));
+    }
+
 //
 //    protected VirtualFile createSourceRoot(@NotNull Module module, String srcPath) {
 //      VirtualFile dummyRoot = VirtualFileManager.getInstance().findFileByUrl("temp:///");

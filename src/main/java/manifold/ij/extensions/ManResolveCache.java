@@ -48,6 +48,7 @@ import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethod;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManPsiElementFactory;
+import manifold.ij.util.ManVersionUtil;
 import manifold.ij.util.ReparseUtil;
 import manifold.util.ReflectUtil;
 import manifold.util.concurrent.LocklessLazyVar;
@@ -96,10 +97,19 @@ public class ManResolveCache extends ResolveCache
     }
 
     boolean physical = containingFile.isPhysical();
+    int index;
     Map<T, ResolveResult[]> map;
-    @Jailbreak ResolveCache me = this;
-    int index = me.getIndex( incompleteCode, true );
-    map = me.getMap( physical, index );
+    if( ManVersionUtil.isAtLeast( 2024, 2, 0 ) )
+    {
+      @Jailbreak ResolveCache me = this;
+      index = me.getIndex( physical, incompleteCode, true );
+      map = me.getMap( index );
+    }
+    else
+    {
+      index = (int)ReflectUtil.method( ResolveCache.class, "getIndex", boolean.class, boolean.class ).invokeStatic( incompleteCode, true );
+      map = (Map)ReflectUtil.method( ResolveCache.class, "getMap", boolean.class, int.class ).invokeStatic( physical, index );
+    }
     ResolveResult[] results = map.get( ref );
     if( results != null )
     {
