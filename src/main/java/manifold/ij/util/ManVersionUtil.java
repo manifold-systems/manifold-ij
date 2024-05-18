@@ -56,7 +56,7 @@ public class ManVersionUtil
     int major = getMajorVersion();
     int minor = getMinorVersion();
     int micro= getMicroVersion();
-    return maj > major || maj == major && (min > minor || min == minor && mic > micro);
+    return major > maj || major == maj && (minor > min || minor == min && micro > mic);
   }
 
   public static boolean isAtLeast( int maj, int min, int mic )
