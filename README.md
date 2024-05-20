@@ -1,8 +1,13 @@
 # manifold-ij
-An IntelliJ IDEA plugin for Manifold
+[![](https://img.shields.io/jetbrains/plugin/d/10057.svg)][jb-url]
+[![](https://img.shields.io/jetbrains/plugin/v/10057.svg)][jb-url]
+
+An IntelliJ IDEA plugin for Manifold.
+
+[jb-url]: https://plugins.jetbrains.com/plugin/10057-manifold
 
 # Description
-Use the [Manifold IntelliJ IDEA plugin](https://plugins.jetbrains.com/plugin/10057-manifold) to experience Manifold to its fullest.
+Use the [Manifold IntelliJ IDEA plugin][jb-url] to experience Manifold to its fullest.
 
 The plugin provides comprehensive support for Manifold along with high-level IntelliJ features including:
 * Feature highlighting
