@@ -99,16 +99,16 @@ public class ManResolveCache extends ResolveCache
     boolean physical = containingFile.isPhysical();
     int index;
     Map<T, ResolveResult[]> map;
+    @Jailbreak ResolveCache me = this;
     if( ManVersionUtil.isAtLeast( 2024, 2, 0 ) )
     {
-      @Jailbreak ResolveCache me = this;
       index = me.getIndex( physical, incompleteCode, true );
       map = me.getMap( index );
     }
     else
     {
       index = (int)ReflectUtil.method( ResolveCache.class, "getIndex", boolean.class, boolean.class ).invokeStatic( incompleteCode, true );
-      map = (Map)ReflectUtil.method( ResolveCache.class, "getMap", boolean.class, int.class ).invokeStatic( physical, index );
+      map = (Map)ReflectUtil.method( me, "getMap", boolean.class, int.class ).invoke( physical, index );
     }
     ResolveResult[] results = map.get( ref );
     if( results != null )

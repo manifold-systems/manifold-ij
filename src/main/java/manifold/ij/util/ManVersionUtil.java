@@ -20,47 +20,33 @@
 package manifold.ij.util;
 
 import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.util.Version;
+
+import java.util.function.Predicate;
 
 public class ManVersionUtil
 {
-  public static int getMajorVersion()
-  {
-    return makeInt( ApplicationInfo.getInstance().getMajorVersion() );
-  }
-
-  public static int getMinorVersion()
-  {
-    return makeInt( ApplicationInfo.getInstance().getMinorVersion() );
-  }
-
-  public static int getMicroVersion()
-  {
-    return makeInt( ApplicationInfo.getInstance().getMicroVersion() );
-  }
-
-  public static int makeInt( String part )
-  {
-    return part == null ? 0 : Integer.parseInt( part );
-  }
-
   public static boolean is( int maj, int min, int mic )
   {
-    int major = getMajorVersion();
-    int minor = getMinorVersion();
-    int micro= getMicroVersion();
-    return maj == major && min == minor && mic == micro;
+    return testVersion( v ->
+     maj == v.major && min == v.minor && mic == v.bugfix );
   }
 
   public static boolean isGreaterThan( int maj, int min, int mic )
   {
-    int major = getMajorVersion();
-    int minor = getMinorVersion();
-    int micro= getMicroVersion();
-    return major > maj || major == maj && (minor > min || minor == min && micro > mic);
+    return testVersion( v ->
+      v.major > maj || v.major == maj && (v.minor > min || v.minor == min && v.bugfix > mic) );
   }
 
   public static boolean isAtLeast( int maj, int min, int mic )
   {
     return is( maj, min, mic ) || isGreaterThan( maj, min, mic );
+  }
+
+  public static boolean testVersion( Predicate<Version> test )
+  {
+    String fullVersion = ApplicationInfo.getInstance().getFullVersion();
+    Version version = Version.parseVersion( fullVersion );
+    return test.test( version );
   }
 }
