@@ -229,8 +229,9 @@ public class ManStatementParser extends StatementParser {
           done(declStatement, JavaElementType.DECLARATION_STATEMENT);
           return declStatement;
         }
-
-        declStatement.rollbackTo();  // generic type followed by the double colon is a good candidate for being a constructor reference
+        else {
+          declStatement.rollbackTo();  // generic type followed by the double colon is a good candidate for being a constructor reference
+        }
       }
     }
 
