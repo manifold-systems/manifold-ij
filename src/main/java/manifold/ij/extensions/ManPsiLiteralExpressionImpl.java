@@ -79,7 +79,7 @@ public class ManPsiLiteralExpressionImpl extends PsiLiteralExpressionImpl
         {
           String fragClass = getFragmentClassName( fragment );
           Module module = ModuleUtilCore.findModuleForPsiElement( this );
-          PsiClass psiFragClass = getFragmentPsiClass( fragClass, module );
+          PsiClass psiFragClass = fragClass == null ? null : getFragmentPsiClass( fragClass, module );
 
           if( psiFragClass != null )
           {

@@ -50,7 +50,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 
-import static com.intellij.psi.JavaTokenType.TEXT_BLOCK_LITERAL;
 import static manifold.preprocessor.TokenType.*;
 
 /**
@@ -69,7 +68,7 @@ public class ManJavaLexer extends LexerBase
   private final boolean myStringTemplates;
   private final IntStack myStateStack = new IntArrayList(1);
   private CharSequence _buffer;
-  private @Nullable char[] _bufferArray;
+  private char @Nullable[] _bufferArray;
   private int _bufferIndex;
   private int _bufferEndOffset;
   private int _tokenEndOffset;  // positioned after the last symbol of the current token
@@ -123,7 +122,8 @@ public class ManJavaLexer extends LexerBase
   public void setChameleon( ASTNode chameleon )
   {
     _chameleon = chameleon;
-    _psiFile = SmartPointerManager.createPointer( ManPsiBuilderFactoryImpl.getPsiFile( chameleon ) );
+    PsiJavaFile psiFile = ManPsiBuilderFactoryImpl.getPsiFile( chameleon );
+    _psiFile = psiFile == null ? null : SmartPointerManager.createPointer( psiFile );
   }
 
   @NotNull
