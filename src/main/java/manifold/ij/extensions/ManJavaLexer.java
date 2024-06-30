@@ -110,7 +110,8 @@ public class ManJavaLexer extends LexerBase
   public void setChameleon( ASTNode chameleon )
   {
     _chameleon = chameleon;
-    _psiFile = SmartPointerManager.createPointer( ManPsiBuilderFactoryImpl.getPsiFile( chameleon ) );
+    PsiJavaFile psiFile = ManPsiBuilderFactoryImpl.getPsiFile( chameleon );
+    _psiFile = psiFile == null ? null : SmartPointerManager.createPointer( psiFile );
   }
 
   @NotNull
