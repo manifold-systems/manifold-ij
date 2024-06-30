@@ -148,9 +148,7 @@ public class ManifoldPsiClassAnnotator implements Annotator
       }
       else
       {
-        ApplicationManager.getApplication().invokeLater( () -> {
-          removeAllHighlighters( containingFile );
-        } );
+        ApplicationManager.getApplication().invokeLater( () -> removeAllHighlighters( containingFile ) );
       }
     }
 
@@ -188,7 +186,10 @@ public class ManifoldPsiClassAnnotator implements Annotator
     if( document != null )
     {
       MarkupModel markupModel = DocumentMarkupModel.forDocument( document, project, false );
-      markupModel.removeAllHighlighters();
+      if( markupModel != null )
+      {
+        markupModel.removeAllHighlighters();
+      }
     }
   }
 

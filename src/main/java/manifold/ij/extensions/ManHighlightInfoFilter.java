@@ -383,6 +383,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return (arrayAccess = getArrayAccessExpression( elem )) != null &&
       (hi.getDescription().startsWith( "Array type expected" ) ||
        hi.getDescription().startsWith( "应为数组类型" )) &&
+      arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_GET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
   }
