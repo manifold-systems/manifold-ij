@@ -60,6 +60,20 @@ public class CreateManifoldTemplateAction extends CreateFileFromTemplateAction
   @Override
   public void update( @NotNull AnActionEvent e )
   {
+    Project project = e.getProject();
+    if( project == null )
+    {
+      return;
+    }
+
+    if( !ManProject.isManifoldInUse( project ) )
+    {
+//      // Manifold jars are not used in the project
+//      ManLibraryChecker.instance().warnFeatureRequiresManifold( e.getProject() );
+      e.getPresentation().setEnabled( false );
+      return;
+    }
+
     super.update( e );
     e.getPresentation().setEnabledAndVisible( true );
   }
@@ -75,25 +89,6 @@ public class CreateManifoldTemplateAction extends CreateFileFromTemplateAction
   protected String getDefaultTemplateProperty()
   {
     return DEFAULT_PROP;
-  }
-
-  @Override
-  public void beforeActionPerformedUpdate( @NotNull AnActionEvent e )
-  {
-    super.beforeActionPerformedUpdate( e );
-
-    Project project = e.getProject();
-    if( project == null )
-    {
-      return;
-    }
-
-    if( !ManProject.isManifoldInUse( project ) )
-    {
-      // Manifold jars are not used in the project
-      ManLibraryChecker.instance().warnFeatureRequiresManifold( e.getProject() );
-      e.getPresentation().setEnabled( false );
-    }
   }
 
   @Override

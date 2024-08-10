@@ -38,6 +38,7 @@ import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.core.ManPsiPostfixExpressionImpl;
 import manifold.ij.core.ManPsiPrefixExpressionImpl;
+import manifold.ij.psi.ManExtensionMethodBuilder;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.template.psi.ManTemplateJavaFile;
 import manifold.ij.util.ManPsiUtil;
@@ -212,6 +213,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     if( filterInnerClassReferenceError( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterUsageOfApiNewerThanError( hi, elem, firstElem ) )
     {
       return false;
     }
@@ -527,6 +533,19 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
           }
         }
       }
+    }
+    return false;
+  }
+
+  private boolean filterUsageOfApiNewerThanError( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    // filter "Usage of API..." error when `--release` version is older than API version and where the method call is an extension method
+
+    if( hi.getDescription().startsWith( "Usage of API documented as" ) && elem instanceof PsiReferenceExpression ref )
+    {
+      PsiElement methodCall = ref.resolve();
+      // the extension method supersedes the API in this case
+      return methodCall instanceof ManExtensionMethodBuilder;
     }
     return false;
   }
