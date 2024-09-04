@@ -21,7 +21,9 @@ package manifold.ij.extensions;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
+import com.intellij.lang.Language;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
@@ -136,6 +138,12 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
     PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
     if( firstElem == null )
+    {
+      return true;
+    }
+
+    Language language = firstElem.getLanguage();
+    if( !language.is( JavaLanguage.INSTANCE ) && !language.isKindOf( JavaLanguage.INSTANCE ) )
     {
       return true;
     }
