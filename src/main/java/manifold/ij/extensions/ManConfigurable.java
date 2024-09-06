@@ -27,6 +27,8 @@ import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+
+import manifold.ij.core.ManLibraryChecker;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
@@ -68,12 +70,19 @@ public class ManConfigurable implements Configurable
     {
       ManResolveCache.setExperimentalFeaturesEnabled( experimentalFeaturesEnabled );
     }
+
+    boolean suppressVersionCheckEnabled = _manifoldPanel.getSuppressManifoldVersionCheck().isSelected();
+    if( ManLibraryChecker.isSuppressVersionCheck() != suppressVersionCheckEnabled )
+    {
+      ManLibraryChecker.setSuppressVersionCheck( suppressVersionCheckEnabled );
+    }
   }
 
   private static class ManifoldPanel extends JPanel
   {
     private JCheckBox _mode;
     private JCheckBox _experimentalFeatures;
+    private JCheckBox _suppressManifoldVersionCheck;
     private boolean _modified;
 
     ManifoldPanel()
@@ -108,6 +117,11 @@ public class ManConfigurable implements Configurable
       _experimentalFeatures.setSelected( ManResolveCache.isExperimentalFeaturesEnabled() );
       _experimentalFeatures.addChangeListener( e -> _modified = true );
 
+      c.gridy = y++;
+      add( _suppressManifoldVersionCheck = new JCheckBox( "Suppress Manifold version check" ), c );
+      _suppressManifoldVersionCheck.setSelected( ManLibraryChecker.isSuppressVersionCheck() );
+      _experimentalFeatures.addChangeListener( e -> _modified = true );
+
       c.anchor = GridBagConstraints.NORTHWEST;
       c.fill = GridBagConstraints.BOTH;
       c.gridx = 0;
@@ -127,6 +141,11 @@ public class ManConfigurable implements Configurable
     JCheckBox getExperimentalFeatures()
     {
       return _experimentalFeatures;
+    }
+
+    JCheckBox getSuppressManifoldVersionCheck()
+    {
+      return _suppressManifoldVersionCheck;
     }
 
     boolean isModified()
