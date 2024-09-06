@@ -21,6 +21,7 @@ package manifold.ij.core;
 
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.ide.plugins.cl.PluginClassLoader;
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
@@ -43,13 +44,28 @@ import manifold.ij.template.psi.ManTemplateFile;
 import manifold.ij.util.MessageUtil;
 import manifold.ij.util.SlowOperationsUtil;
 import manifold.util.ReflectUtil;
+import manifold.util.concurrent.LocklessLazyVar;
 
 public class ManLibraryChecker
 {
+  private static final String MANIFOLD_SUPPRESS_VERSION_CHECK = "manifold.suppress.version.check";
+  private static final LocklessLazyVar<boolean[]> SUPPRESS_VERSION_CHECK = LocklessLazyVar.make( () ->
+    new boolean[] {PropertiesComponent.getInstance().getBoolean( MANIFOLD_SUPPRESS_VERSION_CHECK )} );
+
   private static final ManLibraryChecker INSTANCE = new ManLibraryChecker();
   public static ManLibraryChecker instance()
   {
     return INSTANCE;
+  }
+
+  public static boolean isSuppressVersionCheck()
+  {
+    return SUPPRESS_VERSION_CHECK.get()[0];
+  }
+  public static void setSuppressVersionCheck( boolean suppress )
+  {
+    SUPPRESS_VERSION_CHECK.get()[0] = suppress;
+    PropertiesComponent.getInstance().setValue( MANIFOLD_SUPPRESS_VERSION_CHECK, suppress );
   }
 
   private ManLibraryChecker()
@@ -71,6 +87,11 @@ public class ManLibraryChecker
 
   public void warnIfManifoldJarsAreOld( Project project )
   {
+    if( isSuppressVersionCheck() )
+    {
+      return;
+    }
+
     EventQueue.invokeLater(
       () -> {
         if( projectJarOlderThanPluginJar( project ) )
