@@ -30,6 +30,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.PsiJavaFile;
 import java.io.File;
+import java.util.Collections;
 import java.util.Map;
 
 import com.intellij.psi.SmartPsiElementPointer;
@@ -92,6 +93,14 @@ public class ManDefinitions extends Definitions
   }
 
   @Override
+  protected Map<String, String> loadJavacDefinitions()
+  {
+    //## todo: these are javac -Akey[=value] command line options,
+    //    get these from IJ's compiler settings?
+    return Collections.emptyMap();
+  }
+
+  @Override
   protected Map<String, String> loadEnvironmentDefinitions()
   {
     return new IdeEnvironmentDefinitions().getEnv();
@@ -100,13 +109,10 @@ public class ManDefinitions extends Definitions
   private class IdeEnvironmentDefinitions extends EnvironmentDefinitions
   {
     @Override
-    protected void addJavacEnvironment( Map<String, String> map )
+    protected void addJavaVersion( Map<String, String> map )
     {
       int major = getJavaVersion();
       makeJavaVersionDefinitions( map, major );
-
-      //## todo: see super class, need to get these from IJ's compiler settings
-      //addAnnotationOptions();
     }
 
     @Override
