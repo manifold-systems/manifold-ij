@@ -119,7 +119,7 @@ String getIjVersion() {
 intellij {
   pluginName = project.name
   version = getIjVersion()
-  plugins = ['com.intellij.java'] //, 'com.intellij.lang.jsgraphql:3.0.0']
+  plugins = ['com.intellij.java', 'com.intellij.modules.json'] //, 'com.intellij.lang.jsgraphql:3.0.0']
 }
 
 runIde {
@@ -132,7 +132,7 @@ runIde {
 patchPluginXml {
   // Get build numbers from https://www.jetbrains.com/idea/download/other.html
   sinceBuild = '241'   //2024.1
-  untilBuild = '242.*' //2024.2.*
+  untilBuild = '243.*' //2024.3.*
 }
 
 buildSearchableOptions {

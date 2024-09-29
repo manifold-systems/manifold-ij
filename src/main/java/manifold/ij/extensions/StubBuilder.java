@@ -282,55 +282,21 @@ public class StubBuilder
     srcMethod.modifiers( getModifiers( method.getModifierList() ) );
     String name = method.getName();
     srcMethod.name( name );
-    PsiClass containingClass = method.getContainingClass();
-    boolean isExtensionClass = containingClass instanceof ClsClassImpl && containingClass.getAnnotation( Extension.class.getTypeName() ) != null;
     if( !method.isConstructor() )
     {
       SrcType returnType;
-      if( isExtensionClass )
-      {
-        //todo: remove this after IJ fixes https://youtrack.jetbrains.com/issue/IDEA-247069
-        returnType = makeReturnTypeFromClass( method, srcMethod, containingClass );
-      }
-      else
-      {
-        returnType = makeSrcType( method.getReturnType() );
-      }
+      returnType = makeSrcType( method.getReturnType() );
       srcMethod.returns( returnType );
     }
     for( PsiTypeParameter typeVar : method.getTypeParameters() )
     {
       srcMethod.addTypeVar( new SrcType( makeTypeVar( typeVar ) ) );
     }
-    if( isExtensionClass ) //## todo: kill this whole if( isExtensions ) block after IJ fixes https://youtrack.jetbrains.com/issue/IDEA-247069
+    for( PsiParameter param : method.getParameterList().getParameters() )
     {
-      PsiParameter[] parameters = method.getParameterList().getParameters();
-      Method m = findRawMethod( method, containingClass );
-      for( int iParam = 0; iParam < parameters.length; iParam++ )
-      {
-        PsiParameter psiParam = parameters[iParam];
-        try
-        {
-          SrcParameter srcParam = new SrcParameter( psiParam.getName(), makeSrcType( m.getAnnotatedParameterTypes()[iParam] ) );
-          addAnnotations( srcParam, psiParam );
-          srcMethod.addParam( srcParam );
-        }
-        catch( Exception e )
-        {
-          SrcParameter srcParam = new SrcParameter( psiParam.getName(), makeSrcType( psiParam.getType() ) );
-          addAnnotations( srcParam, psiParam );
-          srcMethod.addParam( srcParam );
-        }
-      }
-    }
-    else
-    {
-      for( PsiParameter param : method.getParameterList().getParameters() )
-      {
-        SrcParameter srcParam = new SrcParameter( param.getName(), makeSrcType( param.getType() ) );
-        addAnnotations( srcParam, param );
-        srcMethod.addParam( srcParam );
-      }
+      SrcParameter srcParam = new SrcParameter( param.getName(), makeSrcType( param.getTypeElement().getType() ) );
+      addAnnotations( srcParam, param );
+      srcMethod.addParam( srcParam );
     }
     for( PsiClassType throwType : method.getThrowsList().getReferencedTypes() )
     {

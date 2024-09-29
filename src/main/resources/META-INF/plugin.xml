@@ -251,6 +251,7 @@ String content = abc.example.UserSample.render(users);
   <idea-version since-build="This value is patched by the build script"/>
 
   <depends>com.intellij.modules.java</depends>
+  <depends>com.intellij.modules.json</depends>
 
   <!-- no longer a paid plugin -->
   <!--  <product-descriptor code="PMANIFOLD" optional="true" release-date="20200212" release-version="20201"/>-->

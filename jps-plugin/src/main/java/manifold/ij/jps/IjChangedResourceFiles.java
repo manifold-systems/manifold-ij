@@ -20,11 +20,11 @@
 package manifold.ij.jps;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This class applies to an entire build (both incremental and full), it contains aggregated information for the
@@ -37,21 +37,19 @@ import java.util.Set;
 @SuppressWarnings("WeakerAccess")
 public class IjChangedResourceFiles
 {
-  private static ThreadLocal<List<File>> ChangedFiles =
-    ThreadLocal.withInitial( () -> new ArrayList<>() );
+  private static CopyOnWriteArrayList<File> ChangedFiles = new CopyOnWriteArrayList<>();
 
-  private static ThreadLocal<Map<File, Set<String>>> TypesToFile =
-    ThreadLocal.withInitial( () -> new HashMap<>() );
+  private static ConcurrentHashMap<File, Set<String>> TypesToFile = new ConcurrentHashMap<>();
 
   /**
    * @return All the changed resource files corresponding with an *entire* incremental build. Used by manifold's
    * ManifoldJavaFileManager to prevent unnecessary recompilation of types -- a resource file must be in this list to
-   * recompile as part of the incremental build. Note this list only pertains to an incemental build; it is empty for a
-   * rebuild (full bulid) as all types are compiled.
+   * recompile as part of the incremental build. Note this list only pertains to an incremental build; it is empty for a
+   * rebuild (full build) as all types are compiled.
    */
   public static List<File> getChangedFiles()
   {
-    return ChangedFiles.get();
+    return ChangedFiles;
   }
 
 
@@ -64,7 +62,7 @@ public class IjChangedResourceFiles
    */
   public static Map<File, Set<String>> getTypesToFile()
   {
-    return TypesToFile.get();
+    return TypesToFile;
   }
 
   /**
@@ -72,7 +70,7 @@ public class IjChangedResourceFiles
    */
   public static void clear()
   {
-    ChangedFiles.remove();
-    TypesToFile.remove();
+    ChangedFiles = new CopyOnWriteArrayList<>();
+    TypesToFile = new ConcurrentHashMap<>();
   }
 }
