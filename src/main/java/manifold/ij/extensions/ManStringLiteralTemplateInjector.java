@@ -21,19 +21,12 @@ package manifold.ij.extensions;
 
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.psi.InjectedLanguagePlaces;
-import com.intellij.psi.JavaTokenType;
-import com.intellij.psi.LanguageInjector;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiLanguageInjectionHost;
-import com.intellij.psi.PsiModifierListOwner;
-import com.intellij.psi.PsiNameValuePair;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.source.tree.java.PsiLiteralExpressionImpl;
 import java.util.List;
 
 import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.util.PsiUtil;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.ComputeUtil;
@@ -84,12 +77,28 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
     {
       if( !expr.isVerbatim() )
       {
+        String prefix = qualifyThis( expr.getExpr(), stringLiteral );
         injectionPlacesRegistrar.addPlace(
           JavaLanguage.INSTANCE,
           new TextRange( expr.getOffset(), expr.getOffset() + expr.getExpr().length() ),
-          PREFIX, SUFFIX );
+          prefix, SUFFIX );
       }
     }
+  }
+
+  private static @NotNull String qualifyThis( String expr, PsiLiteralExpressionImpl stringLiteral )
+  {
+    String prefix = PREFIX;
+    if( expr.startsWith( "this." ) || expr.equals( "this" ) )
+    {
+      PsiClass containingClass = PsiUtil.getContainingClass( stringLiteral );
+      if( containingClass != null )
+      {
+        // qualify `this` with outer class name, otherwise `this` refers to our _Muh_Class_ prefix
+        prefix += containingClass.getName() + '.';
+      }
+    }
+    return prefix;
   }
 
   private boolean isEscaped( String hostText, int index )
