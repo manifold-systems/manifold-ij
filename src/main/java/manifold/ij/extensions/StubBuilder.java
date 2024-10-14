@@ -41,6 +41,7 @@ import manifold.api.gen.SrcType;
 import manifold.ext.rt.api.Extension;
 import manifold.ij.core.ManModule;
 import manifold.ij.util.ComputeUtil;
+import org.jetbrains.annotations.NotNull;
 
 /**
  */
@@ -294,7 +295,8 @@ public class StubBuilder
     }
     for( PsiParameter param : method.getParameterList().getParameters() )
     {
-      SrcParameter srcParam = new SrcParameter( param.getName(), makeSrcType( param.getTypeElement().getType() ) );
+      SrcType srcParamType = getSrcType( param );
+      SrcParameter srcParam = new SrcParameter( param.getName(), srcParamType );
       addAnnotations( srcParam, param );
       srcMethod.addParam( srcParam );
     }
@@ -307,6 +309,23 @@ public class StubBuilder
         new SrcRawStatement()
           .rawText( "throw new RuntimeException();" ) ) );
     srcClass.addMethod( srcMethod );
+  }
+
+  private @NotNull SrcType getSrcType( PsiParameter param )
+  {
+    PsiTypeElement paramTypeElem = param.getTypeElement();
+    SrcType srcParamType;
+    if( paramTypeElem != null )
+    {
+      srcParamType = makeSrcType( paramTypeElem.getType() );
+    }
+    else
+    {
+      // chick/egg problem: since IJ 2024.3 sometimes can't get PsiTypeElement while building typeinfo...
+      // parse text of param type instead
+      srcParamType = new SrcType( param.getText() );
+    }
+    return srcParamType;
   }
 
   private Method findRawMethod( PsiMethod method, PsiClass containingClass )
