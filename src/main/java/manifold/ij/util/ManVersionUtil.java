@@ -47,6 +47,33 @@ public class ManVersionUtil
   {
     String fullVersion = ApplicationInfo.getInstance().getFullVersion();
     Version version = Version.parseVersion( fullVersion );
+    if( version == null )
+    {
+      // probably an Android Studio build, format is like: "Ladybug | 2024.2.1 Patch 1"
+
+      int ibar = fullVersion.indexOf( " | " );
+      if( ibar >= 0 )
+      {
+        fullVersion = fullVersion.substring( ibar + " | ".length() );
+        version = Version.parseVersion( fullVersion );
+      }
+
+      if( version == null )
+      {
+        // no idea what intellij variant this could be, search for the beginning of a year?
+        int idate = fullVersion.indexOf( "202" );
+        if( idate >= 0 )
+        {
+          fullVersion = fullVersion.substring( idate );
+          version = Version.parseVersion( fullVersion );
+        }
+      }
+
+      if( version == null )
+      {
+        throw new RuntimeException( "Could not parse version info from: " + fullVersion );
+      }
+    }
     return test.test( version );
   }
 }
