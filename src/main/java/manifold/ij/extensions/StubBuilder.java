@@ -20,12 +20,13 @@
 package manifold.ij.extensions;
 
 import com.intellij.psi.*;
-import com.intellij.psi.impl.compiled.ClsClassImpl;
+import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.search.GlobalSearchScope;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.Arrays;
+import java.util.List;
 
 import manifold.api.gen.SrcAnnotated;
 import manifold.api.gen.SrcAnnotationExpression;
@@ -38,7 +39,6 @@ import manifold.api.gen.SrcRawExpression;
 import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
-import manifold.ext.rt.api.Extension;
 import manifold.ij.core.ManModule;
 import manifold.ij.util.ComputeUtil;
 import org.jetbrains.annotations.NotNull;
@@ -48,6 +48,10 @@ import org.jetbrains.annotations.NotNull;
 public class StubBuilder
 {
   public SrcClass make( String fqn, ManModule module )
+  {
+    return make( fqn, module, true );
+  }
+  public SrcClass make( String fqn, ManModule module, boolean includeExtenstions )
   {
     JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance( module.getIjProject() );
     PsiClass psiClass = javaPsiFacade.findClass( fqn, GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() ) );
@@ -59,29 +63,33 @@ public class StubBuilder
         return null;
       }
     }
-    return makeSrcClass( fqn, psiClass, module );
+    return makeSrcClass( fqn, psiClass, module, includeExtenstions );
   }
 
-  public SrcClass makeSrcClass( String fqn, PsiClass psiClass, ManModule module )
+  private SrcClass makeSrcClass( String fqn, PsiClass psiClass, ManModule module, boolean includeExtensions )
   {
+    PsiModifierList modifierList = psiClass.getModifierList();
     SrcClass srcClass = new SrcClass( fqn, getKind( psiClass ) )
-      .modifiers( getModifiers( psiClass.getModifierList() ) );
+      .modifiers( modifierList == null ? 0L : getModifiers( modifierList ) );
     for( PsiTypeParameter typeVar : psiClass.getTypeParameters() )
     {
       srcClass.addTypeVar( new SrcType( makeTypeVar( typeVar ) ) );
     }
     setSuperTypes( srcClass, psiClass );
-    for( PsiMethod psiMethod : psiClass.getMethods() )
+    List<PsiMethod> psiMethods = includeExtensions ? List.of( psiClass.getMethods() ) : ((PsiExtensibleClass)psiClass).getOwnMethods();
+    for( PsiMethod psiMethod : psiMethods )
     {
       addMethod( srcClass, psiMethod );
     }
-    for( PsiField psiField : psiClass.getFields() )
+    List<PsiField> psiFields = includeExtensions ? List.of( psiClass.getFields() ) : ((PsiExtensibleClass)psiClass).getOwnFields();
+    for( PsiField psiField : psiFields )
     {
       addField( srcClass, psiField );
     }
-    for( PsiClass psiInnerClass : psiClass.getInnerClasses() )
+    List<PsiClass> psiInnerClasses = includeExtensions ? List.of( psiClass.getInnerClasses() ) : ((PsiExtensibleClass)psiClass).getOwnInnerClasses();
+    for( PsiClass psiInnerClass : psiInnerClasses )
     {
-      addInnerClass( srcClass, psiInnerClass, module );
+      addInnerClass( srcClass, psiInnerClass, module, includeExtensions );
     }
     return srcClass;
   }
@@ -99,7 +107,7 @@ public class StubBuilder
     }
   }
 
-  private SrcType makeSrcType( PsiType type )
+  public SrcType makeSrcType( PsiType type )
   {
     SrcType srcType;
     if( type instanceof PsiClassType )
@@ -259,16 +267,17 @@ public class StubBuilder
     return SrcClass.Kind.Class;
   }
 
-  private void addInnerClass( SrcClass srcClass, PsiClass psiClass, ManModule module )
+  private void addInnerClass( SrcClass srcClass, PsiClass psiClass, ManModule module, boolean includeExtensions )
   {
-    SrcClass innerClass = makeSrcClass( psiClass.getQualifiedName(), psiClass, module );
+    SrcClass innerClass = makeSrcClass( psiClass.getQualifiedName(), psiClass, module, includeExtensions );
     srcClass.addInnerClass( innerClass );
   }
 
   private void addField( SrcClass srcClass, PsiField field )
   {
     SrcField srcField = new SrcField( field.getName(), makeSrcType( field.getType() ) );
-    srcField.modifiers( getModifiers( field.getModifierList() ) );
+    PsiModifierList modifierList = field.getModifierList();
+    srcField.modifiers( modifierList == null ? 0L : getModifiers( modifierList ) );
     if( Modifier.isFinal( (int)srcField.getModifiers() ) )
     {
       srcField.initializer( new SrcRawExpression( ComputeUtil.getDefaultValue( field.getType() ) ) );
@@ -277,6 +286,11 @@ public class StubBuilder
   }
 
   private void addMethod( SrcClass srcClass, PsiMethod method )
+  {
+    SrcMethod srcMethod = makeMethod( srcClass, method );
+    srcClass.addMethod( srcMethod );
+  }
+  public SrcMethod makeMethod( SrcClass srcClass, PsiMethod method )
   {
     SrcMethod srcMethod = new SrcMethod( srcClass );
     addAnnotations( srcMethod, method );
@@ -308,7 +322,7 @@ public class StubBuilder
       .addStatement(
         new SrcRawStatement()
           .rawText( "throw new RuntimeException();" ) ) );
-    srcClass.addMethod( srcMethod );
+    return srcMethod;
   }
 
   private @NotNull SrcType getSrcType( PsiParameter param )
@@ -380,7 +394,8 @@ public class StubBuilder
 
   private void addAnnotations( SrcAnnotated<?> srcAnnotated, PsiModifierListOwner annotated )
   {
-    addAnnotations( srcAnnotated, annotated.getModifierList().getAnnotations() );
+    PsiModifierList modifierList = annotated.getModifierList();
+    addAnnotations( srcAnnotated, modifierList == null ? null : modifierList.getAnnotations() );
   }
   private void addAnnotations( SrcAnnotated<?> srcAnnotated, PsiAnnotation[] annotations )
   {

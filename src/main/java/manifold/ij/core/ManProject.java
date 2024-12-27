@@ -247,6 +247,31 @@ public class ManProject
     return _manInUse;
   }
 
+  public static boolean isParamsEnabledInAnyModules( PsiElement element )
+  {
+    ManProject manProject = ManProject.manProjectFrom( element.getProject() );
+    if( manProject == null )
+    {
+      return false;
+    }
+    return manProject.isParamsEnabledInAnyModules();
+  }
+
+  public boolean isParamsEnabledInAnyModules()
+  {
+    if( !isManifoldInUse() )
+    {
+      return false;
+    }
+
+    Map<Module, ManModule> modules = getModules();
+    if( modules == null )
+    {
+      return false;
+    }
+    return modules.values().stream().anyMatch( m -> m.isParamsEnabled() );
+  }
+
   public static boolean isPropertiesEnabledInAnyModules( PsiElement element )
   {
     ManProject manProject = ManProject.manProjectFrom( element.getProject() );

@@ -30,11 +30,14 @@ import com.intellij.psi.impl.light.LightRecordField;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Consumer;
+import manifold.ext.params.rt.manifold_params;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Arrays;
 
 /**
  * Filters out extension methods not accessible from the call-site.
@@ -123,7 +126,7 @@ public class ManJavaCompletionContributor extends CompletionContributor
       }
 
       PsiElement psiElem = lookupElement.getPsiElement();
-      if( psiElem instanceof ManLightMethodBuilder )
+      if( psiElem instanceof ManLightMethodBuilder manMethod )
       {
         ManModule module = ManProject.getModule( _module );
         if( module != null && !module.isExtEnabled() )
@@ -132,7 +135,13 @@ public class ManJavaCompletionContributor extends CompletionContributor
           return true;
         }
 
-        return ((ManLightMethodBuilder)psiElem).getModules().stream()
+        if( manMethod.getAnnotation( manifold_params.class.getTypeName() ) != null )
+        {
+          // don't show generated params method, it navs to the original method
+          return true;
+        }
+
+        return manMethod.getModules().stream()
           .map( ManModule::getIjModule )
           .noneMatch( methodModule -> GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( _module ).isSearchInModuleContent( methodModule ) );
       }

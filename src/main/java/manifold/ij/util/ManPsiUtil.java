@@ -22,6 +22,8 @@ package manifold.ij.util;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.util.PsiTypesUtil;
 import manifold.ext.rt.api.Structural;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
@@ -36,6 +38,12 @@ public class ManPsiUtil
                                    ? null
                                    : psiClass.getModifierList().findAnnotation( Structural.class.getTypeName() );
     return structuralAnno != null;
+  }
+
+  public static boolean isStructuralInterface( PsiType type )
+  {
+    PsiClass psiClass = PsiTypesUtil.getPsiClass( type );
+    return isStructuralInterface( psiClass );
   }
 
   public static void runInTypeManifoldLoader( PsiElement context, Runnable code )

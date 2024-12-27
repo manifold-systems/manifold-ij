@@ -43,12 +43,17 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
   private final Set<ManModule> _modules;
   private LightIdentifier _nameIdentifier;
   private ASTNode _astNode;
+  private PsiCodeBlock _code;
 
   public ManLightMethodBuilderImpl( ManModule manModule, PsiManager manager, String name )
   {
     this( manModule, manager, name, null );
   }
   public ManLightMethodBuilderImpl( ManModule manModule, PsiManager manager, String name, PsiModifierList modifierList )
+  {
+    this( manModule, manager, name, false, modifierList );
+  }
+  public ManLightMethodBuilderImpl( ManModule manModule, PsiManager manager, String name, boolean isConstructor, PsiModifierList modifierList )
   {
     super( manager, JavaLanguage.INSTANCE, name,
       new LightParameterListBuilder( manager, JavaLanguage.INSTANCE ),
@@ -62,6 +67,7 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
         }
       },
       new LightTypeParameterListBuilder( manager, JavaLanguage.INSTANCE ) );
+    setConstructor( isConstructor );
     _module = manModule;
     _modules = new LinkedHashSet<>();
     _modules.add( manModule );
@@ -149,6 +155,19 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
     LightTypeParameterListBuilder typeParameterList = (LightTypeParameterListBuilder)getTypeParameterList();
     Objects.requireNonNull( typeParameterList ).addParameter( typeParameter );
     return this;
+  }
+
+  @Override
+  public ManLightMethodBuilder withBody( PsiCodeBlock code )
+  {
+    _code = code;
+    return this;
+  }
+
+  @Override
+  public PsiCodeBlock getBody()
+  {
+    return _code;
   }
 
   @Override

@@ -27,11 +27,19 @@ public class ManJavaParser extends JavaParser
 {
   private final StatementParser myStatementParser;
   private final ExpressionParser myExpressionParser;
+  private final DeclarationParser myDeclarationParser;
 
   public ManJavaParser()
   {
     myStatementParser = new ManStatementParser( this );
     myExpressionParser = new ManExpressionParser( this );
+    myDeclarationParser = new ManDeclarationParser( this );
+  }
+
+  @NotNull
+  public DeclarationParser getDeclarationParser()
+  {
+    return myDeclarationParser;
   }
 
   @NotNull

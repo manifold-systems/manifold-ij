@@ -35,7 +35,7 @@ import com.intellij.psi.impl.source.resolve.graphInference.InferenceSession;
 import com.intellij.psi.impl.source.resolve.graphInference.PsiPolyExpressionUtil;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.util.*;
-import com.intellij.util.IncorrectOperationException;
+
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,7 +51,6 @@ import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
 import manifold.ext.rt.api.ThisClass;
-import manifold.ij.psi.ManExtensionMethodBuilder;
 import manifold.internal.javac.ManAttr;
 import manifold.rt.api.Array;
 import manifold.api.type.ITypeManifold;
@@ -63,13 +62,13 @@ import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.fs.IjFile;
 import manifold.ij.psi.ManLightMethodBuilder;
-import manifold.ij.psi.ManPsiElementFactory;
 import manifold.rt.api.util.ManClassUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 
 import static manifold.api.type.ContributorKind.Supplemental;
+import static manifold.ij.util.ManPsiGenerationUtil.*;
 
 /**
  * Augment a PsiClass extended by one or more extension classes.  All
@@ -276,7 +275,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
 
     addInterfaceExtensions( psiClass, extClass );
 
-    SrcClass srcExtClass = new StubBuilder().make( extClass.getQualifiedName(), manModule );
+    SrcClass srcExtClass = new StubBuilder().make( extClass.getQualifiedName(), manModule, false );
     if( srcExtClass == null )
     {
       return;
@@ -305,7 +304,8 @@ public class ManAugmentProvider extends PsiAugmentProvider
           PsiMethod extMethod = makePsiMethod( srcMethod, psiClass );
           if( extMethod != null )
           {
-            PsiMethod plantedMethod = plantMethodInPsiClass( manModule, extMethod, psiClass, extClass );
+            PsiMethod navMethod = findExtensionMethodNavigationElement( extClass, extMethod );
+            PsiMethod plantedMethod = plantMethodInPsiClass( manModule, extMethod, psiClass, navMethod );
             augFeatures.put( key.toString(), plantedMethod );
           }
         }
@@ -323,140 +323,6 @@ public class ManAugmentProvider extends PsiAugmentProvider
       .filter( Objects::nonNull )
       .map( PsiClass::getQualifiedName ).collect( Collectors.toList() );
     psiClass.putUserData( KEY_MAN_INTERFACE_EXTENSIONS, ifaceExtensions );
-  }
-
-  private PsiMethod makePsiMethod( AbstractSrcMethod<?> method, PsiClass psiClass )
-  {
-    PsiElementFactory elementFactory = JavaPsiFacade.getInstance( psiClass.getProject() ).getElementFactory();
-    StringBuilder sb = new StringBuilder();
-    method.render( sb, 0 );
-    try
-    {
-      return elementFactory.createMethodFromText( sb.toString(), psiClass );
-    }
-    catch( IncorrectOperationException ioe )
-    {
-      // the text of the method does not conform to method grammar, probably being edited in an IJ editor,
-      // ignore these since the editor provides error information
-      return null;
-    }
-  }
-
-  private PsiMethod plantMethodInPsiClass( ManModule manModule, PsiMethod refMethod, PsiClass psiClass, PsiClass extClass )
-  {
-    if( null != refMethod )
-    {
-      ManPsiElementFactory manPsiElemFactory = ManPsiElementFactory.instance();
-      String methodName = refMethod.getName();
-      PsiMethod navMethod = findExtensionMethodNavigationElement( extClass, refMethod );
-      ManExtensionMethodBuilder method = manPsiElemFactory.createExtensionMethodMethod( manModule, psiClass.getManager(), methodName, navMethod )
-        .withMethodReturnType( refMethod.getReturnType() )
-        .withContainingClass( psiClass );
-
-// do not add navigation element because PsiExtensionMethod (implemented by ManExtensionMethodBuilder) handles that separately with getTargetMethod(), additionally MethodCallUtils#getParameterForArgument() would fail
-//      if( navMethod != null )
-//      {
-//        method.withNavigationElement( navMethod.getNavigationElement() );
-//      }
-
-      copyAnnotations( refMethod, method );
-
-      copyModifiers( refMethod, method );
-
-      for( PsiTypeParameter tv : refMethod.getTypeParameters() )
-      {
-        method.withTypeParameterDirect( tv );
-      }
-
-      PsiParameter[] parameters = refMethod.getParameterList().getParameters();
-      for( PsiParameter psiParameter : parameters )
-      {
-        method.withParameter( psiParameter.getName(), psiParameter.getType() );
-      }
-
-      for( PsiClassType psiClassType : refMethod.getThrowsList().getReferencedTypes() )
-      {
-        method.withException( psiClassType );
-      }
-
-      return method;
-    }
-    return null;
-  }
-
-  private void copyModifiers( PsiMethod refMethod, ManLightMethodBuilder method )
-  {
-    addModifier( refMethod, method, PsiModifier.PUBLIC );
-    addModifier( refMethod, method, PsiModifier.STATIC );
-    addModifier( refMethod, method, PsiModifier.PACKAGE_LOCAL );
-    addModifier( refMethod, method, PsiModifier.PROTECTED );
-  }
-
-  private void copyAnnotations( PsiMethod refMethod, ManLightMethodBuilder method )
-  {
-    for( PsiAnnotation anno : refMethod.getModifierList().getAnnotations() )
-    {
-      String qualifiedName = anno.getQualifiedName();
-      if( qualifiedName == null )
-      {
-        continue;
-      }
-      PsiAnnotation psiAnnotation = method.getModifierList().addAnnotation( qualifiedName );
-      for( PsiNameValuePair pair : anno.getParameterList().getAttributes() )
-      {
-        psiAnnotation.setDeclaredAttributeValue( pair.getName(), pair.getValue() );
-      }
-    }
-  }
-
-  private PsiMethod findExtensionMethodNavigationElement( PsiClass extClass, PsiMethod plantedMethod )
-  {
-    PsiMethod[] found = extClass.findMethodsByName( plantedMethod.getName(), false );
-    outer:
-    for( PsiMethod m : found )
-    {
-      PsiParameter[] extParams = m.getParameterList().getParameters();
-      PsiParameter[] plantedParams = plantedMethod.getParameterList().getParameters();
-      int offset = getParamOffset( extParams );
-      if( extParams.length - offset == plantedParams.length )
-      {
-        for( int i = offset; i < extParams.length; i++ )
-        {
-          PsiParameter extParam = extParams[i];
-          PsiParameter plantedParam = plantedParams[i - offset];
-          PsiType extErased = TypeConversionUtil.erasure( extParam.getType() );
-          PsiType plantedErased = TypeConversionUtil.erasure( plantedParam.getType() );
-          if( !extErased.toString().equals( plantedErased.toString() ) )
-          {
-            continue outer;
-          }
-        }
-        return m;
-      }
-    }
-    return null;
-  }
-
-  private int getParamOffset( PsiParameter[] params )
-  {
-    if( params.isEmpty() )
-    {
-      return 0;
-    }
-    boolean skipFirstParam = Arrays.stream( params[0].getAnnotations() )
-      .anyMatch( anno ->
-        anno.getQualifiedName() != null &&
-          (anno.getQualifiedName().equals( This.class.getTypeName() ) ||
-           anno.getQualifiedName().equals( ThisClass.class.getTypeName() )) );
-    return skipFirstParam ? 1 : 0;
-  }
-
-  private void addModifier( PsiMethod psiMethod, ManLightMethodBuilder method, String modifier )
-  {
-    if( psiMethod.hasModifierProperty( modifier ) )
-    {
-      method.withModifier( modifier );
-    }
   }
 
   private SrcMethod addExtensionMethod( SrcClass srcClass, AbstractSrcMethod<?> method, PsiClass extendedType )

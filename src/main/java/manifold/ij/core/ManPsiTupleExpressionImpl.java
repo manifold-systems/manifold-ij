@@ -22,18 +22,17 @@ package manifold.ij.core;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.JavaPsiFacadeEx;
 import com.intellij.psi.impl.source.tree.ChildRole;
 import com.intellij.psi.impl.source.tree.ElementType;
 import com.intellij.psi.impl.source.tree.java.ExpressionPsiElement;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.tree.ChildRoleBase;
 import com.intellij.psi.tree.IElementType;
-import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.PsiUtil;
-import com.intellij.util.PsiErrorElementUtil;
-import manifold.ij.extensions.PsiErrorClassUtil;
 import manifold.ij.util.ManPsiUtil;
 import manifold.internal.javac.ITupleTypeProvider;
+import manifold.rt.api.Null;
 import manifold.rt.api.util.ManClassUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,7 +55,36 @@ public class ManPsiTupleExpressionImpl extends ExpressionPsiElement implements M
   }
 
   @Override
-  public @Nullable List<ManPsiTupleValueExpression> getValueExpressions()
+  public PsiExpression @NotNull [] getExpressions() {
+    List<ManPsiTupleValueExpression> expressions = getValueExpressions();
+    return expressions == null ? new PsiExpression[0] : getValueExpressions().stream().map( e -> e.getValue() ).toArray( i -> new PsiExpression[i] );
+  }
+
+  @Override
+  public int getExpressionCount() {
+    PsiExpression[] expressions = getExpressions();
+    return expressions.length;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return findChildByType(ElementType.EXPRESSION_BIT_SET) == null;
+  }
+
+  @Override
+  public PsiType @NotNull [] getExpressionTypes() {
+    PsiExpression[] expressions = getExpressions();
+    PsiType[] types = PsiType.createArray(expressions.length);
+
+    for (int i = 0; i < types.length; i++) {
+      types[i] = expressions[i].getType();
+    }
+
+    return types;
+  }
+
+  @Override
+  public List<ManPsiTupleValueExpression> getValueExpressions()
   {
     PsiExpression[] expressions = getChildrenAsPsiElements( ElementType.EXPRESSION_BIT_SET, PsiExpression.ARRAY_FACTORY );
     return Arrays.stream( expressions ).map( e -> (ManPsiTupleValueExpression)e ).collect( Collectors.toList() );
@@ -87,11 +115,35 @@ public class ManPsiTupleExpressionImpl extends ExpressionPsiElement implements M
       return null;
     }
 
+    PsiClassType paramsClassType = (PsiClassType)handleNamedArgs();
+    if( paramsClassType != null )
+    {
+      // type when tuple is used for optional parameters
+      return paramsClassType;
+    }
+
     String pkg = ManClassUtil.getPackage( topLevelClass.getQualifiedName() );
     String tupleTypeName = ManPsiUtil.runInTypeManifoldLoader( this,
       () -> ITupleTypeProvider.INSTANCE.get().makeType( pkg, makeTupleFieldMap() ) );
     PsiClass psiClass = JavaPsiFacade.getInstance( getProject() ).findClass( tupleTypeName, GlobalSearchScope.projectScope( getProject() ) );
-    return psiClass == null ? null : PsiTypesUtil.getClassType( psiClass );
+    PsiExpression expr = JavaPsiFacadeEx.getInstanceEx( getProject() ).getParserFacade().createExpressionFromText( "new " + tupleTypeName + "(" +
+      getValueExpressions().stream().map( v -> v.getValue() == null ? "" : v.getValue().getText() ).collect( Collectors.joining(", ") ) + ")", this );
+    return psiClass == null ? null : expr.getType();
+//    return psiClass == null ? null : PsiTypesUtil.getClassType( psiClass );
+  }
+
+  private PsiType handleNamedArgs()
+  {
+    PsiElement parent = getParent();
+    if( parent instanceof PsiExpressionList && ((PsiExpressionList)parent).getExpressionCount() == 1 )
+    {
+      parent = parent.getParent();
+      if( parent instanceof PsiCallExpression )
+      {
+        return TupleNamedArgsUtil.getNewParamsClassExprType( (PsiCallExpression)parent, this );
+      }
+    }
+    return null;
   }
 
   @Override
@@ -156,7 +208,12 @@ public class ManPsiTupleExpressionImpl extends ExpressionPsiElement implements M
       {
         PsiType type = value.getType();
         type = RecursiveTypeVarEraser.eraseTypeVars( type, value );
-        map.put( item, type == null ? null : type.getCanonicalText() );
+        map.put( item,
+          type == null
+          ? null
+          : type == PsiTypes.nullType()
+            ? Null.class.getTypeName()
+            : type.getCanonicalText() );
       }
       else
       {
@@ -165,25 +222,6 @@ public class ManPsiTupleExpressionImpl extends ExpressionPsiElement implements M
     }
     return map;
   }
-
-//  private PsiType eraseBound( PsiType t, PsiType bound )
-//  {
-//    if( bound == null  )
-//    {
-//      return bound;
-//    }
-//
-//    PsiType erasedBound;
-//    if( bound.contains( t ) )
-//    {
-//      erasedBound = visit( _types.erasure( bound ) );
-//    }
-//    else
-//    {
-//      erasedBound = visit( bound );
-//    }
-//    return erasedBound;
-//  }
 
   private String getFieldNameFromMethodName( String methodName )
   {

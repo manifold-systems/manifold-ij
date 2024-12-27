@@ -674,14 +674,18 @@ Other minor fixes and improvements.
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManAugmentProvider"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManPropertiesAugmentProvider"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManDelegationAugmentProvider"/>
+    <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManParamsAugmentProvider"/>
     <methodReferencesSearch implementation="manifold.ij.extensions.ExtensionMethodUsageSearcher"/>
     <methodReferencesSearch implementation="manifold.ij.extensions.InferredPropertyMethodUsageSearcher"/>
+    <methodReferencesSearch implementation="manifold.ij.extensions.ParamsMethodUsageSearcher"/>
+    <implicitUsageProvider implementation="manifold.ij.extensions.ParamsMethodUsageSearcher"/>
     <lang.parserDefinition language="JAVA" implementationClass="manifold.ij.extensions.ManJavaParserDefinition" order="first"/>
     <externalAnnotator language="JAVA" implementationClass="manifold.ij.extensions.DelegationExternalAnnotator"/>
     <externalAnnotator language="JAVA" implementationClass="manifold.ij.extensions.ManPreprocessorAnnotator" order="last"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionClassAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionMethodCallSiteAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.PropertiesAnnotator"/>
+    <annotator language="JAVA" implementationClass="manifold.ij.extensions.ParamsAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.DelegationAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.SelfUsageAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.JailbreakUsageAnnotator"/>
@@ -705,6 +709,7 @@ Other minor fixes and improvements.
     <implicitUsageProvider implementation="manifold.ij.extensions.ManStringLiteralTemplateUsageProvider"/>
     <targetElementEvaluator language="TEXT" implementationClass="manifold.ij.extensions.ManTextElementEvaluator"/>
     <completion.contributor language="JAVA" implementationClass="manifold.ij.extensions.ManJavaCompletionContributor" order="first"/>
+    <codeInsight.parameterInfo language="JAVA" implementationClass="manifold.ij.extensions.ManMethodParameterInfoHandler" order="first"/>
     <iconProvider implementation="manifold.ij.extensions.PropertiesIconProvider"/>
     <highlightVisitor implementation="manifold.ij.extensions.ManHighlightVisitor"/>
     <psi.treeChangeListener implementation="manifold.ij.extensions.GraphQlConfigTreeChangeListener"/>

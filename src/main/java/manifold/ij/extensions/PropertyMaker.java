@@ -206,7 +206,7 @@ class PropertyMaker
       boolean setFinal = isFinal || hasOption( args, PropOption.Final );
       PropOption setAccess = getAccess( args );
 
-      if( shouldCheck() && _field.hasInitializer() && setAbstract )
+      if( shouldCheck() && _field.hasInitializer() && setAbstract && !_psiClass.isInterface() )
       {
         reportError( _field.getInitializer(),
           MSG_WRITABLE_ABSTRACT_PROPERTY_CANNOT_HAVE_INITIALIZER.get( _field.getName() ) );

@@ -537,10 +537,19 @@ class PropertyInference
 
   private PsiField[] findExistingFieldInAncestry( String name, PsiClass c, PsiClass origin )
   {
+    return findExistingFieldInAncestry( name, c, origin, new HashSet<>() );
+  }
+  private PsiField[] findExistingFieldInAncestry( String name, PsiClass c, PsiClass origin, Set<PsiClass> seen )
+  {
     if( !(c instanceof PsiExtensibleClass) )
     {
       return null;
     }
+    if( seen.contains( c ) )
+    {
+      return null;
+    }
+    seen.add( c );
 
     List<PsiField> fields = c == origin ? ((PsiExtensibleClass)c).getOwnFields() : Arrays.asList( c.getFields() );
     for( PsiField psiField : fields )
@@ -553,7 +562,7 @@ class PropertyInference
     PsiClass st = c.getSuperClass();
     if( st instanceof PsiExtensibleClass )
     {
-      PsiField[] psiField = findExistingFieldInAncestry( name, st, origin );
+      PsiField[] psiField = findExistingFieldInAncestry( name, st, origin, seen );
       if( psiField != null )
       {
         return psiField;
@@ -561,7 +570,7 @@ class PropertyInference
     }
     for( PsiClass iface : c.getInterfaces() )
     {
-      PsiField[] sym = findExistingFieldInAncestry( name, iface, origin );
+      PsiField[] sym = findExistingFieldInAncestry( name, iface, origin, seen );
       if( sym != null && sym.length > 0 &&
         (sym[0].getModifierList() == null || !sym[0].getModifierList().hasExplicitModifier( PsiModifier.STATIC )) )
       {

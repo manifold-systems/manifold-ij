@@ -20,11 +20,12 @@
 package manifold.ij.core;
 
 import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiExpressionList;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public interface ManPsiTupleExpression extends PsiExpression
+public interface ManPsiTupleExpression extends PsiExpression, PsiExpressionList
 {
   /**
    * Returns the tuple's list of value expressions

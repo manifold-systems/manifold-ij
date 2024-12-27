@@ -45,6 +45,12 @@ public class ManPsiTupleValueExpressionImpl extends ExpressionPsiElement impleme
   }
 
   @Override
+  public String getName()
+  {
+    return getLabel() != null ? getLabel().getText() : null;
+  }
+
+  @Override
   public PsiIdentifier getLabel()
   {
     return (PsiIdentifier)findChildByRoleAsPsiElement( ChildRole.LABEL_NAME );

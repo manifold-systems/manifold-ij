@@ -19,12 +19,8 @@
 
 package manifold.ij.psi;
 
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeParameter;
+import com.intellij.psi.*;
+
 import java.util.Set;
 import manifold.ij.core.ManModule;
 
@@ -54,6 +50,8 @@ public interface ManLightMethodBuilder extends PsiMethod
   ManLightMethodBuilder withTypeParameterDirect( PsiTypeParameter typeParameter );
 
   ManLightMethodBuilder withAdditionalModule( ManModule module );
+
+  ManLightMethodBuilder withBody( PsiCodeBlock code );
 
   ManModule getModule();
   Set<ManModule> getModules();

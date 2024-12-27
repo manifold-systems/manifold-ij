@@ -74,6 +74,7 @@ public class ManModule extends SimpleModule
   private final LocklessLazyVar<Boolean> _isExceptionsEnabled;
   private final LocklessLazyVar<Boolean> _isPreprocessorEnabled;
   private final LocklessLazyVar<Boolean> _isPropertiesEnabled;
+  private final LocklessLazyVar<Boolean> _isParamsEnabled;
   private final LocklessLazyVar<Boolean> _isDelegationEnabled;
   private final LocklessLazyVar<Boolean> _isTuplesEnabled;
 
@@ -95,6 +96,7 @@ public class ManModule extends SimpleModule
     _isExceptionsEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-exceptions" ) || hasJar( "manifold-all" ) );
     _isPreprocessorEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-preprocessor" ) || hasJar( "manifold-all" ) );
     _isPropertiesEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-props" ) || hasJar( "manifold-all" ) );
+    _isParamsEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-params" ) || hasJar( "manifold-all" ) );
     _isDelegationEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-delegation" ) || hasJar( "manifold-all" ) );
     _isTuplesEnabled = LocklessLazyVar.make( () -> hasJar( "manifold-tuple" ) || hasJar( "manifold-all" ) );
   }
@@ -530,6 +532,11 @@ public class ManModule extends SimpleModule
   public boolean isPropertiesEnabled()
   {
     return _isPropertiesEnabled.get();
+  }
+
+  public boolean isParamsEnabled()
+  {
+    return _isParamsEnabled.get();
   }
 
   public boolean isDelegationEnabled()
