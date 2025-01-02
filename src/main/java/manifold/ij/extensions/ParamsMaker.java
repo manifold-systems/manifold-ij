@@ -21,20 +21,24 @@ package manifold.ij.extensions;
 
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.navigation.ItemPresentation;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.util.MethodSignatureUtil;
+import com.intellij.psi.util.PsiMethodUtil;
+import com.intellij.psi.util.PsiUtil;
 import com.intellij.psi.util.TypeConversionUtil;
 import manifold.api.gen.*;
-import manifold.ext.params.rt.api.spread;
 import manifold.ext.params.rt.manifold_params;
 import manifold.ij.core.ManProject;
+import manifold.ij.psi.ManExtensionMethodBuilder;
 import manifold.rt.api.util.ManStringUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static manifold.ij.extensions.ManParamsAugmentProvider.hasInitializer;
 import static manifold.ij.util.ManPsiGenerationUtil.makePsiMethod;
@@ -83,13 +87,6 @@ class ParamsMaker
 
   private void generateOrCheckParamsClass()
   {
-    PsiAnnotation spreadAnno = findSpreadAnno();
-    if( spreadAnno != null )
-    {
-      // use of @spread turns off named args, only telescoping methods are generated
-      return;
-    }
-
     PsiClass paramsClass = makeParamsClass();
     if( paramsClass == null )
     {
@@ -114,22 +111,27 @@ class ParamsMaker
       }
     }
 
-    PsiAnnotation spreadAnno = findSpreadAnno();
-
     if( !hasOptionalParams() )
     {
       // the method doesn't have optional parameters
+      return;
+    }
 
-      if( shouldCheck() && spreadAnno != null )
+    if( _holder != null && !_psiMethod.findSuperMethods().isEmpty() )
+    {
+      for( PsiParameter param : _psiMethod.getParameterList().getParameters() )
       {
-        reportError( spreadAnno, "'@spread' requires one or more optional parameters in the method signature" );
+        if( hasInitializer( param ) )
+        {
+          reportIssue( param, HighlightSeverity.ERROR,
+            "Default parameter values are not allowed in the signature of an overriding method",
+            getInitializerRange( param ) );;
+        }
       }
       return;
     }
 
-    // if @spread is present, we only generate telescoping methods,
-    // and don't generate the params method, which disables named args
-    if( paramsClass != null && spreadAnno == null )
+    if( paramsClass != null )
     {
       PsiMethod forwardingMeth = makeParamsMethod( paramsClass );
       if( _augFeatures != null )
@@ -274,21 +276,6 @@ class ParamsMaker
     return result;
   }
 
-  private PsiAnnotation findSpreadAnno()
-  {
-    for( PsiAnnotation annotation : _psiMethod.getAnnotations() )
-    {
-      PsiJavaCodeReferenceElement nameReferenceElement = annotation.getNameReferenceElement();
-      if( nameReferenceElement != null &&
-        nameReferenceElement.getReferenceName() != null &&
-        nameReferenceElement.getReferenceName().contains( spread.class.getSimpleName() ) )
-      {
-         return annotation;
-      }
-    }
-    return null;
-  }
-
   private boolean methodExists( PsiMethod patternMethod )
   {
     List<PsiMethod> methodsByName = _psiClass.getOwnMethods().stream()
@@ -348,7 +335,66 @@ class ParamsMaker
     PsiMethod paramsMethod = makePsiMethod( srcMethod, _psiClass );
     //noinspection UnnecessaryLocalVariable
     PsiMethod plantedMethod = plantMethodInPsiClass( ManProject.getModule( _psiClass ), paramsMethod, _psiClass, _psiMethod, _psiMethod.isConstructor() );
+    checkDuplication( plantedMethod );
     return plantedMethod;
+  }
+
+  private void checkDuplication( PsiMethod plantedMethod )
+  {
+    if( !shouldCheck() )
+    {
+      return;
+    }
+
+    PsiMethod[] methods = _psiClass.findMethodsByName( plantedMethod.getName(), true );
+    for( PsiMethod m : methods )
+    {
+      if( notFromSameMethod( m ) && MethodSignatureUtil.areParametersErasureEqual( m, plantedMethod ) )
+      {
+        ItemPresentation pres = _psiMethod.getPresentation();
+        ItemPresentation otherPres = m.getPresentation();
+
+        String paramsMethodDisplay = pres == null ? m.getName() : pres.getPresentableText();
+        String otherDisplay = otherPres == null ? m.getName() : otherPres.getPresentableText();
+
+        if( m.getContainingClass() == _psiClass )
+        {
+          if( m instanceof ManExtensionMethodBuilder )
+          {
+            // two optional params methods generate clashing telescoping methods (report that the two optional params method clash indirectly bc of this)
+
+            PsiType[] erasedSig = MethodSignatureUtil.calcErasedParameterTypes( m.getSignature( PsiSubstitutor.EMPTY ) );
+            m = ((ManExtensionMethodBuilder)m).getTargetMethod();
+            otherPres = m.getPresentation();
+            otherDisplay = otherPres == null ? m.getName() : otherPres.getPresentableText();
+            String subSignature = "'(" + Arrays.stream( erasedSig ).map( p -> p.getPresentableText() ).collect( Collectors.joining( ", " ) ) + ")'";
+            reportError( _psiMethod.getNameIdentifier(), "'" + paramsMethodDisplay + "' clashes with '" + otherDisplay + "' using sub-signature " + subSignature );
+          }
+          else
+          {
+            // a telescoping method clashes with a physical method (report that the corresponding optional params method interferes)
+
+            reportError( _psiMethod.getNameIdentifier(), "Optional parameter method: '" + paramsMethodDisplay +
+              "' indirectly clashes with '" + otherDisplay + "'" );
+          }
+        }
+        else if( !m.isConstructor() &&
+          !m.getModifierList().hasModifierProperty( PsiModifier.STATIC ) &&
+          !m.getModifierList().hasModifierProperty( PsiModifier.PRIVATE ) )
+        {
+          // a telescoping method overrides a physical method in the super class (report that the corresponding optional params method interferes)
+
+          reportWarning( _psiMethod.getNameIdentifier(), "Optional parameter method: '" + paramsMethodDisplay +
+            "' indirectly overrides method '" + otherDisplay + "' in class '" +
+            (m.getContainingClass() == null ? "<unknown>": m.getContainingClass().getName()) + "'" );
+        }
+      }
+    }
+  }
+
+  private boolean notFromSameMethod( PsiMethod m )
+  {
+    return !(m instanceof ManExtensionMethodBuilder) || ((ManExtensionMethodBuilder)m).getTargetMethod() != _psiMethod;
   }
 
   private String makeTypeParamString( PsiTypeParameter[] typeParameters )

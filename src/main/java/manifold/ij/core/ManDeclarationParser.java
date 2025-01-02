@@ -120,7 +120,7 @@ public class ManDeclarationParser extends DeclarationParser
         BasicJavaParserUtil.done( param, _this.myJavaElementTypeContainer.RESOURCE_VARIABLE, _this.myWhiteSpaceAndCommentSetHolder );
         return param;
       }
-      else if( type == _this.myJavaElementTypeContainer.PARAMETER )
+      else if( type == _this.myJavaElementTypeContainer.PARAMETER || type == _this.myJavaElementTypeContainer.RECORD_COMPONENT )
       {
         _this.eatBrackets( builder, (String)null );
         if( PsiBuilderUtil.expect( builder, JavaTokenType.EQ ) && _this.myParser.getExpressionParser().parse( builder ) == null )

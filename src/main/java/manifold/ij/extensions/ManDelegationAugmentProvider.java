@@ -173,7 +173,11 @@ public class ManDelegationAugmentProvider extends PsiAugmentProvider
     {
       if( obj instanceof MyCachedValueProvider<?> )
       {
-        return Objects.equals( ((MyCachedValueProvider<?>)obj)._psiClassPointer.getElement(), _psiClassPointer.getElement() );
+        PsiExtensibleClass thisElem = _psiClassPointer.getElement();
+        PsiExtensibleClass thatElem = ((MyCachedValueProvider<?>)obj)._psiClassPointer.getElement();
+        return Objects.equals( thatElem, thisElem ) &&
+          (thisElem == null ||
+            Objects.equals( thisElem.getTextRange(), thatElem.getTextRange() ));
       }
       return false;
     }

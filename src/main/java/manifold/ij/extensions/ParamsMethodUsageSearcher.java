@@ -30,7 +30,6 @@ import com.intellij.psi.search.*;
 import com.intellij.psi.search.searches.MethodReferencesSearch;
 import com.intellij.refactoring.psi.SearchUtils;
 import com.intellij.util.Processor;
-import manifold.ext.params.rt.api.spread;
 import manifold.ext.params.rt.manifold_params;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManExtensionMethodBuilder;
@@ -92,6 +91,7 @@ public class ParamsMethodUsageSearcher extends MethodUsagesSearcher implements I
       // manifold-params not in use
       return false;
     }
+
     return true;
   }
 
@@ -112,7 +112,6 @@ public class ParamsMethodUsageSearcher extends MethodUsagesSearcher implements I
 
     if( !(method instanceof ManLightMethodBuilder) &&
       !method.hasAnnotation( manifold_params.class.getTypeName() ) &&
-      !method.hasAnnotation( spread.class.getTypeName() ) &&
       !ParamsMaker.hasOptionalParams( method ) )
     {
       return false;

@@ -24,6 +24,7 @@ import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Ref;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
+import com.intellij.psi.impl.source.PsiParameterListImpl;
 import com.intellij.psi.impl.source.resolve.JavaResolveCache;
 import com.intellij.psi.impl.source.resolve.graphInference.PsiPolyExpressionUtil;
 import com.intellij.psi.impl.source.tree.ChildRole;
@@ -123,7 +124,72 @@ public class ManJavaResolveCache extends JavaResolveCache
       }
     }
 
+    // enable default parameter expressions to ref preceding parameters
+    PsiType parameterType = maybeResolveRefToPrecedingParamFromDefaultParamExpr( expr );
+    if( parameterType != null )
+    {
+      return parameterType;
+    }
+
     return f.fun( expr );
+  }
+
+  private <T extends PsiExpression> PsiType maybeResolveRefToPrecedingParamFromDefaultParamExpr( T expr )
+  {
+    if( !(expr instanceof PsiReferenceExpression) || ((PsiReferenceExpression)expr).getQualifier() != null )
+    {
+      return null;
+    }
+
+    String refName = ((PsiReferenceExpression)expr).getReferenceName();
+    if( refName == null )
+    {
+      return null;
+    }
+
+    return findPriorParamType( expr, refName );
+  }
+
+  private <T extends PsiExpression> PsiType findPriorParamType( T expr, String refName )
+  {
+    PsiParameter param = null;
+    for( PsiElement csr = expr; ; csr = csr.getParent() )
+    {
+      if( csr instanceof PsiParameter )
+      {
+        param = (PsiParameter)csr;
+        break;
+      }
+      else if( csr == null )
+      {
+        return null;
+      }
+    }
+    PsiParameterList paramList = null;
+    for( PsiElement csr = param; ; csr = csr.getParent() )
+    {
+      if( csr instanceof PsiParameterList )
+      {
+        paramList = (PsiParameterList)csr;
+        break;
+      }
+      else if( csr == null )
+      {
+        return null;
+      }
+    }
+    for( PsiParameter parameter : paramList.getParameters() )
+    {
+      if( parameter == param )
+      {
+        return null;
+      }
+      else if( parameter.getName().equals( refName ) )
+      {
+        return parameter.getType();
+      }
+    }
+    throw new IllegalStateException( "Should have found param" );
   }
 
   static boolean isBindingExpression( final PsiExpression expr )

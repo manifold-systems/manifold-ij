@@ -30,6 +30,7 @@ import com.intellij.psi.util.PsiUtil;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.ComputeUtil;
+import manifold.ij.util.ManPsiUtil;
 import manifold.strings.StringLiteralTemplateParser;
 import manifold.rt.api.DisableStringLiteralTemplates;
 import org.jetbrains.annotations.NotNull;
@@ -91,7 +92,7 @@ public class ManStringLiteralTemplateInjector implements LanguageInjector
     String prefix = PREFIX;
     if( expr.startsWith( "this." ) || expr.equals( "this" ) )
     {
-      PsiClass containingClass = PsiUtil.getContainingClass( stringLiteral );
+      PsiClass containingClass = ManPsiUtil.getContainingClass( stringLiteral );
       if( containingClass != null )
       {
         // qualify `this` with outer class name, otherwise `this` refers to our _Muh_Class_ prefix

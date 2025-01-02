@@ -31,6 +31,7 @@ import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.core.ManPsiTupleExpression;
 import manifold.ij.core.TupleNamedArgsUtil;
+import manifold.ij.util.ManPsiUtil;
 import org.jetbrains.annotations.NotNull;
 
 import static manifold.ij.extensions.ManParamsAugmentProvider.hasInitializer;
@@ -93,7 +94,7 @@ public class ParamsAnnotator implements Annotator
   {
     if( element instanceof PsiMethod )
     {
-      PsiClass containingClass = PsiUtil.getContainingClass( element );
+      PsiClass containingClass = ManPsiUtil.getContainingClass( element );
       if( containingClass instanceof PsiExtensibleClass )
       {
         ParamsMaker.checkParamsClass( (PsiMethod)element, (PsiExtensibleClass)containingClass, holder );

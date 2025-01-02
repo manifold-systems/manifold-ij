@@ -19,14 +19,13 @@
 
 package manifold.ij.util;
 
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiType;
+import com.intellij.psi.*;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiTypesUtil;
 import manifold.ext.rt.api.Structural;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.Callable;
 
@@ -63,5 +62,27 @@ public class ManPsiUtil
       throw new NullPointerException();
     }
     return module.runWithLoader( code );
+  }
+
+  /**
+   * @return containing class for {@code element} ignoring {@link PsiAnonymousClass} if {@code element} is located in corresponding expression list
+   */
+  @Nullable
+  public static PsiClass getContainingClass( PsiElement element )
+  {
+    PsiClass currentClass;
+    while( true )
+    {
+      currentClass = PsiTreeUtil.getParentOfType( element, PsiClass.class );
+      if( currentClass instanceof PsiAnonymousClass &&
+        PsiTreeUtil.isAncestor( ((PsiAnonymousClass)currentClass).getArgumentList(), element, false ) )
+      {
+        element = currentClass;
+      }
+      else
+      {
+        return currentClass;
+      }
+    }
   }
 }

@@ -27,6 +27,7 @@ import com.intellij.openapi.util.Key;
 import com.intellij.psi.*;
 import com.intellij.psi.augment.PsiAugmentProvider;
 import com.intellij.psi.impl.compiled.ClsClassImpl;
+import com.intellij.psi.impl.light.LightMethod;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.util.CachedValue;
 import com.intellij.psi.util.CachedValueProvider;
@@ -38,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * - generate static inner data class aligning with method parameters having one or more default values, and also aligning with potential tuple matching data class<br>
@@ -178,7 +180,11 @@ public class ManParamsAugmentProvider extends PsiAugmentProvider
     {
       if( obj instanceof MyCachedValueProvider<?> )
       {
-        return Objects.equals( ((MyCachedValueProvider<?>)obj)._psiClassPointer.getElement(), _psiClassPointer.getElement() );
+        PsiExtensibleClass thisElem = _psiClassPointer.getElement();
+        PsiExtensibleClass thatElem = ((MyCachedValueProvider<?>)obj)._psiClassPointer.getElement();
+        return Objects.equals( thatElem, thisElem ) &&
+          (thisElem == null ||
+            Objects.equals( thisElem.getTextRange(), thatElem.getTextRange() ));
       }
       return false;
     }
@@ -191,6 +197,8 @@ public class ManParamsAugmentProvider extends PsiAugmentProvider
       // .class files already have it
       return;
     }
+
+    handleRecord_class( psiClass, augFeatures );
 
     for( PsiMethod method : psiClass.getOwnMethods() )
     {
@@ -205,6 +213,32 @@ public class ManParamsAugmentProvider extends PsiAugmentProvider
     }
   }
 
+  private static void handleRecord_class( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
+  {
+    if( psiClass.isRecord() )
+    {
+      for( PsiRecordComponent rc : psiClass.getRecordComponents() )
+      {
+        if( hasInitializer( rc ) )
+        {
+          LightMethod psiCtor = makeDisconnectedRecordCtor( psiClass );
+          ParamsMaker.generateParamsClass( psiCtor, psiClass, augFeatures );
+          break;
+        }
+      }
+    }
+  }
+
+  private static @NotNull LightMethod makeDisconnectedRecordCtor( PsiExtensibleClass psiClass )
+  {
+    String params = psiClass.getRecordComponents().stream().map( c -> c.getText() ).collect( Collectors.joining( ", " ) );
+    String ctor = "public ${psiClass.getName()}($params){}";
+    PsiMethod psiDummyCtor = JavaPsiFacade.getElementFactory( psiClass.getProject() ).createMethodFromText( ctor, psiClass );
+    LightMethod psiCtor = new LightMethod( psiClass.getManager(), psiDummyCtor, psiClass );
+    psiCtor.setNavigationElement( psiClass );
+    return psiCtor;
+  }
+
   private void addMethods( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
   {
     if( psiClass instanceof ClsClassImpl )
@@ -213,6 +247,8 @@ public class ManParamsAugmentProvider extends PsiAugmentProvider
       return;
     }
 
+    handleRecord_methods( psiClass, augFeatures );
+
     for( PsiMethod method : psiClass.getOwnMethods() )
     {
       for( PsiParameter param : method.getParameterList().getParameters() )
@@ -220,6 +256,22 @@ public class ManParamsAugmentProvider extends PsiAugmentProvider
         if( hasInitializer( param ) )
         {
           ParamsMaker.generateMethod( method, psiClass, augFeatures );
+          break;
+        }
+      }
+    }
+  }
+
+  private static void handleRecord_methods( PsiExtensibleClass psiClass, LinkedHashMap<String, PsiMember> augFeatures )
+  {
+    if( psiClass.isRecord() )
+    {
+      for( PsiRecordComponent rc : psiClass.getRecordComponents() )
+      {
+        if( hasInitializer( rc ) )
+        {
+          LightMethod psiCtor = makeDisconnectedRecordCtor( psiClass );
+          ParamsMaker.generateMethod( psiCtor, psiClass, augFeatures );
           break;
         }
       }
@@ -238,7 +290,7 @@ public class ManParamsAugmentProvider extends PsiAugmentProvider
     return false;
   }
 
-  static boolean hasInitializer( PsiParameter param )
+  static boolean hasInitializer( PsiVariable param )
   {
     PsiElement idElem = param.getIdentifyingElement();
     if( idElem == null )

@@ -31,6 +31,7 @@ import com.intellij.psi.util.*;
 import manifold.api.gen.SrcExpression;
 import manifold.api.gen.SrcRawExpression;
 import manifold.ij.util.ComputeUtil;
+import manifold.ij.util.ManPsiUtil;
 import manifold.rt.api.util.ManStringUtil;
 
 import java.util.*;
@@ -91,7 +92,7 @@ public class TupleNamedArgsUtil
       }
       else
       {
-        containingClass = PsiUtil.getContainingClass( callExpr );
+        containingClass = ManPsiUtil.getContainingClass( callExpr );
         if( containingClass != null )
         {
           receiverType = JavaPsiFacade.getElementFactory( containingClass.getProject() ).createType( containingClass, PsiSubstitutor.EMPTY );
