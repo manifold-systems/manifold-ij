@@ -33,6 +33,7 @@ import manifold.api.gen.SrcRawExpression;
 import manifold.ij.util.ComputeUtil;
 import manifold.ij.util.ManPsiUtil;
 import manifold.rt.api.util.ManStringUtil;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -134,14 +135,14 @@ public class TupleNamedArgsUtil
 
     Map<String, PsiExpression> namedArgs = new LinkedHashMap<>();
     ArrayList<PsiExpression> unnnamedArgs = new ArrayList<>();
-    List<ManPsiTupleValueExpression> tupleItems = tupleExpr.getValueExpressions();
+    List<PsiExpression> tupleItems = tupleExpr.getValueExpressions();
     if( tupleItems == null )
     {
       return null;
     }
-    for( ManPsiTupleValueExpression arg : tupleItems )
+    for( PsiExpression arg : tupleItems )
     {
-      String name = arg.getName();
+      String name = arg instanceof ManPsiTupleValueExpression ? ((ManPsiTupleValueExpression)arg).getName() : null;
       if( name != null )
       {
         namedArgs.put( name, arg );
@@ -375,27 +376,27 @@ public class TupleNamedArgsUtil
 
   private static TextRange getTupleItemRange( ManPsiTupleExpression tupleExpr, int paramIndex, String name )
   {
-    List<ManPsiTupleValueExpression> valueExpressions = tupleExpr.getValueExpressions();
+    List<PsiExpression> valueExpressions = tupleExpr.getValueExpressions();
     if( valueExpressions == null )
     {
       return null;
     }
 
-    for( ManPsiTupleValueExpression ve : valueExpressions )
+    for( PsiExpression ve : valueExpressions )
     {
-      String veName = ve.getName();
+      String veName = ve instanceof ManPsiTupleValueExpression ? ((ManPsiTupleValueExpression)ve).getName() : null;
       if( veName != null && veName.equals( name ) )
       {
         // found named tuple item matching param name
-        return ve.getValue().getTextRange();
+        return ((ManPsiTupleValueExpression)ve).getValue().getTextRange();
       }
     }
 
     if( valueExpressions.size() > paramIndex )
     {
       // use positional tuple time matching param index
-      ManPsiTupleValueExpression ve = valueExpressions.get( paramIndex );
-      return ve.getValue().getTextRange();
+      PsiExpression ve = valueExpressions.get( paramIndex );
+      return ve.getTextRange();
     }
     return null;
   }

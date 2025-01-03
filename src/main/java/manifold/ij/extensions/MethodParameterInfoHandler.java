@@ -427,17 +427,18 @@ public /*final*/ class MethodParameterInfoHandler
 
     Map<String, PsiExpression> labeledArgs = new LinkedHashMap<>();
     ArrayList<PsiExpression> nonlabeledArgs = new ArrayList<>();
-    List<ManPsiTupleValueExpression> tupleItems = tupleExpr.getValueExpressions();
+    @Nullable List<PsiExpression> tupleItems = tupleExpr.getValueExpressions();
     if( tupleItems == null )
     {
       return argsAppearanceOrder;
     }
-    for( ManPsiTupleValueExpression arg : tupleItems )
+    for( PsiExpression arg : tupleItems )
     {
-      String name = arg.getName();
+      String name = arg instanceof ManPsiTupleValueExpression ? ((ManPsiTupleValueExpression)arg).getName() : null;
+      PsiExpression expr = arg instanceof ManPsiTupleValueExpression ? ((ManPsiTupleValueExpression)arg).getValue() : arg;
       if( name != null )
       {
-        labeledArgs.put( name, arg.getValue() );
+        labeledArgs.put( name, expr );
       }
       else
       {
@@ -445,7 +446,7 @@ public /*final*/ class MethodParameterInfoHandler
         {
           return argsAppearanceOrder;
         }
-        nonlabeledArgs.add( arg.getValue() );
+        nonlabeledArgs.add( expr );
       }
     }
 

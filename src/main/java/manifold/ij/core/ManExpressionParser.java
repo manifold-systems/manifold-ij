@@ -44,6 +44,7 @@ import static com.intellij.lang.PsiBuilderUtil.advance;
 import static com.intellij.lang.java.parser.JavaParserUtil.*;
 import static com.intellij.lang.java.parser.JavaParserUtil.emptyElement;
 import static com.intellij.psi.impl.source.tree.JavaElementType.BINARY_EXPRESSION;
+import static manifold.ij.core.ManElementType.TUPLE_EXPRESSION;
 import static manifold.ij.core.ManElementType.TUPLE_VALUE_EXPRESSION;
 
 //Manifold: replace ExpressionsParser with ManExpressionParser to handle "binding" expressions. See parseBinary().
@@ -1203,54 +1204,76 @@ public class ManExpressionParser extends ExpressionParser {
   @NotNull
   public PsiBuilder.Marker parseArgumentList(final PsiBuilder builder) {
     final PsiBuilder.Marker list = builder.mark();
+    final PsiBuilder.Marker tupleExpr = builder.mark();
     builder.advanceLexer();
 
-    if( builder.getTokenType() == JavaTokenType.IDENTIFIER && builder.lookAhead( 1 ) == JavaTokenType.COLON )
+    boolean colon = false;
+    boolean first = true;
+    while( true )
     {
-      parseTupleOrExpr( builder, false );
-    }
-    else
-    {
-      boolean first = true;
-      while( true )
+      final IElementType tokenType = builder.getTokenType();
+      if( first && (ARGS_LIST_END.contains( tokenType ) || builder.eof()) ) break;
+      if( !first && !ARGS_LIST_CONTINUE.contains( tokenType ) ) break;
+
+      boolean hasError = false;
+      if( !first )
       {
-        final IElementType tokenType = builder.getTokenType();
-        if( first && (ARGS_LIST_END.contains( tokenType ) || builder.eof()) ) break;
-        if( !first && !ARGS_LIST_CONTINUE.contains( tokenType ) ) break;
-
-        boolean hasError = false;
-        if( !first )
+        if( builder.getTokenType() == JavaTokenType.COMMA )
         {
-          if( builder.getTokenType() == JavaTokenType.COMMA )
-          {
-            builder.advanceLexer();
-          }
-          else
-          {
-            hasError = true;
-            error( builder, JavaPsiBundle.message( "expected.comma.or.rparen" ) );
-            emptyExpression( builder );
-          }
+          builder.advanceLexer();
         }
-        first = false;
-
-        final PsiBuilder.Marker arg = parse( builder );
-        if( arg == null )
+        else
         {
-          if( !hasError )
-          {
-            error( builder, JavaPsiBundle.message( "expected.expression" ) );
-            emptyExpression( builder );
-          }
-          if( !ARGS_LIST_CONTINUE.contains( builder.getTokenType() ) ) break;
-          if( builder.getTokenType() != JavaTokenType.COMMA && !builder.eof() )
-          {
-            builder.advanceLexer();
-          }
+          hasError = true;
+          error( builder, JavaPsiBundle.message( "expected.comma.or.rparen" ) );
+          emptyExpression( builder );
         }
+      }
+      first = false;
+
+      PsiBuilder.Marker argWhole = builder.mark();
+      boolean isTupleItem = false;
+      if( builder.getTokenType() == JavaTokenType.IDENTIFIER && builder.lookAhead( 1 ) == JavaTokenType.COLON )
+      {
+        builder.advanceLexer();
+        builder.advanceLexer();
+        isTupleItem = true;
+        colon = true;
+      }
+      final PsiBuilder.Marker arg = parse( builder );
+      if( arg == null )
+      {
+        if( !hasError )
+        {
+          error( builder, JavaPsiBundle.message( "expected.expression" ) );
+          emptyExpression( builder );
+        }
+        if( !ARGS_LIST_CONTINUE.contains( builder.getTokenType() ) ) break;
+        if( builder.getTokenType() != JavaTokenType.COMMA && !builder.eof() )
+        {
+          builder.advanceLexer();
+        }
+      }
+
+      if( arg != null && isTupleItem )
+      {
+        argWhole.done( TUPLE_VALUE_EXPRESSION );
+      }
+      else
+      {
+        argWhole.drop();
       }
     }
     final boolean closed = expectOrError(builder, JavaTokenType.RPARENTH, "expected.rparen");
+
+    if( colon )
+    {
+      tupleExpr.done( TUPLE_EXPRESSION );
+    }
+    else
+    {
+      tupleExpr.drop();
+    }
 
     list.done(JavaElementType.EXPRESSION_LIST);
     if (!closed) {

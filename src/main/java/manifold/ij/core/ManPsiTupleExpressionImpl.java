@@ -56,8 +56,9 @@ public class ManPsiTupleExpressionImpl extends ExpressionPsiElement implements M
 
   @Override
   public PsiExpression @NotNull [] getExpressions() {
-    List<ManPsiTupleValueExpression> expressions = getValueExpressions();
-    return expressions == null ? new PsiExpression[0] : getValueExpressions().stream().map( e -> e.getValue() ).toArray( i -> new PsiExpression[i] );
+    List<PsiExpression> expressions = getValueExpressions();
+    return expressions == null ? new PsiExpression[0] : getValueExpressions().stream().map( e ->
+      e instanceof ManPsiTupleValueExpression ? ((ManPsiTupleValueExpression)e).getValue() : e ).toArray( i -> new PsiExpression[i] );
   }
 
   @Override
@@ -84,10 +85,10 @@ public class ManPsiTupleExpressionImpl extends ExpressionPsiElement implements M
   }
 
   @Override
-  public List<ManPsiTupleValueExpression> getValueExpressions()
+  public List<PsiExpression> getValueExpressions()
   {
     PsiExpression[] expressions = getChildrenAsPsiElements( ElementType.EXPRESSION_BIT_SET, PsiExpression.ARRAY_FACTORY );
-    return Arrays.stream( expressions ).map( e -> (ManPsiTupleValueExpression)e ).collect( Collectors.toList() );
+    return Arrays.asList( expressions );
   }
 
   @Override
@@ -127,7 +128,10 @@ public class ManPsiTupleExpressionImpl extends ExpressionPsiElement implements M
       () -> ITupleTypeProvider.INSTANCE.get().makeType( pkg, makeTupleFieldMap() ) );
     PsiClass psiClass = JavaPsiFacade.getInstance( getProject() ).findClass( tupleTypeName, GlobalSearchScope.projectScope( getProject() ) );
     PsiExpression expr = JavaPsiFacadeEx.getInstanceEx( getProject() ).getParserFacade().createExpressionFromText( "new " + tupleTypeName + "(" +
-      getValueExpressions().stream().map( v -> v.getValue() == null ? "" : v.getValue().getText() ).collect( Collectors.joining(", ") ) + ")", this );
+      getValueExpressions().stream().map( v ->
+        v instanceof ManPsiTupleValueExpression
+          ? ((ManPsiTupleValueExpression)v).getValue() == null ? "" : ((ManPsiTupleValueExpression)v).getValue().getText()
+          : v.getText() ).collect( Collectors.joining(", ") ) + ")", this );
     return psiClass == null ? null : expr.getType();
 //    return psiClass == null ? null : PsiTypesUtil.getClassType( psiClass );
   }
@@ -162,23 +166,23 @@ public class ManPsiTupleExpressionImpl extends ExpressionPsiElement implements M
   private Map<String, String> makeTupleFieldMap()
   {
     Map<String, String> map = new LinkedHashMap<>();
-    List<ManPsiTupleValueExpression> valueExpressions = getValueExpressions();
+    List<PsiExpression> valueExpressions = getValueExpressions();
     if( valueExpressions == null )
     {
       return map;
     }
     int nullNameCount = 0;
-    for( ManPsiTupleValueExpression valueExpression : valueExpressions )
+    for( PsiExpression expr : valueExpressions )
     {
       String name = null;
-      PsiIdentifier label = valueExpression.getLabel();
+      PsiIdentifier label = expr instanceof ManPsiTupleValueExpression ? ((ManPsiTupleValueExpression)expr).getLabel() : null;
       if( label != null )
       {
         name = label.getText();
       }
       else
       {
-        PsiExpression arg = valueExpression.getValue();
+        PsiExpression arg = expr instanceof ManPsiTupleValueExpression ? ((ManPsiTupleValueExpression)expr).getValue() : expr;
         if( arg instanceof PsiIdentifier )
         {
           name = arg.getText();
@@ -203,7 +207,7 @@ public class ManPsiTupleExpressionImpl extends ExpressionPsiElement implements M
       {
         item = name + '_' + i;
       }
-      PsiExpression value = valueExpression.getValue();
+      PsiExpression value = expr instanceof ManPsiTupleValueExpression ? ((ManPsiTupleValueExpression)expr).getValue() : expr;
       if( value != null && value.getType() != null )
       {
         PsiType type = value.getType();

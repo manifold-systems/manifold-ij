@@ -28,8 +28,8 @@ import java.util.List;
 public interface ManPsiTupleExpression extends PsiExpression, PsiExpressionList
 {
   /**
-   * Returns the tuple's list of value expressions
+   * Returns the tuple's list of value expressions, including {@link ManPsiTupleValueExpression}
    */
   @Nullable
-  List<ManPsiTupleValueExpression> getValueExpressions();
+  List<PsiExpression> getValueExpressions();
 }
