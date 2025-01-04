@@ -45,6 +45,7 @@ import com.intellij.openapi.util.registry.Registry;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.PsiImplUtil;
+import com.intellij.psi.impl.light.LightParameterListWrapper;
 import com.intellij.psi.impl.source.resolve.CompletionParameterTypeInferencePolicy;
 import com.intellij.psi.impl.source.resolve.DefaultParameterTypeInferencePolicy;
 import com.intellij.psi.infos.CandidateInfo;
@@ -359,7 +360,14 @@ public /*final*/ class MethodParameterInfoHandler
         continue;
       }
 
-      PsiParameter[] parms = method.getParameterList().getParameters();
+      PsiParameterList paramList = method.getParameterList();
+      if( paramList instanceof LightParameterListWrapper lightParamListWrapper )
+      {
+        // record param list
+        paramList = lightParamListWrapper.jailbreak().myDelegate;
+      }
+
+      PsiParameter[] parms = paramList.getParameters();
       args = getTupleArgsInParamOrder( tupleExpr, argsAppearanceOrder, parms );
       if( tupleExpr != null )
       {
@@ -1047,8 +1055,14 @@ public /*final*/ class MethodParameterInfoHandler
       StringBuilder buffer = new StringBuilder();
       appendModifierList(buffer, returnType, method);
       String modifiers = buffer.toString();
+      PsiParameterList paramList = method.getParameterList();
+      if( paramList instanceof LightParameterListWrapper lightParamListWrapper )
+      {
+        // record param list
+        paramList = lightParamListWrapper.jailbreak().myDelegate;
+      }
       List<MethodParameterInfoHandler.ParameterPresentation> parameters =
-        ContainerUtil.map(method.getParameterList().getParameters(), param -> MethodParameterInfoHandler.ParameterPresentation.from(param, substitutor));
+        ContainerUtil.map( paramList.getParameters(), param -> MethodParameterInfoHandler.ParameterPresentation.from(param, substitutor));
       return new MethodParameterInfoHandler.MethodPresentation(modifiers, type, method.getName(), method.isConstructor(), method.isDeprecated(),
         method.isVarArgs(), parameters);
     }

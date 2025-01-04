@@ -28,6 +28,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.augment.PsiAugmentProvider;
 import com.intellij.psi.impl.compiled.ClsClassImpl;
 import com.intellij.psi.impl.light.LightMethod;
+import com.intellij.psi.impl.light.LightParameterListWrapper;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.util.CachedValue;
 import com.intellij.psi.util.CachedValueProvider;
@@ -280,6 +281,12 @@ public class ManParamsAugmentProvider extends PsiAugmentProvider
 
   static boolean hasOptionalParam( PsiParameterList paramList )
   {
+    if( paramList instanceof LightParameterListWrapper lightParamListWrapper )
+    {
+      // record param list
+      paramList = lightParamListWrapper.jailbreak().myDelegate;
+    }
+
     for( PsiParameter param : paramList.getParameters() )
     {
       if( hasInitializer( param ) )

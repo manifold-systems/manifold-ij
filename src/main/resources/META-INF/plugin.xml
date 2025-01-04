@@ -671,6 +671,7 @@ Other minor fixes and improvements.
     <java.elementFinder implementation="manifold.ij.extensions.ManTypeFinder" order="first, before java"/>
     <java.shortNamesCache implementation="manifold.ij.extensions.ManShortNamesCache"/>
     <gotoDeclarationHandler implementation="manifold.ij.extensions.ManGotoDeclarationHandler"/>
+    <lang.documentationProvider language="JAVA" implementationClass="manifold.ij.extensions.ManJavaDocumentationProvider" order="first"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManAugmentProvider"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManPropertiesAugmentProvider"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManDelegationAugmentProvider"/>

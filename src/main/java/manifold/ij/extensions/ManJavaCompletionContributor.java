@@ -33,6 +33,7 @@ import com.intellij.util.Consumer;
 import manifold.ext.params.rt.manifold_params;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.ij.psi.ManLightClassBuilder;
 import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -155,6 +156,13 @@ public class ManJavaCompletionContributor extends CompletionContributor
           // module not using manifold-props
           return true;
         }
+      }
+
+      if( psiElem instanceof ManLightClassBuilder &&
+        ((ManLightClassBuilder)psiElem).getName().startsWith( "$" ) )
+      {
+        // a "params class" inner class, should never see these in completion
+        return true;
       }
 
       return false;

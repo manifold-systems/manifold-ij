@@ -1203,6 +1203,7 @@ public class ManExpressionParser extends ExpressionParser {
 
   @NotNull
   public PsiBuilder.Marker parseArgumentList(final PsiBuilder builder) {
+//    builder.setDebugMode( true );
     final PsiBuilder.Marker list = builder.mark();
     final PsiBuilder.Marker tupleExpr = builder.mark();
     builder.advanceLexer();
@@ -1248,7 +1249,18 @@ public class ManExpressionParser extends ExpressionParser {
           error( builder, JavaPsiBundle.message( "expected.expression" ) );
           emptyExpression( builder );
         }
-        if( !ARGS_LIST_CONTINUE.contains( builder.getTokenType() ) ) break;
+        if( !ARGS_LIST_CONTINUE.contains( builder.getTokenType() ) )
+        {
+          if( isTupleItem )
+          {
+            argWhole.done( TUPLE_VALUE_EXPRESSION );
+          }
+          else
+          {
+            argWhole.drop();
+          }
+          break;
+        }
         if( builder.getTokenType() != JavaTokenType.COMMA && !builder.eof() )
         {
           builder.advanceLexer();
