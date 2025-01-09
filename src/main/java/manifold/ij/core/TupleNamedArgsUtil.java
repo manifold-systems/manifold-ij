@@ -20,27 +20,24 @@
 package manifold.ij.core;
 
 import com.intellij.lang.LanguageAnnotators;
-import com.intellij.lang.annotation.Annotation;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.lang.java.JavaLanguage;
+import com.intellij.lang.jvm.annotation.JvmAnnotationConstantValue;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import com.intellij.psi.util.*;
 import manifold.api.gen.SrcExpression;
 import manifold.api.gen.SrcRawExpression;
+import manifold.ext.params.rt.manifold_params;
 import manifold.ij.util.ComputeUtil;
 import manifold.ij.util.ManPsiUtil;
 import manifold.rt.api.util.ManStringUtil;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static com.intellij.psi.util.TypeConversionUtil.erasure;
 import static com.intellij.psi.util.TypeConversionUtil.isAssignable;
-import static manifold.ij.core.RecursiveTypeVarEraser.eraseTypeVars;
 
 public class TupleNamedArgsUtil
 {
@@ -145,7 +142,7 @@ public class TupleNamedArgsUtil
       String name = arg instanceof ManPsiTupleValueExpression ? ((ManPsiTupleValueExpression)arg).getName() : null;
       if( name != null )
       {
-        namedArgs.put( name, arg );
+        namedArgs.put( name, ((ManPsiTupleValueExpression)arg).getValue() );
       }
       else
       {
@@ -159,9 +156,13 @@ public class TupleNamedArgsUtil
           }
           return null;
         }
-        unnnamedArgs.add( arg );
+        unnnamedArgs.add( arg instanceof ManPsiTupleValueExpression ? ((ManPsiTupleValueExpression)arg).getValue() : arg );
       }
     }
+
+    List<PsiExpression> values = tupleItems.stream()
+      .map( e -> e instanceof ManPsiTupleValueExpression ? ((ManPsiTupleValueExpression)e).getValue() : e )
+      .toList();
 
     List<PsiClass> paramsClasses = Arrays.stream( containingClass.getAllInnerClasses() )
     .filter( inner -> inner.getName() != null && inner.getName().startsWith( "$" + methodName + "_" ) )
@@ -183,16 +184,17 @@ public class TupleNamedArgsUtil
       if( ctors.length > 0 )
       {
         PsiMethod ctor = ctors[0];
-        List<String> paramsInOrder = getParamNames( paramsClass.getName(), true );
+        List<String> paramsInOrder = getParamNames( paramsClass, true );
         //noinspection SlowListContainsAll
         if( paramsInOrder.containsAll( namedArgsCopy.keySet() ) )
         {
           ArrayList<SrcExpression<?>> args = new ArrayList<>();
           ArrayList<SrcExpression<?>> explicitArgs = new ArrayList<>();
+          Map<Integer, Integer> psiNewExprArgPosToTupleArgPos = new LinkedHashMap<>();
 
           boolean optional = false;
           PsiParameter[] params = ctor.getParameterList().getParameters();
-          List<String> paramNames = getParamNames( paramsClass.getName(), false );
+          List<String> paramNames = getParamNames( paramsClass, false );
           int targetParamsOffset = 0;
           for( int i = 0; i < params.length; i++ )
           {
@@ -238,8 +240,7 @@ public class TupleNamedArgsUtil
             PsiExpression expr;
             if( unnamedArgsCopy.isEmpty() )
             {
-              ManPsiTupleValueExpression sigh = (ManPsiTupleValueExpression)namedArgsCopy.remove( paramName );
-              expr = sigh == null ? null : sigh.getValue();
+              expr = namedArgsCopy.remove( paramName );
             }
             else
             {
@@ -268,6 +269,11 @@ public class TupleNamedArgsUtil
               missingRequiredParam = paramName;
               continue nextParamsClass;
             }
+
+            if( expr != null )
+            {
+              psiNewExprArgPosToTupleArgPos.put( args.size() - 1, values.indexOf( expr ) );
+            }
           }
 
           missingRequiredParam = null;
@@ -291,24 +297,19 @@ public class TupleNamedArgsUtil
           // note, still need to generate new expr for non-generic params class to produce compile error for extra args
           if( !errant || !iterParamsClasses.hasNext() )
           {
-            if( holder == null )
-            {
-              PsiTypeParameterList typeParameterList = paramsClass.getTypeParameterList();
-              String paramsClassExpr = typeParameterList == null || typeParameterList.getTypeParameters().isEmpty()
-                ? containingClass.getName() + '.' + paramsClass.getName()
-                : containingClass.getName() + '.' + paramsClass.getName() + "<>";
-              String newExpr = "new " + paramsClassExpr + "(" + makeArgsList( args ) + ")";
+            PsiTypeParameterList typeParameterList = paramsClass.getTypeParameterList();
+            String paramsClassExpr = typeParameterList == null || typeParameterList.getTypeParameters().isEmpty()
+              ? containingClass.getName() + '.' + paramsClass.getName()
+              : containingClass.getName() + '.' + paramsClass.getName() + "<>";
+            String newExpr = "new " + paramsClassExpr + "(" + makeArgsList( args ) + ")";
 
-              PsiExpression psiNewExpr = JavaPsiFacade.getElementFactory( containingClass.getProject() )
-                .createExpressionFromText( newExpr, tupleExpr );
-              //          checkExpr( psiNewExpr, holder );
-              return (PsiClassType)psiNewExpr.getType();
-            }
-            else
+            PsiExpression psiNewExpr = JavaPsiFacade.getElementFactory( containingClass.getProject() )
+              .createExpressionFromText( newExpr, tupleExpr );
+            if( holder != null && psiNewExpr instanceof PsiNewExpression )
             {
-              checkArgTypes( tupleExpr, holder, params, args, containingClass, explicitArgs );
-              return null;
+              checkArgTypes( (PsiNewExpression)psiNewExpr, tupleExpr, holder, params, psiNewExprArgPosToTupleArgPos );
             }
+            return (PsiClassType)psiNewExpr.getType();
           }
         }
         else if( holder != null && !iterParamsClasses.hasNext() )
@@ -333,7 +334,7 @@ public class TupleNamedArgsUtil
     List<String> badNamedArgs = Collections.emptyList();
     for( PsiClass paramsClass: paramsClasses )
     {
-      List<String> paramsInOrder = getParamNames( paramsClass.getName(), true );
+      List<String> paramsInOrder = getParamNames( paramsClass, true );
       List<String> candidate = namedArgsCopy.keySet().stream()
         .filter( e -> !paramsInOrder.contains( e ) )
         .toList();
@@ -348,30 +349,81 @@ public class TupleNamedArgsUtil
       .create();
   }
 
-  private static void checkArgTypes( ManPsiTupleExpression tupleExpr, AnnotationHolder holder, PsiParameter[] params,
-                                     ArrayList<SrcExpression<?>> args, PsiClass containingClass, ArrayList<SrcExpression<?>> explicitArgs )
+  private static void checkArgTypes( PsiNewExpression psiNewExpr, ManPsiTupleExpression tupleExpr, AnnotationHolder holder,
+                                     PsiParameter[] params, Map<Integer, Integer> psiNewExprArgPosToTupleArgPos )
   {
+    PsiExpression[] tupleArgs = tupleExpr.getExpressions();
     for( int i = 0; i < params.length; i++ )
     {
       PsiParameter param = params[i];
-      PsiType paramType = param.getType();
-
-      SrcExpression<?> argExpr = args.get( i );
-      PsiExpression psiExpr = JavaPsiFacade.getElementFactory( containingClass.getProject() )
-        .createExpressionFromText( argExpr.render( new StringBuilder(), 0 ).toString(), tupleExpr );
-      PsiType exprType = psiExpr.getType();
-      if( exprType != null && exprType.isValid() && !isAssignable( eraseTypeVars( paramType, param ), eraseTypeVars( exprType, tupleExpr ) ) )
+      if( param.getName().startsWith( "opt$" ) )
       {
-        TextRange tupleItemRange = getTupleItemRange( tupleExpr, explicitArgs.indexOf( argExpr ), param.getName() );
+        continue;
+      }
+
+      PsiExpressionList argumentList = psiNewExpr.getArgumentList();
+      PsiExpression newExprArg;
+      if( argumentList == null )
+      {
+        newExprArg = null;
+      }
+      else
+      {
+        PsiExpression[] args = argumentList.getExpressions();
+        if( args.length <= i )
+        {
+          continue;
+        }
+        newExprArg = args[i];
+      }
+      if( newExprArg == null || newExprArg.getType() == null )
+      {
+        continue;
+      }
+
+      Integer tupleArgIndex = psiNewExprArgPosToTupleArgPos.get( i );
+      if( tupleArgIndex == null )
+      {
+        continue;
+      }
+
+      PsiExpression tupleArg = tupleArgs[tupleArgIndex];
+      if( tupleArg == null )
+      {
+        continue;
+      }
+
+
+      PsiType argType = useNewExprSubstitutor( psiNewExpr, newExprArg.getType() );
+      PsiType paramType = useNewExprSubstitutor( psiNewExpr, param.getType() );
+      if( /*argType != null && paramType != null && */!isAssignable( paramType, argType ) )
+      {
+        TextRange tupleItemRange = getTupleItemRange( tupleExpr, tupleArgIndex, param.getName() );
         if( tupleItemRange != null )
         {
-          holder.newAnnotation( HighlightSeverity.ERROR, "Incompatible types: '" + exprType.getPresentableText() +
+          holder.newAnnotation( HighlightSeverity.ERROR, "Incompatible types: '" + argType.getPresentableText() +
               "' cannot be converted to '" + paramType.getPresentableText() + "'" )
             .range( tupleItemRange )
             .create();
         }
       }
     }
+  }
+  private static PsiType useNewExprSubstitutor( PsiNewExpression psiNewExpr, PsiType type )
+  {
+    if( type == null )
+    {
+      return null;
+    }
+
+    PsiClassType resultType = (PsiClassType)psiNewExpr.getType();
+    if( resultType == null )
+    {
+      return type;
+    }
+
+    PsiSubstitutor psiSubstitutor = resultType.resolveGenerics().getSubstitutor();
+    return psiSubstitutor.substitute( type );
   }
 
   private static TextRange getTupleItemRange( ManPsiTupleExpression tupleExpr, int paramIndex, String name )
@@ -455,15 +507,22 @@ public class TupleNamedArgsUtil
     return sb.toString();
   }
 
-  private static List<String> getParamNames( String paramsClass, boolean removeOpt$ )
+  private static List<String> getParamNames( PsiClass paramsClass, boolean removeOpt$ )
   {
     List<String> result = new ArrayList<>();
-    StringTokenizer tokenizer = new StringTokenizer( paramsClass, "_" );
-    if( tokenizer.hasMoreTokens() )
+    PsiAnnotation anno = paramsClass.getAnnotation( manifold_params.class.getTypeName() );
+    if( anno == null )
     {
-      // skip method name
-      tokenizer.nextToken();
+      throw new IllegalStateException( "Expecting '@" + manifold_params.class.getTypeName() + "' annotation" );
     }
+    JvmAnnotationConstantValue value = (JvmAnnotationConstantValue) anno.getAttributes().get( 0 ).getAttributeValue();
+    String paramsInfo = value == null ? null : (String)value.getConstantValue();
+    if( paramsInfo == null )
+    {
+      throw new IllegalStateException( "Expecting non-null value for '@" + manifold_params.class.getTypeName() + "' annotation" );
+    }
+
+    StringTokenizer tokenizer = new StringTokenizer( paramsInfo, "_" );
     while( tokenizer.hasMoreTokens() )
     {
       String paramName = tokenizer.nextToken();

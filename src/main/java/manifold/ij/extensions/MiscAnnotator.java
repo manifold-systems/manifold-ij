@@ -23,12 +23,14 @@ import com.intellij.ide.highlighter.JavaHighlightingColors;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import manifold.ExtIssueMsg;
 import manifold.api.util.IssueMsg;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.core.ManPsiTupleExpression;
+import manifold.ij.core.ManPsiTupleValueExpression;
 import manifold.ij.psi.ManExtensionMethodBuilder;
 import manifold.ij.util.ManPsiUtil;
 import manifold.internal.javac.ManAttr;
@@ -50,11 +52,27 @@ public class MiscAnnotator implements Annotator
     }
 
     highlightAutoAsKeyword( element, holder );
-
+    highlightTupleLabelAsComment( element, holder );
+    
     verifyMethodRefNotExtension( element, holder );
     verifyMethodRefNotAuto( element, holder );
     verifyMethodDefNotAbstractAuto( element, holder );
     verifyTuplesEnabled( element, holder );
+  }
+
+  private void highlightTupleLabelAsComment( PsiElement element, AnnotationHolder holder )
+  {
+    if( element instanceof ManPsiTupleValueExpression valueExpr )
+    {
+      PsiIdentifier label = valueExpr.getLabel();
+      if( label != null )
+      {
+        holder.newAnnotation( HighlightSeverity.TEXT_ATTRIBUTES, "" )
+          .range( new TextRange( label.getTextRange().getStartOffset(), valueExpr.getValue().getTextRange().getStartOffset() ) )
+          .textAttributes( JavaHighlightingColors.LINE_COMMENT )
+          .create();
+      }
+    }
   }
 
   private void highlightAutoAsKeyword( PsiElement element, AnnotationHolder holder )

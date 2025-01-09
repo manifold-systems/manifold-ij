@@ -22,6 +22,7 @@ package manifold.ij.extensions;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.navigation.ItemPresentation;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
@@ -33,11 +34,15 @@ import manifold.api.gen.*;
 import manifold.ext.params.rt.manifold_params;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManExtensionMethodBuilder;
+import manifold.ij.psi.ManLightParameterImpl;
 import manifold.rt.api.util.ManStringUtil;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
+import javax.lang.model.type.NullType;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static manifold.ij.extensions.ManParamsAugmentProvider.hasInitializer;
@@ -179,12 +184,12 @@ class ParamsMaker
     for( PsiParameter param: _psiMethod.getParameterList().getParameters() )
     {
       String initializer = getInitializer( param );
-      if( initializer != null && param.getTypeElement() != null )
+      if( initializer != null && !initializer.isEmpty() && param.getTypeElement() != null )
       {
         PsiType paramType = param.getType();
         if( paramType.isValid() )
         {
-          PsiExpression expr = JavaPsiFacade.getElementFactory( _psiClass.getProject() ).createExpressionFromText( initializer, _psiMethod );
+          PsiExpression expr = JavaPsiFacade.getElementFactory( _psiClass.getProject() ).createExpressionFromText( initializer, param );
           PsiType initType = expr.getType();
           if( initType != null && initType.isValid() && !TypeConversionUtil.isAssignable( paramType, initType ) )
           {
@@ -204,8 +209,8 @@ class ParamsMaker
   public static String getTypeName( PsiMethod originalMethod )
   {
     String typeName = originalMethod.isConstructor() ? "constructor" : originalMethod.getName();
-    return "$" + typeName + Arrays.stream( originalMethod.getParameterList().getParameters() )
-      .map( e -> "_" + (getInitializer( e ) == null ? "" : "opt$") + e.getName() ).reduce( "", ( a, b ) -> a + b );
+    return "$" + typeName + "_" + Arrays.stream( originalMethod.getParameterList().getParameters() )
+      .filter( e -> getInitializer( e ) == null ).map( e -> "_" + e.getName() ).reduce( "", ( a, b ) -> a + b );
   }
 
   // Make a method to forward the passed in tuple values
@@ -427,6 +432,7 @@ class ParamsMaker
   //   $foo(EncClass<T> foo, String name,  boolean isAge,int age) {
   //   }
   // }
+  private static final Key<PsiType> PARAM_TYPE_KEY = Key.create( "manifold_params_type" );
   private PsiClass makeParamsClass()
   {
     String name = getTypeName();
@@ -434,7 +440,12 @@ class ParamsMaker
     SrcClass srcParent = new SrcClass( _psiClass.getQualifiedName(), _psiClass.isInterface ? AbstractSrcClass.Kind.Interface : AbstractSrcClass.Kind.Class );
     SrcClass srcClass = new SrcClass( name, srcParent, AbstractSrcClass.Kind.Class )
       .name( name )
-      .modifiers( Modifier.PUBLIC | Modifier.STATIC );
+      .modifiers( Modifier.PUBLIC | Modifier.STATIC )
+      .addAnnotation( new SrcAnnotationExpression( manifold_params.class )
+        .addArgument( new SrcArgument( new SrcRawExpression( "\"" +
+          Arrays.stream( _psiMethod.getParameterList().getParameters() )
+            .map( e -> "_" + (getInitializer( e ) == null ? "" : "opt$") + e.name )
+            .reduce( "", (a,b) -> a+b ) + "\"" ) ) ) );
     addTypeParams( srcClass );
 
     SrcConstructor srcCtor = new SrcConstructor( srcClass )
@@ -460,7 +471,15 @@ class ParamsMaker
         srcCtor.addParam( isXxx, PsiTypes.booleanType().getName() );
       }
 
-      srcCtor.addParam( param.getName(), new StubBuilder().makeSrcType( param.getType() ) );
+      PsiTypeElement typeElement = param.getTypeElement();
+      try
+      {
+        srcCtor.addParam( param.getName(), typeElement == null ? "" : typeElement.getText() == null ? "" : typeElement.getText() );
+      }
+      catch( TypeNameParserException tnpe )
+      {
+        return null;
+      }
     }
     srcCtor.body( "" );
     srcClass.addConstructor( srcCtor );
@@ -468,12 +487,48 @@ class ParamsMaker
     StringBuilder sb = new StringBuilder();
     srcClass.render( sb, 0 );
     PsiClass classFromText = JavaPsiFacade.getElementFactory( _psiClass.getProject() )
-      .createClassFromText( sb.toString(), _psiClass );
+      .createClassFromText( sb.toString(), _psiMethod );
     PsiClass innerPsiClass = classFromText.getInnerClasses()[0];
 
-    //noinspection UnnecessaryLocalVariable
     PsiClass paramsClass = plantInnerClassInPsiClass( ManProject.getModule( _psiClass ), innerPsiClass, _psiClass, _psiMethod );
+    setLazyParameterTypes( paramsClass, innerPsiClass );
     return paramsClass;
+  }
+
+  // the ctor param types won't resolve unqualified type names bc the params class does have access to the parent class' imports,
+  // we can't resolve the type and use the resulting text bc resolving the type now will cause a stackoveflow exception wrt adding augments,
+  // therefore we need to resolve the type lazily
+  private void setLazyParameterTypes( PsiClass paramsClass, PsiClass innerPsiClass )
+  {
+    PsiMethod paramsCtor = paramsClass.getConstructors()[0];
+    PsiParameter[] parameters = paramsCtor.getParameterList().getParameters();
+    for( PsiParameter psiParam: _psiMethod.getParameterList().getParameters() )
+    {
+      PsiType psiParamType = psiParam.getType();
+      if( psiParamType instanceof PsiPrimitiveType )
+      {
+        continue;
+      }
+
+      for( PsiParameter ctorParam : parameters )
+      {
+        if( ctorParam.getName().equals( psiParam.getName() ) )
+        {
+          ((ManLightParameterImpl)ctorParam).setTypeSupplier( () -> {
+            PsiType cachedType = ctorParam.getUserData( PARAM_TYPE_KEY );
+            if( cachedType == null )
+            {
+              cachedType = JavaPsiFacade.getElementFactory( _psiClass.getProject() )
+                .createTypeFromText( psiParamType.getCanonicalText(), innerPsiClass );
+              ctorParam.putUserData( PARAM_TYPE_KEY, cachedType );
+            }
+            return cachedType;
+          } );
+
+          break;
+        }
+      }
+    }
   }
 
 //  private PsiType useClassTypeParams( PsiClass paramsClass, PsiType type )

@@ -184,7 +184,7 @@ public class ManParamsAugmentProvider extends PsiAugmentProvider
         PsiExtensibleClass thisElem = _psiClassPointer.getElement();
         PsiExtensibleClass thatElem = ((MyCachedValueProvider<?>)obj)._psiClassPointer.getElement();
         return Objects.equals( thatElem, thisElem ) &&
-          (thisElem == null ||
+          (thisElem == null || thisElem instanceof PsiCompiledElement || // .class files don't change
             Objects.equals( thisElem.getTextRange(), thatElem.getTextRange() ));
       }
       return false;

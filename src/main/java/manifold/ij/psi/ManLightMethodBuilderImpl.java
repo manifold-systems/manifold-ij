@@ -29,6 +29,7 @@ import com.intellij.util.IncorrectOperationException;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import manifold.ext.rt.api.Self;
 import manifold.ij.core.ManModule;
@@ -118,6 +119,13 @@ public class ManLightMethodBuilderImpl extends LightMethodBuilder implements Man
   public ManLightMethodBuilder withParameter( String name, PsiType type )
   {
     addParameter( new ManLightParameterImpl( name, type, this, JavaLanguage.INSTANCE ) );
+    return this;
+  }
+
+  @Override
+  public ManLightMethodBuilder withParameter( String name, Supplier<PsiType> typeSupplier, PsiElement declScope )
+  {
+    addParameter( new ManLightParameterImpl( name, typeSupplier, declScope, JavaLanguage.INSTANCE ) );
     return this;
   }
 

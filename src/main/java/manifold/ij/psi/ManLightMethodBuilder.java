@@ -22,6 +22,8 @@ package manifold.ij.psi;
 import com.intellij.psi.*;
 
 import java.util.Set;
+import java.util.function.Supplier;
+
 import manifold.ij.core.ManModule;
 
 /**
@@ -37,6 +39,7 @@ public interface ManLightMethodBuilder extends PsiMethod
   ManLightMethodBuilder withMethodReturnType( PsiType returnType );
 
   ManLightMethodBuilder withParameter( String name, PsiType type );
+  ManLightMethodBuilder withParameter( String name, Supplier<PsiType> typeSupplier, PsiElement declScope );
 
   ManLightMethodBuilder withException( PsiClassType type );
 
