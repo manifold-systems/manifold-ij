@@ -24,7 +24,6 @@ import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Ref;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
-import com.intellij.psi.impl.source.PsiParameterListImpl;
 import com.intellij.psi.impl.source.resolve.JavaResolveCache;
 import com.intellij.psi.impl.source.resolve.graphInference.PsiPolyExpressionUtil;
 import com.intellij.psi.impl.source.tree.ChildRole;
@@ -46,6 +45,8 @@ import manifold.ij.core.ManProject;
 import manifold.internal.javac.AbstractBinder.Node;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import static manifold.ij.extensions.ParamsMaker.KEY_EXPR_PARAM_PARENT;
 
 public class ManJavaResolveCache extends JavaResolveCache
 {
@@ -124,17 +125,17 @@ public class ManJavaResolveCache extends JavaResolveCache
       }
     }
 
-    // enable default parameter expressions to ref preceding parameters
-    PsiType parameterType = maybeResolveRefToPrecedingParamFromDefaultParamExpr( expr );
-    if( parameterType != null )
-    {
-      return parameterType;
-    }
+//    // enable default parameter expressions to ref preceding parameters
+//    PsiParameter precedingParam = maybeResolveRefToPrecedingParamFromDefaultParamExpr( expr );
+//    if( precedingParam != null )
+//    {
+//      return precedingParam.getType();
+//    }
 
     return f.fun( expr );
   }
 
-  private <T extends PsiExpression> PsiType maybeResolveRefToPrecedingParamFromDefaultParamExpr( T expr )
+  static <T extends PsiExpression> PsiParameter maybeResolveRefToPrecedingParamFromDefaultParamExpr( T expr )
   {
     if( !(expr instanceof PsiReferenceExpression) || ((PsiReferenceExpression)expr).getQualifier() != null )
     {
@@ -150,11 +151,22 @@ public class ManJavaResolveCache extends JavaResolveCache
     return findPriorParamType( expr, refName );
   }
 
-  private <T extends PsiExpression> PsiType findPriorParamType( T expr, String refName )
+  static private <T extends PsiExpression> PsiParameter findPriorParamType( T expr, String refName )
   {
     PsiParameter param = null;
     for( PsiElement csr = expr; ; csr = csr.getParent() )
     {
+      if( csr == null )
+      {
+        return null;
+      }
+
+      SmartPsiElementPointer<PsiParameter> paramParent = csr.getCopyableUserData( KEY_EXPR_PARAM_PARENT );
+      if( paramParent != null )
+      {
+        csr = paramParent.getElement();
+      }
+
       if( csr instanceof PsiParameter )
       {
         param = (PsiParameter)csr;
@@ -186,7 +198,7 @@ public class ManJavaResolveCache extends JavaResolveCache
       }
       else if( parameter.getName().equals( refName ) )
       {
-        return parameter.getType();
+        return parameter;
       }
     }
     throw new IllegalStateException( "Should have found param" );

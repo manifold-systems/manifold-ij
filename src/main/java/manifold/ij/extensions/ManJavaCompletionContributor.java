@@ -28,17 +28,20 @@ import com.intellij.openapi.module.Module;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.light.LightRecordField;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
+import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Consumer;
 import manifold.ext.params.rt.manifold_params;
-import manifold.ij.core.ManModule;
-import manifold.ij.core.ManProject;
+import manifold.ij.core.*;
 import manifold.ij.psi.ManLightClassBuilder;
 import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import static manifold.ij.core.TupleNamedArgsUtil.getParamNames;
 
 /**
  * Filters out extension methods not accessible from the call-site.
@@ -58,8 +61,103 @@ public class ManJavaCompletionContributor extends CompletionContributor
     // Record fields are treated as public val properties
     addRecordFields( parameters.getPosition(), result );
 
+    // provide arg name completion for calls to methods having optional params
+    addArgumentNames( parameters.getPosition(), result );
+
     result.runRemainingContributors( parameters, new MyConsumer( parameters, result ) );
     result.stopHere();
+  }
+
+  private void addArgumentNames( @NotNull PsiElement position, CompletionResultSet result )
+  {
+    if( isInTupleValue( position ) )
+    {
+      // don't include arg name completion when in the value expr part
+      return;
+    }
+
+    PsiCallExpression callExpr = findCallExpr( position );
+    if( callExpr == null )
+    {
+      return;
+    }
+
+    CandidateInfo[] candidates = PsiResolveHelper.getInstance( callExpr.getProject() ).getReferencedMethodCandidates( callExpr, false );
+    Set<String> paramNames = new HashSet<>();
+    for( CandidateInfo candidate : candidates )
+    {
+      PsiElement elem = candidate.getElement();
+      if( elem instanceof PsiMethod method )
+      {
+        PsiAnnotation anno = method.getAnnotation( manifold_params.class.getTypeName() );
+        if( anno != null )
+        {
+          PsiParameterList paramList = method.getParameterList();
+          if( paramList.getParametersCount() == 1 )
+          {
+            PsiParameter parameter = paramList.getParameter( 0 );
+            PsiType paramType = parameter == null ? null : parameter.getType();
+            if( paramType instanceof PsiClassType psiClassType )
+            {
+              PsiClass psiClass = psiClassType.resolve();
+              if( psiClass != null )
+              {
+                PsiAnnotation annoOnClass = psiClass.getAnnotation( manifold_params.class.getTypeName() );
+                if( annoOnClass != null )
+                {
+                  paramNames.addAll( getParamNames( psiClass, true ) );
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    for( String paramName : paramNames )
+    {
+      result.addElement( LookupElementBuilder.create( paramName + ":" )
+        .withIcon( AllIcons.Nodes.Parameter ) );
+    }
+  }
+
+  private boolean isInTupleValue( PsiElement position )
+  {
+    if( position == null )
+    {
+      return false;
+    }
+    if( position instanceof ManPsiTupleValueExpression )
+    {
+      return true;
+    }
+    PsiElement parent = position.getParent();
+    if( isInTupleValue( parent ) )
+    {
+      if( parent instanceof ManPsiTupleValueExpression )
+      {
+        ManPsiTupleValueExpression itemExpr = (ManPsiTupleValueExpression)parent;
+        return itemExpr.getValue() != null && itemExpr.getValue().getTextRange().contains( position.getTextRange() );
+      }
+      return true;
+    }
+    return false;
+  }
+
+  private PsiCallExpression findCallExpr( PsiElement position )
+  {
+    if( position == null )
+    {
+      return null;
+    }
+    if( position instanceof PsiCallExpression )
+    {
+      return (PsiCallExpression)position;
+    }
+    if( position instanceof PsiClass )
+    {
+      return null;
+    }
+    return findCallExpr( position.getParent() );
   }
 
   private void addRecordFields( @NotNull PsiElement position, CompletionResultSet result )

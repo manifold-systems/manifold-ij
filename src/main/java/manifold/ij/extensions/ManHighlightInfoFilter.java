@@ -34,12 +34,11 @@ import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiUtil;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import manifold.ext.rt.api.Jailbreak;
-import manifold.ij.core.ManModule;
-import manifold.ij.core.ManProject;
-import manifold.ij.core.ManPsiPostfixExpressionImpl;
-import manifold.ij.core.ManPsiPrefixExpressionImpl;
+import manifold.ij.core.*;
 import manifold.ij.psi.ManExtensionMethodBuilder;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.template.psi.ManTemplateJavaFile;
@@ -226,6 +225,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     if( filterUsageOfApiNewerThanError( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterParamsClassErrors( hi, elem, firstElem ) )
     {
       return false;
     }
@@ -543,6 +547,39 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       }
     }
     return false;
+  }
+
+  private static Pattern paramsClassPattern = Pattern.compile( "\\$([a-zA-Z_$][a-zA-Z_$0-9]*)_(_[a-zA-Z_$][a-zA-Z_$0-9]*)" );
+  private boolean filterParamsClassErrors( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    if( containedInTupleExpr( elem, elem ) )
+    {
+      if( hi.getDescription().contains( "<lambda parameter>" ) )
+      {
+        // bogus error wrt lambda arg to optional params method
+        return true;
+      }
+
+      // pattern for matching manifold-params generated params class names such as $mymethodname__param1_param2.
+      // basically, filtering out error messages concerning params method bc we do error checking on args wrt original
+      // user-defined method, not generated one
+      Matcher m = paramsClassPattern.matcher( hi.getDescription() );
+      return m.find();
+    }
+    return false;
+  }
+
+  private static boolean containedInTupleExpr( PsiElement origin, PsiElement elem )
+  {
+    if( elem == null )
+    {
+      return false;
+    }
+    if( elem instanceof ManPsiTupleExpression )
+    {
+      return elem.getTextRange().contains( origin.getTextRange() );
+    }
+    return containedInTupleExpr( origin, elem.getParent() );
   }
 
   private boolean filterUsageOfApiNewerThanError( HighlightInfo hi, PsiElement elem, PsiElement firstElem )

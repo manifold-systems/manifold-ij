@@ -174,6 +174,7 @@ class ParamsMaker
     return false;
   }
 
+  public static Key<SmartPsiElementPointer<PsiParameter>> KEY_EXPR_PARAM_PARENT = Key.create( "KEY_EXPR_PARAM_PARENT" );
   private void checkInitializers()
   {
     if( !shouldCheck() )
@@ -190,6 +191,7 @@ class ParamsMaker
         if( paramType.isValid() )
         {
           PsiExpression expr = JavaPsiFacade.getElementFactory( _psiClass.getProject() ).createExpressionFromText( initializer, param );
+          expr.putCopyableUserData( KEY_EXPR_PARAM_PARENT, SmartPointerManager.createPointer( param ) );
           PsiType initType = expr.getType();
           if( initType != null && initType.isValid() && !TypeConversionUtil.isAssignable( paramType, initType ) )
           {
@@ -548,19 +550,20 @@ class ParamsMaker
     PsiTypeParameter[] typeParameters = _psiMethod.getTypeParameters();
     for( PsiTypeParameter tp: typeParameters )
     {
-      String tpName = tp.getName();
-      if( tpName != null )
+      String tpText = tp.getText();
+      if( tpText != null )
       {
-        paramsClass.addTypeVar( new SrcType( tpName ) );
+        paramsClass.addTypeVar( new SrcType( tpText ) );
       }
     }
     if( !_psiMethod.getModifierList().hasModifierProperty( PsiModifier.STATIC ) )
     {
       for( PsiTypeParameter tp: _psiClass.getTypeParameters() )
       {
-        if( tp.getName() != null )
+        String tpText = tp.getText();
+        if( tpText != null )
         {
-          paramsClass.addTypeVar( new SrcType( tp.getName() ) );
+          paramsClass.addTypeVar( new SrcType( tpText ) );
         }
       }
     }

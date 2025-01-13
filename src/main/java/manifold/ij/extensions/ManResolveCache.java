@@ -21,7 +21,6 @@ package manifold.ij.extensions;
 
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.IndexNotReadyException;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
@@ -48,14 +47,15 @@ import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethod;
 import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManPsiElementFactory;
+import manifold.ij.util.ManPsiUtil;
 import manifold.ij.util.ManVersionUtil;
-import manifold.ij.util.ReparseUtil;
 import manifold.util.ReflectUtil;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static manifold.ij.extensions.ManJavaResolveCache.maybeResolveRefToPrecedingParamFromDefaultParamExpr;
 import static manifold.ij.extensions.ManPropertiesAugmentProvider.KEY_CACHED_PROP_FIELD_AUGMENTS;
 
 public class ManResolveCache extends ResolveCache
@@ -110,7 +110,14 @@ public class ManResolveCache extends ResolveCache
       index = (int)ReflectUtil.method( ResolveCache.class, "getIndex", boolean.class, boolean.class ).invokeStatic( incompleteCode, true );
       map = (Map)ReflectUtil.method( me, "getMap", boolean.class, int.class ).invoke( physical, index );
     }
+
     ResolveResult[] results = map.get( ref );
+
+    if( results == null )
+    {
+      results = handleOptionalParamRef( ref, results, map, manModule );
+    }
+
     if( results != null )
     {
       return results;
@@ -200,6 +207,32 @@ public class ManResolveCache extends ResolveCache
             handleFieldSelfTypes( info, ref );
           }
         }
+      }
+    }
+    return results;
+  }
+
+  private static <T extends PsiPolyVariantReference> ResolveResult[] handleOptionalParamRef( @NotNull T ref, ResolveResult[] results, Map<T, ResolveResult[]> map, ManModule manModule )
+  {
+    if( manModule != null && !manModule.isParamsEnabled() )
+    {
+      // manifold-params is not used in the ref's module
+      return results;
+    }
+
+    if( (results == null || results.length == 0) && ref instanceof PsiReferenceExpression )
+    {
+      PsiParameter precedingParam = maybeResolveRefToPrecedingParamFromDefaultParamExpr( (PsiExpression)ref );
+      if( precedingParam != null )
+      {
+        PsiType paramType = precedingParam.getType();
+        PsiSubstitutor substitutor = paramType instanceof PsiClassType
+          ? ((PsiClassType)paramType).resolveGenerics().getSubstitutor()
+          : PsiSubstitutor.EMPTY;
+        @Jailbreak  CandidateInfo ci = new CandidateInfo( precedingParam, substitutor, ref.getElement(), ManPsiUtil.getContainingClass( ref.getElement() ), false, ((PsiReferenceExpression)ref).getContainingFile() );
+        ci.myAccessible = true;
+        results = new JavaResolveResult[] {ci};
+        map.put( ref, results );
       }
     }
     return results;

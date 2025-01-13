@@ -507,7 +507,7 @@ public class TupleNamedArgsUtil
     return sb.toString();
   }
 
-  private static List<String> getParamNames( PsiClass paramsClass, boolean removeOpt$ )
+  public static List<String> getParamNames( PsiClass paramsClass, boolean removeOpt$ )
   {
     List<String> result = new ArrayList<>();
     PsiAnnotation anno = paramsClass.getAnnotation( manifold_params.class.getTypeName() );
