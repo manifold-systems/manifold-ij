@@ -100,8 +100,9 @@ public class TupleNamedArgsUtil
           return null;
         }
       }
-      methodName = methodExpression.getReferenceName();
-      isConstructor = false;
+      String referenceName = methodExpression.getReferenceName();
+      isConstructor = referenceName != null && (referenceName.equals( "this" ) || referenceName.equals( "super" ));
+      methodName = isConstructor ? "constructor" : referenceName;
     }
     else if( callExpr instanceof PsiNewExpression )
     {
@@ -116,8 +117,8 @@ public class TupleNamedArgsUtil
         return null;
       }
       receiverType = PsiTypesUtil.getClassType( containingClass );
-      methodName = "constructor";
       isConstructor = true;
+      methodName = "constructor";
     }
     else
     {

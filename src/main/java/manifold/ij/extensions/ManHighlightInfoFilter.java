@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.intellij.refactoring.util.RefactoringUtil;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.*;
 import manifold.ij.psi.ManExtensionMethodBuilder;
@@ -566,6 +567,26 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       Matcher m = paramsClassPattern.matcher( hi.getDescription() );
       return m.find();
     }
+
+    // allow for @Override on opt params method if it has at least on telescoping method that that overrides
+    if( elem instanceof PsiAnnotation &&
+      Override.class.getTypeName().equals( ((PsiAnnotation)elem).getQualifiedName() ) )
+    {
+      PsiMethod enclosingMethod = RefactoringUtil.getEnclosingMethod( elem );
+      if( enclosingMethod != null && ParamsMaker.hasOptionalParams( enclosingMethod ) )
+      {
+        PsiClass psiClass = enclosingMethod.getContainingClass();
+        if( psiClass != null )
+        {
+          // opt params method has at least one telescoping overload that overrides a super method
+          return psiClass.getMethods().stream()
+            .anyMatch( m -> m instanceof ManExtensionMethodBuilder manMeth &&
+              manMeth.getTargetMethod().equals( enclosingMethod ) &&
+              !manMeth.findSuperMethods().isEmpty() );
+        }
+      }
+    }
+
     return false;
   }
 

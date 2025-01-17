@@ -100,7 +100,7 @@ public class MoveTypeManifoldFileProcessor extends MoveFileHandler
   }
 
   @Override
-  public void retargetUsages( List<UsageInfo> usageInfos, Map<PsiElement, PsiElement> oldToNewMap )
+  public void retargetUsages( List<? extends UsageInfo> usageInfos, Map<PsiElement, PsiElement> oldToNewMap )
   {
     PsiFile oldFile = (PsiFile)oldToNewMap.keySet().iterator().next();
 

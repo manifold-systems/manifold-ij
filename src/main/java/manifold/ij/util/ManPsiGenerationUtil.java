@@ -72,11 +72,11 @@ public class ManPsiGenerationUtil
     }
   }
 
-  public static PsiMethod plantMethodInPsiClass( ManModule manModule, PsiMethod refMethod, PsiClass psiClass, PsiMethod navMethod  )
+  public static ManExtensionMethodBuilder plantMethodInPsiClass( ManModule manModule, PsiMethod refMethod, PsiClass psiClass, PsiMethod navMethod  )
   {
     return plantMethodInPsiClass( manModule, refMethod, psiClass, navMethod, false );
   }
-  public static PsiMethod plantMethodInPsiClass( ManModule manModule, PsiMethod refMethod, PsiClass psiClass, PsiMethod navMethod, boolean isConstructor  )
+  public static ManExtensionMethodBuilder plantMethodInPsiClass( ManModule manModule, PsiMethod refMethod, PsiClass psiClass, PsiMethod navMethod, boolean isConstructor  )
   {
     if( null != refMethod )
     {

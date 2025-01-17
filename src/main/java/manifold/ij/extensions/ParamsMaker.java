@@ -340,13 +340,12 @@ class ParamsMaker
     srcMethod.body( block );
 
     PsiMethod paramsMethod = makePsiMethod( srcMethod, _psiClass );
-    //noinspection UnnecessaryLocalVariable
-    PsiMethod plantedMethod = plantMethodInPsiClass( ManProject.getModule( _psiClass ), paramsMethod, _psiClass, _psiMethod, _psiMethod.isConstructor() );
+    ManExtensionMethodBuilder plantedMethod = plantMethodInPsiClass( ManProject.getModule( _psiClass ), paramsMethod, _psiClass, _psiMethod, _psiMethod.isConstructor() );
     checkDuplication( plantedMethod );
     return plantedMethod;
   }
 
-  private void checkDuplication( PsiMethod plantedMethod )
+  private void checkDuplication( ManExtensionMethodBuilder plantedMethod )
   {
     if( !shouldCheck() )
     {
@@ -387,7 +386,8 @@ class ParamsMaker
         }
         else if( !m.isConstructor() &&
           !m.getModifierList().hasModifierProperty( PsiModifier.STATIC ) &&
-          !m.getModifierList().hasModifierProperty( PsiModifier.PRIVATE ) )
+          !m.getModifierList().hasModifierProperty( PsiModifier.PRIVATE ) &&
+          !plantedMethod.hasAnnotation( Override.class.getTypeName() ) )
         {
           // a telescoping method overrides a physical method in the super class (report that the corresponding optional params method interferes)
 
