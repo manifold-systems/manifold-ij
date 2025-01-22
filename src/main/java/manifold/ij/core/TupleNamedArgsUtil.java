@@ -56,11 +56,11 @@ public class TupleNamedArgsUtil
    * Note, the new expression type matches the parameter type of the generated method that forwards to the optional
    * parameters method. So this is effectively resolving the method reference as well.
    */
-  public static PsiClassType getNewParamsClassExprType( PsiCallExpression callExpr, ManPsiTupleExpression tupleExpr )
+  public static PsiClassType getNewParamsClassExprType( PsiElement callExpr, ManPsiTupleExpression tupleExpr )
   {
     return getNewParamsClassExprType( callExpr, tupleExpr, null );
   }
-  public static PsiClassType getNewParamsClassExprType( PsiCallExpression callExpr, ManPsiTupleExpression tupleExpr, AnnotationHolder holder )
+  public static PsiClassType getNewParamsClassExprType( PsiElement callExpr, ManPsiTupleExpression tupleExpr, AnnotationHolder holder )
   {
     final String methodName;
     final PsiClass containingClass;
@@ -104,18 +104,34 @@ public class TupleNamedArgsUtil
       isConstructor = referenceName != null && (referenceName.equals( "this" ) || referenceName.equals( "super" ));
       methodName = isConstructor ? "constructor" : referenceName;
     }
-    else if( callExpr instanceof PsiNewExpression )
+    else if( callExpr instanceof PsiNewExpression ||
+             callExpr instanceof PsiAnonymousClass ||
+             callExpr instanceof PsiEnumConstant )
     {
-      PsiJavaCodeReferenceElement classRef = ((PsiNewExpression)callExpr).getClassReference();
-      if( classRef == null )
+      if( callExpr instanceof PsiNewExpression )
       {
-        return null;
+        PsiJavaCodeReferenceElement classRef = ((PsiNewExpression)callExpr).getClassReference();
+        if( classRef == null )
+        {
+          return null;
+        }
+        containingClass = (PsiClass)classRef.resolve();
       }
-      containingClass = (PsiClass)classRef.resolve();
+      else if( callExpr instanceof PsiAnonymousClass )
+      {
+        PsiJavaCodeReferenceElement classRef = ((PsiAnonymousClass)callExpr).getBaseClassReference();
+        containingClass = (PsiClass)classRef.resolve();
+      }
+      else
+      {
+        containingClass = ((PsiEnumConstant)callExpr).getContainingClass();
+      }
+
       if( containingClass == null )
       {
         return null;
       }
+
       receiverType = PsiTypesUtil.getClassType( containingClass );
       isConstructor = true;
       methodName = "constructor";
