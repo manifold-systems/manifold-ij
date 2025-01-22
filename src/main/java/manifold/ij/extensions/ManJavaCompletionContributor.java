@@ -38,8 +38,11 @@ import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static manifold.ij.core.TupleNamedArgsUtil.getParamNames;
 
@@ -76,17 +79,21 @@ public class ManJavaCompletionContributor extends CompletionContributor
       return;
     }
 
-    PsiCallExpression callExpr = findCallExpr( position );
+    PsiElement callExpr = findCallExpr( position );
     if( callExpr == null )
     {
       return;
     }
 
-    CandidateInfo[] candidates = PsiResolveHelper.getInstance( callExpr.getProject() ).getReferencedMethodCandidates( callExpr, false );
+    List<PsiElement> candidates =
+      callExpr instanceof PsiCallExpression
+      ? makeCallExprCadidates( callExpr )
+      : callExpr instanceof PsiAnonymousClass
+        ? makeAnonymousClassCandidate( (PsiAnonymousClass)callExpr )
+        : makeEnumConstantCandidate( (PsiEnumConstant)callExpr );
     Set<String> paramNames = new HashSet<>();
-    for( CandidateInfo candidate : candidates )
+    for( PsiElement elem : candidates )
     {
-      PsiElement elem = candidate.getElement();
       if( elem instanceof PsiMethod method )
       {
         PsiAnnotation anno = method.getAnnotation( manifold_params.class.getTypeName() );
@@ -120,6 +127,37 @@ public class ManJavaCompletionContributor extends CompletionContributor
     }
   }
 
+  private static List<PsiElement> makeCallExprCadidates( PsiElement callExpr )
+  {
+    return Arrays.stream( PsiResolveHelper.getInstance( callExpr.getProject() )
+                            .getReferencedMethodCandidates( (PsiCallExpression)callExpr, false ) )
+      .map( c -> c.getElement() ).collect( Collectors.toList() );
+  }
+
+  private List<PsiElement> makeEnumConstantCandidate( PsiEnumConstant callExpr )
+  {
+    PsiExpressionList exprList = callExpr.getArgumentList();
+    if( exprList != null )
+    {
+      JavaResolveResult[] results = PsiResolveHelper.getInstance( callExpr.getProject() ).multiResolveConstructor(
+        (PsiClassType)callExpr.getType(), exprList, callExpr );
+      return Arrays.stream( results ).map( r -> r.getElement() ).collect( Collectors.toList() );
+    }
+    return null;
+  }
+
+  private List<PsiElement> makeAnonymousClassCandidate( PsiAnonymousClass callExpr )
+  {
+    PsiExpressionList exprList = callExpr.getArgumentList();
+    if( exprList != null )
+    {
+      JavaResolveResult[] results = PsiResolveHelper.getInstance( callExpr.getProject() ).multiResolveConstructor(
+        callExpr.getBaseClassType(), exprList, callExpr );
+      return Arrays.stream( results ).map( r -> r.getElement() ).collect( Collectors.toList() );
+    }
+    return null;
+  }
+
   private boolean isInTupleValue( PsiElement position )
   {
     if( position == null )
@@ -143,15 +181,15 @@ public class ManJavaCompletionContributor extends CompletionContributor
     return false;
   }
 
-  private PsiCallExpression findCallExpr( PsiElement position )
+  private PsiElement findCallExpr( PsiElement position )
   {
     if( position == null )
     {
       return null;
     }
-    if( position instanceof PsiCallExpression )
+    if( position instanceof PsiCall || position instanceof PsiAnonymousClass )
     {
-      return (PsiCallExpression)position;
+      return position;
     }
     if( position instanceof PsiClass )
     {

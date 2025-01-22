@@ -142,9 +142,9 @@ public class ManPsiTupleExpressionImpl extends ExpressionPsiElement implements M
     if( parent instanceof PsiExpressionList && ((PsiExpressionList)parent).getExpressionCount() == 1 )
     {
       parent = parent.getParent();
-      if( parent instanceof PsiCallExpression )
+      if( parent instanceof PsiCallExpression || parent instanceof PsiAnonymousClass || parent instanceof PsiEnumConstant )
       {
-        return TupleNamedArgsUtil.getNewParamsClassExprType( (PsiCallExpression)parent, this );
+        return TupleNamedArgsUtil.getNewParamsClassExprType( parent, this );
       }
     }
     return null;

@@ -108,6 +108,9 @@ public /*final*/ class MethodParameterInfoHandler
 
   private PsiExpressionList findArgumentList(final PsiFile file, int offset, int parameterStart, boolean allowOuter) {
     PsiExpressionList argumentList = ParameterInfoUtils.findArgumentList(file, offset, parameterStart, this, allowOuter);
+    if( argumentList == null) {
+      argumentList = findTupleExprParent( file, offset );
+    }
     if (argumentList == null && allowOuter) {
       PsiCall call = ParameterInfoUtils.findParentOfTypeWithStopElements(file, offset, PsiMethodCallExpression.class, PsiMethod.class);
       if (call == null) {
@@ -123,6 +126,25 @@ public /*final*/ class MethodParameterInfoHandler
       }
     }
     return argumentList;
+  }
+
+  private PsiExpressionList findTupleExprParent( PsiFile file, int offset )
+  {
+    PsiElement elementAt = file.findElementAt( offset );
+    while( elementAt != null && !(elementAt instanceof PsiMethod) )
+    {
+      if( elementAt instanceof ManPsiTupleExpression )
+      {
+        PsiElement parent = elementAt.getParent();
+        if( parent instanceof PsiExpressionList )
+        {
+          return (PsiExpressionList)parent;
+        }
+      }
+
+      elementAt = elementAt.getParent();
+    }
+    return null;
   }
 
   private static PsiExpressionList findMethodsForArgumentList(final CreateParameterInfoContext context,

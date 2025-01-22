@@ -107,10 +107,12 @@ public class ParamsAnnotator implements Annotator
       if( parent instanceof PsiExpressionList && ((PsiExpressionList)parent).getExpressionCount() == 1 )
       {
         parent = parent.getParent();
-        if( parent instanceof PsiCallExpression )
+        if( parent instanceof PsiCallExpression ||
+            parent instanceof PsiAnonymousClass ||
+            parent instanceof PsiEnumConstant )
         {
           // calling only to check/add compile errors
-          TupleNamedArgsUtil.getNewParamsClassExprType( (PsiCallExpression)parent, (ManPsiTupleExpression)element, holder );
+          TupleNamedArgsUtil.getNewParamsClassExprType( parent, (ManPsiTupleExpression)element, holder );
         }
       }
     }
