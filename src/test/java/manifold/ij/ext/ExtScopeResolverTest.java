@@ -11,6 +11,7 @@ public class ExtScopeResolverTest extends AbstractManifoldCodeInsightTest
   {
     myFixture.configureByFile( "ext/highlight/MyErrors.java" );
     List<HighlightInfo> highlightInfos = myFixture.doHighlighting( HighlightSeverity.ERROR );
+    highlightInfos.forEach( hi -> System.out.println(hi.toString()) ); //should be empty, but sometimes fails
     assertEquals( 0, highlightInfos.size() );
   }
 
