@@ -54,7 +54,6 @@ public class MiscAnnotator implements Annotator
     highlightAutoAsKeyword( element, holder );
     highlightTupleLabelAsComment( element, holder );
     
-    verifyMethodRefNotExtension( element, holder );
     verifyMethodRefNotAuto( element, holder );
     verifyMethodDefNotAbstractAuto( element, holder );
     verifyTuplesEnabled( element, holder );
@@ -158,35 +157,6 @@ public class MiscAnnotator implements Annotator
     String fqn = typeElement.getText();
     return fqn.equals( ManClassUtil.getShortClassName( ManAttr.AUTO_TYPE ) ) ||
       fqn.equals( ManAttr.AUTO_TYPE );
-  }
-
-  private void verifyMethodRefNotExtension( PsiElement element, AnnotationHolder holder )
-  {
-    if( element instanceof PsiMethodReferenceExpression )
-    {
-
-      PsiElement maybeMethod = ((PsiMethodReferenceExpression)element).resolve();
-      if( maybeMethod instanceof PsiMethod )
-      {
-        PsiMethod psiMethod = (PsiMethod)maybeMethod;
-        if( isExtensionMethod( psiMethod ) )
-        {
-          // Method ref not allowed on an extension method
-          holder.newAnnotation( HighlightSeverity.ERROR,
-              ExtIssueMsg.MSG_EXTENSION_METHOD_REF_NOT_SUPPORTED.get( psiMethod.getName() ) )
-            .range( element.getTextRange() )
-            .create();
-        }
-        else if( isStructuralInterfaceMethod( psiMethod ) )
-        {
-          // Method ref not allowed on a structural interface method
-          holder.newAnnotation( HighlightSeverity.ERROR,
-              ExtIssueMsg.MSG_STRUCTURAL_METHOD_REF_NOT_SUPPORTED.get( psiMethod.getName() ) )
-            .range( element.getTextRange() )
-            .create();
-        }
-      }
-    }
   }
 
   private void verifyMethodRefNotAuto( PsiElement element, AnnotationHolder holder )
