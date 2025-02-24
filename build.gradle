@@ -33,6 +33,15 @@ tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
 }
 
+/**
+ * Create 'reproducible archives' (JARs will be identical regardless of the platform they are created)
+ * https://docs.gradle.org/3.4/userguide/working_with_files.html#sec:reproducible_archives
+ */
+tasks.withType(AbstractArchiveTask) {
+  preserveFileTimestamps = false
+  reproducibleFileOrder = true
+}
+
 configurations {
   manifoldAll
   manifoldEp
