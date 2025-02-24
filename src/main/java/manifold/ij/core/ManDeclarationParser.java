@@ -91,7 +91,7 @@ public class ManDeclarationParser extends DeclarationParser
       }
     }
 
-    WhiteSpaceAndCommentSetHolder myWhiteSpaceAndCommentSetHolder = (WhiteSpaceAndCommentSetHolder) ReflectUtil.field(_this, "myWhiteSpaceAndCommentSetHolder").get();
+    WhiteSpaceAndCommentSetHolder myWhiteSpaceAndCommentSetHolder = WhiteSpaceAndCommentSetHolder.INSTANCE;
 
     if( typed )
     {
