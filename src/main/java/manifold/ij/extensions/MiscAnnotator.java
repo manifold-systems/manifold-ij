@@ -54,7 +54,7 @@ public class MiscAnnotator implements Annotator
     highlightAutoAsKeyword( element, holder );
     highlightTupleLabelAsComment( element, holder );
     
-    verifyMethodRefNotExtension( element, holder );
+//    verifyMethodRefNotExtension( element, holder );
     verifyMethodRefNotAuto( element, holder );
     verifyMethodDefNotAbstractAuto( element, holder );
     verifyTuplesEnabled( element, holder );
@@ -160,34 +160,34 @@ public class MiscAnnotator implements Annotator
       fqn.equals( ManAttr.AUTO_TYPE );
   }
 
-  private void verifyMethodRefNotExtension( PsiElement element, AnnotationHolder holder )
-  {
-    if( element instanceof PsiMethodReferenceExpression )
-    {
-
-      PsiElement maybeMethod = ((PsiMethodReferenceExpression)element).resolve();
-      if( maybeMethod instanceof PsiMethod )
-      {
-        PsiMethod psiMethod = (PsiMethod)maybeMethod;
-        if( isExtensionMethod( psiMethod ) )
-        {
-          // Method ref not allowed on an extension method
-          holder.newAnnotation( HighlightSeverity.ERROR,
-              ExtIssueMsg.MSG_EXTENSION_METHOD_REF_NOT_SUPPORTED.get( psiMethod.getName() ) )
-            .range( element.getTextRange() )
-            .create();
-        }
-        else if( isStructuralInterfaceMethod( psiMethod ) )
-        {
-          // Method ref not allowed on a structural interface method
-          holder.newAnnotation( HighlightSeverity.ERROR,
-              ExtIssueMsg.MSG_STRUCTURAL_METHOD_REF_NOT_SUPPORTED.get( psiMethod.getName() ) )
-            .range( element.getTextRange() )
-            .create();
-        }
-      }
-    }
-  }
+//  private void verifyMethodRefNotExtension( PsiElement element, AnnotationHolder holder )
+//  {
+//    if( element instanceof PsiMethodReferenceExpression )
+//    {
+//
+//      PsiElement maybeMethod = ((PsiMethodReferenceExpression)element).resolve();
+//      if( maybeMethod instanceof PsiMethod )
+//      {
+//        PsiMethod psiMethod = (PsiMethod)maybeMethod;
+//        if( isExtensionMethod( psiMethod ) )
+//        {
+//          // Method ref not allowed on an extension method
+//          holder.newAnnotation( HighlightSeverity.ERROR,
+//              ExtIssueMsg.MSG_EXTENSION_METHOD_REF_NOT_SUPPORTED.get( psiMethod.getName() ) )
+//            .range( element.getTextRange() )
+//            .create();
+//        }
+//        else if( isStructuralInterfaceMethod( psiMethod ) )
+//        {
+//          // Method ref not allowed on a structural interface method
+//          holder.newAnnotation( HighlightSeverity.ERROR,
+//              ExtIssueMsg.MSG_STRUCTURAL_METHOD_REF_NOT_SUPPORTED.get( psiMethod.getName() ) )
+//            .range( element.getTextRange() )
+//            .create();
+//        }
+//      }
+//    }
+//  }
 
   private void verifyMethodRefNotAuto( PsiElement element, AnnotationHolder holder )
   {
@@ -209,37 +209,37 @@ public class MiscAnnotator implements Annotator
     }
   }
 
-  private boolean isStructuralInterfaceMethod( PsiMethod psiMethod )
-  {
-    return ManPsiUtil.isStructuralInterface( psiMethod.getContainingClass() );
-  }
-
-  private boolean isExtensionMethod( PsiMethod method )
-  {
-    return method instanceof ManExtensionMethodBuilder;
-    
-//    PsiElement navigationElement = method.getNavigationElement();
-//    if( navigationElement instanceof PsiMethod && navigationElement != method )
-//    {
-//      method = (PsiMethod)navigationElement;
-//    }
+//  private boolean isStructuralInterfaceMethod( PsiMethod psiMethod )
+//  {
+//    return ManPsiUtil.isStructuralInterface( psiMethod.getContainingClass() );
+//  }
 //
-//    PsiModifierList methodMods = method.getModifierList();
-//    if( methodMods.findAnnotation( Extension.class.getName() ) != null )
-//    {
-//      return true;
-//    }
+//  private boolean isExtensionMethod( PsiMethod method )
+//  {
+//    return method instanceof ManExtensionMethodBuilder;
 //
-//    for( PsiParameter param: method.getParameterList().getParameters() )
-//    {
-//      PsiModifierList modifierList = param.getModifierList();
-//      if( modifierList != null &&
-//        (modifierList.findAnnotation( This.class.getName() ) != null ||
-//          modifierList.findAnnotation( ThisClass.class.getName() ) != null) )
-//      {
-//        return true;
-//      }
-//    }
-//    return false;
-  }
+////    PsiElement navigationElement = method.getNavigationElement();
+////    if( navigationElement instanceof PsiMethod && navigationElement != method )
+////    {
+////      method = (PsiMethod)navigationElement;
+////    }
+////
+////    PsiModifierList methodMods = method.getModifierList();
+////    if( methodMods.findAnnotation( Extension.class.getName() ) != null )
+////    {
+////      return true;
+////    }
+////
+////    for( PsiParameter param: method.getParameterList().getParameters() )
+////    {
+////      PsiModifierList modifierList = param.getModifierList();
+////      if( modifierList != null &&
+////        (modifierList.findAnnotation( This.class.getName() ) != null ||
+////          modifierList.findAnnotation( ThisClass.class.getName() ) != null) )
+////      {
+////        return true;
+////      }
+////    }
+////    return false;
+//  }
 }

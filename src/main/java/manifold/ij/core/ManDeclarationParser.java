@@ -28,8 +28,10 @@ import com.intellij.lang.java.parser.DeclarationParser;
 import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.openapi.util.Pair;
 import com.intellij.psi.JavaTokenType;
+import com.intellij.psi.impl.source.WhiteSpaceAndCommentSetHolder;
 import com.intellij.psi.tree.IElementType;
 import manifold.ext.rt.api.Jailbreak;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -89,6 +91,8 @@ public class ManDeclarationParser extends DeclarationParser
       }
     }
 
+    WhiteSpaceAndCommentSetHolder myWhiteSpaceAndCommentSetHolder = (WhiteSpaceAndCommentSetHolder) ReflectUtil.field(_this, "myWhiteSpaceAndCommentSetHolder").get();
+
     if( typed )
     {
       IElementType tokenType = builder.getTokenType();
@@ -99,7 +103,7 @@ public class ManDeclarationParser extends DeclarationParser
         if( expr != null && BasicJavaParserUtil.exprType( expr ) == _this.myJavaElementTypeContainer.THIS_EXPRESSION )
         {
           mark.drop();
-          BasicJavaParserUtil.done( param, _this.myJavaElementTypeContainer.RECEIVER_PARAMETER, _this.myWhiteSpaceAndCommentSetHolder );
+          BasicJavaParserUtil.done( param, _this.myJavaElementTypeContainer.RECEIVER_PARAMETER, myWhiteSpaceAndCommentSetHolder);
           return param;
         }
 
@@ -117,7 +121,7 @@ public class ManDeclarationParser extends DeclarationParser
           BasicJavaParserUtil.error( builder, JavaPsiBundle.message( "expected.expression", new Object[0] ) );
         }
 
-        BasicJavaParserUtil.done( param, _this.myJavaElementTypeContainer.RESOURCE_VARIABLE, _this.myWhiteSpaceAndCommentSetHolder );
+        BasicJavaParserUtil.done( param, _this.myJavaElementTypeContainer.RESOURCE_VARIABLE, myWhiteSpaceAndCommentSetHolder );
         return param;
       }
       else if( type == _this.myJavaElementTypeContainer.PARAMETER || type == _this.myJavaElementTypeContainer.RECORD_COMPONENT )
@@ -128,7 +132,7 @@ public class ManDeclarationParser extends DeclarationParser
           BasicJavaParserUtil.error( builder, JavaPsiBundle.message( "expected.expression", new Object[0] ) );
         }
       }
-      BasicJavaParserUtil.done( param, type, _this.myWhiteSpaceAndCommentSetHolder );
+      BasicJavaParserUtil.done( param, type, myWhiteSpaceAndCommentSetHolder );
       return param;
     }
     else
