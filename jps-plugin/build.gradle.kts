@@ -1,5 +1,6 @@
 plugins {
   id("org.jetbrains.intellij.platform.module")
+  id("java")
 }
 
 tasks.named<Jar>("jar") {
@@ -13,8 +14,8 @@ configurations {
 java {
 // Java 8 is required for JPS, otherwise an IJ project use a Java 8 compiler
 // will fail to load Java 11 compiled JPS classes
-  sourceCompatibility = JavaVersion.VERSION_1_8
-  targetCompatibility = JavaVersion.VERSION_1_8
+  sourceCompatibility = JavaVersion.VERSION_21
+  targetCompatibility = JavaVersion.VERSION_21
 }
 
 //repositories {
@@ -38,8 +39,7 @@ fun getIjVersion() : String {
 
 dependencies {
   intellijPlatform {
-    intellijIdeaCommunity(getIjVersion())
-    pluginVerifier()
+    intellijIdeaCommunity(getIjVersion(), useInstaller = false)
     bundledPlugin("com.intellij.java")
   }
 
@@ -52,11 +52,4 @@ dependencies {
   testImplementation("junit:junit:4.13.2")
 
   add("manifoldAll", "systems.manifold:manifold-all:$manifoldVersion")
-}
-
-tasks.configureEach {
-  when (name) {
-    "buildSearchableOptions" -> enabled = false
-    "runIde" -> enabled = false
-  }
 }

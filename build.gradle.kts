@@ -23,11 +23,12 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
   id("org.jetbrains.intellij.platform")
+  id("java")
 }
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
+  sourceCompatibility = JavaVersion.VERSION_21
+  targetCompatibility = JavaVersion.VERSION_21
 }
 
 configurations {
@@ -49,13 +50,6 @@ repositories {
   gradlePluginPortal()
 }
 
-allprojects {
-  apply {
-    plugin("org.jetbrains.intellij.platform")
-    plugin("java")
-  }
-}
-
 subprojects {
   afterEvaluate {
     if (plugins.hasPlugin("java-library")) {
@@ -69,12 +63,10 @@ subprojects {
 
 dependencies {
   intellijPlatform {
-    intellijIdeaCommunity(getIjVersion())
+    intellijIdeaCommunity(getIjVersion(), useInstaller = false)
     pluginModule(implementation(project(":jps-plugin")))
     bundledPlugin("com.intellij.java")
     bundledPlugin("com.intellij.modules.json")
-    pluginVerifier()
-    zipSigner()
 
     testFramework(TestFrameworkType.Platform)
   }
@@ -121,6 +113,7 @@ fun getIjVersion() : String {
 }
 
 intellijPlatform {
+  buildSearchableOptions = false
   pluginConfiguration {
     name = project.name
     description = "Manifold :: IJ"
@@ -155,10 +148,6 @@ tasks.test {
     "path.to.manifold.all" to configurations.getByName("manifoldAll").singleFile.absolutePath,
     "path.to.manifold.ep" to configurations.getByName("manifoldEp").files.first()
   )
-}
-
-tasks.buildSearchableOptions {
-  enabled = false
 }
 
 tasks.runIde {
