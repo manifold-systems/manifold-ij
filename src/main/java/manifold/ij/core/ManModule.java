@@ -116,7 +116,7 @@ public class ManModule extends SimpleModule
     ClassLoader prior = Thread.currentThread().getContextClassLoader();
     if( _typeManifoldClassLoader != null )
     {
-      Thread.currentThread().setContextClassLoader( _typeManifoldClassLoader );
+      ReflectUtil.setContextClassLoader( _typeManifoldClassLoader );
     }
     try
     {
@@ -124,7 +124,7 @@ public class ManModule extends SimpleModule
     }
     finally
     {
-      Thread.currentThread().setContextClassLoader( prior );
+      ReflectUtil.setContextClassLoader( prior );
     }
   }
 
