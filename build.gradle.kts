@@ -116,7 +116,7 @@ intellijPlatform {
   buildSearchableOptions = false
   pluginConfiguration {
     name = project.name
-    description = "IntelliJ IDEA plugin the Manifold project"
+    description = "IntelliJ IDEA plugin for the Manifold project"
     version = getIjVersion()
 
     ideaVersion {
