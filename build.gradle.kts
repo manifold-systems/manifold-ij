@@ -117,7 +117,7 @@ intellijPlatform {
   pluginConfiguration {
     name = project.name
     description = "IntelliJ IDEA plugin for the Manifold project"
-    version = getIjVersion()
+    version = project.property("version") as String
 
     ideaVersion {
       // Get build numbers from https://www.jetbrains.com/idea/download/other.html
