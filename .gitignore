@@ -6,3 +6,4 @@ out/
 !gradle/wrapper/gradle-wrapper.jar
 .gradle
 local.properties
+/.intellijPlatform

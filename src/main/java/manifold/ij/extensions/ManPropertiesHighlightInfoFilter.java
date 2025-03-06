@@ -182,7 +182,7 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterFinalError( HighlightInfo hi, PsiElement firstElem )
   {
     String msg = hi.getDescription();
-    if( !((msg.startsWith( "Variable" ) || msg.startsWith( "变量" )) &&
+    if( !((msg.startsWith( "Variable" ) || msg.startsWith( "Field" ) || msg.startsWith( "变量" )) &&
       (msg.endsWith( "might not have been initialized" ) || msg.endsWith( "可能尚未初始化" ))) )
     {
       return false;

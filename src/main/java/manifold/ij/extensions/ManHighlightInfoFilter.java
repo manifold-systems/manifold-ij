@@ -204,6 +204,10 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     {
       return false;
     }
+    if( filterIncompatibleTypesWithArrayAccess( hi, elem, firstElem ) )
+    {
+      return false;
+    }
 
     if( filterAnyAnnoTypeError( hi, elem, firstElem ) )
     {
@@ -405,6 +409,14 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_GET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
+  }
+  private boolean filterIncompatibleTypesWithArrayAccess( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    return elem.getParent() instanceof PsiArrayAccessExpression &&
+            (hi.getDescription().contains( "Incompatible types" ) ||
+                    hi.getDescription().contains( "不兼容的类型" )) &&
+            ((ManPsiArrayAccessExpressionImpl) elem.getParent()).getType() != null &&
+            ((ManPsiArrayAccessExpressionImpl) elem.getParent()).getType().isValid();
   }
 
   private PsiArrayAccessExpressionImpl getArrayAccessExpression( PsiElement elem )
