@@ -463,17 +463,20 @@ class PropertyInference
       {
         boolean publicDefault = exField.getCopyableUserData( VAR_TAG ) == null;
         int weakest = weakest( PropertyMaker.getAccess( exField.getModifierList(), publicDefault ), getAccess( flags ) );
-        if( exField.getContainingClass() == psiClass )
+        int declaredAccess = PropertyMaker.getAccess( exField.getModifierList(), publicDefault );
+        if( isExitingFieldAccessible( psiClass, exField, declaredAccess ) )
         {
           if( isExplicitPropertyField( exField ) )
           {
             return null; // the field is already a property with @var or @val, etc.
           }
 
-          // make the existing field accessible according to the weakest of property methods
-          int declaredAccess = PropertyMaker.getAccess( exField.getModifierList(), publicDefault );
-          addVarTag( exField, varClass, weakest, declaredAccess );
-          cb.accept( exField );
+          if( exField.getContainingClass() == psiClass )
+          {
+            // make the existing field accessible according to the weakest of property methods
+            addVarTag(exField, varClass, weakest, declaredAccess);
+            cb.accept(exField);
+          }
           return null; // don't create another one
         }
         if( isPropertyField( exField ) )
@@ -506,6 +509,42 @@ class PropertyInference
       {
         return true;
       }
+    }
+    return false;
+  }
+
+  // for inferred properties, if the existing field is accessible, use it, not the property. Basically, don't mess with
+  // code that otherwise works normally without applying inferred properties.
+  private boolean isExitingFieldAccessible( PsiClass classSym, PsiField exField, int mod )
+  {
+    PsiClass fieldClass = exField.getContainingClass();
+    if( fieldClass == null )
+    {
+      return false;
+    }
+
+    boolean isInferredProperty = exField.getCopyableUserData( VAR_TAG ) != null;
+    switch( mod )
+    {
+      case PUBLIC:
+        // field is public
+        if( isInferredProperty )
+          return true;
+        // fall through
+      case PROTECTED:
+        // subclass of field's class
+        if( isInferredProperty && classSym.isInheritor( fieldClass, true ) )
+          return true;
+        // fall through
+      case 0: // PACKAGE
+        // same package as field's class
+        if( isInferredProperty && Objects.equals( PsiUtil.getPackageName( fieldClass ), PsiUtil.getPackageName( classSym ) ) )
+          return true;
+        // fall through
+      case PRIVATE:
+        // same class as field
+        if( fieldClass == classSym )
+          return true;
     }
     return false;
   }
