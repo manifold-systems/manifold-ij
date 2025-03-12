@@ -272,21 +272,28 @@ public class PropertiesAnnotator implements Annotator
     int declaredAccess = tag.declaredAccess;
     switch( declaredAccess )
     {
-      case PRIVATE:
-        // same class as field or inside same top-level class
-        return psiClass == fieldsClass || PsiUtil.getTopLevelClass( psiClass ) == PsiUtil.getTopLevelClass( psiField );
-      case 0: // PACKAGE
-        // same package as field's class
-        return Objects.equals( PsiUtil.getPackageName( psiClass ),
-          PsiUtil.getPackageName( fieldsClass ) );
-      case PROTECTED:
-        // same as private, but include subclasses of field's class
-        return fieldsClass == psiClass ||
-          PsiUtil.getTopLevelClass( psiClass ) == PsiUtil.getTopLevelClass( psiField ) ||
-          psiClass.isInheritor( fieldsClass, true );
       case PUBLIC:
         // field is public, no dice
         return true;
+      case PROTECTED:
+        // same as private, but include subclasses of field's class
+        if( psiClass.isInheritor( fieldsClass, true ) )
+        {
+          return true;
+        }
+        // fall through
+      case 0: // PACKAGE
+        // same package as field's class
+        if( Objects.equals( PsiUtil.getPackageName( psiClass ), PsiUtil.getPackageName( fieldsClass ) ) )
+        {
+          return true;
+        }
+        // fall through
+      case PRIVATE:
+        // same class as field or inside same top-level class
+        return psiClass == fieldsClass ||
+                PsiTreeUtil.isAncestor( psiClass, psiField.getContainingClass(), true ) ||
+                PsiTreeUtil.isAncestor( psiField.getContainingClass(), psiClass, true );
       case -1:
         // indicates no existing field to worry about
         return false;
