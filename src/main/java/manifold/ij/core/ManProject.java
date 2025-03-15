@@ -21,8 +21,6 @@ package manifold.ij.core;
 
 import com.intellij.AppTopics;
 import com.intellij.ProjectTopics;
-import com.intellij.codeInsight.daemon.impl.HighlightVisitor;
-import com.intellij.codeInsight.daemon.impl.analysis.HighlightVisitorImpl;
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.lang.java.JavaLanguage;
@@ -339,9 +337,6 @@ public class ManProject
 
   private void init()
   {
-    // Remove stock highlighter regardless of _manInUse since we add a replacement in plugin.xml
-    removeHighlighter();
-    
     _manInUse = ManLibraryChecker.instance().isUsingManifoldJars( _ijProject );
 
 // plugin is free now
@@ -360,12 +355,6 @@ public class ManProject
     _modules = LockingLazyVar.make( () -> ApplicationManager.getApplication().<Map<Module, ManModule>>runReadAction( this::defineModules ) );
     _rootModules = assignRootModuleLazy();
     ManLibraryChecker.instance().warnIfManifoldJarsAreOld( getNativeProject() );
-  }
-
-  private void removeHighlighter()
-  {
-    // ManHighlightVisitor replaces this
-    HighlightVisitor.EP_HIGHLIGHT_VISITOR.getPoint( getNativeProject() ).unregisterExtension( HighlightVisitorImpl.class );
   }
 
   private void licenseCheck()

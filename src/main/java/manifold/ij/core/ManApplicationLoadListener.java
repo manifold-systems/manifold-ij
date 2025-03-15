@@ -32,18 +32,13 @@ import com.intellij.psi.impl.java.stubs.JavaStubElementTypes;
 import com.intellij.psi.impl.source.tree.JavaElementType;
 import com.intellij.psi.tree.IElementType;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.function.Supplier;
 
 import com.intellij.util.messages.MessageBusConnection;
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
-import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.extensions.ManJavaLiteralExpressionElementType;
-import manifold.internal.javac.JavacPlugin;
-import manifold.rt.api.util.StreamUtil;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -58,23 +53,12 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ManApplicationLoadListener implements ApplicationLoadListener
 {
-  //@Override in version 2024.x
+  @Override
   public Object beforeApplicationLoaded(Application application, Path configPath, Continuation<? super Unit> continuation)
   {
-    beforeApplicationLoaded( application, configPath );
+    overrideJavaParserStuff();
+    listenToProjectOpenClose();
     return null;
-  }
-  // @Override in version 2022.x
-  public void beforeApplicationLoaded( @NotNull Application application, @NotNull Path configPath )
-  {
-    overrideJavaParserStuff();
-    listenToProjectOpenClose();
-  }
-  // @Override in versions *prior* to 2022.x
-  public void beforeApplicationLoaded( @NotNull Application application, @NotNull String configPath )
-  {
-    overrideJavaParserStuff();
-    listenToProjectOpenClose();
   }
 
   public void overrideJavaParserStuff()
@@ -88,41 +72,12 @@ public class ManApplicationLoadListener implements ApplicationLoadListener
     try
     {
       overrideJavaStringLiterals();
-      replaceExpressionChecker();
       replaceJavaExpressionParser();
     }
     finally
     {
       //noinspection UnstableApiUsage
       ReflectUtil.field( LoadingState.class, "CHECK_LOADING_PHASE" ).setStatic( check );
-    }
-  }
-
-  private void replaceExpressionChecker()
-  {
-    replaceExpressionCheckerClass( "ExpressionChecker" );
-//    replaceExpressionCheckerClass( "ExpressionChecker$1YieldFinder" );
-  }
-  private void replaceExpressionCheckerClass( String className )
-  {
-    @Jailbreak ClassLoader classLoader = ReflectUtil.type( "com.intellij.java.codeserver.highlighting.LiteralChecker" ).getClassLoader();
-    if( null == classLoader.findLoadedClass( "com.intellij.java.codeserver.highlighting." + className ) )
-    {
-      if (classLoader.getDefinedPackage("com.intellij.java.codeserver.highlighting") == null) {
-        classLoader.definePackage("com.intellij.java.codeserver.highlighting", null, null, null, null, null, null, null);
-      }
-
-      InputStream is = JavacPlugin.class.getClassLoader().getResourceAsStream(
-              "com/intellij/java/codeserver/highlighting/" + className + ".clazz" );
-      try
-      {
-        byte[] content = StreamUtil.getContent( is );
-        classLoader.defineClass( "com.intellij.java.codeserver.highlighting." + className, content, 0, content.length );
-      }
-      catch( IOException e )
-      {
-        throw new RuntimeException( e );
-      }
     }
   }
 

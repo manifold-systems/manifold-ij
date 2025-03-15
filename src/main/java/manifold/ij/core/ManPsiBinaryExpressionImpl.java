@@ -52,7 +52,14 @@ public class ManPsiBinaryExpressionImpl extends PsiBinaryExpressionImpl implemen
     if( child == null )
     {
       // pose as multiplication to get by
-      child = new PsiJavaTokenImpl( JavaTokenType.ASTERISK, "*" );
+      child = new PsiJavaTokenImpl( JavaTokenType.ASTERISK, "*" )
+              {
+                @Override
+                public PsiElement getParent()
+                {
+                  return ManPsiBinaryExpressionImpl.this;
+                }
+              };
     }
     return child;
   }

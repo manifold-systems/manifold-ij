@@ -19,20 +19,20 @@
 
 package manifold.ij.extensions;
 
+import com.intellij.codeInsight.daemon.impl.analysis.JavaHighlightUtil;
 import com.intellij.ide.highlighter.JavaHighlightingColors;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
-import manifold.ExtIssueMsg;
+import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.util.TypeConversionUtil;
 import manifold.api.util.IssueMsg;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.core.ManPsiTupleExpression;
 import manifold.ij.core.ManPsiTupleValueExpression;
-import manifold.ij.psi.ManExtensionMethodBuilder;
-import manifold.ij.util.ManPsiUtil;
 import manifold.internal.javac.ManAttr;
 import manifold.rt.api.util.ManClassUtil;
 import org.jetbrains.annotations.NotNull;
@@ -58,6 +58,8 @@ public class MiscAnnotator implements Annotator
     verifyMethodRefNotAuto( element, holder );
     verifyMethodDefNotAbstractAuto( element, holder );
     verifyTuplesEnabled( element, holder );
+
+    checkPolyadicOperatorApplicable( element, holder );
   }
 
   private void highlightTupleLabelAsComment( PsiElement element, AnnotationHolder holder )
@@ -207,6 +209,74 @@ public class MiscAnnotator implements Annotator
         }
       }
     }
+  }
+
+  // handles binding expressions along with binary expressions
+  private static void checkPolyadicOperatorApplicable( @NotNull PsiElement elem, @NotNull AnnotationHolder holder )
+  {
+    if( !(elem instanceof PsiPolyadicExpression expression) )
+    {
+      return;
+    }
+
+    PsiExpression[] operands = expression.getOperands();
+
+    PsiType lType = operands[0].getType();
+    IElementType operationSign = expression.getOperationTokenType();
+    for( int i = 1; i < operands.length; i++ )
+    {
+      PsiExpression operand = operands[i];
+      PsiType rType = operand.getType();
+      if( !TypeConversionUtil.isBinaryOperatorApplicable( operationSign, lType, rType, false ) )
+      {
+        if( expression instanceof PsiBinaryExpression &&
+                ManJavaResolveCache.getTypeForOverloadedBinaryOperator( expression ) != null )
+        {
+          continue;
+        }
+        else if( isNestedBindingExpression( expression ) )
+        {
+          // only detect whether the outermost binding expression is valid
+          continue;
+        }
+        PsiJavaToken token = expression.getTokenBeforeOperand( operand );
+        assert token != null : expression;
+        String message =
+            ManJavaResolveCache.isBindingExpression(expression)
+            ? String.format( "Binding operator cannot be applied to '%s' and '%s'",
+                JavaHighlightUtil.formatType( lType ),
+                JavaHighlightUtil.formatType( rType ) )
+            : String.format( "Operator '%s' cannot be applied to '%s', '%s'", token.getText(),
+                JavaHighlightUtil.formatType( lType ),
+                JavaHighlightUtil.formatType( rType ) );
+//        String message = JavaErrorBundle.message( "binary.operator.not.applicable", token.getText(),
+//                JavaHighlightUtil.formatType( lType ),
+//                JavaHighlightUtil.formatType( rType ) );
+        holder.newAnnotation( HighlightSeverity.ERROR, message )
+                .range( expression )
+                .create();
+      }
+      lType = TypeConversionUtil.calcTypeForBinaryExpression( lType, rType, operationSign, true );
+    }
+  }
+
+  private static boolean isNestedBindingExpression( PsiElement csr )
+  {
+    return _isNestedBindingExpression( csr, 0 );
+  }
+  private static boolean _isNestedBindingExpression( PsiElement csr, int count )
+  {
+    if( !(csr instanceof PsiExpression) )
+    {
+      return count > 1;
+    }
+
+    if( csr instanceof PsiBinaryExpression csrBin && ManJavaResolveCache.isBindingExpression( csrBin ) )
+    {
+      count++;
+    }
+
+    return _isNestedBindingExpression( csr.getParent(), count );
   }
 
 //  private boolean isStructuralInterfaceMethod( PsiMethod psiMethod )
