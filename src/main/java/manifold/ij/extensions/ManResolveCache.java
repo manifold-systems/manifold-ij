@@ -139,6 +139,8 @@ public class ManResolveCache extends ResolveCache
       return ResolveResult.EMPTY_ARRAY;
     }
 
+    results = handleAmbiguousProperties( ref, results, map );
+
     for( ResolveResult result: results )
     {
       if( result instanceof CandidateInfo )
@@ -207,6 +209,49 @@ public class ManResolveCache extends ResolveCache
             handleFieldSelfTypes( info, ref );
           }
         }
+      }
+    }
+    return results;
+  }
+
+  // Handle case where multiple resolve results exist for a property ref, but really only one is valid. In this case, the
+  // ref resolves to an interface member and a class member, where the class ref overrides the interface one. Only the
+  // class ref can be referenced.
+  private <T extends PsiPolyVariantReference> ResolveResult[] handleAmbiguousProperties( T ref, ResolveResult[] results, Map<T, ResolveResult[]> map )
+  {
+    ResolveResult[] prevResults = results;
+    results = handleAmbiguousProperties( results );
+    if( prevResults != results )
+    {
+      map.put( ref, results );
+    }
+    return results;
+  }
+  private ResolveResult[] handleAmbiguousProperties( ResolveResult[] results )
+  {
+    if( results.length <= 1 || !(results[0] instanceof CandidateInfo) )
+    {
+      return results;
+    }
+
+    List<CandidateInfo> infos = (List)Arrays.asList(results);
+    CandidateInfo classResult = infos.stream()
+            .filter(result ->
+                    result.getElement() instanceof PsiField &&
+                            !(result.getElement() instanceof ManLightFieldBuilder) &&
+                            ((PsiField) result.getElement()).getContainingClass() != null && !((PsiField)result.getElement()).getContainingClass().isInterface())
+            .findFirst().orElse( null );
+
+    if( classResult != null )
+    {
+      // remove references to interface prop because class ref overrides
+      boolean hasInterfacePropRef = infos.stream()
+                .anyMatch(result ->
+                        result.getElement() instanceof PsiField &&
+                                ((PsiField)result.getElement()).getContainingClass() != null && ((PsiField)result.getElement()).getContainingClass().isInterface());
+      if( hasInterfacePropRef )
+      {
+        return new CandidateInfo[] {classResult};
       }
     }
     return results;
