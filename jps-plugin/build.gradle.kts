@@ -31,6 +31,8 @@ configurations {
 }
 
 java {
+// Java 8 is required for JPS, otherwise an IJ project use a Java 8 compiler
+// will fail to load Java 11 compiled JPS classes
   sourceCompatibility = JavaVersion.VERSION_1_8
   targetCompatibility = JavaVersion.VERSION_1_8
 }

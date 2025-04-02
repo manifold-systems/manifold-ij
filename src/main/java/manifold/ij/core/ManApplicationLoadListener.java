@@ -39,6 +39,7 @@ import com.intellij.util.messages.MessageBusConnection;
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
 import manifold.ij.extensions.ManJavaLiteralExpressionElementType;
+import manifold.util.JdkAccessUtil;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -128,6 +129,7 @@ public class ManApplicationLoadListener implements ApplicationLoadListener
    */
   private void overrideJavaStringLiterals()
   {
+    JdkAccessUtil.bypassJava9Security();
     ManJavaLiteralExpressionElementType override = new ManJavaLiteralExpressionElementType();
     ReflectUtil.field( JavaStubElementTypes.class, "LITERAL_EXPRESSION" ).setStatic( override );
 
