@@ -118,7 +118,7 @@ public class ManApplicationLoadListener implements ApplicationLoadListener
    */
   private void overrideJavaStringLiterals()
   {
-    JdkAccessUtil.bypassJava9Security();
+    JdkAccessUtil.openModules();
     ManJavaLiteralExpressionElementType override = new ManJavaLiteralExpressionElementType();
     ReflectUtil.field( JavaStubElementTypes.class, "LITERAL_EXPRESSION" ).setStatic( override );
 
