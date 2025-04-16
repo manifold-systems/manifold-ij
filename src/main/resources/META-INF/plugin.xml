@@ -717,6 +717,8 @@ Other minor fixes and improvements.
 
     <applicationConfigurable instance="manifold.ij.extensions.ManConfigurable"/>
 
+    <colorSettingsPage implementation="manifold.ij.extensions.ManColorSettingsPage"/>
+
     <!-- ManJavaSyntaxHighlighterFactory exists solely so we can include '$' as an escapable for String literal templates
          see ManJavaFileHighlighter -->
     <lang.syntaxHighlighterFactory language="JAVA" implementationClass="manifold.ij.extensions.ManJavaSyntaxHighlighterFactory" order="first"/>

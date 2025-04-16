@@ -319,7 +319,7 @@ public class ManModule extends SimpleModule
   public void loadRegistered( Set<ITypeManifold> sps )
   {
     initializeModuleClassLoader();
-    JdkAccessUtil.bypassJava9Security( true );
+    JdkAccessUtil.openModules( true );
     runWithLoader( () -> super.loadRegistered( sps ) );
   }
 
