@@ -31,7 +31,7 @@ import com.intellij.psi.util.PsiMethodUtil;
 import com.intellij.psi.util.PsiUtil;
 import com.intellij.psi.util.TypeConversionUtil;
 import manifold.api.gen.*;
-import manifold.ext.params.rt.manifold_params;
+import manifold.ext.params.rt.params;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManExtensionMethodBuilder;
 import manifold.ij.psi.ManLightParameterImpl;
@@ -122,20 +122,6 @@ class ParamsMaker
       return;
     }
 
-    if( _holder != null && !_psiMethod.findSuperMethods().isEmpty() )
-    {
-      for( PsiParameter param : _psiMethod.getParameterList().getParameters() )
-      {
-        if( hasInitializer( param ) )
-        {
-          reportIssue( param, HighlightSeverity.ERROR,
-            "Default parameter values are not allowed in the signature of an overriding method",
-            getInitializerRange( param ) );;
-        }
-      }
-      return;
-    }
-
     if( paramsClass != null )
     {
       PsiMethod forwardingMeth = makeParamsMethod( paramsClass );
@@ -222,8 +208,8 @@ class ParamsMaker
     StubBuilder stubBuilder = new StubBuilder();
     SrcMethod srcMethod = stubBuilder.makeMethod( srcClass, _psiMethod );
 
-    // mark with @manifold_params to facilitate excluding this method from code completion menus
-    srcMethod.addAnnotation( manifold_params.class.getTypeName() );
+    // mark with @params to facilitate excluding this method from code completion menus
+    srcMethod.addAnnotation( params.class.getTypeName() );
 
     // replace target method's params with paramsClass type
     srcMethod.getParameters().clear();
@@ -309,8 +295,8 @@ class ParamsMaker
 
     SrcMethod srcMethod = stubBuilder.makeMethod( srcClass, _psiMethod );
 
-    // mark with @manifold_params to facilitate excluding this method from code completion menus
-    srcMethod.addAnnotation( manifold_params.class.getTypeName() );
+    // mark with @params to facilitate excluding this method from code completion menus
+    srcMethod.addAnnotation( params.class.getTypeName() );
 
     srcMethod.getParameters().clear();
     for( PsiParameter reqParam: reqParams )
@@ -443,10 +429,10 @@ class ParamsMaker
     SrcClass srcClass = new SrcClass( name, srcParent, AbstractSrcClass.Kind.Class )
       .name( name )
       .modifiers( Modifier.PUBLIC | Modifier.STATIC )
-      .addAnnotation( new SrcAnnotationExpression( manifold_params.class )
+      .addAnnotation( new SrcAnnotationExpression( params.class )
         .addArgument( new SrcArgument( new SrcRawExpression( "\"" +
           Arrays.stream( _psiMethod.getParameterList().getParameters() )
-            .map( e -> "_" + (getInitializer( e ) == null ? "" : "opt$") + e.name )
+            .map( e -> "_" + (getInitializer( e ) == null ? "" : "opt$") + e.getName() )
             .reduce( "", (a,b) -> a+b ) + "\"" ) ) ) );
     addTypeParams( srcClass );
 

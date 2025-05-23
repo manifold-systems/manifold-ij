@@ -31,7 +31,7 @@ import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Consumer;
-import manifold.ext.params.rt.manifold_params;
+import manifold.ext.params.rt.params;
 import manifold.ij.core.*;
 import manifold.ij.psi.ManLightClassBuilder;
 import manifold.ij.psi.ManLightFieldBuilder;
@@ -96,7 +96,7 @@ public class ManJavaCompletionContributor extends CompletionContributor
     {
       if( elem instanceof PsiMethod method )
       {
-        PsiAnnotation anno = method.getAnnotation( manifold_params.class.getTypeName() );
+        PsiAnnotation anno = method.getAnnotation( params.class.getTypeName() );
         if( anno != null )
         {
           PsiParameterList paramList = method.getParameterList();
@@ -109,7 +109,7 @@ public class ManJavaCompletionContributor extends CompletionContributor
               PsiClass psiClass = psiClassType.resolve();
               if( psiClass != null )
               {
-                PsiAnnotation annoOnClass = psiClass.getAnnotation( manifold_params.class.getTypeName() );
+                PsiAnnotation annoOnClass = psiClass.getAnnotation( params.class.getTypeName() );
                 if( annoOnClass != null )
                 {
                   paramNames.addAll( getParamNames( psiClass, true ) );
@@ -272,7 +272,7 @@ public class ManJavaCompletionContributor extends CompletionContributor
           return true;
         }
 
-        if( manMethod.getAnnotation( manifold_params.class.getTypeName() ) != null )
+        if( manMethod.getAnnotation( params.class.getTypeName() ) != null )
         {
           // don't show generated params method, it navs to the original method
           return true;
