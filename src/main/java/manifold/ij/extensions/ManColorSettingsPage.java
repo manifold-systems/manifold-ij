@@ -17,17 +17,23 @@ import java.util.Map;
 
 public class ManColorSettingsPage implements ColorSettingsPage
 {
+    public static final TextAttributesKey PREPROCESSOR_MASKED_CODE =
+            TextAttributesKey.createTextAttributesKey("PREPROCESSOR_MASKED_CODE", DefaultLanguageHighlighterColors.INLINE_PARAMETER_HINT );
+    private static final AttributesDescriptor[] DESCRIPTORS = new AttributesDescriptor[]{
+            new AttributesDescriptor( "Masked code", PREPROCESSOR_MASKED_CODE ),
+    };
+
     static final ColorKey KEY_PREPROCESSOR_DIRECTIVE = ColorKey.createColorKey( "KEY_PREPROCESSOR_DIRECTIVE", DefaultLanguageHighlighterColors.KEYWORD.getDefaultAttributes().getForegroundColor() );
-    static final ColorKey KEY_PREPROCESSOR_MASKED_CODE = ColorKey.createColorKey( "KEY_PREPROCESSOR_MASKED_CODE", DefaultLanguageHighlighterColors.INLINE_PARAMETER_HINT.getDefaultAttributes().getBackgroundColor() );
+//    static final ColorKey KEY_PREPROCESSOR_MASKED_CODE = ColorKey.createColorKey( "KEY_PREPROCESSOR_MASKED_CODE", DefaultLanguageHighlighterColors.INLINE_PARAMETER_HINT.getDefaultAttributes().getBackgroundColor() );
     private static final ColorDescriptor[] COLOR_DESCRIPTORS = new ColorDescriptor[] {
             new ColorDescriptor("Directives", KEY_PREPROCESSOR_DIRECTIVE, ColorDescriptor.Kind.FOREGROUND ),
-            new ColorDescriptor("Masked code", KEY_PREPROCESSOR_MASKED_CODE, ColorDescriptor.Kind.BACKGROUND ),
+//            new ColorDescriptor("Masked code", KEY_PREPROCESSOR_MASKED_CODE, ColorDescriptor.Kind.BACKGROUND ),
     };
 
 
     @Override
     public @NotNull AttributesDescriptor @NotNull [] getAttributeDescriptors() {
-        return new AttributesDescriptor[0]; // not using this since all colors are specific to foreground or background, not both, see getColorDescriptors() below
+        return DESCRIPTORS;
     }
 
     @Override

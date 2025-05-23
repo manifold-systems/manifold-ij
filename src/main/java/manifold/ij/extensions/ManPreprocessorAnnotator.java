@@ -24,6 +24,7 @@ import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorColorsUtil;
 import com.intellij.openapi.editor.markup.EffectType;
 import com.intellij.openapi.editor.markup.TextAttributes;
@@ -154,9 +155,10 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
   }
 
   private @NotNull TextAttributes maskedCodeAttr() {
-    Color color = EditorColorsUtil.getGlobalOrDefaultColor( ManColorSettingsPage.KEY_PREPROCESSOR_MASKED_CODE );
-    color = new Color( color.getRed(), color.getGreen(), color.getBlue(), 100);
-    return new TextAttributes( null, color, null, EffectType.WAVE_UNDERSCORE, Font.PLAIN );
+    TextAttributes attrs = EditorColorsManager.getInstance().getGlobalScheme().getAttributes( ManColorSettingsPage.PREPROCESSOR_MASKED_CODE );
+    Color foregroundColor = attrs.getForegroundColor();
+    Color backgroundColor = attrs.getBackgroundColor();
+    return new TextAttributes( foregroundColor, backgroundColor, attrs.getEffectColor(), attrs.getEffectType(), attrs.getFontType() );
   }
 
   private void addDirective( Tokenizer tokenizer, Info info )

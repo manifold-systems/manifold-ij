@@ -26,14 +26,20 @@ import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
-import com.intellij.psi.util.PsiUtil;
+import com.intellij.psi.impl.source.resolve.JavaResolveUtil;
+import manifold.ext.params.rt.params;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.core.ManPsiTupleExpression;
 import manifold.ij.core.TupleNamedArgsUtil;
 import manifold.ij.util.ManPsiUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.*;
+
+import static manifold.ext.params.ParamsIssueMsg.MSG_OPT_PARAM_NAME_MISMATCH;
+import static manifold.ext.params.ParamsIssueMsg.MSG_OPT_PARAM_OVERRIDABLE_METHOD_OVERLOAD_NOT_ALLOWED;
 import static manifold.ij.extensions.ManParamsAugmentProvider.hasInitializer;
 
 /**
@@ -116,5 +122,226 @@ public class ParamsAnnotator implements Annotator
         }
       }
     }
+  }
+
+  private void checkIllegalOverrides( PsiElement element, AnnotationHolder holder )
+  {
+    if( !(element instanceof PsiExtensibleClass) )
+    {
+      return;
+    }
+
+    PsiExtensibleClass psiClass = (PsiExtensibleClass) element;
+    Map<String, ArrayList<PsiMethod>> methodsByName = new HashMap<>();
+    for( PsiMethod def : psiClass.getOwnMethods() )
+    {
+      methodsByName.computeIfAbsent( def.getName(), __-> new ArrayList<>() )
+              .add( def );
+    }
+    for( Map.Entry<String, ArrayList<PsiMethod>> entry : methodsByName.entrySet() )
+    {
+      if( entry.getValue().size() > 1 &&
+              // two or more method overloads having optional parameters
+              entry.getValue().stream()
+                      .filter( m -> isOverridable( m ) && m.getParameterList().getParameters().stream()
+                              .anyMatch( param -> hasInitializer( param ) ) )
+                      .count() > 1 )
+      {
+        for( PsiMethod m : entry.getValue() )
+        {
+          if( m.getParameterList().getParameters().stream().anyMatch(
+                  param -> hasInitializer( param ) ) || hasOverloadInSuperTypes( psiClass, m, holder ) )
+          {
+
+            TextRange textRange = m.getNameIdentifier().getTextRange();
+            TextRange range = new TextRange( textRange.getStartOffset(), textRange.getEndOffset() );
+            holder.newAnnotation( HighlightSeverity.ERROR,
+                            MSG_OPT_PARAM_OVERRIDABLE_METHOD_OVERLOAD_NOT_ALLOWED.get( entry.getKey() ) )
+                    .range( range )
+                    .create();
+          }
+        }
+      }
+    }
+  }
+
+  private boolean hasOverloadInSuperTypes( PsiExtensibleClass tree, PsiMethod method, AnnotationHolder holder )
+  {
+    if( method.isConstructor() )
+    {
+      return false;
+    }
+
+    PsiMethod superMethod = findSuperMethod( method, holder );
+    if( superMethod != null )
+    {
+      // ignore super methods because the super method will be checked against methods in its class
+      return false;
+    }
+
+    return tree.getAllMethods().stream()
+            .anyMatch( m -> m != method &&
+                 !m.isConstructor() &&
+                 m.getName().equals( method.getName() ) &&
+                 JavaResolveUtil.isAccessible( m, m.getContainingClass(), m.getModifierList(), null, tree, tree.getContainingFile() ) &&
+                 m.getParameterList().getParameters().stream().anyMatch( p -> hasInitializer( p ) ) );
+  }
+
+//  private Set<PsiClass> getAllSuperTypes( PsiClass psiClass )
+//  {
+//    return getAllSuperTypes( psiClass, psiClass, new LinkedHashSet<>() );
+//  }
+//  private Set<PsiClass> getAllSuperTypes( PsiClass origin, PsiClass psiClass, Set<PsiClass> result )
+//  {
+//    if( result.contains( psiClass ) )
+//    {
+//      return result;
+//    }
+//    if( origin != psiClass )
+//    {
+//      result.add( psiClass );
+//    }
+//
+//    for( PsiClassType superType : psiClass.getSuperTypes() )
+//    {
+//      getAllSuperTypes( origin, PsiTypesUtil.getPsiClass( superType ), result );
+//    }
+//    return result;
+//  }
+
+  private PsiMethod findSuperMethod( PsiMethod method, AnnotationHolder holder )
+  {
+    PsiMethod superMethod = findSuperMethod_NoParamCheck( method );
+    if( superMethod == null )
+    {
+      return null;
+    }
+
+    // check that param names match
+    checkParamNames( method, superMethod, holder );
+    return superMethod;
+  }
+
+  private void checkParamNames(PsiMethod method, PsiMethod superMethod, AnnotationHolder holder )
+  {
+    List<PsiParameter> superParams = Arrays.asList( superMethod.getParameterList().getParameters() );
+    for( int i = 0, paramsSize = superParams.size(); i < paramsSize; i++ )
+    {
+      PsiParameter superParam = superParams.get( i );
+      PsiParameter param = method.getParameterList().getParameter( i );
+      if( param != null && !superParam.getName().equals( param.getName() ) )
+      {
+        TextRange textRange = param.getNameIdentifier().getTextRange();
+        TextRange range = new TextRange( textRange.getStartOffset(), textRange.getEndOffset() );
+        holder.newAnnotation( HighlightSeverity.ERROR,
+                        MSG_OPT_PARAM_NAME_MISMATCH.get( param.getName(), superParam.getName() ) )
+                .range( range )
+                .create();
+      }
+    }
+  }
+
+  private PsiMethod findSuperMethod_NoParamCheck( PsiMethod method )
+  {
+    if( !couldOverride( method ) )
+    {
+      return null;
+    }
+
+    PsiMethod superMethod = findSuperMethodImpl(method );
+    if( superMethod != null )
+    {
+      // directly overrides super method
+      return (PsiMethod)superMethod;
+    }
+// todo: impl this
+//
+//    // check for indirect override where overrider has additional optional parameters
+//
+//    int lastPositional = -1;
+//    List<PsiParameter> requiredForOverride = new ArrayList<>();
+//    List<PsiParameter> remainingOptional = new ArrayList<>();
+//    List<PsiParameter> params = Arrays.asList( method.getParameterList().getParameters() );
+//    for( int i = 0; i < params.size(); i++ )
+//    {
+//      PsiParameter param = params.get( i );
+//      if( hasInitializer( param ) )
+//      {
+//        lastPositional = i;
+//      }
+//    }
+//    for( int i = 0; i <= lastPositional; i++ )
+//    {
+//      requiredForOverride.add( params.get( i ) );
+//    }
+//    for( int i = lastPositional + 1; i < params.size(); i++ )
+//    {
+//      remainingOptional.add( params.get( i ) );
+//    }
+//
+//    for( int i = lastPositional + remainingOptional.size(); i > lastPositional; i-- ) // excludes last param bc we already checked for a direct override up top
+//    {
+//      List<PsiParameter> l = params.subList( 0, i );
+//      List<PsiParameter> superSig = l;
+//      // this is from manifold javac plugin, there's no good direct translation to IJ API, but maybe use the generated telescoping methods--find their super methods?
+//      PsiMethod methodTypeWithParameters = getTypes().createMethodTypeWithParameters( method.sym.type, superSig );
+//      superMethod = findSuperMethod( classDecl().sym, method.name, methodTypeWithParameters );
+//      if( superMethod != null )
+//      {
+//        return (PsiMethod)superMethod;
+//      }
+//    }
+    return null;
+  }
+
+  // search the ancestry for the super method, if the direct super method does not have optional parameters, search for
+  // its direct super method, and so on until a super method with optional parameters is found, otherwise return null.
+  private PsiMethod findSuperMethodImpl(PsiMethod candidate )
+  {
+    PsiMethod[] superMethods = candidate.findSuperMethods( true );
+    if( superMethods.length > 0 )
+    {
+      PsiMethod sm = superMethods[0];
+      if( !hasParamAnnoValue( sm ) )
+      {
+        return findSuperMethodImpl( sm );
+      }
+      return sm;
+    }
+    return null;
+  }
+
+  private boolean hasParamAnnoValue( PsiMethod superMethod )
+  {
+    PsiClass superClass = superMethod.getContainingClass();
+    for( PsiMethod m: superClass.getMethods() )
+    {
+      if( m.getName().equals( superMethod.getName()) )
+      {
+        @Nullable PsiAnnotation paramsAnno = m.getAnnotation( params.class.getTypeName() );
+        if( paramsAnno != null )
+        {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  public boolean isOverridable( PsiMethod m )
+  {
+    PsiModifierList mods = m.getModifierList();
+    return !mods.hasModifierProperty( PsiModifier.FINAL ) &&
+           !mods.hasModifierProperty( PsiModifier.STATIC ) &&
+           !mods.hasModifierProperty( PsiModifier.PRIVATE ) &&
+           !m.isConstructor();
+  }
+
+  private boolean couldOverride( PsiMethod m )
+  {
+    PsiModifierList mods = m.getModifierList();
+    return !mods.hasModifierProperty( PsiModifier.STATIC ) &&
+           !mods.hasModifierProperty( PsiModifier.PRIVATE ) &&
+           !m.isConstructor();
   }
 }

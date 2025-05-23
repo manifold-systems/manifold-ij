@@ -61,7 +61,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.DocumentUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.text.CharArrayUtil;
-import manifold.ext.params.rt.manifold_params;
+import manifold.ext.params.rt.params;
 import manifold.ij.core.ManPsiTupleExpression;
 import manifold.ij.core.ManPsiTupleValueExpression;
 import manifold.ij.core.RecursiveTypeVarEraser;
@@ -355,7 +355,7 @@ public /*final*/ class MethodParameterInfoHandler
 
     PsiElement realResolve = call != null ? call.resolveMethod() : null;
     if( realResolve instanceof ManExtensionMethodBuilder paramsMethod &&
-      paramsMethod.hasAnnotation( manifold_params.class.getTypeName() ) )
+      paramsMethod.hasAnnotation( params.class.getTypeName() ) )
     {
       realResolve = paramsMethod.getTargetMethod();
     }

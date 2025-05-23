@@ -78,7 +78,7 @@ dependencies {
   implementation("systems.manifold:manifold-image:$manifoldVersion")
   implementation("systems.manifold:manifold-ext:$manifoldVersion")
   implementation("systems.manifold:manifold-props:$manifoldVersion")
-  implementation("systems.manifold:manifold-params-rt:$manifoldVersion")
+  implementation("systems.manifold:manifold-params:$manifoldVersion")
   implementation("systems.manifold:manifold-delegation:$manifoldVersion")
   implementation("systems.manifold:manifold-strings:$manifoldVersion")
   implementation("systems.manifold:manifold-exceptions:$manifoldVersion")

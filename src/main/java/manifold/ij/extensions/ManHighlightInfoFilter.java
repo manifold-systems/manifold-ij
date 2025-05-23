@@ -411,13 +411,29 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterOperatorCannotBeAppliedToWithBinaryOperatorOverload( HighlightInfo hi, PsiElement elem )
   {
-    if( elem instanceof PsiPolyadicExpression || elem.getParent() instanceof PsiPolyadicExpression )
+    PsiPolyadicExpression pexpr = getEnclosingPolyadicExpr(elem);
+    if( pexpr != null )
     {
       return (hi.getDescription().contains( "' cannot be applied to " ) ||  // eg. "Operator '+' cannot be applied to 'java.math.BigDecimal'"
               hi.getDescription().contains( "' 不能应用于 " )) &&  // eg. "运算符 '+' 不能应用于 'java.math.BigDecimal'"
-              checkPolyadicOperatorApplicable( (PsiPolyadicExpression)(elem instanceof PsiPolyadicExpression ? elem : elem.getParent()) );
+             checkPolyadicOperatorApplicable( pexpr );
     }
     return false;
+  }
+
+  private static PsiPolyadicExpression getEnclosingPolyadicExpr( PsiElement elem )
+  {
+    if( elem == null )
+    {
+      return null;
+    }
+
+    if( elem instanceof PsiPolyadicExpression e )
+    {
+      return e;
+    }
+
+    return getEnclosingPolyadicExpr( elem.getParent() );
   }
 
   private static boolean checkPolyadicOperatorApplicable( @NotNull PsiPolyadicExpression expression )

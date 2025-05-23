@@ -32,7 +32,7 @@ import com.intellij.psi.scope.conflictResolvers.JavaMethodsConflictResolver;
 import com.intellij.psi.util.PsiFormatUtil;
 import com.intellij.psi.util.PsiFormatUtilBase;
 import com.intellij.psi.util.PsiTreeUtil;
-import manifold.ext.params.rt.manifold_params;
+import manifold.ext.params.rt.params;
 import manifold.ext.rt.api.Jailbreak;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -104,7 +104,7 @@ public class ManJavaDocumentationProvider extends JavaDocumentationProvider
           final StringBuilder sb = new StringBuilder();
 
           for (PsiMethod constructor : constructors) {
-            if( constructor.getAnnotation( manifold_params.class.getTypeName() ) != null )
+            if( constructor.getAnnotation( params.class.getTypeName() ) != null )
             {
               // filter out generated params methods/constructors (manifold-params)
               continue;
@@ -142,7 +142,7 @@ public class ManJavaDocumentationProvider extends JavaDocumentationProvider
       JavaMethodsConflictResolver.filterSupers(conflicts, expr.getContainingFile(), null);
 
       conflicts = conflicts.stream()
-        .filter( c -> c.getElement() instanceof PsiMethod m && m.getAnnotation( manifold_params.class.getTypeName() ) == null )
+        .filter( c -> c.getElement() instanceof PsiMethod m && m.getAnnotation( params.class.getTypeName() ) == null )
         .toList();
       if( conflicts.size() == 1 )
       {
