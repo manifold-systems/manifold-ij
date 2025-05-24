@@ -462,7 +462,12 @@ class ParamsMaker
       PsiTypeElement typeElement = param.getTypeElement();
       try
       {
-        srcCtor.addParam( param.getName(), typeElement == null ? "" : typeElement.getText() == null ? "" : typeElement.getText() );
+        String type = typeElement == null ? null : typeElement.getText() == null ? null : typeElement.getText();
+        if( type == null || type.isEmpty() )
+        {
+          return null;
+        }
+        srcCtor.addParam( param.getName(), type);
       }
       catch( TypeNameParserException tnpe )
       {
