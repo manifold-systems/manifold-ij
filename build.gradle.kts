@@ -37,13 +37,10 @@ configurations {
 }
 
 repositories {
-  if (System.getenv("CI")?.equals("true", ignoreCase = true) != true) {
+//  if (System.getenv("CI")?.equals("true", ignoreCase = true) != true) {
     mavenLocal()
-  }
+//  }
   mavenCentral()
-  maven {
-    url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
-  }
   intellijPlatform {
     defaultRepositories()
   }

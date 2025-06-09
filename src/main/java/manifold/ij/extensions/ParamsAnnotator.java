@@ -25,6 +25,7 @@ import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.compiled.ClsClassImpl;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.impl.source.resolve.JavaResolveUtil;
 import manifold.ext.params.rt.params;
@@ -98,13 +99,20 @@ public class ParamsAnnotator implements Annotator
 
   private void checkParams( PsiElement element, AnnotationHolder holder )
   {
-    if( element instanceof PsiMethod )
+    if( element instanceof PsiMethod psiMethod )
     {
       PsiClass containingClass = ManPsiUtil.getContainingClass( element );
-      if( containingClass instanceof PsiExtensibleClass )
+      if( containingClass instanceof PsiExtensibleClass psiClass )
       {
-        ParamsMaker.checkParamsClass( (PsiMethod)element, (PsiExtensibleClass)containingClass, holder );
-        ParamsMaker.checkMethod( (PsiMethod)element, (PsiExtensibleClass)containingClass, holder );
+        for( PsiParameter param : psiMethod.getParameterList().getParameters() )
+        {
+          if( hasInitializer( param ) )
+          {
+            ParamsMaker.checkParamsClass( psiMethod, psiClass, holder );
+            ParamsMaker.checkMethod( psiMethod, psiClass, holder );
+            break;
+          }
+        }
       }
     }
     else if( element instanceof ManPsiTupleExpression )

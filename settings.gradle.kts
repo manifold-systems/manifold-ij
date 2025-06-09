@@ -28,9 +28,7 @@ dependencyResolutionManagement {
 //    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
 
     repositories {
-        maven {
-            url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
-        }
+        mavenLocal()
         intellijPlatform {
             defaultRepositories()
         }
