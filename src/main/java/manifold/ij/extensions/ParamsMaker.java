@@ -31,6 +31,7 @@ import com.intellij.psi.util.PsiMethodUtil;
 import com.intellij.psi.util.PsiUtil;
 import com.intellij.psi.util.TypeConversionUtil;
 import manifold.api.gen.*;
+import manifold.ext.params.ParamsIssueMsg;
 import manifold.ext.params.rt.params;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManExtensionMethodBuilder;
@@ -360,26 +361,25 @@ class ParamsMaker
             otherPres = m.getPresentation();
             otherDisplay = otherPres == null ? m.getName() : otherPres.getPresentableText();
             String subSignature = "'(" + Arrays.stream( erasedSig ).map( p -> p.getPresentableText() ).collect( Collectors.joining( ", " ) ) + ")'";
-            reportError( _psiMethod.getNameIdentifier(), "'" + paramsMethodDisplay + "' clashes with '" + otherDisplay + "' using sub-signature " + subSignature );
+            reportError( _psiMethod.getNameIdentifier(), ParamsIssueMsg.MSG_OPT_PARAM_METHOD_CLASHES_WITH_SUBSIG.get( paramsMethodDisplay, otherDisplay, subSignature ) );
           }
           else
           {
             // a telescoping method clashes with a physical method (report that the corresponding optional params method interferes)
 
-            reportError( _psiMethod.getNameIdentifier(), "Optional parameter method: '" + paramsMethodDisplay +
-              "' indirectly clashes with '" + otherDisplay + "'" );
+            reportError( _psiMethod.getNameIdentifier(), ParamsIssueMsg.MSG_OPT_PARAM_METHOD_INDIRECTLY_CLASHES.get( paramsMethodDisplay, otherDisplay ) );
           }
         }
         else if( !m.isConstructor() &&
           !m.getModifierList().hasModifierProperty( PsiModifier.STATIC ) &&
           !m.getModifierList().hasModifierProperty( PsiModifier.PRIVATE ) &&
+          !m.hasAnnotation( params.class.getTypeName() ) &&
           !plantedMethod.hasAnnotation( Override.class.getTypeName() ) )
         {
           // a telescoping method overrides a physical method in the super class (report that the corresponding optional params method interferes)
 
-          reportWarning( _psiMethod.getNameIdentifier(), "Optional parameter method: '" + paramsMethodDisplay +
-            "' indirectly overrides method '" + otherDisplay + "' in class '" +
-            (m.getContainingClass() == null ? "<unknown>": m.getContainingClass().getName()) + "'" );
+          reportWarning( _psiMethod.getNameIdentifier(), ParamsIssueMsg.MSG_OPT_PARAM_METHOD_INDIRECTLY_OVERRIDES
+                  .get( paramsMethodDisplay, otherDisplay, (m.getContainingClass() == null ? "<unknown>": m.getContainingClass().getName() ) ) );
         }
       }
     }
