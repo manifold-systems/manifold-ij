@@ -25,7 +25,6 @@ import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
-import com.intellij.psi.impl.compiled.ClsClassImpl;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.impl.source.resolve.JavaResolveUtil;
 import manifold.ext.params.rt.params;
@@ -74,6 +73,11 @@ public class ParamsAnnotator implements Annotator
     }
 
     checkParams( element, holder );
+
+    if( element instanceof PsiMethod psiMethod )
+    {
+      findSuperMethod_ParamCheck( psiMethod, holder );
+    }
   }
 
   private void errorIfOptionalParam( ManModule module, @NotNull PsiElement element, @NotNull AnnotationHolder holder )
@@ -180,7 +184,7 @@ public class ParamsAnnotator implements Annotator
       return false;
     }
 
-    PsiMethod superMethod = findSuperMethod( method, holder );
+    PsiMethod superMethod = findSuperMethod_ParamCheck( method, holder );
     if( superMethod != null )
     {
       // ignore super methods because the super method will be checked against methods in its class
@@ -217,7 +221,7 @@ public class ParamsAnnotator implements Annotator
 //    return result;
 //  }
 
-  private PsiMethod findSuperMethod( PsiMethod method, AnnotationHolder holder )
+  private PsiMethod findSuperMethod_ParamCheck( PsiMethod method, AnnotationHolder holder )
   {
     PsiMethod superMethod = findSuperMethod_NoParamCheck( method );
     if( superMethod == null )
