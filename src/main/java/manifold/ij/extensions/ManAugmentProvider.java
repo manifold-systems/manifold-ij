@@ -530,6 +530,13 @@ public class ManAugmentProvider extends PsiAugmentProvider
                 {
                   return;
                 }
+
+                if( !isMethodReturn( statement, method ) )
+                {
+                  // return stmt is inside a lambda
+                  return;
+                }
+
                 visited.get().add( statement );
                 try
                 {
@@ -548,6 +555,23 @@ public class ManAugmentProvider extends PsiAugmentProvider
                 {
                   visited.get().remove( statement );
                 }
+              }
+
+              private boolean isMethodReturn( PsiReturnStatement statement, PsiMethod method )
+              {
+                for( PsiElement parent = statement.getParent(); parent != null; parent = parent.getParent() )
+                {
+                  if( parent == method )
+                  {
+                    return true;
+                  }
+
+                  if( parent instanceof PsiLambdaExpression || parent instanceof PsiMethod )
+                  {
+                    return false;
+                  }
+                }
+                return false;
               }
             } );
           if( retType[0] != null )
