@@ -714,7 +714,7 @@ Other minor fixes and improvements.
     <iconProvider implementation="manifold.ij.extensions.PropertiesIconProvider"/>
     <psi.treeChangeListener implementation="manifold.ij.extensions.GraphQlConfigTreeChangeListener"/>
 
-    <applicationConfigurable instance="manifold.ij.extensions.ManConfigurable"/>
+    <projectConfigurable instance="manifold.ij.extensions.ManConfigurable" displayName="Manifold Settings"/>
 
     <colorSettingsPage implementation="manifold.ij.extensions.ManColorSettingsPage"/>
 
