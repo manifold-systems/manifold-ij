@@ -154,7 +154,13 @@ public class ManAugmentProvider extends PsiAugmentProvider
         LinkedHashMap<String, PsiMethod> augFeatures = new LinkedHashMap<>();
         List<Object> dependencies = new ArrayList<>( addMethods( fqn, psiClass, augFeatures ) );
         dependencies.add( psiClass );
-        dependencies.add( new MyModificationTracker( fqn, psiClass.getProject() ) );
+
+        PsiClass topLevelClass = PsiUtil.getTopLevelClass( element );
+        String toplevelFqn = topLevelClass == null
+              ? ((PsiExtensibleClass)element).getQualifiedName() // should never happen?
+              : topLevelClass.getQualifiedName();
+
+        dependencies.add( new MyModificationTracker( toplevelFqn, psiClass.getProject() ) );
         //noinspection unchecked
         return new CachedValueProvider.Result<>(
           new ArrayList<E>( (Collection<E>)augFeatures.values() ), dependencies.toArray() );
@@ -191,7 +197,8 @@ public class ManAugmentProvider extends PsiAugmentProvider
     {
       if( tm.getContributorKind() == Supplemental )
       {
-        if( tm.isType( fqn ) )
+        PsiClass topLevelClass = PsiUtil.getTopLevelClass( psiClass );
+        if( topLevelClass != null && tm.isType( topLevelClass.getQualifiedName() ) )
         {
           List<IFile> files = tm.findFilesForType( fqn );
           for( IFile file : files )
