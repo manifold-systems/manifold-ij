@@ -192,7 +192,14 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
 
   private String getExtendedFqn( PsiClass extensionClass )
   {
-    String fqn = extensionClass.getQualifiedName();
+    PsiClass topLevelClass = PsiUtil.getTopLevelClass( extensionClass );
+    if( topLevelClass == null )
+    {
+      return null;
+    }
+
+    String topLevelFqn = topLevelClass.getQualifiedName();
+    String fqn = topLevelFqn;
     if( fqn != null )
     {
       int iExt = fqn.indexOf( ExtensionManifold.EXTENSIONS_PACKAGE + '.' );
@@ -200,6 +207,13 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
       {
         fqn = fqn.substring( iExt + ExtensionManifold.EXTENSIONS_PACKAGE.length() + 1 );
         fqn = fqn.substring( 0, fqn.lastIndexOf( '.' ) );
+
+        String extFqn = extensionClass.getQualifiedName(); // could be inner class
+        if( extFqn != null && extFqn.length() > topLevelFqn.length() )
+        {
+          // add inner class
+          fqn += extFqn.substring( topLevelFqn.length() );
+        }
         return fqn;
       }
     }
