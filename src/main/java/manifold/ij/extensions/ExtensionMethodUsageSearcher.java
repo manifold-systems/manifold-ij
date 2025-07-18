@@ -101,12 +101,8 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
     {
       return;
     }
-    PsiAnnotation extensionAnno = resolveInReadAction( searchParameters.getProject(), () ->
-      {
-        PsiModifierList modifierList = extensionClass.getModifierList();
-        return modifierList == null ? null : modifierList.findAnnotation( Extension.class.getName() );
-      } );
-    if( extensionAnno == null )
+
+    if( !isExtensionClass( searchParameters.getProject(), extensionClass ) )
     {
       return;
     }
@@ -175,6 +171,19 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
           searchParameters.isStrictSignatureSearch(), searchParameters.getOptimizer() );
       super.processQuery( searchParams, consumer );
     }
+  }
+
+  private static boolean isExtensionClass( Project project, PsiClass extensionClass )
+  {
+    PsiAnnotation extensionAnno = resolveInReadAction( project, () ->
+      {
+        // only require the toplevel class to have @Extension
+        PsiClass topLevelClass = PsiUtil.getTopLevelClass( extensionClass );
+        PsiClass psiClass = topLevelClass == null ? extensionClass : topLevelClass;
+        PsiModifierList modifierList = psiClass.getModifierList();
+        return modifierList == null ? null : modifierList.findAnnotation( Extension.class.getName() );
+      } );
+    return extensionAnno != null;
   }
 
   private GlobalSearchScope getTargetScope( GlobalSearchScope searchScope, PsiMethod method )
