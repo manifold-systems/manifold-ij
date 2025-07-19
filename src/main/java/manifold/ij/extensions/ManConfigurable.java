@@ -184,10 +184,8 @@ public class ManConfigurable implements Configurable
         false,
         false
       );
-      chooserDescriptor.setTitle( "Android `build` Directory" );
-      chooserDescriptor.setDescription( description );
       directoryChooser.setPreferredSize( new Dimension( 300, directoryChooser.getPreferredSize().height ) );
-      directoryChooser.addBrowseFolderListener( _project, chooserDescriptor );
+      directoryChooser.addBrowseFolderListener( "Android `build` Directory", description, _project, chooserDescriptor );
       return directoryChooser;
     }
 
