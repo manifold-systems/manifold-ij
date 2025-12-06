@@ -40,7 +40,7 @@ public class ManBuildService extends BuilderService
 
   @NotNull
   @Override
-  public List<? extends ModuleLevelBuilder> createModuleLevelBuilders()
+  public List <? extends ModuleLevelBuilder> createModuleLevelBuilders()
   {
     return Collections.singletonList( new ManFileFragmentBuilder() );
   }

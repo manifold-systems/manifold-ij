@@ -87,11 +87,8 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
       // include libraries to handle extended classes
       @Jailbreak ModuleWithDependenciesScope scope = (ModuleWithDependenciesScope)searchScope;
 
-      if( scope.myModule != null )
-      {
-        searchScope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( scope.myModule,
-          ApplicationManager.getApplication().isUnitTestMode() );
-      }
+      searchScope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( scope.getModule(),
+        ApplicationManager.getApplication().isUnitTestMode() );
     }
     GlobalSearchScope theSearchScope = (GlobalSearchScope)searchScope;
 

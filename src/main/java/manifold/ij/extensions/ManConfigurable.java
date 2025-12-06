@@ -69,9 +69,9 @@ public class ManConfigurable implements Configurable
   public void apply()
   {
     boolean dumbProcessorMode = !_manifoldPanel.getMode().isSelected();
-    if( ManJavaLexer.isDumbPreprocessorMode() != dumbProcessorMode )
+    if( ManPreprocessorJavaLexerHook.isDumbPreprocessorMode() != dumbProcessorMode )
     {
-      ManJavaLexer.setDumbPreprocessorMode( dumbProcessorMode );
+      ManPreprocessorJavaLexerHook.setDumbPreprocessorMode( dumbProcessorMode );
     }
 
     boolean experimentalFeaturesEnabled = _manifoldPanel.getExperimentalFeatures().isSelected();
@@ -123,7 +123,7 @@ public class ManConfigurable implements Configurable
                             "code according to both local and environmental definitions. " +
                             "Additionally inactive code is not parsed by IntelliJ to avoid " +
                             "compiler errors and to avoid false positives wrt usage searches etc." );
-      _mode.setSelected( !ManJavaLexer.isDumbPreprocessorMode() );
+      _mode.setSelected( !ManPreprocessorJavaLexerHook.isDumbPreprocessorMode() );
       _mode.addChangeListener( e -> _modified = true );
 
       c.gridy = y++;

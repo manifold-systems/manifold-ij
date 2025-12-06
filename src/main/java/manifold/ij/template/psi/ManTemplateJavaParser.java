@@ -22,6 +22,7 @@ package manifold.ij.template.psi;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.PsiParser;
+import com.intellij.lang.impl.PsiBuilderImpl;
 import com.intellij.lang.java.parser.ExpressionParser;
 import com.intellij.lang.java.parser.JavaParser;
 import com.intellij.lang.java.parser.JavaParserUtil;
@@ -35,7 +36,6 @@ import com.intellij.psi.tree.IElementType;
 import java.util.Collections;
 import java.util.List;
 import manifold.ext.rt.api.Jailbreak;
-import manifold.ij.extensions.ManPsiBuilderImpl;
 import manifold.ij.template.IManTemplateOffsets;
 import org.jetbrains.annotations.NotNull;
 
@@ -130,9 +130,9 @@ public class ManTemplateJavaParser implements PsiParser
 
   private List<Integer> getExpressionOffsets( @NotNull PsiBuilder builder )
   {
-    if( builder instanceof ManPsiBuilderImpl )
+    if( builder instanceof PsiBuilderImpl )
     {
-      Lexer lexer = ((ManPsiBuilderImpl)builder).getLexer();
+      Lexer lexer = ((PsiBuilderImpl)builder).getLexer();
       if( lexer instanceof ManTemplateJavaLexer )
       {
         return ((ManTemplateJavaLexer)lexer).getExprOffsets();
@@ -145,9 +145,9 @@ public class ManTemplateJavaParser implements PsiParser
 
   private List<Integer> getDirectiveOffsets( @NotNull PsiBuilder builder )
   {
-    if( builder instanceof ManPsiBuilderImpl )
+    if( builder instanceof PsiBuilderImpl )
     {
-      Lexer lexer = ((ManPsiBuilderImpl)builder).getLexer();
+      Lexer lexer = ((PsiBuilderImpl)builder).getLexer();
       if( lexer instanceof ManTemplateJavaLexer )
       {
         return ((ManTemplateJavaLexer)lexer).getDirectiveOffsets();
@@ -160,9 +160,9 @@ public class ManTemplateJavaParser implements PsiParser
 
   private List<Integer> getStatementOffsets( @NotNull PsiBuilder builder )
   {
-    if( builder instanceof ManPsiBuilderImpl )
+    if( builder instanceof PsiBuilderImpl )
     {
-      Lexer lexer = ((ManPsiBuilderImpl)builder).getLexer();
+      Lexer lexer = ((PsiBuilderImpl)builder).getLexer();
       if( lexer instanceof ManTemplateJavaLexer )
       {
         return ((ManTemplateJavaLexer)lexer).getStmtOffsets();

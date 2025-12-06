@@ -20,9 +20,12 @@
 import java.util.concurrent.TimeUnit
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.InstrumentedJarTask
+import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 
 plugins {
   id("org.jetbrains.intellij.platform")
+  id("org.jetbrains.kotlin.jvm") version "2.2.0"
   id("java")
 }
 
@@ -118,15 +121,92 @@ intellijPlatform {
 
     ideaVersion {
       // Get build numbers from https://www.jetbrains.com/idea/download/other.html
-      sinceBuild = "251"   //2025.1
-      untilBuild = "251.*" //2025.1.*
+      sinceBuild = "252"   //2025.2
+      untilBuild = "252.*" //2025.2.*
     }
   }
 }
 
+tasks.register("deleteFrontloadClasses") {
+  doLast {
+    val kotlinDir = layout.buildDirectory.dir("classes/kotlin/main/com/intellij").get().asFile
+
+    val kotlinFiles = fileTree(kotlinDir) {
+      include("**/*.class")
+    }
+
+    println("Deleting Kotlin classes: ${kotlinFiles.files}")
+
+    delete(kotlinFiles)
+  }
+}
+// Make the build task depend on it
+tasks.named("build") {
+  finalizedBy("deleteFrontloadClasses")
+}
+
+// keep the frontloaded classes out of sight
+tasks.named("instrumentCode") {
+  doLast {
+    val kotlinDir = layout.buildDirectory.dir("classes/kotlin/main/com/intellij").get().asFile
+
+    val kotlinFiles = fileTree(kotlinDir) {
+      include("**/*.class")
+    }
+
+    println("Deleting Kotlin classes: ${kotlinFiles.files}")
+
+    delete(kotlinFiles)
+  }
+}
+
+tasks.named<PrepareSandboxTask>("prepareSandbox") {
+  from(rootProject.layout.buildDirectory.file("libs/manifold-jps-plugin.jar")) {
+    into("manifold-ij/lib")
+  }
+  doLast {
+    val kotlinDir = layout.buildDirectory.dir("classes/kotlin/main/com/intellij").get().asFile
+
+    val kotlinFiles = fileTree(kotlinDir) {
+      include("**/*.class")
+    }
+
+    println("Deleting Kotlin classes: ${kotlinFiles.files}")
+
+    delete(kotlinFiles)
+  }
+}
+
 tasks.named<Jar>("jar") {
+  exclude("com/intellij/**")
+
   manifest {
     attributes["Contains-Sources"] = "darkj"
+  }
+}
+
+tasks.named<InstrumentedJarTask>("instrumentedJar") {
+  doLast {
+    val jarFile = archiveFile.get().asFile
+    println("Purging unwanted classes from: ${jarFile.absolutePath}")
+
+    val tempJar = File(jarFile.parent, jarFile.name + ".tmp")
+
+    ant.withGroovyBuilder {
+      "zip"("destfile" to tempJar) {
+        "zipfileset"("src" to jarFile) {
+          // Adjust this pattern as needed
+          "exclude"("name" to "com/intellij/**")
+        }
+      }
+    }
+
+    if (jarFile.delete()) {
+      tempJar.renameTo(jarFile)
+      println("Updated $jarFile with excluded classes.")
+    } else {
+      println("Failed to delete original jar!")
+    }
   }
 }
 

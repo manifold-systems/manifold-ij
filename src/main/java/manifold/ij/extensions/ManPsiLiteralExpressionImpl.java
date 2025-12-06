@@ -72,9 +72,9 @@ public class ManPsiLiteralExpressionImpl extends PsiLiteralExpressionImpl
     if( type == JavaTokenType.STRING_LITERAL || "TEXT_BLOCK_LITERAL".equals( type.toString() ) )
     {
       ASTNode token = getNode().getFirstChildNode();
-      if( token instanceof ManPsiBuilderImpl.ManPsiStringLiteral )
+      if( token instanceof ManPsiStringLiteral )
       {
-        IFileFragment fragment = ((ManPsiBuilderImpl.ManPsiStringLiteral)token).getFragment();
+        IFileFragment fragment = ((ManPsiStringLiteral)token).getFragment();
         if( fragment != null )
         {
           String fragClass = getFragmentClassName( fragment );

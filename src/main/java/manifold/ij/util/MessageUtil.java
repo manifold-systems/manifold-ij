@@ -19,17 +19,22 @@
 
 package manifold.ij.util;
 
-import com.intellij.ide.plugins.PluginManagerMain;
+import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.wm.WindowManager;
+import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.awt.RelativePoint;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLFrameHyperlinkEvent;
+import java.net.URL;
 
 public final class MessageUtil
 {
@@ -84,7 +89,7 @@ public final class MessageUtil
   {
     String message = String.format( format, args );
     JBPopupFactory popupFactory = JBPopupFactory.getInstance();
-    popupFactory.createHtmlTextBalloonBuilder( message, messageType, new PluginManagerMain.MyHyperlinkListener() )
+    popupFactory.createHtmlTextBalloonBuilder( message, messageType, new MyHyperlinkListener() )
       .setCloseButtonEnabled( true )
       .setShowCallout( false )
       .setHideOnClickOutside( false )
@@ -103,6 +108,24 @@ public final class MessageUtil
     else
     {
       log.debug( message );
+    }
+  }
+
+  public static final class MyHyperlinkListener extends HyperlinkAdapter
+  {
+    @Override
+    protected void hyperlinkActivated(@NotNull HyperlinkEvent e) {
+      JEditorPane pane = (JEditorPane)e.getSource();
+      if (e instanceof HTMLFrameHyperlinkEvent ) {
+        HTMLDocument doc = (HTMLDocument)pane.getDocument();
+        doc.processHTMLFrameHyperlinkEvent((HTMLFrameHyperlinkEvent)e);
+      }
+      else {
+        URL url = e.getURL();
+        if (url != null) {
+          BrowserUtil.browse( url);
+        }
+      }
     }
   }
 
