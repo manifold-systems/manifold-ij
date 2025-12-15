@@ -121,8 +121,8 @@ intellijPlatform {
 
     ideaVersion {
       // Get build numbers from https://www.jetbrains.com/idea/download/other.html
-      sinceBuild = "252"   //2025.2
-      untilBuild = "252.*" //2025.2.*
+      sinceBuild = "253"   //2025.3
+      untilBuild = "253.*" //2025.3.*
     }
   }
 }
