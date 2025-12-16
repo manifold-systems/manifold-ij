@@ -3,6 +3,7 @@ package manifold.ij.extensions;
 import com.intellij.java.syntax.lexer.JavaLexer;
 import com.intellij.java.syntax.lexer.JavaLexerHook;
 import com.intellij.lang.ASTNode;
+import com.intellij.lang.FileASTNode;
 import com.intellij.lang.Language;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.util.Pair;
@@ -12,6 +13,8 @@ import com.intellij.platform.syntax.psi.PsiSyntaxBuilderFactoryHook;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.TokenType;
+import com.intellij.psi.impl.source.tree.TreeUtil;
 import com.intellij.psi.text.BlockSupport;
 import com.intellij.testFramework.LightVirtualFile;
 import manifold.ij.util.FileUtil;
@@ -78,6 +81,11 @@ public class ManPsiBuilderFactoryHook implements PsiSyntaxBuilderFactoryHook
 
   static PsiJavaFile getPsiFile(ASTNode chameleon )
   {
+    if( isInDummyHolder( chameleon ) )
+    {
+      return null;
+    }
+
     PsiFile containingFile = null;
     PsiElement psi = chameleon.getPsi();
     if( psi != null )
@@ -110,5 +118,16 @@ public class ManPsiBuilderFactoryHook implements PsiSyntaxBuilderFactoryHook
     return containingFile instanceof PsiJavaFile && FileUtil.toVirtualFile( containingFile ) != null
       ? (PsiJavaFile)containingFile
       : null;
+  }
+
+  private static boolean isInDummyHolder( ASTNode chameleon )
+  {
+    FileASTNode fileElem = TreeUtil.getFileElement( chameleon );
+    if( fileElem == null )
+    {
+      return true;
+    }
+    ASTNode fileElemParent = fileElem.getTreeParent();
+    return fileElemParent != null && fileElemParent.getElementType() == TokenType.DUMMY_HOLDER;
   }
 }
