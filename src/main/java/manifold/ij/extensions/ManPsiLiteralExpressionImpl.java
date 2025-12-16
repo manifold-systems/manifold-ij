@@ -22,6 +22,7 @@ package manifold.ij.extensions;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
+import com.intellij.openapi.project.DumbService;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.PsiImplUtil;
 import com.intellij.psi.impl.java.stubs.impl.PsiLiteralStub;
@@ -79,7 +80,7 @@ public class ManPsiLiteralExpressionImpl extends PsiLiteralExpressionImpl
         {
           String fragClass = getFragmentClassName( fragment );
           Module module = ModuleUtilCore.findModuleForPsiElement( this );
-          PsiClass psiFragClass = fragClass == null ? null : getFragmentPsiClass( fragClass, module );
+          PsiClass psiFragClass = fragClass == null || DumbService.isDumb( getProject() ) ? null : getFragmentPsiClass( fragClass, module );
 
           if( psiFragClass != null )
           {
