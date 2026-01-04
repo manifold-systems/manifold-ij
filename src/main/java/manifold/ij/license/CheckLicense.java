@@ -19,7 +19,6 @@
 
 package manifold.ij.license;
 
-import com.intellij.openapi.application.PermanentInstallationID;
 import com.intellij.ui.LicensingFacade;
 import org.jetbrains.annotations.NotNull;
 
@@ -188,37 +187,37 @@ public class CheckLicense {
   }
 
   private static boolean isLicenseServerStampValid(String serverStamp) {
-    try {
-      final String[] parts = serverStamp.split(":");
-      final Base64.Decoder base64 = Base64.getMimeDecoder();
-
-      final long timeStamp = Long.parseLong(parts[0]);
-      final String machineId = parts[1];
-      final String signatureType = parts[2];
-      final byte[] signatureBytes = base64.decode(parts[3].getBytes(StandardCharsets.UTF_8));
-      final byte[] certBytes = base64.decode(parts[4].getBytes(StandardCharsets.UTF_8));
-      final Collection<byte[]> intermediate = new ArrayList<byte[]>();
-      for (int idx = 5; idx < parts.length; idx++) {
-        intermediate.add(base64.decode(parts[idx].getBytes(StandardCharsets.UTF_8)));
-      }
-
-      final Signature sig = Signature.getInstance(signatureType);
-
-      // the last parameter of 'createCertificate()' set to 'true' causes the certificate to be checked for
-      // expiration. Expired certificates from a license server cannot be trusted
-      sig.initVerify(createCertificate(certBytes, intermediate, true));
-
-      sig.update((parts[0] + ":" + parts[1]).getBytes(StandardCharsets.UTF_8));
-      if (sig.verify(signatureBytes)) {
-        final String thisMachineId = PermanentInstallationID.get();
-        // machineId must match the machineId from the server reply and
-        // server reply should be relatively 'fresh'
-        return thisMachineId.equals(machineId) && Math.abs(System.currentTimeMillis() - timeStamp) < TIMESTAMP_VALIDITY_PERIOD_MS;
-      }
-    }
-    catch (Throwable ignored) {
-      // consider serverStamp invalid
-    }
+//    try {
+//      final String[] parts = serverStamp.split(":");
+//      final Base64.Decoder base64 = Base64.getMimeDecoder();
+//
+//      final long timeStamp = Long.parseLong(parts[0]);
+//      final String machineId = parts[1];
+//      final String signatureType = parts[2];
+//      final byte[] signatureBytes = base64.decode(parts[3].getBytes(StandardCharsets.UTF_8));
+//      final byte[] certBytes = base64.decode(parts[4].getBytes(StandardCharsets.UTF_8));
+//      final Collection<byte[]> intermediate = new ArrayList<byte[]>();
+//      for (int idx = 5; idx < parts.length; idx++) {
+//        intermediate.add(base64.decode(parts[idx].getBytes(StandardCharsets.UTF_8)));
+//      }
+//
+//      final Signature sig = Signature.getInstance(signatureType);
+//
+//      // the last parameter of 'createCertificate()' set to 'true' causes the certificate to be checked for
+//      // expiration. Expired certificates from a license server cannot be trusted
+//      sig.initVerify(createCertificate(certBytes, intermediate, true));
+//
+//      sig.update((parts[0] + ":" + parts[1]).getBytes(StandardCharsets.UTF_8));
+//      if (sig.verify(signatureBytes)) {
+//        final String thisMachineId = PermanentInstallationID.get();
+//        // machineId must match the machineId from the server reply and
+//        // server reply should be relatively 'fresh'
+//        return thisMachineId.equals(machineId) && Math.abs(System.currentTimeMillis() - timeStamp) < TIMESTAMP_VALIDITY_PERIOD_MS;
+//      }
+//    }
+//    catch (Throwable ignored) {
+//      // consider serverStamp invalid
+//    }
     return false;
   }
 

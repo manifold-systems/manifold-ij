@@ -34,7 +34,7 @@ import org.jetbrains.annotations.NotNull;
  * phase so that annotation can be marked "dirty" after the comment is created. See usage of {@link DaemonCodeAnalyzer}
  * from {@link PsiFileFragment}.
  * <p/>
- * See {@link ManPsiBuilderImpl} for the same treatment for String literals.
+ * See {@link ManPsiStringLiteral} for the same treatment for String literals.
  */
 public class ManDefaultASTFactoryImpl extends DefaultASTFactoryImpl
 {

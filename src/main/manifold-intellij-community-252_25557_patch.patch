@@ -1,0 +1,1114 @@
+Subject: [PATCH] manifold-intellij-community-252.25557 patch
+---
+Index: java/java-syntax/src/com/intellij/java/syntax/parser/DeclarationParser.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/java/java-syntax/src/com/intellij/java/syntax/parser/DeclarationParser.kt b/java/java-syntax/src/com/intellij/java/syntax/parser/DeclarationParser.kt
+--- a/java/java-syntax/src/com/intellij/java/syntax/parser/DeclarationParser.kt	(revision c8218295b3aa96ca8a81c8843dd86fe16f74d6db)
++++ b/java/java-syntax/src/com/intellij/java/syntax/parser/DeclarationParser.kt	(date 1758117650190)
+@@ -654,10 +654,12 @@
+     if (ellipsis) typeFlags = typeFlags or ReferenceParser.ELLIPSIS
+     if (disjunctiveType) typeFlags = typeFlags or ReferenceParser.DISJUNCTIONS
+     if (varType) typeFlags = typeFlags or ReferenceParser.VAR_TYPE
++    // manifold: added trailing `true` argument for optional params / default values
+     return parseListElement(builder = builder,
+                             typed = true,
+                             typeFlags = typeFlags,
+-                            type = if (isParameter) JavaSyntaxElementType.PARAMETER else JavaSyntaxElementType.RECORD_COMPONENT)
++                            type = if (isParameter) JavaSyntaxElementType.PARAMETER else JavaSyntaxElementType.RECORD_COMPONENT,
++                            true)
+   }
+ 
+   fun parseResource(builder: SyntaxTreeBuilder): SyntaxTreeBuilder.Marker? {
+@@ -695,6 +697,16 @@
+     typeFlags: Int,
+     type: SyntaxElementType?
+   ): SyntaxTreeBuilder.Marker? {
++    return parseListElement(builder, typed, typeFlags, type, false)
++  }
++  // manifold: for optional parameters / default values
++  private fun parseListElement(
++    builder: SyntaxTreeBuilder,
++    typed: Boolean,
++    typeFlags: Int,
++    type: SyntaxElementType?,
++    isParamOrRec: Boolean
++  ): SyntaxTreeBuilder.Marker? {
+     val param = builder.mark()
+ 
+     val modListInfo = parseModifierList(builder)
+@@ -734,29 +746,57 @@
+       }
+     }
+ 
+-    if (builder.expect(JavaSyntaxTokenType.IDENTIFIER)) {
+-      if (type === JavaSyntaxElementType.PARAMETER || type === JavaSyntaxElementType.RECORD_COMPONENT) {
+-        eatBrackets(builder, null)
+-        JavaParserUtil.done(param, type, languageLevel)
+-        return param
+-      }
+-    }
+-    else {
+-      JavaParserUtil.error(builder, message("expected.identifier"))
+-      param.drop()
+-      return modListInfo.first
+-    }
++    // manifold: optional params / default values
++    if( !isParamOrRec) {
++      if (builder.expect(JavaSyntaxTokenType.IDENTIFIER)) {
++        if (type === JavaSyntaxElementType.PARAMETER || type === JavaSyntaxElementType.RECORD_COMPONENT) {
++          eatBrackets(builder, null)
++          JavaParserUtil.done(param, type, languageLevel)
++          return param
++        }
++      }
++      else {
++        JavaParserUtil.error(builder, message("expected.identifier"))
++        param.drop()
++        return modListInfo.first
++      }
+ 
+-    if (JavaParserUtil.expectOrError(builder, JavaSyntaxTokenType.EQ, "expected.eq")) {
+-      if (myParser.expressionParser.parse(builder) == null) {
+-        JavaParserUtil.error(builder, message("expected.expression"))
+-      }
+-    }
++      if (JavaParserUtil.expectOrError(builder, JavaSyntaxTokenType.EQ, "expected.eq")) {
++        if (myParser.expressionParser.parse(builder) == null) {
++          JavaParserUtil.error(builder, message("expected.expression"))
++        }
++      }
+ 
+-    JavaParserUtil.done(param, JavaSyntaxElementType.RESOURCE_VARIABLE, languageLevel)
+-    return param
+-  }
++      JavaParserUtil.done(param, JavaSyntaxElementType.RESOURCE_VARIABLE, languageLevel)
++      return param
++    }
+ 
++    // manifold: for method params and record components to handle optional parameters / default values
++    if (builder.expect(JavaSyntaxTokenType.IDENTIFIER)) {
++      //Manifold: allow parameters to have default values
++      if (type !== JavaSyntaxElementType.PARAMETER && type !== JavaSyntaxElementType.RECORD_COMPONENT) {
++        if (JavaParserUtil.expectOrError(builder, JavaSyntaxTokenType.EQ, "expected.eq") && myParser.expressionParser.parse(builder) == null) {
++          builder.error(message("expected.expression"))
++        }
++        JavaParserUtil.done(param, JavaSyntaxElementType.RESOURCE_VARIABLE, languageLevel)
++        return param
++      }
++      else if (type === JavaSyntaxElementType.PARAMETER || type === JavaSyntaxElementType.RECORD_COMPONENT) {
++        eatBrackets(builder, null as String?)
++        if (builder.expect(JavaSyntaxTokenType.EQ) && myParser.expressionParser.parse(builder) == null) {
++          builder.error(message("expected.expression"))
++        }
++      }
++      JavaParserUtil.done(param, type, languageLevel)
++      return param
++    }
++    else {
++      builder.error(message("expected.identifier"))
++      param.drop()
++      return modListInfo.first
++    }
++  }
++
+   private fun parseFieldOrLocalVariable(
+     builder: SyntaxTreeBuilder,
+     declaration: SyntaxTreeBuilder.Marker,
+Index: .idea/vcs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+--- a/.idea/vcs.xml	(revision c8218295b3aa96ca8a81c8843dd86fe16f74d6db)
++++ b/.idea/vcs.xml	(date 1758117650103)
+@@ -51,6 +51,5 @@
+   </component>
+   <component name="VcsDirectoryMappings">
+     <mapping directory="" vcs="Git" />
+-    <mapping directory="$PROJECT_DIR$/android" vcs="Git" />
+   </component>
+ </project>
+\ No newline at end of file
+Index: java/java-syntax/src/com/intellij/java/syntax/parser/StatementParser.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/java/java-syntax/src/com/intellij/java/syntax/parser/StatementParser.kt b/java/java-syntax/src/com/intellij/java/syntax/parser/StatementParser.kt
+--- a/java/java-syntax/src/com/intellij/java/syntax/parser/StatementParser.kt	(revision c8218295b3aa96ca8a81c8843dd86fe16f74d6db)
++++ b/java/java-syntax/src/com/intellij/java/syntax/parser/StatementParser.kt	(date 1758117650295)
+@@ -24,7 +24,6 @@
+ import com.intellij.pom.java.LanguageLevel
+ import org.jetbrains.annotations.ApiStatus
+ import org.jetbrains.annotations.Contract
+-import kotlin.jvm.JvmOverloads
+ 
+ open class StatementParser(
+   private val myParser: JavaParser,
+@@ -34,8 +33,9 @@
+     TILL_FIRST, TILL_LAST
+   }
+ 
++  // manifold: made this method `open` so we can override it
+   @JvmOverloads
+-  fun parseCodeBlock(builder: SyntaxTreeBuilder, isStatement: Boolean = false): SyntaxTreeBuilder.Marker? {
++  open fun parseCodeBlock(builder: SyntaxTreeBuilder, isStatement: Boolean = false): SyntaxTreeBuilder.Marker? {
+     if (builder.tokenType !== JavaSyntaxTokenType.LBRACE) return null
+     return if (isStatement && parseCodeBlockDeep) {
+       parseCodeBlockDeep(builder, false)
+@@ -177,7 +177,10 @@
+     }
+ 
+     val pos = builder.mark()
+-    val expr = myParser.expressionParser.parse(builder)
++    // manifold:
++    val expr = parseAssignmentExpr( builder, true )
++    // manifold end:
++
+     var incompleteDeclarationRestrictedTokenType: SyntaxElementType? = null
+ 
+     if (expr != null) {
+@@ -187,7 +190,9 @@
+       while (builder.tokenType === JavaSyntaxTokenType.COMMA) {
+         val commaPos = builder.mark()
+         builder.advanceLexer()
+-        val expr1 = myParser.expressionParser.parse(builder)
++        // manifold:
++        val expr1 = parseAssignmentExpr( builder, true )
++        // manifold end:
+         if (expr1 == null) {
+           commaPos.rollbackTo()
+           break
+@@ -264,6 +269,13 @@
+     return null
+   }
+ 
++  // manifold: for binding expressions
++  private fun parseAssignmentExpr(builder: SyntaxTreeBuilder, disallowBinding: Boolean): SyntaxTreeBuilder.Marker? {
++    val exprParser = myParser.expressionParser
++    return exprParser.parseAssignment(builder, 0, disallowBinding)
++  }
++  // manifold end:
++
+   private val languageLevel: LanguageLevel
+     get() = myParser.languageLevel
+ 
+@@ -652,7 +664,9 @@
+   private fun parseReturnStatement(builder: SyntaxTreeBuilder): SyntaxTreeBuilder.Marker {
+     val statement = builder.mark()
+     builder.advanceLexer()
+-    myParser.expressionParser.parse(builder)
++    // manifold:
++    myParser.expressionParser.parseTupleOrExpr(builder, false)
++    // manifold end:
+     semicolon(builder)
+     done(statement, JavaSyntaxElementType.RETURN_STATEMENT, myParser.languageLevel)
+     return statement
+Index: java/java-syntax/src/com/intellij/java/syntax/lexer/JavaLexerHook.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/java/java-syntax/src/com/intellij/java/syntax/lexer/JavaLexerHook.kt b/java/java-syntax/src/com/intellij/java/syntax/lexer/JavaLexerHook.kt
+new file mode 100644
+--- /dev/null	(date 1758117650143)
++++ b/java/java-syntax/src/com/intellij/java/syntax/lexer/JavaLexerHook.kt	(date 1758117650143)
+@@ -0,0 +1,10 @@
++// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
++package com.intellij.java.syntax.lexer
++
++import java.util.function.Consumer
++
++interface JavaLexerHook : Consumer<JavaLexer> {
++  override fun accept(javaLexer: JavaLexer)
++  fun start()
++  fun locateToken(c: Char): Boolean
++}
+\ No newline at end of file
+Index: java/java-syntax/src/com/intellij/java/syntax/lexer/JavaLexer.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/java/java-syntax/src/com/intellij/java/syntax/lexer/JavaLexer.kt b/java/java-syntax/src/com/intellij/java/syntax/lexer/JavaLexer.kt
+--- a/java/java-syntax/src/com/intellij/java/syntax/lexer/JavaLexer.kt	(revision c8218295b3aa96ca8a81c8843dd86fe16f74d6db)
++++ b/java/java-syntax/src/com/intellij/java/syntax/lexer/JavaLexer.kt	(date 1758117650127)
+@@ -10,16 +10,32 @@
+ import com.intellij.pom.java.LanguageLevel
+ import com.intellij.util.fastutil.ints.IntArrayList
+ import com.intellij.util.text.CharArrayUtilKmp.fromSequenceWithoutCopying
++import java.util.ServiceLoader
++
++var MAN_CLASSLOADER : ClassLoader? = null
+ 
+ class JavaLexer(level: LanguageLevel) : Lexer {
+-  private val myFlexLexer: _JavaLexer = _JavaLexer(level)
+-  private val myStateStack = IntArrayList(1)
+-  private lateinit var myBuffer: CharSequence
+-  private var myBufferArray: CharArray? = null
+-  private var myBufferIndex = 0
+-  private var myBufferEndOffset = 0
+-  private var myTokenEndOffset = 0 // positioned after the last symbol of the current token
+-  private var myTokenType: SyntaxElementType? = null
++  val myFlexLexer: _JavaLexer = _JavaLexer(level)
++  val myStateStack = IntArrayList(1)
++  lateinit var myBuffer: CharSequence
++  var myBufferArray: CharArray? = null
++  var myBufferIndex = 0
++  var myBufferEndOffset = 0
++  var myTokenEndOffset = 0 // positioned after the last symbol of the current token
++  var myTokenType: SyntaxElementType? = null
++
++  // manifold: preprocessor hook
++  var myLexerHook : JavaLexerHook? = loadPreprocessorHook()
++
++  private fun loadPreprocessorHook(): JavaLexerHook? {
++    val loader = ServiceLoader.load(JavaLexerHook::class.java, MAN_CLASSLOADER)
++    for(hook in loader) {
++      hook.accept(this)
++      return hook
++    }
++    return null
++  }
++  // manifold end:
+ 
+   /** The length of the last valid unicode escape (6 or greater), or 1 when no unicode escape was found.  */
+   private var mySymbolLength = 1
+@@ -34,6 +50,10 @@
+     mySymbolLength = 1
+     myStateStack.push(initialState)
+     myFlexLexer.reset(myBuffer, startOffset, endOffset, 0)
++
++    // manifold: preprocessor hook
++    myLexerHook?.start()
++    // end manifold:
+   }
+ 
+   override fun start(buf: CharSequence, start: Int, end: Int) {
+@@ -93,126 +113,131 @@
+     myBufferIndex = myTokenEndOffset
+ 
+     val c = locateCharAt(myBufferIndex)
+-    when (c) {
+-      //allowed only at the end of files
+-      '\u001a' -> {
+-        if (myBufferIndex + mySymbolLength == myBufferEndOffset) {
+-          myTokenType = WHITE_SPACE
+-          myTokenEndOffset = myBufferIndex + mySymbolLength
+-        }
+-        else {
+-          flexLocateToken()
+-        }
+-      }
+-      ' ', '\t', '\n', '\r', '\u000C' -> {
+-        myTokenType = WHITE_SPACE
+-        myTokenEndOffset = getWhitespaces(myBufferIndex + mySymbolLength)
+-      }
+-      '{' -> {
+-        val count1 = myStateStack.topInt() shr 16
+-        if (count1 > 0) myStateStack.push((myStateStack.popInt() and STATE_TEXT_BLOCK_TEMPLATE) or ((count1 + 1) shl 16))
+-        myTokenType = JavaSyntaxTokenType.LBRACE
+-        myTokenEndOffset = myBufferIndex + mySymbolLength
+-      }
+-      '}' -> {
+-        val count2 = myStateStack.topInt() shr 16
+-        var updateToken = true
+-        if (count2 > 0) {
+-          if (count2 != 1) {
+-            myStateStack.push((myStateStack.popInt() and STATE_TEXT_BLOCK_TEMPLATE) or ((count2 - 1) shl 16))
+-          }
+-          else {
+-            val state = myStateStack.popInt()
+-            if (myStateStack.size == 0) myStateStack.push(STATE_DEFAULT)
+-            if ((state and STATE_TEXT_BLOCK_TEMPLATE) != 0) {
+-              val fragment = locateLiteralEnd(myBufferIndex + mySymbolLength, LiteralType.TEXT_BLOCK)
+-              myTokenType = if (fragment) JavaSyntaxTokenType.TEXT_BLOCK_TEMPLATE_MID else JavaSyntaxTokenType.TEXT_BLOCK_TEMPLATE_END
+-            }
+-            else {
+-              val fragment = locateLiteralEnd(myBufferIndex + mySymbolLength, LiteralType.STRING)
+-              myTokenType = if (fragment) JavaSyntaxTokenType.STRING_TEMPLATE_MID else JavaSyntaxTokenType.STRING_TEMPLATE_END
+-            }
+-            updateToken = false
+-          }
+-        }
+-        if (updateToken) {
+-          myTokenType = JavaSyntaxTokenType.RBRACE
+-          myTokenEndOffset = myBufferIndex + mySymbolLength
+-        }
+-      }
+-      '/' -> if (myBufferIndex + mySymbolLength >= myBufferEndOffset) {
+-        myTokenType = JavaSyntaxTokenType.DIV
+-        myTokenEndOffset = myBufferEndOffset
+-      }
+-      else {
+-        val l1 = mySymbolLength
+-        val nextChar = locateCharAt(myBufferIndex + l1)
+-        if (nextChar == '/') {
+-          val l2 = mySymbolLength
+-          if (myBufferIndex + l1 + l2 < myBufferEndOffset && locateCharAt(myBufferIndex + l1 + l2) == '/') {
+-            // Java 23 Markdown comments
+-            myTokenType = JavaDocSyntaxElementType.DOC_COMMENT
+-            myTokenEndOffset = getClosingMarkdownComment(myBufferIndex + l1 + l2)
+-          }
+-          else {
+-            myTokenType = JavaSyntaxTokenType.END_OF_LINE_COMMENT
+-            myTokenEndOffset = getLineTerminator(myBufferIndex + l1 + l2)
+-          }
+-        }
+-        else if (nextChar == '*') {
+-          val l2 = mySymbolLength
+-          if (myBufferIndex + l1 + l2 < myBufferEndOffset && locateCharAt(myBufferIndex + l1 + l2) == '*') {
+-            val l3 = mySymbolLength
+-            if (myBufferIndex + l1 + l2 + l3 < myBufferEndOffset && locateCharAt(myBufferIndex + l1 + l2 + l3) == '/') {
+-              myTokenType = JavaSyntaxTokenType.C_STYLE_COMMENT
+-              myTokenEndOffset = myBufferIndex + l1 + l2 + l3 + mySymbolLength
+-            }
+-            else {
+-              myTokenType = JavaDocSyntaxElementType.DOC_COMMENT
+-              myTokenEndOffset = getClosingComment(myBufferIndex + l1 + l2 + l3)
+-            }
+-          }
+-          else {
+-            myTokenType = JavaSyntaxTokenType.C_STYLE_COMMENT
+-            myTokenEndOffset = getClosingComment(myBufferIndex + l1 + l2 + mySymbolLength)
+-          }
+-        }
+-        else {
+-          flexLocateToken()
+-        }
+-      }
+-      '#' -> if (myBufferIndex == 0 && mySymbolLength == 1 && myBufferEndOffset > 1 && charAt(1) == '!') {
+-        myTokenType = JavaSyntaxTokenType.END_OF_LINE_COMMENT
+-        myTokenEndOffset = getLineTerminator(2)
+-      }
+-      else {
+-        flexLocateToken()
+-      }
+-      '\'' -> {
+-        myTokenType = JavaSyntaxTokenType.CHARACTER_LITERAL
+-        locateLiteralEnd(myBufferIndex + mySymbolLength, LiteralType.CHAR)
+-      }
+-      '"' -> {
+-        val l1 = mySymbolLength
+-        if (myBufferIndex + l1 < myBufferEndOffset && locateCharAt(myBufferIndex + l1) == '"') {
+-          val l2 = mySymbolLength
+-          if (myBufferIndex + l1 + l2 < myBufferEndOffset && locateCharAt(myBufferIndex + l1 + l2) == '"') {
+-            val fragment = locateLiteralEnd(myBufferIndex + l1 + l2 + mySymbolLength, LiteralType.TEXT_BLOCK)
+-            myTokenType = if (fragment) JavaSyntaxTokenType.TEXT_BLOCK_TEMPLATE_BEGIN else JavaSyntaxTokenType.TEXT_BLOCK_LITERAL
+-          }
+-          else {
+-            myTokenType = JavaSyntaxTokenType.STRING_LITERAL
+-            myTokenEndOffset = myBufferIndex + l1 + l2
+-          }
+-        }
+-        else {
+-          val fragment = locateLiteralEnd(myBufferIndex + l1, LiteralType.STRING)
+-          myTokenType = if (fragment) JavaSyntaxTokenType.STRING_TEMPLATE_BEGIN else JavaSyntaxTokenType.STRING_LITERAL
+-        }
+-      }
+-      else -> flexLocateToken()
++
++    // manifold:
++    if (myLexerHook?.locateToken(c) != true) {
++    // end manifold:
++
++      when (c) {
++        //allowed only at the end of files
++        '\u001a' -> {
++          if (myBufferIndex + mySymbolLength == myBufferEndOffset) {
++            myTokenType = WHITE_SPACE
++            myTokenEndOffset = myBufferIndex + mySymbolLength
++          } else {
++            flexLocateToken()
++          }
++        }
++
++        ' ', '\t', '\n', '\r', '\u000C' -> {
++          myTokenType = WHITE_SPACE
++          myTokenEndOffset = getWhitespaces(myBufferIndex + mySymbolLength)
++        }
++
++        '{' -> {
++          val count1 = myStateStack.topInt() shr 16
++          if (count1 > 0) myStateStack.push((myStateStack.popInt() and STATE_TEXT_BLOCK_TEMPLATE) or ((count1 + 1) shl 16))
++          myTokenType = JavaSyntaxTokenType.LBRACE
++          myTokenEndOffset = myBufferIndex + mySymbolLength
++        }
++
++        '}' -> {
++          val count2 = myStateStack.topInt() shr 16
++          var updateToken = true
++          if (count2 > 0) {
++            if (count2 != 1) {
++              myStateStack.push((myStateStack.popInt() and STATE_TEXT_BLOCK_TEMPLATE) or ((count2 - 1) shl 16))
++            } else {
++              val state = myStateStack.popInt()
++              if (myStateStack.size == 0) myStateStack.push(STATE_DEFAULT)
++              if ((state and STATE_TEXT_BLOCK_TEMPLATE) != 0) {
++                val fragment = locateLiteralEnd(myBufferIndex + mySymbolLength, LiteralType.TEXT_BLOCK)
++                myTokenType =
++                  if (fragment) JavaSyntaxTokenType.TEXT_BLOCK_TEMPLATE_MID else JavaSyntaxTokenType.TEXT_BLOCK_TEMPLATE_END
++              } else {
++                val fragment = locateLiteralEnd(myBufferIndex + mySymbolLength, LiteralType.STRING)
++                myTokenType =
++                  if (fragment) JavaSyntaxTokenType.STRING_TEMPLATE_MID else JavaSyntaxTokenType.STRING_TEMPLATE_END
++              }
++              updateToken = false
++            }
++          }
++          if (updateToken) {
++            myTokenType = JavaSyntaxTokenType.RBRACE
++            myTokenEndOffset = myBufferIndex + mySymbolLength
++          }
++        }
++
++        '/' -> if (myBufferIndex + mySymbolLength >= myBufferEndOffset) {
++          myTokenType = JavaSyntaxTokenType.DIV
++          myTokenEndOffset = myBufferEndOffset
++        } else {
++          val l1 = mySymbolLength
++          val nextChar = locateCharAt(myBufferIndex + l1)
++          if (nextChar == '/') {
++            val l2 = mySymbolLength
++            if (myBufferIndex + l1 + l2 < myBufferEndOffset && locateCharAt(myBufferIndex + l1 + l2) == '/') {
++              // Java 23 Markdown comments
++              myTokenType = JavaDocSyntaxElementType.DOC_COMMENT
++              myTokenEndOffset = getClosingMarkdownComment(myBufferIndex + l1 + l2)
++            } else {
++              myTokenType = JavaSyntaxTokenType.END_OF_LINE_COMMENT
++              myTokenEndOffset = getLineTerminator(myBufferIndex + l1 + l2)
++            }
++          } else if (nextChar == '*') {
++            val l2 = mySymbolLength
++            if (myBufferIndex + l1 + l2 < myBufferEndOffset && locateCharAt(myBufferIndex + l1 + l2) == '*') {
++              val l3 = mySymbolLength
++              if (myBufferIndex + l1 + l2 + l3 < myBufferEndOffset && locateCharAt(myBufferIndex + l1 + l2 + l3) == '/') {
++                myTokenType = JavaSyntaxTokenType.C_STYLE_COMMENT
++                myTokenEndOffset = myBufferIndex + l1 + l2 + l3 + mySymbolLength
++              } else {
++                myTokenType = JavaDocSyntaxElementType.DOC_COMMENT
++                myTokenEndOffset = getClosingComment(myBufferIndex + l1 + l2 + l3)
++              }
++            } else {
++              myTokenType = JavaSyntaxTokenType.C_STYLE_COMMENT
++              myTokenEndOffset = getClosingComment(myBufferIndex + l1 + l2 + mySymbolLength)
++            }
++          } else {
++            flexLocateToken()
++          }
++        }
++
++        '#' -> if (myBufferIndex == 0 && mySymbolLength == 1 && myBufferEndOffset > 1 && charAt(1) == '!') {
++          myTokenType = JavaSyntaxTokenType.END_OF_LINE_COMMENT
++          myTokenEndOffset = getLineTerminator(2)
++        } else {
++          flexLocateToken()
++        }
++
++        '\'' -> {
++          myTokenType = JavaSyntaxTokenType.CHARACTER_LITERAL
++          locateLiteralEnd(myBufferIndex + mySymbolLength, LiteralType.CHAR)
++        }
++
++        '"' -> {
++          val l1 = mySymbolLength
++          if (myBufferIndex + l1 < myBufferEndOffset && locateCharAt(myBufferIndex + l1) == '"') {
++            val l2 = mySymbolLength
++            if (myBufferIndex + l1 + l2 < myBufferEndOffset && locateCharAt(myBufferIndex + l1 + l2) == '"') {
++              val fragment = locateLiteralEnd(myBufferIndex + l1 + l2 + mySymbolLength, LiteralType.TEXT_BLOCK)
++              myTokenType =
++                if (fragment) JavaSyntaxTokenType.TEXT_BLOCK_TEMPLATE_BEGIN else JavaSyntaxTokenType.TEXT_BLOCK_LITERAL
++            } else {
++              myTokenType = JavaSyntaxTokenType.STRING_LITERAL
++              myTokenEndOffset = myBufferIndex + l1 + l2
++            }
++          } else {
++            val fragment = locateLiteralEnd(myBufferIndex + l1, LiteralType.STRING)
++            myTokenType =
++              if (fragment) JavaSyntaxTokenType.STRING_TEMPLATE_BEGIN else JavaSyntaxTokenType.STRING_LITERAL
++          }
++        }
++
++        else -> flexLocateToken()
++      }
+     }
+-
+     if (myTokenEndOffset > myBufferEndOffset) {
+       myTokenEndOffset = myBufferEndOffset
+     }
+Index: java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt b/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt
+--- a/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt	(revision c8218295b3aa96ca8a81c8843dd86fe16f74d6db)
++++ b/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt	(date 1758117650246)
+@@ -4,10 +4,13 @@
+ import com.intellij.java.syntax.JavaSyntaxBundle
+ import com.intellij.java.syntax.JavaSyntaxBundle.message
+ import com.intellij.java.syntax.element.JavaSyntaxElementType
++import com.intellij.java.syntax.element.JavaSyntaxElementType.PARENTH_EXPRESSION
+ import com.intellij.java.syntax.element.JavaSyntaxTokenType
++import com.intellij.java.syntax.element.JavaSyntaxTokenType.RPARENTH
+ import com.intellij.java.syntax.element.SyntaxElementTypes
+ import com.intellij.java.syntax.element.SyntaxElementTypes.MODIFIER_BIT_SET
+ import com.intellij.java.syntax.element.SyntaxElementTypes.PRIMITIVE_TYPE_BIT_SET
++import com.intellij.java.syntax.lexer.MAN_CLASSLOADER
+ import com.intellij.java.syntax.parser.ExpressionParser.Companion.FORBID_LAMBDA_MASK
+ import com.intellij.java.syntax.parser.JavaParserUtil.done
+ import com.intellij.java.syntax.parser.JavaParserUtil.emptyElement
+@@ -24,12 +27,16 @@
+ import com.intellij.platform.syntax.util.parser.SyntaxBuilderUtil.advance
+ import com.intellij.platform.syntax.util.parser.SyntaxBuilderUtil.expect
+ import com.intellij.util.BitUtil
++import com.intellij.util.BitUtil.isSet
+ import org.jetbrains.annotations.ApiStatus
+ import org.jetbrains.annotations.PropertyKey
++import java.util.ServiceLoader
+ 
+ //suppress to be clear, what type is used
++@Suppress("UnstableApiUsage")
+ @ApiStatus.Experimental
+ class PrattExpressionParser(private val myParser: JavaParser) {
++  private val hookLoad = hook
+   private val ourInfixParsers: MutableMap<SyntaxElementType?, ParserData?>
+ 
+   init {
+@@ -76,23 +83,48 @@
+   fun parse(builder: SyntaxTreeBuilder, mode: Int): SyntaxTreeBuilder.Marker? {
+     return tryParseWithPrecedenceAtMost(builder, ASSIGNMENT_PRECEDENCE, mode)
+   }
++  fun parse(builder: SyntaxTreeBuilder, mode: Int, disallowBinding: Boolean): SyntaxTreeBuilder.Marker? {
++    return tryParseWithPrecedenceAtMost(builder, ASSIGNMENT_PRECEDENCE, mode, disallowBinding)
++  }
+ 
+   /**
+    * Traditional Pratt parser for infix expressions.
+    * If marker is null it is guaranteed that nothing is parsed
+    */
+   fun tryParseWithPrecedenceAtMost(builder: SyntaxTreeBuilder, maxPrecedence: Int, mode: Int): SyntaxTreeBuilder.Marker? {
++    return tryParseWithPrecedenceAtMost(builder, maxPrecedence, mode, false)
++  }
++  fun tryParseWithPrecedenceAtMost(builder: SyntaxTreeBuilder, maxPrecedence: Int, mode: Int, disallowBinding: Boolean): SyntaxTreeBuilder.Marker? {
+     var lhs = parseUnary(builder, mode) ?: return null
+ 
+     while (true) {
+-      val type = getBinOpToken(builder) ?: break
+-      val data = ourInfixParsers[type] ?: break
+-      val opPrecedence = data.myPrecedence
+-      if (maxPrecedence < opPrecedence) {
+-        break
++      val type = getBinOpToken(builder) //manifold:
++      val parser : InfixParser
++      val opPrecedence : Int
++      if(!disallowBinding &&
++         (type == JavaSyntaxTokenType.IDENTIFIER ||
++         type == JavaSyntaxTokenType.LPARENTH ||
++         type == JavaSyntaxTokenType.STRING_LITERAL ||
++         type == JavaSyntaxTokenType.FLOAT_LITERAL ||
++         type == JavaSyntaxTokenType.INTEGER_LITERAL ||
++         type == JavaSyntaxTokenType.DOUBLE_LITERAL ||
++         type == JavaSyntaxTokenType.CHARACTER_LITERAL ||
++         type == JavaSyntaxTokenType.LONG_LITERAL ||
++         type == JavaSyntaxTokenType.TEXT_BLOCK_LITERAL))
++      {
++        parser = BindingExprParser()
++        opPrecedence = BINDING_PRECEDENCE
++      }
++      else {
++        val data = ourInfixParsers[type] ?: break
++        parser = data.myParser
++        opPrecedence = data.myPrecedence
++        if (maxPrecedence < opPrecedence) {
++          break
++        }
+       }
+       val beforeLhs = lhs.precede()
+-      data.myParser.parse(this, builder, beforeLhs, type, opPrecedence, mode)
++      parser.parse(this, builder, beforeLhs, type, opPrecedence, mode)
+       lhs = beforeLhs
+     }
+     return lhs
+@@ -119,9 +151,9 @@
+ 
+       val typeInfo = myParser.referenceParser.parseTypeInfo(
+         builder, ReferenceParser.EAT_LAST_DOT or
+-          ReferenceParser.WILDCARD or
+-          ReferenceParser.CONJUNCTIONS or
+-          ReferenceParser.INCOMPLETE_ANNO)
++        ReferenceParser.WILDCARD or
++        ReferenceParser.CONJUNCTIONS or
++        ReferenceParser.INCOMPLETE_ANNO)
+       if (typeInfo == null || !builder.expect(JavaSyntaxTokenType.RPARENTH)) {
+         typeCast.rollbackTo()
+         return parsePostfix(builder, mode)
+@@ -375,27 +407,7 @@
+     }
+ 
+     if (tokenType === JavaSyntaxTokenType.LPARENTH) {
+-      if (!BitUtil.isSet(mode, FORBID_LAMBDA_MASK)) {
+-        val lambda = parseLambdaAfterParenth(builder)
+-        if (lambda != null) {
+-          return lambda
+-        }
+-      }
+-
+-      val parenth = builder.mark()
+-      builder.advanceLexer()
+-
+-      val inner = parse(builder, mode)
+-      if (inner == null) {
+-        error(builder, message("expected.expression"))
+-      }
+-
+-      if (!builder.expect(JavaSyntaxTokenType.RPARENTH) && inner != null) {
+-        error(builder, message("expected.rparen"))
+-      }
+-
+-      parenth.done(JavaSyntaxElementType.PARENTH_EXPRESSION)
+-      return parenth
++      return parseTupleOrLambdaOrParens(builder, mode)
+     }
+ 
+     if (TYPE_START.contains(tokenType)) {
+@@ -485,6 +497,98 @@
+     return null
+   }
+ 
++  // manifold:
++  private fun parseTupleOrLambdaOrParens(builder: SyntaxTreeBuilder, mode: Int): SyntaxTreeBuilder.Marker? {
++    if (!isSet(mode, FORBID_LAMBDA_MASK)) {
++      val lambda: SyntaxTreeBuilder.Marker? = parseLambdaAfterParenth(builder)
++      if (lambda != null) {
++        return lambda
++      }
++    }
++
++    return parseTupleOrExpr(builder, true)
++  }
++
++  fun parseTupleOrExpr(builder: SyntaxTreeBuilder, requireParen: Boolean): SyntaxTreeBuilder.Marker? {
++    val parenth = builder.mark()
++    if (requireParen) {
++      builder.advanceLexer()
++    }
++    var argCount = 0
++    var colonFound = false
++    var argWhole: SyntaxTreeBuilder.Marker?
++    var arg: SyntaxTreeBuilder.Marker?
++    while (true) {
++      argWhole = builder.mark()
++      arg = builder.mark()
++      var tokenType = builder.tokenType
++      if (tokenType === JavaSyntaxTokenType.IDENTIFIER) {
++        builder.advanceLexer()
++        tokenType = builder.tokenType
++        if (tokenType === JavaSyntaxTokenType.COLON) {
++          colonFound = true
++          arg.drop()
++          builder.advanceLexer()
++          val labeledValue: SyntaxTreeBuilder.Marker? = parse(builder)
++          if (labeledValue == null) {
++            error(builder, message("expected.expression"))
++          }
++        } else {
++          arg.rollbackTo()
++          arg = parse(builder)
++          if (arg == null) {
++            error(builder, message("expected.expression"))
++          }
++        }
++        argCount++
++      } else {
++        arg.rollbackTo()
++        arg = parse(builder)
++        if (arg != null || !requireParen) {
++          argCount++
++        }
++        //        if( arg == null && requireParen )
++        //        {
++        //          error( builder, JavaPsiBundle.message( "expected.expression" ) );
++        //        }
++      }
++
++      tokenType = builder.tokenType
++
++      val comma = tokenType === JavaSyntaxTokenType.COMMA
++
++      if (argCount > 1 || colonFound || comma) {
++        argWhole.done(TUPLE_VALUE_EXPRESSION)
++      } else {
++        argWhole.drop()
++      }
++
++      if (!comma) {
++        break
++      }
++
++      builder.advanceLexer()
++    }
++    if (requireParen && !builder.expect(RPARENTH)) {
++      if (argCount > 0) {
++        error(builder, message("expected.rparen"))
++      }
++    }
++
++    if (requireParen) {
++      parenth.done(if (argCount != 1 || colonFound) TUPLE_EXPRESSION else PARENTH_EXPRESSION)
++      return parenth
++    } else if (argCount > 1 || colonFound) {
++      // return tuple or optional params tuple (neither has parens)
++      parenth.done(TUPLE_EXPRESSION)
++      return parenth
++    } else {
++      parenth.drop()
++      return arg
++    }
++  }
++  // manifold end:
++
+   private fun parseClassAccessOrMethodReference(builder: SyntaxTreeBuilder): SyntaxTreeBuilder.Marker? {
+     val expr = builder.mark()
+ 
+@@ -704,10 +808,14 @@
+     return arrayInit
+   }
+ 
++  // manifold: edited to treat an unparenthesized tuple expression as named arguments
+   fun parseArgumentList(builder: SyntaxTreeBuilder): SyntaxTreeBuilder.Marker {
++    //    builder.setDebugMode( true );
+     val list = builder.mark()
++    val tupleExpr = builder.mark()
+     builder.advanceLexer()
+ 
++    var colon = false
+     var first = true
+     while (true) {
+       val tokenType = builder.tokenType
+@@ -727,34 +835,55 @@
+       }
+       first = false
+ 
+-      val arg = parse(builder, 0)
++      val argWhole = builder.mark()
++      var isTupleItem = false
++      if (builder.tokenType === JavaSyntaxTokenType.IDENTIFIER && builder.lookAhead(1) === JavaSyntaxTokenType.COLON) {
++        builder.advanceLexer()
++        builder.advanceLexer()
++        isTupleItem = true
++        colon = true
++      }
++      val arg = parse(builder)
+       if (arg == null) {
+         if (!hasError) {
+           error(builder, message("expected.expression"))
+           emptyExpression(builder)
+         }
+-        if (!ARGS_LIST_CONTINUE.contains(builder.tokenType)) break
++        if (!ARGS_LIST_CONTINUE.contains(builder.tokenType)) {
++          if (isTupleItem) {
++            argWhole.done(TUPLE_VALUE_EXPRESSION)
++          }
++          else {
++            argWhole.drop()
++          }
++          break
++        }
+         if (builder.tokenType !== JavaSyntaxTokenType.COMMA && !builder.eof()) {
+           builder.advanceLexer()
+         }
+       }
++
++      if (arg != null && isTupleItem) {
++        argWhole.done(TUPLE_VALUE_EXPRESSION)
++      }
++      else {
++        argWhole.drop()
++      }
+     }
++    val closed = expectOrError(builder, JavaSyntaxTokenType.RPARENTH, "expected.rparen")
+ 
+-    var closed = true
+-    if (!builder.expect(JavaSyntaxTokenType.RPARENTH)) {
+-      if (first) {
+-        error(builder, message("expected.rparen"))
+-      }
+-      else {
+-        error(builder, message("expected.comma.or.rparen"))
+-      }
+-      closed = false
++    if (colon) {
++      tupleExpr.done(TUPLE_EXPRESSION)
++    }
++    else {
++      tupleExpr.drop()
+     }
+ 
+     list.done(JavaSyntaxElementType.EXPRESSION_LIST)
+     if (!closed) {
+       list.setCustomEdgeTokenBinders(null, greedyRightBinder())
+     }
++
+     return list
+   }
+ 
+@@ -895,7 +1024,8 @@
+         }
+         operandCount++
+         val nextToken: SyntaxElementType? = getBinOpToken(builder)
+-        if (nextToken !== binOpType) {
++        // manifold: don't make polyadic exprs for biding and multiplication precedences, force multiple binary exprs (for binding exprs and unit types such as m/s/s)
++        if (nextToken !== binOpType || currentPrecedence == MULTIPLICATION_PRECEDENCE) {
+           break
+         }
+       }
+@@ -906,6 +1036,25 @@
+     }
+   }
+ 
++  // a binding expr is a binary expr with no operator
++  // see https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions
++  private inner class BindingExprParser : InfixParser {
++    override fun parse(
++      parser: PrattExpressionParser,
++      builder: SyntaxTreeBuilder,
++      beforeLhs: SyntaxTreeBuilder.Marker,
++      binOpType: SyntaxElementType?,
++      currentPrecedence: Int,
++      mode: Int
++    ) {
++      val rhs = parser.tryParseWithPrecedenceAtMost(builder, currentPrecedence - 1, mode)
++      if (rhs == null) {
++        error(builder, message("expected.expression"))
++      }
++      done(beforeLhs, JavaSyntaxElementType.BINARY_EXPRESSION, myParser.languageLevel)
++    }
++  }
++
+   private class ConditionalExprParser : InfixParser {
+     override fun parse(
+       parser: PrattExpressionParser,
+@@ -1048,16 +1197,30 @@
+   }
+ }
+ 
++// manifold: must provide a mapping for converting between "syntax" tuple elements and "psi" tuple elements
++private val TUPLE_VALUE_EXPRESSION: SyntaxElementType = SyntaxElementType("TUPLE_VALUE_EXPRESSION")
++private val TUPLE_EXPRESSION: SyntaxElementType = SyntaxElementType("TUPLE_EXPRESSION")
++private val hook: JavaParserHook? by lazy {
++  val loader = ServiceLoader.load(JavaParserHook::class.java, MAN_CLASSLOADER)
++  var result : JavaParserHook? = null
++  for (hook in loader) {
++    hook?.updateConverter( TUPLE_EXPRESSION, TUPLE_VALUE_EXPRESSION )
++    result = hook
++    break
++  }
++  result
++}
+ 
+ private const val MULTIPLICATION_PRECEDENCE = 2
+-private const val ADDITIVE_PRECEDENCE = 3
+-private const val SHIFT_PRECEDENCE = 4
+-private const val COMPARISON_AND_INSTANCEOF_PRECEDENCE = 5
+-private const val EQUALITY_PRECEDENCE = 6
+-private const val BITWISE_AND_PRECEDENCE = 7
+-private const val BITWISE_XOR_PRECEDENCE = 8
+-private const val BITWISE_OR_PRECEDENCE = 9
+-private const val LOGICAL_AND_PRECEDENCE = 10
+-private const val LOGICAL_OR_PRECEDENCE = 11
+-const val CONDITIONAL_EXPR_PRECEDENCE: Int = 12
+-private const val ASSIGNMENT_PRECEDENCE = 13
++private const val BINDING_PRECEDENCE = 3
++private const val ADDITIVE_PRECEDENCE = 4
++private const val SHIFT_PRECEDENCE = 5
++private const val COMPARISON_AND_INSTANCEOF_PRECEDENCE = 6
++private const val EQUALITY_PRECEDENCE = 7
++private const val BITWISE_AND_PRECEDENCE = 8
++private const val BITWISE_XOR_PRECEDENCE = 9
++private const val BITWISE_OR_PRECEDENCE = 10
++private const val LOGICAL_AND_PRECEDENCE = 11
++private const val LOGICAL_OR_PRECEDENCE = 12
++const val CONDITIONAL_EXPR_PRECEDENCE: Int = 13
++private const val ASSIGNMENT_PRECEDENCE = 14
+Index: java/java-syntax/src/com/intellij/java/syntax/parser/ExpressionParser.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/java/java-syntax/src/com/intellij/java/syntax/parser/ExpressionParser.kt b/java/java-syntax/src/com/intellij/java/syntax/parser/ExpressionParser.kt
+--- a/java/java-syntax/src/com/intellij/java/syntax/parser/ExpressionParser.kt	(revision c8218295b3aa96ca8a81c8843dd86fe16f74d6db)
++++ b/java/java-syntax/src/com/intellij/java/syntax/parser/ExpressionParser.kt	(date 1758117650212)
+@@ -38,6 +38,17 @@
+     return myNewExpressionParser.parse(builder, FORBID_LAMBDA_MASK)
+   }
+ 
++  // manifold:
++  fun parseTupleOrExpr(builder: SyntaxTreeBuilder, requireParen: Boolean): SyntaxTreeBuilder.Marker? {
++    return myNewExpressionParser.parseTupleOrExpr(builder, requireParen)
++  }
++
++  //make binding expressions great again
++  fun parseAssignment(builder: SyntaxTreeBuilder, mode: Int, disallowBinding: Boolean ): SyntaxTreeBuilder.Marker? {
++    return myNewExpressionParser.parse(builder, mode, disallowBinding)
++  }
++  // manifold end:
++
+   companion object {
+     @JvmStatic
+     val SHIFT_OPS: SyntaxElementTypeSet = syntaxElementTypeSetOf(JavaSyntaxTokenType.LTLT, JavaSyntaxTokenType.GTGT, JavaSyntaxTokenType.GTGTGT)
+Index: platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/impl/PsiSyntaxBuilderImpl.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/impl/PsiSyntaxBuilderImpl.kt b/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/impl/PsiSyntaxBuilderImpl.kt
+--- a/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/impl/PsiSyntaxBuilderImpl.kt	(revision c8218295b3aa96ca8a81c8843dd86fe16f74d6db)
++++ b/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/impl/PsiSyntaxBuilderImpl.kt	(date 1758117650316)
+@@ -38,8 +38,9 @@
+ import org.jetbrains.annotations.NonNls
+ import java.util.*
+ import kotlin.math.max
+-
+-internal class PsiSyntaxBuilderImpl(
++// manifold: open this class so we can subclass it (see PsiSyntaxBuilderFactory)
++open internal class PsiSyntaxBuilderImpl(
++// manifold end:
+   internal var file: PsiFile?,
+   private val parserDefinition: ParserDefinition,
+   syntaxDefinition: LanguageSyntaxDefinition,
+Index: platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactoryHook.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactoryHook.kt b/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactoryHook.kt
+new file mode 100644
+--- /dev/null	(date 1758117650340)
++++ b/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactoryHook.kt	(date 1758117650340)
+@@ -0,0 +1,15 @@
++// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
++package com.intellij.platform.syntax.psi;
++
++import com.intellij.lang.ASTNode
++import com.intellij.lang.Language
++import com.intellij.platform.syntax.lexer.Lexer
++import java.util.function.Consumer
++
++interface PsiSyntaxBuilderFactoryHook : Consumer<PsiSyntaxBuilderFactory> {
++  override fun accept(psiSyntaxBuilderFactory: PsiSyntaxBuilderFactory)
++  fun createBuilder(chameleon: ASTNode, lexer: Lexer?, lang: Language, text: CharSequence)
++  fun pushNode(chameleon: ASTNode?)
++  fun popNode(builder: ASTNode?)
++  fun peekNode(): ASTNode?
++}
+Index: java/java-syntax/src/com/intellij/java/syntax/parser/JavaParserHook.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/java/java-syntax/src/com/intellij/java/syntax/parser/JavaParserHook.kt b/java/java-syntax/src/com/intellij/java/syntax/parser/JavaParserHook.kt
+new file mode 100644
+--- /dev/null	(date 1758117721123)
++++ b/java/java-syntax/src/com/intellij/java/syntax/parser/JavaParserHook.kt	(date 1758117721123)
+@@ -0,0 +1,9 @@
++// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
++package com.intellij.java.syntax.parser
++
++import com.intellij.platform.syntax.SyntaxElementType
++import java.util.function.Consumer
++
++interface JavaParserHook {
++    fun updateConverter( tuple_expression: SyntaxElementType, tuple_value_expression: SyntaxElementType )
++}
+\ No newline at end of file
+Index: platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactory.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactory.kt b/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactory.kt
+--- a/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactory.kt	(revision c8218295b3aa96ca8a81c8843dd86fe16f74d6db)
++++ b/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactory.kt	(date 1758117650332)
+@@ -4,6 +4,7 @@
+ import com.intellij.lang.*
+ import com.intellij.openapi.components.Service
+ import com.intellij.openapi.components.service
++import com.intellij.openapi.util.Key
+ import com.intellij.openapi.util.Pair
+ import com.intellij.platform.syntax.SyntaxElementType
+ import com.intellij.platform.syntax.lexer.Lexer
+@@ -15,6 +16,26 @@
+ import com.intellij.psi.impl.source.tree.SharedImplUtil
+ import com.intellij.psi.text.BlockSupport
+ import com.intellij.psi.tree.IElementType
++import java.util.ServiceLoader
++import kotlin.AssertionError
++import kotlin.IllegalStateException
++
++var MAN_CLASSLOADER : ClassLoader? = null
++
++val MAN_BUILDING: Key<ASTNode?> = Key.create<ASTNode?>("MAN_BUILDING")
++val MAN_LEXER: Key<Lexer?> = Key.create<Lexer?>("MAN_LEXER")
++
++// manifold: hook
++val hook: PsiSyntaxBuilderFactoryHook? by lazy { loadHook() }
++private fun loadHook(): PsiSyntaxBuilderFactoryHook? {
++  val loader = ServiceLoader.load(PsiSyntaxBuilderFactoryHook::class.java, MAN_CLASSLOADER)
++  for(hook in loader) {
++    hook.accept(PsiSyntaxBuilderFactory.getInstance())
++    return hook
++  }
++  return null
++}
++// manifold end:
+ 
+ @Service(Service.Level.APP)
+ class PsiSyntaxBuilderFactory {
+@@ -29,9 +50,15 @@
+     val syntaxDefinition = LanguageSyntaxDefinitions.INSTANCE.forLanguage(lang) ?: throw IllegalStateException("No SyntaxDefinition for language: $lang")
+     val actualLexer = lexer ?: syntaxDefinition.getLexer()
+     val cachedLexemes = extractCachedLexemes(chameleon)
++
++    // manifold:
++    hook?.createBuilder(chameleon, lexer, lang, text)
++    // manifold end:
++
+     val lexingResult = performLexingIfNecessary(cachedLexemes, actualLexer, text, lang)
+ 
+-    return PsiSyntaxBuilderImpl(
++    // manifold: override getTreeBuild()
++    val syntaxBuilderImpl = object : PsiSyntaxBuilderImpl(
+       file = SharedImplUtil.getContainingFile(chameleon),
+       parserDefinition = parserDefinition,
+       syntaxDefinition = syntaxDefinition,
+@@ -45,7 +72,24 @@
+       tokenConverter = tokenConverter,
+       opaquePolicy = null,
+       whitespaceOrCommentBindingPolicy = DefaultWhitespaceOrCommentPolicy(tokenConverter),
+-    )
++    ) {
++      override fun getTreeBuilt(): ASTNode {
++        hook?.pushNode( getUserData(MAN_BUILDING) );
++        try
++        {
++          return super.getTreeBuilt()
++        }
++        finally
++        {
++          hook?.popNode( getUserData(MAN_BUILDING) );
++        }
++      }
++    }
++
++    syntaxBuilderImpl.putUserData(MAN_BUILDING, chameleon)
++    syntaxBuilderImpl.putUserData(MAN_LEXER, lexer)
++    return syntaxBuilderImpl
++    // manifold end:
+   }
+ 
+   fun createBuilder(

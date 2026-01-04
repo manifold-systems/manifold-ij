@@ -654,8 +654,8 @@ Other minor fixes and improvements.
     <!--  These application service overrides facilitate file fragments -->
     <applicationService serviceInterface="com.intellij.lang.DefaultASTFactory"
                         serviceImplementation="manifold.ij.extensions.ManDefaultASTFactoryImpl" overrides="true"/>
-    <applicationService serviceInterface="com.intellij.lang.PsiBuilderFactory"
-                        serviceImplementation="manifold.ij.extensions.ManPsiBuilderFactoryImpl" overrides="true"/>
+<!--    <applicationService serviceInterface="com.intellij.lang.PsiBuilderFactory"-->
+<!--                        serviceImplementation="manifold.ij.extensions.ManPsiBuilderFactoryImpl" overrides="true"/>-->
 
     <applicationService serviceInterface="com.intellij.psi.util.JavaClassSupers"
                         serviceImplementation="manifold.ij.extensions.ManJavaClassSupersImpl" overrides="true"/>
@@ -671,6 +671,7 @@ Other minor fixes and improvements.
     <java.elementFinder implementation="manifold.ij.extensions.ManTypeFinder" order="first, before java"/>
     <java.shortNamesCache implementation="manifold.ij.extensions.ManShortNamesCache"/>
     <gotoDeclarationHandler implementation="manifold.ij.extensions.ManGotoDeclarationHandler"/>
+    <lang.ast.factory language="JAVA" implementationClass="manifold.ij.extensions.ManJavaASTFactory" order="first"/>
     <lang.documentationProvider language="JAVA" implementationClass="manifold.ij.extensions.ManJavaDocumentationProvider" order="first"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManAugmentProvider"/>
     <lang.psiAugmentProvider implementation="manifold.ij.extensions.ManPropertiesAugmentProvider"/>
@@ -680,7 +681,7 @@ Other minor fixes and improvements.
     <methodReferencesSearch implementation="manifold.ij.extensions.InferredPropertyMethodUsageSearcher"/>
     <methodReferencesSearch implementation="manifold.ij.extensions.ParamsMethodUsageSearcher"/>
     <implicitUsageProvider implementation="manifold.ij.extensions.ParamsMethodUsageSearcher"/>
-    <lang.parserDefinition language="JAVA" implementationClass="manifold.ij.extensions.ManJavaParserDefinition" order="first"/>
+<!--    <lang.parserDefinition language="JAVA" implementationClass="manifold.ij.extensions.ManJavaParserDefinition" order="first"/>-->
     <externalAnnotator language="JAVA" implementationClass="manifold.ij.extensions.DelegationExternalAnnotator"/>
     <externalAnnotator language="JAVA" implementationClass="manifold.ij.extensions.ManPreprocessorAnnotator" order="last"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.ExtensionClassAnnotator"/>
@@ -712,10 +713,11 @@ Other minor fixes and improvements.
     <completion.contributor language="JAVA" implementationClass="manifold.ij.extensions.ManJavaCompletionContributor" order="first"/>
     <codeInsight.parameterInfo language="JAVA" implementationClass="manifold.ij.extensions.ManMethodParameterInfoHandler" order="first"/>
     <iconProvider implementation="manifold.ij.extensions.PropertiesIconProvider"/>
-    <highlightVisitor implementation="manifold.ij.extensions.ManHighlightVisitor"/>
     <psi.treeChangeListener implementation="manifold.ij.extensions.GraphQlConfigTreeChangeListener"/>
 
-    <applicationConfigurable instance="manifold.ij.extensions.ManConfigurable"/>
+    <projectConfigurable instance="manifold.ij.extensions.ManConfigurable" displayName="Manifold Settings"/>
+
+    <colorSettingsPage implementation="manifold.ij.extensions.ManColorSettingsPage"/>
 
     <!-- ManJavaSyntaxHighlighterFactory exists solely so we can include '$' as an escapable for String literal templates
          see ManJavaFileHighlighter -->

@@ -114,7 +114,7 @@ class ManTemplateJavaLexer extends DelegateLexer
     int next = findNextOffset( pos, getDelegate().getBufferEnd(), _exprOffsets, _stmtOffsets, _directiveOffsets );
     if( next > 0 )
     {
-      ReflectUtil.field( ReflectUtil.field( getJavaLexerDelegate(), "myFlexLexer" ).get(), "zzEndRead" ).set( next );
+      ReflectUtil.field( ReflectUtil.field( delegate.getLexer(), "myFlexLexer" ).get(), "zzEndRead" ).set( next );
     }
   }
 

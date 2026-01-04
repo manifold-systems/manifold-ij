@@ -23,9 +23,9 @@ import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.colors.TextAttributesKey;
+import com.intellij.openapi.editor.colors.EditorColorsManager;
+import com.intellij.openapi.editor.colors.EditorColorsUtil;
 import com.intellij.openapi.editor.markup.EffectType;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.util.Computable;
@@ -33,7 +33,6 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiComment;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import com.intellij.util.ObjectUtils;
 import java.awt.Color;
 import java.awt.Font;
 import java.util.ArrayList;
@@ -53,19 +52,6 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPreprocessorAnnotator.Info>
 {
-  private static final TextAttributesKey KEY_DIRECTIVE_KEYWORD = ObjectUtils.notNull( TextAttributesKey.find( "JAVA_KEYWORD" ),
-    DefaultLanguageHighlighterColors.KEYWORD );
-  private static final Color COLOR_DIRECTIVE_KEYWORD = KEY_DIRECTIVE_KEYWORD.getDefaultAttributes().getForegroundColor();
-
-  private static final TextAttributesKey KEY_DIRECTIVE_BACKGROUND = ObjectUtils.notNull( TextAttributesKey.find( "INLINE_PARAMETER_HINT" ),
-    DefaultLanguageHighlighterColors.BLOCK_COMMENT );
-  private static final Color COLOR_DIRECTIVES_BACKGROUND = KEY_DIRECTIVE_BACKGROUND.getDefaultAttributes().getBackgroundColor();
-
-  private final TextAttributes _directiveKeyword =
-    new TextAttributes( COLOR_DIRECTIVE_KEYWORD, null, null, null, Font.BOLD );
-  private final TextAttributes _notCompiled =
-    new TextAttributes( null, COLOR_DIRECTIVES_BACKGROUND, COLOR_DIRECTIVES_BACKGROUND, EffectType.WAVE_UNDERSCORE, Font.PLAIN );
-
   @Nullable
   @Override
   public PsiFile collectInformation( @NotNull PsiFile file )
@@ -138,7 +124,7 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
     info.getDirectives().forEach( d -> {
       holder.newAnnotation( HighlightSeverity.INFORMATION, "" )
         .range( TextRange.create( d[0], d[1] ) )
-        .enforcedTextAttributes( _directiveKeyword )
+        .enforcedTextAttributes( directiveAttr() )
         .create();
       PsiElement comment = file.findElementAt( d[0] + 1 );
       if( comment instanceof PsiComment )
@@ -153,7 +139,7 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
         }
         holder.newAnnotation( HighlightSeverity.INFORMATION, "" )
           .range( comment )
-          .enforcedTextAttributes( _notCompiled )
+          .enforcedTextAttributes( maskedCodeAttr() )
           .create();
       }
     } );
@@ -161,6 +147,18 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
       issue -> holder.newAnnotation( HighlightSeverity.ERROR, issue.getFirst() )
         .range( TextRange.create( issue.getSecond(), issue.getSecond() + 1 ) )
         .create() );
+  }
+
+  private @NotNull TextAttributes directiveAttr() {
+    Color color = EditorColorsUtil.getGlobalOrDefaultColor( ManColorSettingsPage.KEY_PREPROCESSOR_DIRECTIVE );
+    return new TextAttributes( color, null, null, null, Font.BOLD );
+  }
+
+  private @NotNull TextAttributes maskedCodeAttr() {
+    TextAttributes attrs = EditorColorsManager.getInstance().getGlobalScheme().getAttributes( ManColorSettingsPage.PREPROCESSOR_MASKED_CODE );
+    Color foregroundColor = attrs.getForegroundColor();
+    Color backgroundColor = attrs.getBackgroundColor();
+    return new TextAttributes( foregroundColor, backgroundColor, attrs.getEffectColor(), attrs.getEffectType(), attrs.getFontType() );
   }
 
   private void addDirective( Tokenizer tokenizer, Info info )

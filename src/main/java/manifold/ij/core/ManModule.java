@@ -53,7 +53,7 @@ import manifold.ext.IExtensionClassProducer;
 import manifold.ij.fs.IjFile;
 import manifold.internal.host.SimpleModule;
 import manifold.strings.StringLiteralTemplateProcessor;
-import manifold.util.NecessaryEvilUtil;
+import manifold.util.JdkAccessUtil;
 import manifold.util.ReflectUtil;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
@@ -116,7 +116,7 @@ public class ManModule extends SimpleModule
     ClassLoader prior = Thread.currentThread().getContextClassLoader();
     if( _typeManifoldClassLoader != null )
     {
-      Thread.currentThread().setContextClassLoader( _typeManifoldClassLoader );
+      ReflectUtil.setContextClassLoader( _typeManifoldClassLoader );
     }
     try
     {
@@ -124,7 +124,7 @@ public class ManModule extends SimpleModule
     }
     finally
     {
-      Thread.currentThread().setContextClassLoader( prior );
+      ReflectUtil.setContextClassLoader( prior );
     }
   }
 
@@ -319,7 +319,7 @@ public class ManModule extends SimpleModule
   public void loadRegistered( Set<ITypeManifold> sps )
   {
     initializeModuleClassLoader();
-    NecessaryEvilUtil.bypassJava9Security( true );
+    JdkAccessUtil.openModules( true );
     runWithLoader( () -> super.loadRegistered( sps ) );
   }
 

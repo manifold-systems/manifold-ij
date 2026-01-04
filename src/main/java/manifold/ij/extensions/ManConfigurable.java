@@ -19,24 +19,33 @@
 
 package manifold.ij.extensions;
 
+import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.ui.DocumentAdapter;
 import com.intellij.util.ui.JBUI;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import javax.swing.BorderFactory;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
+
+import java.awt.*;
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
 
 import manifold.ij.core.ManLibraryChecker;
-import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ManConfigurable implements Configurable
 {
+  private final Project _project;
   private ManifoldPanel _manifoldPanel;
 
-//  @Nls(capitalization = Nls.Capitalization.Title)
+  public ManConfigurable( Project project )
+  {
+    _project = project;
+  }
+
+  //  @Nls(capitalization = Nls.Capitalization.Title)
   @Override
   public String getDisplayName()
   {
@@ -60,9 +69,9 @@ public class ManConfigurable implements Configurable
   public void apply()
   {
     boolean dumbProcessorMode = !_manifoldPanel.getMode().isSelected();
-    if( ManJavaLexer.isDumbPreprocessorMode() != dumbProcessorMode )
+    if( ManPreprocessorJavaLexerHook.isDumbPreprocessorMode() != dumbProcessorMode )
     {
-      ManJavaLexer.setDumbPreprocessorMode( dumbProcessorMode );
+      ManPreprocessorJavaLexerHook.setDumbPreprocessorMode( dumbProcessorMode );
     }
 
     boolean experimentalFeaturesEnabled = _manifoldPanel.getExperimentalFeatures().isSelected();
@@ -76,13 +85,18 @@ public class ManConfigurable implements Configurable
     {
       ManLibraryChecker.setSuppressVersionCheck( suppressVersionCheckEnabled );
     }
+
+    String text = _manifoldPanel.getAndroidBuildDirectory();
+    PropertiesComponent state = PropertiesComponent.getInstance( _project );
+    state.setValue( "manifold.android.build.dir", text );
   }
 
-  private static class ManifoldPanel extends JPanel
+  private class ManifoldPanel extends JPanel
   {
     private JCheckBox _mode;
     private JCheckBox _experimentalFeatures;
     private JCheckBox _suppressManifoldVersionCheck;
+    private TextFieldWithBrowseButton _androidBuildDirectory;
     private boolean _modified;
 
     ManifoldPanel()
@@ -109,7 +123,7 @@ public class ManConfigurable implements Configurable
                             "code according to both local and environmental definitions. " +
                             "Additionally inactive code is not parsed by IntelliJ to avoid " +
                             "compiler errors and to avoid false positives wrt usage searches etc." );
-      _mode.setSelected( !ManJavaLexer.isDumbPreprocessorMode() );
+      _mode.setSelected( !ManPreprocessorJavaLexerHook.isDumbPreprocessorMode() );
       _mode.addChangeListener( e -> _modified = true );
 
       c.gridy = y++;
@@ -120,7 +134,33 @@ public class ManConfigurable implements Configurable
       c.gridy = y++;
       add( _suppressManifoldVersionCheck = new JCheckBox( "Suppress Manifold version check" ), c );
       _suppressManifoldVersionCheck.setSelected( ManLibraryChecker.isSuppressVersionCheck() );
-      _experimentalFeatures.addChangeListener( e -> _modified = true );
+      _suppressManifoldVersionCheck.addChangeListener( e -> _modified = true );
+
+      c.gridy = y++;
+      c.insets = JBUI.insets( 5, 2, 0, 0 );
+      JLabel label = new JLabel( "Android custom build directory:" );
+      String desc =
+        "For android projects using manifold-preprocessor with build variants plugin. " +
+        "If you override the standard `build` directory location, you must specify the " +
+        "directory here. Otherwise, build variants will not work with the preprocessor.";
+      label.setToolTipText( desc );
+      add( label, c );
+      c.gridy = y++;
+      c.weightx = 1;
+      c.insets = JBUI.insets( 2, 2, 0, 0 );
+      add( _androidBuildDirectory = makeAndroidBuildDirectoryUi( desc ), c );
+      PropertiesComponent state = PropertiesComponent.getInstance( _project );
+      String dir = state.getValue( "manifold.android.build.dir" );
+      _androidBuildDirectory.setText( dir );
+      _androidBuildDirectory.getTextField().getDocument().addDocumentListener( new DocumentAdapter()
+        {
+          @Override
+          protected void textChanged( @NotNull DocumentEvent e )
+          {
+            _modified = true;
+          }
+        } );
+      c.weightx = 0;
 
       c.anchor = GridBagConstraints.NORTHWEST;
       c.fill = GridBagConstraints.BOTH;
@@ -131,6 +171,24 @@ public class ManConfigurable implements Configurable
       c.weightx = 1;
       c.weighty = 1;
       add( new JPanel(), c );
+    }
+
+    private TextFieldWithBrowseButton makeAndroidBuildDirectoryUi( String description )
+    {
+      TextFieldWithBrowseButton directoryChooser = new TextFieldWithBrowseButton();
+      FileChooserDescriptor chooserDescriptor = new FileChooserDescriptor(
+        false, // choose files
+        true,  // choose directories
+        false,
+        false,
+        false,
+        false
+      );
+      chooserDescriptor.setTitle( "Android `build` Directory" );
+      chooserDescriptor.setDescription( description );
+      directoryChooser.setPreferredSize( new Dimension( 300, directoryChooser.getPreferredSize().height ) );
+      directoryChooser.addBrowseFolderListener( _project, chooserDescriptor );
+      return directoryChooser;
     }
 
     JCheckBox getMode()
@@ -146,6 +204,11 @@ public class ManConfigurable implements Configurable
     JCheckBox getSuppressManifoldVersionCheck()
     {
       return _suppressManifoldVersionCheck;
+    }
+
+    String getAndroidBuildDirectory()
+    {
+      return _androidBuildDirectory.getText();
     }
 
     boolean isModified()

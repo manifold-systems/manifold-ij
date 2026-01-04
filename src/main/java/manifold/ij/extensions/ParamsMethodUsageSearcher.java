@@ -30,7 +30,7 @@ import com.intellij.psi.search.*;
 import com.intellij.psi.search.searches.MethodReferencesSearch;
 import com.intellij.refactoring.psi.SearchUtils;
 import com.intellij.util.Processor;
-import manifold.ext.params.rt.manifold_params;
+import manifold.ext.params.rt.params;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManExtensionMethodBuilder;
 import manifold.ij.psi.ManLightMethodBuilder;
@@ -111,7 +111,7 @@ public class ParamsMethodUsageSearcher extends MethodUsagesSearcher implements I
     PsiMethod method = (PsiMethod)psiElement;
 
     if( !(method instanceof ManLightMethodBuilder) &&
-      !method.hasAnnotation( manifold_params.class.getTypeName() ) &&
+      !method.hasAnnotation( params.class.getTypeName() ) &&
       !ParamsMaker.hasOptionalParams( method ) )
     {
       return false;

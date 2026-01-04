@@ -20,10 +20,10 @@
 package manifold.ij.extensions;
 
 import com.intellij.lang.ASTNode;
-import com.intellij.lang.PsiBuilderFactory;
-import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.platform.syntax.psi.PsiSyntaxBuilderFactory;
+import com.intellij.platform.syntax.psi.PsiSyntaxBuilderFactoryHook;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiJavaFile;
 import java.util.Set;
@@ -31,6 +31,7 @@ import java.util.Set;
 import manifold.api.fs.IFileFragment;
 import manifold.api.fs.def.FileFragmentImpl;
 import manifold.api.type.ITypeManifold;
+import manifold.ij.core.ManApplicationLoadListener;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.util.FileUtil;
@@ -38,6 +39,8 @@ import manifold.ij.util.ReparseUtil;
 import manifold.ij.util.SlowOperationsUtil;
 import manifold.internal.javac.FragmentProcessor;
 import manifold.internal.javac.HostKind;
+import manifold.util.ReflectUtil;
+import org.jetbrains.annotations.NotNull;
 
 
 import static manifold.api.type.ContributorKind.Supplemental;
@@ -73,14 +76,14 @@ interface PsiFileFragment extends ASTNode, PsiElement
     {
       // containingFile is null when tokenizing
 
-      ManPsiBuilderFactoryImpl manBuilderFactory = (ManPsiBuilderFactoryImpl)PsiBuilderFactory.getInstance();
-      ASTNode buildingNode = manBuilderFactory.peekNode();
+      PsiSyntaxBuilderFactoryHook hook = (PsiSyntaxBuilderFactoryHook)ReflectUtil.method( ManApplicationLoadListener.typePsiSyntaxBuilderFactoryKt, "getHook" ).invokeStatic();
+      ASTNode buildingNode = hook.peekNode();
       if( buildingNode == null )
       {
         return;
       }
 
-      containingFile = ManPsiBuilderFactoryImpl.getPsiFile( buildingNode );
+      containingFile = ManPsiBuilderFactoryHook.getPsiFile( buildingNode );
       if( containingFile == null )
       {
         return;

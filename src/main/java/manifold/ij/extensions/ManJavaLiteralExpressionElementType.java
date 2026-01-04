@@ -32,7 +32,6 @@ public class ManJavaLiteralExpressionElementType extends JavaLiteralExpressionEl
     return new ManPsiLiteralExpressionImpl( node );
   }
 
-  @Override
   public PsiLiteralExpression createPsi( @NotNull PsiLiteralStub stub )
   {
     return new ManPsiLiteralExpressionImpl( stub );

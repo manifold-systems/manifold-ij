@@ -21,24 +21,33 @@ package manifold.ij.core;
 
 import com.intellij.diagnostic.LoadingState;
 import com.intellij.ide.ApplicationLoadListener;
-import com.intellij.lang.java.parser.JavaParser;
+import com.intellij.java.syntax.lexer.JavaLexer;
+import com.intellij.lang.ASTNode;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.ProjectManagerListener;
+import com.intellij.platform.syntax.psi.PsiSyntaxBuilderFactory;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.impl.java.stubs.JavaLiteralExpressionElementType;
+import com.intellij.psi.impl.java.stubs.JavaStubElementTypePsiElementMappingRegistry;
 import com.intellij.psi.impl.java.stubs.JavaStubElementTypes;
 import com.intellij.psi.impl.source.tree.JavaElementType;
 import com.intellij.psi.tree.IElementType;
 
 import java.nio.file.Path;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.intellij.util.messages.MessageBusConnection;
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
+import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.extensions.ManJavaLiteralExpressionElementType;
+import manifold.ij.extensions.ManPsiBuilderFactoryHook;
+import manifold.ij.extensions.ManPsiLiteralExpressionImpl;
+import manifold.util.JdkAccessUtil;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,23 +62,12 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ManApplicationLoadListener implements ApplicationLoadListener
 {
-  //@Override in version 2024.x
+  @Override
   public Object beforeApplicationLoaded(Application application, Path configPath, Continuation<? super Unit> continuation)
   {
-    beforeApplicationLoaded( application, configPath );
+    overrideJavaParserStuff();
+    listenToProjectOpenClose();
     return null;
-  }
-  // @Override in version 2022.x
-  public void beforeApplicationLoaded( @NotNull Application application, @NotNull Path configPath )
-  {
-    overrideJavaParserStuff();
-    listenToProjectOpenClose();
-  }
-  // @Override in versions *prior* to 2022.x
-  public void beforeApplicationLoaded( @NotNull Application application, @NotNull String configPath )
-  {
-    overrideJavaParserStuff();
-    listenToProjectOpenClose();
   }
 
   public void overrideJavaParserStuff()
@@ -128,6 +126,7 @@ public class ManApplicationLoadListener implements ApplicationLoadListener
    */
   private void overrideJavaStringLiterals()
   {
+    JdkAccessUtil.openModules();
     ManJavaLiteralExpressionElementType override = new ManJavaLiteralExpressionElementType();
     ReflectUtil.field( JavaStubElementTypes.class, "LITERAL_EXPRESSION" ).setStatic( override );
 
@@ -140,11 +139,27 @@ public class ManApplicationLoadListener implements ApplicationLoadListener
         registry[i] = override;
       }
     }
+
+    ReflectUtil.method( JavaStubElementTypePsiElementMappingRegistry.getInstance(), "registerFactory", IElementType.class, Function.class )
+      .invoke( override, (Function<ASTNode, PsiElement>)node -> new ManPsiLiteralExpressionImpl( node ) );
   }
 
+  public static Class<?> typePsiSyntaxBuilderFactoryKt = null;
   private void replaceJavaExpressionParser()
   {
-    ReflectUtil.field( JavaParser.class, "INSTANCE" ).setStatic( new ManJavaParser() );
+    Frontloader.frontloadClasses( "com.intellij.java.syntax.lexer.JavaLexer", getClass() );
+    Frontloader.frontloadClasses( "com.intellij.platform.syntax.psi.impl.PsiSyntaxBuilderImpl", getClass() );
+    Frontloader.frontloadClasses( "com.intellij.platform.syntax.psi.PsiSyntaxBuilderFactory", getClass() );
+    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.JavaParserHook", "com.intellij.java.syntax.parser.JavaParser", getClass() );
+    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.PrattExpressionParser", getClass() );
+    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.ExpressionParser", getClass() );
+    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.StatementParser", getClass() );
+    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.DeclarationParser", getClass() );
+
+    ReflectUtil.field( JavaLexer.class.getTypeName() + "Kt" , "MAN_CLASSLOADER" ).setStatic( getClass().getClassLoader() );
+    typePsiSyntaxBuilderFactoryKt = ReflectUtil.type( PsiSyntaxBuilderFactory.class.getTypeName() + "Kt" );
+    ReflectUtil.field( typePsiSyntaxBuilderFactoryKt, "MAN_CLASSLOADER" ).setStatic( getClass().getClassLoader() );
+
     ReflectUtil.field( JavaElementType.BINARY_EXPRESSION, "myConstructor" ).set( (Supplier<?>)ManPsiBinaryExpressionImpl::new );
     ReflectUtil.field( JavaElementType.PREFIX_EXPRESSION, "myConstructor" ).set( (Supplier<?>)ManPsiPrefixExpressionImpl::new );
     ReflectUtil.field( JavaElementType.POSTFIX_EXPRESSION, "myConstructor" ).set( (Supplier<?>)ManPsiPostfixExpressionImpl::new );

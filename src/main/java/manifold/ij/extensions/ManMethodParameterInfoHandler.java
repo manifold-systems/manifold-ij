@@ -24,7 +24,7 @@ import com.intellij.lang.parameterInfo.ParameterInfoHandler;
 import com.intellij.lang.parameterInfo.ParameterInfoUIContext;
 import com.intellij.lang.parameterInfo.UpdateParameterInfoContext;
 import com.intellij.psi.*;
-import manifold.ext.params.rt.manifold_params;
+import manifold.ext.params.rt.params;
 import manifold.ij.core.ManPsiTupleExpression;
 import manifold.ij.util.ManPsiUtil;
 import org.jetbrains.annotations.NotNull;
@@ -71,9 +71,9 @@ public class ManMethodParameterInfoHandler implements ParameterInfoHandler<PsiEx
               keep.add( item );
             }
           }
-          else if( !psiMethod.hasAnnotation( manifold_params.class.getTypeName() ) )
+          else if( !psiMethod.hasAnnotation( params.class.getTypeName() ) )
           {
-            // filter out generated methods marked with @manifold_params
+            // filter out generated methods marked with @params
             keep.add( item );
           }
         }

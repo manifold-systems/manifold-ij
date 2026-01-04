@@ -30,7 +30,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.util.*;
 import manifold.api.gen.SrcExpression;
 import manifold.api.gen.SrcRawExpression;
-import manifold.ext.params.rt.manifold_params;
+import manifold.ext.params.rt.params;
 import manifold.ij.util.ComputeUtil;
 import manifold.ij.util.ManPsiUtil;
 import manifold.rt.api.util.ManStringUtil;
@@ -316,8 +316,8 @@ public class TupleNamedArgsUtil
           {
             PsiTypeParameterList typeParameterList = paramsClass.getTypeParameterList();
             String paramsClassExpr = typeParameterList == null || typeParameterList.getTypeParameters().isEmpty()
-              ? containingClass.getName() + '.' + paramsClass.getName()
-              : containingClass.getName() + '.' + paramsClass.getName() + "<>";
+              ? containingClass.getQualifiedName() + '.' + paramsClass.getName()
+              : containingClass.getQualifiedName() + '.' + paramsClass.getName() + "<>";
             String newExpr = "new " + paramsClassExpr + "(" + makeArgsList( args ) + ")";
 
             PsiExpression psiNewExpr = JavaPsiFacade.getElementFactory( containingClass.getProject() )
@@ -527,16 +527,16 @@ public class TupleNamedArgsUtil
   public static List<String> getParamNames( PsiClass paramsClass, boolean removeOpt$ )
   {
     List<String> result = new ArrayList<>();
-    PsiAnnotation anno = paramsClass.getAnnotation( manifold_params.class.getTypeName() );
+    PsiAnnotation anno = paramsClass.getAnnotation( params.class.getTypeName() );
     if( anno == null )
     {
-      throw new IllegalStateException( "Expecting '@" + manifold_params.class.getTypeName() + "' annotation" );
+      throw new IllegalStateException( "Expecting '@" + params.class.getTypeName() + "' annotation" );
     }
     JvmAnnotationConstantValue value = (JvmAnnotationConstantValue) anno.getAttributes().get( 0 ).getAttributeValue();
     String paramsInfo = value == null ? null : (String)value.getConstantValue();
     if( paramsInfo == null )
     {
-      throw new IllegalStateException( "Expecting non-null value for '@" + manifold_params.class.getTypeName() + "' annotation" );
+      throw new IllegalStateException( "Expecting non-null value for '@" + params.class.getTypeName() + "' annotation" );
     }
 
     StringTokenizer tokenizer = new StringTokenizer( paramsInfo, "_" );

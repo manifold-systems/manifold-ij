@@ -31,7 +31,8 @@ import com.intellij.psi.util.PsiMethodUtil;
 import com.intellij.psi.util.PsiUtil;
 import com.intellij.psi.util.TypeConversionUtil;
 import manifold.api.gen.*;
-import manifold.ext.params.rt.manifold_params;
+import manifold.ext.params.ParamsIssueMsg;
+import manifold.ext.params.rt.params;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManExtensionMethodBuilder;
 import manifold.ij.psi.ManLightParameterImpl;
@@ -122,20 +123,6 @@ class ParamsMaker
       return;
     }
 
-    if( _holder != null && !_psiMethod.findSuperMethods().isEmpty() )
-    {
-      for( PsiParameter param : _psiMethod.getParameterList().getParameters() )
-      {
-        if( hasInitializer( param ) )
-        {
-          reportIssue( param, HighlightSeverity.ERROR,
-            "Default parameter values are not allowed in the signature of an overriding method",
-            getInitializerRange( param ) );;
-        }
-      }
-      return;
-    }
-
     if( paramsClass != null )
     {
       PsiMethod forwardingMeth = makeParamsMethod( paramsClass );
@@ -222,8 +209,8 @@ class ParamsMaker
     StubBuilder stubBuilder = new StubBuilder();
     SrcMethod srcMethod = stubBuilder.makeMethod( srcClass, _psiMethod );
 
-    // mark with @manifold_params to facilitate excluding this method from code completion menus
-    srcMethod.addAnnotation( manifold_params.class.getTypeName() );
+    // mark with @params to facilitate excluding this method from code completion menus
+    srcMethod.addAnnotation( params.class.getTypeName() );
 
     // replace target method's params with paramsClass type
     srcMethod.getParameters().clear();
@@ -309,8 +296,8 @@ class ParamsMaker
 
     SrcMethod srcMethod = stubBuilder.makeMethod( srcClass, _psiMethod );
 
-    // mark with @manifold_params to facilitate excluding this method from code completion menus
-    srcMethod.addAnnotation( manifold_params.class.getTypeName() );
+    // mark with @params to facilitate excluding this method from code completion menus
+    srcMethod.addAnnotation( params.class.getTypeName() );
 
     srcMethod.getParameters().clear();
     for( PsiParameter reqParam: reqParams )
@@ -374,26 +361,25 @@ class ParamsMaker
             otherPres = m.getPresentation();
             otherDisplay = otherPres == null ? m.getName() : otherPres.getPresentableText();
             String subSignature = "'(" + Arrays.stream( erasedSig ).map( p -> p.getPresentableText() ).collect( Collectors.joining( ", " ) ) + ")'";
-            reportError( _psiMethod.getNameIdentifier(), "'" + paramsMethodDisplay + "' clashes with '" + otherDisplay + "' using sub-signature " + subSignature );
+            reportError( _psiMethod.getNameIdentifier(), ParamsIssueMsg.MSG_OPT_PARAM_METHOD_CLASHES_WITH_SUBSIG.get( paramsMethodDisplay, otherDisplay, subSignature ) );
           }
           else
           {
             // a telescoping method clashes with a physical method (report that the corresponding optional params method interferes)
 
-            reportError( _psiMethod.getNameIdentifier(), "Optional parameter method: '" + paramsMethodDisplay +
-              "' indirectly clashes with '" + otherDisplay + "'" );
+            reportError( _psiMethod.getNameIdentifier(), ParamsIssueMsg.MSG_OPT_PARAM_METHOD_INDIRECTLY_CLASHES.get( paramsMethodDisplay, otherDisplay ) );
           }
         }
         else if( !m.isConstructor() &&
           !m.getModifierList().hasModifierProperty( PsiModifier.STATIC ) &&
           !m.getModifierList().hasModifierProperty( PsiModifier.PRIVATE ) &&
+          !m.hasAnnotation( params.class.getTypeName() ) &&
           !plantedMethod.hasAnnotation( Override.class.getTypeName() ) )
         {
           // a telescoping method overrides a physical method in the super class (report that the corresponding optional params method interferes)
 
-          reportWarning( _psiMethod.getNameIdentifier(), "Optional parameter method: '" + paramsMethodDisplay +
-            "' indirectly overrides method '" + otherDisplay + "' in class '" +
-            (m.getContainingClass() == null ? "<unknown>": m.getContainingClass().getName()) + "'" );
+          reportWarning( _psiMethod.getNameIdentifier(), ParamsIssueMsg.MSG_OPT_PARAM_METHOD_INDIRECTLY_OVERRIDES
+                  .get( paramsMethodDisplay, otherDisplay, (m.getContainingClass() == null ? "<unknown>": m.getContainingClass().getName() ) ) );
         }
       }
     }
@@ -443,10 +429,10 @@ class ParamsMaker
     SrcClass srcClass = new SrcClass( name, srcParent, AbstractSrcClass.Kind.Class )
       .name( name )
       .modifiers( Modifier.PUBLIC | Modifier.STATIC )
-      .addAnnotation( new SrcAnnotationExpression( manifold_params.class )
+      .addAnnotation( new SrcAnnotationExpression( params.class )
         .addArgument( new SrcArgument( new SrcRawExpression( "\"" +
           Arrays.stream( _psiMethod.getParameterList().getParameters() )
-            .map( e -> "_" + (getInitializer( e ) == null ? "" : "opt$") + e.name )
+            .map( e -> "_" + (getInitializer( e ) == null ? "" : "opt$") + e.getName() )
             .reduce( "", (a,b) -> a+b ) + "\"" ) ) ) );
     addTypeParams( srcClass );
 
@@ -476,7 +462,12 @@ class ParamsMaker
       PsiTypeElement typeElement = param.getTypeElement();
       try
       {
-        srcCtor.addParam( param.getName(), typeElement == null ? "" : typeElement.getText() == null ? "" : typeElement.getText() );
+        String type = typeElement == null ? null : typeElement.getText() == null ? null : typeElement.getText();
+        if( type == null || type.isEmpty() )
+        {
+          return null;
+        }
+        srcCtor.addParam( param.getName(), type);
       }
       catch( TypeNameParserException tnpe )
       {

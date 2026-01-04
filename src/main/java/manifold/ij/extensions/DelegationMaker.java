@@ -523,7 +523,7 @@ public class DelegationMaker
         {
           continue;
         }
-        for( PsiMethod m : psiIface.getOwnMethods() )
+        for( PsiMethod m : psiIface.getMethods() )
         {
           if( !m.getModifierList().hasModifierProperty( PsiModifier.STATIC ) )
           {

@@ -16,15 +16,24 @@
  *
  *
  */
+import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
 
-pluginManagement {
+plugins {
+    id("org.jetbrains.intellij.platform.settings") version "2.7.0"
+}
+
+rootProject.name = "manifold-ij"
+
+dependencyResolutionManagement {
+//    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+
     repositories {
-        maven {
-            url 'https://oss.sonatype.org/content/repositories/snapshots/'
+        mavenLocal()
+        intellijPlatform {
+            defaultRepositories()
         }
         gradlePluginPortal()
     }
 }
 
-rootProject.name = 'manifold-ij'
-include 'jps-plugin'
+include(":jps-plugin")

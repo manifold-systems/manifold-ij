@@ -32,11 +32,13 @@ import com.intellij.psi.impl.source.PsiJavaFileBaseImpl;
 import com.intellij.psi.impl.source.tree.java.*;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiUtil;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.refactoring.util.RefactoringUtil;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.*;
@@ -195,12 +197,21 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if( filterOperatorCannotBeAppliedToWithBinaryOperatorOverload( hi, elem ) )
+    {
+      return false;
+    }
+
     // handle indexed operator overloading
     if( filterArrayTypeExpected( hi, elem, firstElem ) )
     {
       return false;
     }
     if( filterVariableExpected( hi, elem, firstElem ) )
+    {
+      return false;
+    }
+    if( filterIncompatibleTypesWithArrayAccess( hi, elem, firstElem ) )
     {
       return false;
     }
@@ -389,10 +400,91 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   }
   private boolean filterOperatorCannotBeAppliedToWithCompoundAssignmentOperatorOverload( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
   {
-    return firstElem.getParent() instanceof PsiAssignmentExpressionImpl &&
-           (hi.getDescription().contains( "' cannot be applied to " ) ||  // eg. "Operator '+' cannot be applied to 'java.math.BigDecimal'"
-            hi.getDescription().contains( "' 不能应用于 " )) &&  // eg. "运算符 '+' 不能应用于 'java.math.BigDecimal'"
-           ManJavaResolveCache.getTypeForOverloadedBinaryOperator( (PsiExpression)firstElem.getParent() ) != null;
+    if( firstElem.getParent() instanceof PsiAssignmentExpressionImpl )
+    {
+      return (hi.getDescription().contains( "' cannot be applied to " ) ||  // eg. "Operator '+' cannot be applied to 'java.math.BigDecimal'"
+              hi.getDescription().contains( "' 不能应用于 " )) &&  // eg. "运算符 '+' 不能应用于 'java.math.BigDecimal'"
+              ManJavaResolveCache.getTypeForOverloadedBinaryOperator( (PsiExpression)firstElem.getParent() ) != null;
+    }
+    return false;
+  }
+
+  private boolean filterOperatorCannotBeAppliedToWithBinaryOperatorOverload( HighlightInfo hi, PsiElement elem )
+  {
+    PsiPolyadicExpression pexpr = getEnclosingPolyadicExpr(elem);
+    if( pexpr != null )
+    {
+      return (hi.getDescription().contains( "' cannot be applied to " ) ||  // eg. "Operator '+' cannot be applied to 'java.math.BigDecimal'"
+              hi.getDescription().contains( "' 不能应用于 " )) &&  // eg. "运算符 '+' 不能应用于 'java.math.BigDecimal'"
+             checkPolyadicOperatorApplicable( pexpr );
+    }
+    return false;
+  }
+
+  private static PsiPolyadicExpression getEnclosingPolyadicExpr( PsiElement elem )
+  {
+    if( elem == null )
+    {
+      return null;
+    }
+
+    if( elem instanceof PsiPolyadicExpression e )
+    {
+      return e;
+    }
+
+    return getEnclosingPolyadicExpr( elem.getParent() );
+  }
+
+  private static boolean checkPolyadicOperatorApplicable( @NotNull PsiPolyadicExpression expression )
+  {
+    PsiExpression[] operands = expression.getOperands();
+
+    PsiType lType = operands[0].getType();
+    IElementType operationSign = expression.getOperationTokenType();
+    for( int i = 1; i < operands.length; i++ )
+    {
+      PsiExpression operand = operands[i];
+      PsiType rType = operand.getType();
+      if( !TypeConversionUtil.isBinaryOperatorApplicable( operationSign, lType, rType, false ) )
+      {
+        if( expression instanceof PsiBinaryExpression &&
+                ManJavaResolveCache.getTypeForOverloadedBinaryOperator( expression ) != null )
+        {
+          continue;
+        }
+        else if( isInsideBindingExpression( expression ) )
+        {
+          // filter errors on binding expressions because they report errors on the '*" operator, those are properly
+          // reported in our MiscAnnotator
+          continue;
+        }
+        PsiJavaToken token = expression.getTokenBeforeOperand( operand );
+        assert token != null : expression;
+
+        // the error is legit, operator is indeed invalid
+        return false;
+      }
+      lType = TypeConversionUtil.calcTypeForBinaryExpression( lType, rType, operationSign, true );
+    }
+
+    // filter the error, it is a valid operator via overload
+    return true;
+  }
+
+  private static boolean isInsideBindingExpression( PsiElement expression )
+  {
+    if( !(expression instanceof PsiBinaryExpression) )
+    {
+      return false;
+    }
+
+    if( ManJavaResolveCache.isBindingExpression( (PsiBinaryExpression)expression ) )
+    {
+      return true;
+    }
+
+    return isInsideBindingExpression( expression.getParent() );
   }
 
   // support indexed operator overloading
@@ -405,6 +497,14 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_GET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
+  }
+  private boolean filterIncompatibleTypesWithArrayAccess( HighlightInfo hi, PsiElement elem, PsiElement firstElem )
+  {
+    return elem.getParent() instanceof PsiArrayAccessExpression &&
+            (hi.getDescription().contains( "Incompatible types" ) ||
+                    hi.getDescription().contains( "不兼容的类型" )) &&
+            ((ManPsiArrayAccessExpressionImpl) elem.getParent()).getType() != null &&
+            ((ManPsiArrayAccessExpressionImpl) elem.getParent()).getType().isValid();
   }
 
   private PsiArrayAccessExpressionImpl getArrayAccessExpression( PsiElement elem )

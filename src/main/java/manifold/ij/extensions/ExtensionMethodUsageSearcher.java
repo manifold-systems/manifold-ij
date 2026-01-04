@@ -87,11 +87,8 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
       // include libraries to handle extended classes
       @Jailbreak ModuleWithDependenciesScope scope = (ModuleWithDependenciesScope)searchScope;
 
-      if( scope.myModule != null )
-      {
-        searchScope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( scope.myModule,
-          ApplicationManager.getApplication().isUnitTestMode() );
-      }
+      searchScope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( scope.getModule(),
+        ApplicationManager.getApplication().isUnitTestMode() );
     }
     GlobalSearchScope theSearchScope = (GlobalSearchScope)searchScope;
 
@@ -101,12 +98,8 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
     {
       return;
     }
-    PsiAnnotation extensionAnno = resolveInReadAction( searchParameters.getProject(), () ->
-      {
-        PsiModifierList modifierList = extensionClass.getModifierList();
-        return modifierList == null ? null : modifierList.findAnnotation( Extension.class.getName() );
-      } );
-    if( extensionAnno == null )
+
+    if( !isExtensionClass( searchParameters.getProject(), extensionClass ) )
     {
       return;
     }
@@ -177,6 +170,19 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
     }
   }
 
+  private static boolean isExtensionClass( Project project, PsiClass extensionClass )
+  {
+    PsiAnnotation extensionAnno = resolveInReadAction( project, () ->
+      {
+        // only require the toplevel class to have @Extension
+        PsiClass topLevelClass = PsiUtil.getTopLevelClass( extensionClass );
+        PsiClass psiClass = topLevelClass == null ? extensionClass : topLevelClass;
+        PsiModifierList modifierList = psiClass.getModifierList();
+        return modifierList == null ? null : modifierList.findAnnotation( Extension.class.getName() );
+      } );
+    return extensionAnno != null;
+  }
+
   private GlobalSearchScope getTargetScope( GlobalSearchScope searchScope, PsiMethod method )
   {
     if( searchScope instanceof ModuleWithDependenciesScope && searchScope.isSearchInLibraries() )
@@ -192,7 +198,14 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
 
   private String getExtendedFqn( PsiClass extensionClass )
   {
-    String fqn = extensionClass.getQualifiedName();
+    PsiClass topLevelClass = PsiUtil.getTopLevelClass( extensionClass );
+    if( topLevelClass == null )
+    {
+      return null;
+    }
+
+    String topLevelFqn = topLevelClass.getQualifiedName();
+    String fqn = topLevelFqn;
     if( fqn != null )
     {
       int iExt = fqn.indexOf( ExtensionManifold.EXTENSIONS_PACKAGE + '.' );
@@ -200,6 +213,13 @@ public class ExtensionMethodUsageSearcher extends MethodUsagesSearcher
       {
         fqn = fqn.substring( iExt + ExtensionManifold.EXTENSIONS_PACKAGE.length() + 1 );
         fqn = fqn.substring( 0, fqn.lastIndexOf( '.' ) );
+
+        String extFqn = extensionClass.getQualifiedName(); // could be inner class
+        if( extFqn != null && extFqn.length() > topLevelFqn.length() )
+        {
+          // add inner class
+          fqn += extFqn.substring( topLevelFqn.length() );
+        }
         return fqn;
       }
     }
