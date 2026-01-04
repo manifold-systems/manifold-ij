@@ -33,6 +33,7 @@ import com.intellij.psi.impl.source.tree.java.*;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -40,6 +41,10 @@ import java.util.regex.Pattern;
 
 import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.refactoring.util.RefactoringUtil;
+import manifold.ext.props.rt.api.get;
+import manifold.ext.props.rt.api.set;
+import manifold.ext.props.rt.api.val;
+import manifold.ext.props.rt.api.var;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.*;
 import manifold.ij.psi.ManExtensionMethodBuilder;
@@ -121,6 +126,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     if( filterUpdatedButNeverQueried( hi, file ) )
+    {
+      return false;
+    }
+
+    if( filterNotInitializedValueWarningForPropertyInInterface( hi, file ) )
     {
       return false;
     }
@@ -806,6 +816,22 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       {
         ManModule manModule = ManProject.getModule( fileModule );
         return manModule.isExceptionsEnabled();
+      }
+    }
+    return false;
+  }
+
+  // Filter warning '@NullMarked fields must be initialized' for properties in interfaces
+  private boolean filterNotInitializedValueWarningForPropertyInInterface( HighlightInfo hi, PsiFile file )
+  {
+    if( hi != null )
+    {
+      String description = hi.getDescription();
+      if( description != null && description.equals( "@NullMarked fields must be initialized" ) )
+      {
+        PsiField field = PsiTreeUtil.getParentOfType ( file.findElementAt( hi.getStartOffset( ) ), PsiField.class);
+        return field.hasAnnotation( val.class.getTypeName() ) || field.hasAnnotation( var.class.getTypeName() )
+            || field.hasAnnotation( get.class.getTypeName() ) || field.hasAnnotation( set.class.getTypeName() );
       }
     }
     return false;
