@@ -171,6 +171,8 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
     switch( tokenizer.getTokenType() )
     {
       case If:
+      case Ifdef:
+      case Ifndef:
       case Elif:
       case Else:
       case Endif:
