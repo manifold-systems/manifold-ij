@@ -197,8 +197,8 @@ public class ManAugmentProvider extends PsiAugmentProvider
     {
       if( tm.getContributorKind() == Supplemental )
       {
-        PsiClass topLevelClass = PsiUtil.getTopLevelClass( psiClass );
-        if( topLevelClass != null && tm.isType( topLevelClass.getQualifiedName() ) )
+        PsiClass topLevelClass = PsiUtil.getTopLevelClass( psiClass );                 // IJ's name for the array class
+        if( topLevelClass != null && (tm.isType( topLevelClass.getQualifiedName() ) || "__Array__".equals( psiClass.getName() )) )
         {
           List<IFile> files = tm.findFilesForType( fqn );
           for( IFile file : files )
