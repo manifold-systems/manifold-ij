@@ -606,7 +606,14 @@ class PropertyMaker
       {
         return superSig;
       }
+
+      superSig = getSuperMethod( sig, iface );
+      if( superSig != null )
+      {
+        return superSig;
+      }
     }
+
     PsiClass superClass = psiClass.getSuperClass();
     if( superClass != null )
     {
