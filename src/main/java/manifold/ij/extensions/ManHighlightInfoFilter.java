@@ -40,6 +40,10 @@ import java.util.regex.Pattern;
 
 import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.refactoring.util.RefactoringUtil;
+import manifold.ext.props.rt.api.get;
+import manifold.ext.props.rt.api.set;
+import manifold.ext.props.rt.api.val;
+import manifold.ext.props.rt.api.var;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.*;
 import manifold.ij.psi.ManExtensionMethodBuilder;
@@ -121,6 +125,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     if( filterUpdatedButNeverQueried( hi, file ) )
+    {
+      return false;
+    }
+
+    if( filterSynchronizationNonFinalFieldForPropertiesWarning( hi, file ) )
     {
       return false;
     }
@@ -592,6 +601,26 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return finder.isImplicitUsage( elem );
     }
 
+    return false;
+  }
+
+  // Filter warning 'Synchronization on a non-final field' for final properties
+  private boolean filterSynchronizationNonFinalFieldForPropertiesWarning( HighlightInfo hi, PsiFile file )
+  {
+    if( hi != null )
+    {
+      String description = hi.getDescription();
+      if( description != null && description.startsWith( "Synchronization on a non-final field '" ) )
+      {
+        if( file.findElementAt( hi.getStartOffset() ).getParent() instanceof PsiReferenceExpressionImpl refExp )
+        {
+          if( refExp.resolve() instanceof PsiField field )
+          {
+            return field.hasAnnotation( val.class.getTypeName() ) || field.hasAnnotation( get.class.getTypeName() );
+          }
+        }
+      }
+    }
     return false;
   }
 
