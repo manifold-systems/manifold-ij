@@ -103,26 +103,6 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     // Handle Warnings OR Errors...
     //
 
-    if( filterComparedUsingEquals( hi, file ) )
-    {
-      return false;
-    }
-
-    if( filterCanBeReplacedWith( hi, file ) )
-    {
-      return false;
-    }
-
-    if( filterCastingStructuralInterfaceWarning( hi, file ) )
-    {
-      return false;
-    }
-
-    if( filterArrayIndexIsOutOfBounds( hi, file ) )
-    {
-      return false;
-    }
-
     if( filterTemplateUnnecessarySemicolon( hi, file ) )
     {
       return false;
@@ -133,14 +113,34 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    if( filterUpdatedButNeverQueried( hi, file ) )
+    PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
+
+    if( filterFieldIsNeverUsed( hi, firstElem ) )
     {
       return false;
     }
 
-    PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
+    if( filterComparedUsingEquals( hi, firstElem ) )
+    {
+      return false;
+    }
 
-    if( filterFieldIsNeverUsed( hi, firstElem ) )
+    if( filterCanBeReplacedWith( hi, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterCastingStructuralInterfaceWarning( hi, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterArrayIndexIsOutOfBounds( hi, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterUpdatedButNeverQueried( hi, firstElem ) )
     {
       return false;
     }
@@ -302,26 +302,22 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   }
 
   // Operator overloading: Filter warning messages like "Number objects are compared using '==', not 'equals()'"
-  private boolean filterComparedUsingEquals( HighlightInfo hi, PsiFile file )
+  private boolean filterComparedUsingEquals( HighlightInfo hi, PsiElement firstElem )
   {
-    if( hi != null )
+    String description = hi.getDescription();
+    if( description != null &&
+      ((description.contains( "compared using '=='" ) ||
+         description.contains( "compared using '!='" )) ||
+       (description.contains( "使用 '==' 而不是" ) ||
+         description.contains( "使用 '!=' 而不是" ))) )
     {
-      String description = hi.getDescription();
-      if( description != null &&
-        ((description.contains( "compared using '=='" ) ||
-           description.contains( "compared using '!='" )) ||
-         (description.contains( "使用 '==' 而不是" ) ||
-           description.contains( "使用 '!=' 而不是" ))) )
+      if( firstElem != null )
       {
-        PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
-        if( firstElem != null )
+        PsiElement parent = firstElem.getParent();
+        if( parent instanceof PsiBinaryExpressionImpl )
         {
-          PsiElement parent = firstElem.getParent();
-          if( parent instanceof PsiBinaryExpressionImpl )
-          {
-            PsiType type = ManJavaResolveCache.getTypeForOverloadedBinaryOperator( (PsiBinaryExpression)parent );
-            return type != null;
-          }
+          PsiType type = ManJavaResolveCache.getTypeForOverloadedBinaryOperator( (PsiBinaryExpression)parent );
+          return type != null;
         }
       }
     }
@@ -329,45 +325,38 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   }
 
   // Filter warning messages like "1 Xxx can be replaced with Xxx" where '1 Xxx' is a binding expression
-  private boolean filterCanBeReplacedWith( HighlightInfo hi, PsiFile file )
+  private boolean filterCanBeReplacedWith( HighlightInfo hi, PsiElement firstElem )
   {
-    if( hi != null )
+    String description = hi.getDescription();
+    if( description != null && description.contains( "can be replaced with" ) ||
+        description != null && description.contains( "可被替换为" ) )
     {
-      String description = hi.getDescription();
-      if( description != null && description.contains( "can be replaced with" ) ||
-          description != null && description.contains( "可被替换为" ) )
+      while( !(firstElem instanceof PsiBinaryExpressionImpl)  )
       {
-        PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
-        while( !(firstElem instanceof PsiBinaryExpressionImpl)  )
+        if( firstElem == null )
         {
-          if( firstElem == null )
-          {
-            return false;
-          }
-          firstElem = firstElem.getParent();
+          return false;
         }
-
-        // a null operator indicates a biding expression
-        PsiElement child = ((PsiBinaryExpressionImpl)firstElem).findChildByRoleAsPsiElement( OPERATION_SIGN );
-        return child == null;
+        firstElem = firstElem.getParent();
       }
+
+      // a null operator indicates a biding expression
+      PsiElement child = ((PsiBinaryExpressionImpl)firstElem).findChildByRoleAsPsiElement( OPERATION_SIGN );
+      return child == null;
     }
     return false;
   }
 
   // Filter warning messages like "1 Xxx can be replaced with Xxx" where '1 Xxx' is a binding expression
-  private boolean filterCastingStructuralInterfaceWarning( HighlightInfo hi, PsiFile file )
+  private boolean filterCastingStructuralInterfaceWarning( HighlightInfo hi, PsiElement firstElem )
   {
-    if( hi != null )
+    String description = hi.getDescription();
+    if( description != null && (description.startsWith( "Casting '" ) || description.startsWith( "将 '" )) &&
+      (description.endsWith( "will produce 'ClassCastException' for any non-null value" ) ||
+       description.endsWith( "会为任意非 null 值生成 'ClassCastException'" )) )
     {
-      String description = hi.getDescription();
-      if( description != null && (description.startsWith( "Casting '" ) || description.startsWith( "将 '" )) &&
-        (description.endsWith( "will produce 'ClassCastException' for any non-null value" ) ||
-         description.endsWith( "会为任意非 null 值生成 'ClassCastException'" )) )
-      {
-        PsiTypeElement typeElem = findTypeElement( file.findElementAt( hi.getStartOffset() ) );
-        return isStructuralType( typeElem );
-      }
+      PsiTypeElement typeElem = findTypeElement( firstElem );
+      return isStructuralType( typeElem );
     }
     return false;
   }
@@ -571,7 +560,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_SET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
   }
-  private boolean filterArrayIndexIsOutOfBounds( HighlightInfo hi, PsiFile file )
+  private boolean filterArrayIndexIsOutOfBounds( HighlightInfo hi, PsiElement firstElem )
   {
     String description = hi.getDescription();
     if( description == null ||
@@ -581,7 +570,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    PsiArrayAccessExpressionImpl arrayAccess = getArrayAccessExpression( file.findElementAt( hi.getStartOffset() ) );
+    PsiArrayAccessExpressionImpl arrayAccess = getArrayAccessExpression( firstElem );
     if( arrayAccess == null )
     {
       return false;
@@ -601,15 +590,9 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       hi.getDescription().contains( manifold.rt.api.anno.any.class.getTypeName() );
   }
 
-  private boolean filterUpdatedButNeverQueried( HighlightInfo hi, PsiFile file )
+  private boolean filterUpdatedButNeverQueried( HighlightInfo hi, PsiElement elem )
   {
     // for use with string templates when variable is referenced in the string
-
-    PsiElement elem = file.findElementAt( hi.getStartOffset() );
-    if( elem == null )
-    {
-      return false;
-    }
 
     if( (hi.getDescription().contains( "updated, but never queried" ) || hi.getDescription().contains( "更新，但从未被查询" )) ||
 
