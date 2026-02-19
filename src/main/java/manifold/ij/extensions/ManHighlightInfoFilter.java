@@ -161,6 +161,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     {
       return true;
     }
+
     //
     // Handle only Errors...
     //
