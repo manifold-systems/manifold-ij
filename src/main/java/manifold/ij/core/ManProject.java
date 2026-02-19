@@ -80,6 +80,7 @@ import manifold.util.concurrent.LockingLazyVar;
 import manifold.util.concurrent.LocklessLazyVar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
+import org.jspecify.annotations.Nullable;
 
 /**
  *
@@ -120,8 +121,12 @@ public class ManProject
     return getProject( project );
   }
 
-  public static ManModule getModule( Module module )
+  public static @Nullable ManModule getModule( @Nullable Module module )
   {
+    if( module == null )
+    {
+      return null;
+    }
     Project project = module.getProject();
     if( project.isDisposed() )
     {
@@ -199,12 +204,7 @@ public class ManProject
 
   public static ManModule getModule( PsiElement element )
   {
-    Module ijModule = getIjModule( element );
-    if( ijModule != null )
-    {
-      return getModule( ijModule );
-    }
-    return null;
+    return getModule( getIjModule( element ) );
   }
 
   private static ManProject getProject( Project project )
