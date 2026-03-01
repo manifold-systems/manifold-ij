@@ -43,6 +43,7 @@ import manifold.ext.rt.api.Jailbreak;
 import manifold.ext.rt.api.Self;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
+import manifold.ij.psi.ManExtensionMethodBuilder;
 import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightMethod;
 import manifold.ij.psi.ManLightMethodBuilder;
@@ -123,9 +124,41 @@ public class ManResolveCache extends ResolveCache
       return results;
     }
 
+    // A custom context resolver which is capable to select the extension method in case of multiple results being resolved.
+    // This can happen for Intercepted extension methods
     try
     {
-      results = super.resolveWithCaching( ref, resolver, needToPreventRecursion, incompleteCode, containingFile );
+      PolyVariantContextResolver<T> polyVariantContextResolver = (ref_, containingFile_, incompleteCode_) ->
+      {
+        ResolveResult[] resolveResults = resolver.resolve( ref_, containingFile_, incompleteCode_ );
+        if( resolveResults == null ||resolveResults.isEmpty() )
+        {
+          return ResolveResult.EMPTY_ARRAY  ;
+        }
+        else if(resolveResults.length == 1)
+        {
+          return resolveResults;
+        }
+        else
+        {
+          for( ResolveResult result : resolveResults )
+          {
+            if ( result.getElement() instanceof ManExtensionMethodBuilder )
+            {
+              if( result instanceof JavaResolveResult javaResolveResult )
+              {
+                return new JavaResolveResult[]{ javaResolveResult };
+              }
+              else
+              {
+                return new ResolveResult[]{ result };
+              }
+            }
+          }
+          return resolveResults;
+        }
+      };
+      results = super.resolveWithCaching( ref, polyVariantContextResolver, needToPreventRecursion, incompleteCode, containingFile );
     }
     catch( StubTextInconsistencyException stie )
     {
