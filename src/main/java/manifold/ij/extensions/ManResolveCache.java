@@ -128,14 +128,14 @@ public class ManResolveCache extends ResolveCache
     // This can happen for Intercepted extension methods
     try
     {
-      PolyVariantContextResolver<T> polyVariantContextResolver = (ref_, containingFile_, incompleteCode_) ->
+      PolyVariantContextResolver<T> polyVariantContextResolver = ( ref_, containingFile_, incompleteCode_ ) ->
       {
         ResolveResult[] resolveResults = resolver.resolve( ref_, containingFile_, incompleteCode_ );
         if( resolveResults == null ||resolveResults.isEmpty() )
         {
-          return ResolveResult.EMPTY_ARRAY  ;
+          return ResolveResult.EMPTY_ARRAY;
         }
-        else if(resolveResults.length == 1)
+        else if( resolveResults.length == 1 )
         {
           return resolveResults;
         }
