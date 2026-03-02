@@ -27,6 +27,8 @@ import com.intellij.lang.java.JavaLanguage;
 import com.intellij.lang.jvm.annotation.JvmAnnotationConstantValue;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.source.PsiClassReferenceType;
+import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.util.*;
 import manifold.api.gen.SrcExpression;
 import manifold.api.gen.SrcRawExpression;
@@ -34,6 +36,7 @@ import manifold.ext.params.rt.params;
 import manifold.ij.util.ComputeUtil;
 import manifold.ij.util.ManPsiUtil;
 import manifold.rt.api.util.ManStringUtil;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 
@@ -315,9 +318,8 @@ public class TupleNamedArgsUtil
           if( !errant || !iterParamsClasses.hasNext() )
           {
             PsiTypeParameterList typeParameterList = paramsClass.getTypeParameterList();
-            String paramsClassExpr = typeParameterList == null || typeParameterList.getTypeParameters().isEmpty()
-              ? containingClass.getQualifiedName() + '.' + paramsClass.getName()
-              : containingClass.getQualifiedName() + '.' + paramsClass.getName() + "<>";
+            String paramsClassExpr = containingClass.getQualifiedName() + '.' + paramsClass.getName()
+              + inferGenericTypes( callExpr, typeParameterList );
             String newExpr = "new " + paramsClassExpr + "(" + makeArgsList( args ) + ")";
 
             PsiExpression psiNewExpr = JavaPsiFacade.getElementFactory( containingClass.getProject() )
@@ -343,6 +345,194 @@ public class TupleNamedArgsUtil
         .create();
     }
     return null;
+  }
+
+  /**
+   * Attempts to determine the concrete generic type arguments for a constructor call.
+   *
+   * <p>The resolution order is:
+   * <ol>
+   *   <li>Explicit type arguments provided in the constructor call</li>
+   *   <li>Type arguments inferred from a local variable assignment</li>
+   *   <li>Type arguments inferred from an enclosing return statement</li>
+   *   <li>Type arguments inferred from the target method parameter type</li>
+   *   <li>Fallback to the diamond operator ({@code <>})</li>
+   * </ol>
+   *
+   * <p>If the target class does not declare type parameters, an empty string is returned.
+   *
+   * @param callExpr the constructor call expression
+   * @param typeParameterList the type parameters declared on the constructed class
+   * @return a string representation of the inferred or explicit generic arguments,
+   *         {@code <>} if generics exist but cannot be inferred,
+   *         or an empty string if the class is not generic
+   */
+  private static String inferGenericTypes( PsiElement callExpr, PsiTypeParameterList typeParameterList )
+  {
+    if (typeParameterList == null || typeParameterList.getTypeParameters().isEmpty() )
+    {
+      return "";
+    }
+
+    // Explicit generics (e.g. new Foo<String>())
+    String explicitGenerics = extractExplicitGenerics( callExpr );
+    if ( explicitGenerics != null )
+    {
+      return explicitGenerics;
+    }
+
+    // Local variable assignment
+    if ( callExpr.getParent() instanceof PsiLocalVariable localVar
+      && localVar.getType() instanceof PsiClassReferenceType refType )
+    {
+      return extractGenericTypes( refType );
+    }
+
+    // Return statement
+    String fromReturn = extractGenericsFromReturnStatement(callExpr);
+    if ( fromReturn != null )
+    {
+      return fromReturn;
+    }
+
+    // Method call parameter
+    String fromMethodCall = extractGenericsFromMethodCall(callExpr);
+    if ( fromMethodCall != null )
+    {
+      return fromMethodCall;
+    }
+
+    // Default
+    return "<>";
+  }
+
+  /**
+   * Extracts explicitly declared generic arguments from a constructor call.
+   *
+   * Example:
+   * <pre>
+   * new Foo<String, Integer>()
+   * </pre>
+   *
+   * @param callExpr constructor expression
+   * @return the literal generic argument text (e.g. {@code "<String>"}),
+   *         or {@code null} if none were explicitly provided
+   */
+  private static @Nullable String extractExplicitGenerics( @Nullable PsiElement callExpr)
+  {
+    if ( !( callExpr instanceof PsiNewExpression expr ) ) {
+      return null;
+    }
+    for (PsiReferenceParameterList paramList : PsiTreeUtil.findChildrenOfType(expr, PsiReferenceParameterList.class)) {
+      String text = paramList.getText();
+      if (!text.replace("<", "").replace(">", "").isBlank()) {
+        return text;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Attempts to infer generic arguments from an enclosing return statement.
+   *
+   * Example:
+   * <pre>
+   * List<String> create() {
+   *     return new ArrayList<>();
+   * }
+   * </pre>
+   *
+   * @param callExpr constructor expression
+   * @return inferred generic arguments or {@code null} if not resolvable
+   */
+  private static @Nullable String extractGenericsFromReturnStatement( PsiElement callExpr)
+  {
+    if ( callExpr.getParent() instanceof PsiReturnStatement returnStatement)
+    {
+      PsiMethod parent = PsiTreeUtil.getParentOfType(returnStatement, PsiMethod.class);
+      if( parent == null )
+      {
+        return null;
+      }
+      PsiType returnType = parent.getReturnType();
+      if( !( returnType instanceof PsiClassReferenceType refType ) )
+      {
+        return null;
+      }
+      return extractGenericTypes( refType );
+    }
+
+    return null;
+  }
+
+  /**
+   * Attempts to infer generic arguments from the target method parameter type
+   * when the constructor call is used as a method argument.
+   *
+   * Example:
+   * <pre>
+   * void consume(List<String> list)
+   *
+   * consume(new ArrayList<>());
+   * </pre>
+   *
+   * @param callExpr constructor expression
+   * @return inferred generic arguments or {@code null} if not resolvable
+   */
+  private static @Nullable String extractGenericsFromMethodCall( PsiElement callExpr)
+  {
+    if (callExpr instanceof PsiNewExpression expr )
+    {
+      PsiExpressionList exprList = PsiTreeUtil.getParentOfType(expr, PsiExpressionList.class);
+      if (exprList == null)
+      {
+        return null;
+      }
+
+      PsiMethodCallExpression methodCall = PsiTreeUtil.getParentOfType(exprList, PsiMethodCallExpression.class);
+      if (methodCall == null)
+      {
+        return null;
+      }
+
+      PsiMethod method = methodCall.resolveMethod();
+      if (method == null)
+      {
+        return null;
+      }
+
+      // Find index of parameter
+      for(int i = 0; i < exprList.getExpressionCount(); i++ )
+      {
+        if( exprList.getExpressions()[ i ] == callExpr )
+        {
+          return extractGenericTypes( (PsiClassReferenceType) method.getParameters()[ i ].getType() );
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Builds a canonical generic argument string from a {@link PsiClassReferenceType}.
+   * <br>
+   * Example output:
+   * {@code <String, Integer> }
+   *
+   * @param refType reference type containing type parameters
+   * @return canonical generic argument string (including angle brackets)
+   */
+  private static String extractGenericTypes( PsiClassReferenceType refType ){
+    StringBuilder sb = new StringBuilder("<");
+    for( int i = 0; i < refType.getParameters().length; i++ )
+    {
+      if( i > 0 ){
+        sb.append( ", " );
+      }
+      sb.append( refType.getParameters()[ i ].getCanonicalText() );
+    }
+    sb.append(">");
+    return sb.toString();
   }
 
   private static void putErrorOnBestMatchingMethod( AnnotationHolder holder, ManPsiTupleExpression tupleExpr,
