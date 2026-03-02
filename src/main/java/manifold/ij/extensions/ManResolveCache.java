@@ -39,8 +39,12 @@ import java.util.*;
 
 import com.intellij.util.IdempotenceChecker;
 import manifold.api.util.BytecodeOptions;
+import manifold.ext.rt.api.Extension;
+import manifold.ext.rt.api.Intercept;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ext.rt.api.Self;
+import manifold.ext.rt.api.This;
+import manifold.ext.rt.api.ThisClass;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import manifold.ij.psi.ManExtensionMethodBuilder;
@@ -124,41 +128,9 @@ public class ManResolveCache extends ResolveCache
       return results;
     }
 
-    // A custom context resolver which is capable to select the extension method in case of multiple results being resolved.
-    // This can happen for Intercepted extension methods
     try
     {
-      PolyVariantContextResolver<T> polyVariantContextResolver = ( ref_, containingFile_, incompleteCode_ ) ->
-      {
-        ResolveResult[] resolveResults = resolver.resolve( ref_, containingFile_, incompleteCode_ );
-        if( resolveResults == null ||resolveResults.isEmpty() )
-        {
-          return ResolveResult.EMPTY_ARRAY;
-        }
-        else if( resolveResults.length == 1 )
-        {
-          return resolveResults;
-        }
-        else
-        {
-          for( ResolveResult result : resolveResults )
-          {
-            if ( result.getElement() instanceof ManExtensionMethodBuilder )
-            {
-              if( result instanceof JavaResolveResult javaResolveResult )
-              {
-                return new JavaResolveResult[]{ javaResolveResult };
-              }
-              else
-              {
-                return new ResolveResult[]{ result };
-              }
-            }
-          }
-          return resolveResults;
-        }
-      };
-      results = super.resolveWithCaching( ref, polyVariantContextResolver, needToPreventRecursion, incompleteCode, containingFile );
+      results = super.resolveWithCaching( ref, createContextResolver( resolver ), needToPreventRecursion, incompleteCode, containingFile );
     }
     catch( StubTextInconsistencyException stie )
     {
@@ -245,6 +217,134 @@ public class ManResolveCache extends ResolveCache
       }
     }
     return results;
+  }
+
+  /**
+   * Creates a {@link PolyVariantContextResolver} that resolves ambiguity between
+   * an original method and its {@link Intercept} extension counterpart.
+   *
+   * <p>When IntelliJ resolves an intercepted extension call, it typically
+   * returns two candidates:
+   * <ul>
+   *   <li>The original method</li>
+   *   <li>The generated {@link ManExtensionMethodBuilder}</li>
+   * </ul>
+   *
+   * <p>
+   * <h2>Resolution strategy:</h2>
+   * <ul>
+   *   <li>If exactly two candidates are returned and the second is a {@link ManExtensionMethodBuilder}:
+   *     <ul>
+   *       <li>If resolution occurs inside the intercepted extension implementation
+   *           itself, the original method is selected (prevents self-interception).</li>
+   *       <li>Otherwise, the extension method builder is preferred.</li>
+   *     </ul>
+   *   </li>
+   *   <li>In all other cases, the original resolution result is preserved.</li>
+   * </ul>
+   *
+   * @param resolver The original resolver to delegate to.
+   * @param <T> The reference type.
+   * @return A resolver with extension-aware conflict resolution.
+   */
+  private  <T extends PsiPolyVariantReference> PolyVariantContextResolver<T>
+      createContextResolver( @NotNull final PolyVariantContextResolver<T> resolver ){
+
+    return ( ref_, containingFile_, incompleteCode_ ) ->
+      {
+        ResolveResult[] resolveResults = resolver.resolve( ref_, containingFile_, incompleteCode_ );
+        if ( !( ref_ instanceof PsiReferenceExpression refExpr )
+          || resolveResults.length != 2 || !( resolveResults[1].getElement() instanceof ManExtensionMethodBuilder ) ) {
+          // preserve the original resolution
+          return resolveResults;
+        }
+        PsiMethodCallExpression methodCall = PsiTreeUtil.getParentOfType( refExpr, PsiMethodCallExpression.class );
+        PsiMethod enclosingMethod = PsiTreeUtil.getParentOfType( methodCall, PsiMethod.class );
+        PsiClass enclosingClass = PsiTreeUtil.getParentOfType( enclosingMethod, PsiClass.class );
+
+        if ( isInterceptExtensionMethod( enclosingMethod, enclosingClass )
+            && methodExprMatchesExtensionMethod( refExpr, enclosingMethod ) )
+        {
+          // Inside intercepted extension implementation → use original method
+          return createResolveResultArray( resolveResults[0] );
+        }
+        // Outside → use extension method
+        return createResolveResultArray( resolveResults[1] );
+      };
+  }
+
+  /**
+   * Determines whether the given method represents an {@link Intercept}
+   * extension method declared inside an {@link Extension} class.
+   */
+  private boolean isInterceptExtensionMethod( @Nullable PsiMethod method, @Nullable PsiClass clazz )
+  {
+    if ( method == null || clazz == null ) {
+      return false;
+    }
+    if ( !method.hasAnnotation( Intercept.class.getTypeName() )
+      || !clazz.hasAnnotation( Extension.class.getTypeName() )
+      || method.getParameterList().isEmpty() ) {
+      return false;
+    }
+
+    PsiParameter firstParam = method.getParameterList().getParameters()[0];
+    return firstParam.hasAnnotation( This.class.getTypeName() )
+      || firstParam.hasAnnotation( ThisClass.class.getTypeName() );
+  }
+
+  /**
+   * Determines whether the reference corresponds to the enclosing extension method.
+   *
+   * <p>A match is assumed when:
+   * <ul>
+   *   <li>The method names are equal</li>
+   *   <li>The argument types matches (excluding the implicit receiver parameter of the extension method)</li>
+   * </ul>
+   */
+  private boolean methodExprMatchesExtensionMethod( @Nullable PsiReferenceExpression refExpr, @Nullable PsiMethod extensionMethod ) {
+    if ( refExpr == null || extensionMethod == null ) {
+      return false;
+    }
+    if( !Objects.equals( refExpr.getReferenceName(), extensionMethod.getName() ) )
+    {
+      return false;
+    }
+    PsiMethodCallExpression methodCallExp = PsiTreeUtil.getParentOfType( refExpr, PsiMethodCallExpression.class );
+    if( methodCallExp == null )
+    {
+      return false;
+    }
+    PsiType[] expressionTypes = methodCallExp.getArgumentList().getExpressionTypes();
+    PsiParameter[] parameters = extensionMethod.getParameterList().getParameters();
+    if( expressionTypes.length + 1 != parameters.length )
+    {
+      return false;
+    }
+    for( int idx = 0; idx < expressionTypes.length; idx++ )
+    {
+      if( ! TypeConversionUtil.isAssignable( parameters[ idx + 1 ].getType() , expressionTypes[ idx ] ) )
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Wraps a single {@link ResolveResult} into an array while preserving
+   * {@link JavaResolveResult} type when applicable.
+   */
+  private ResolveResult[] createResolveResultArray( ResolveResult resolveResult )
+  {
+    if( resolveResult instanceof JavaResolveResult javaResolveResult )
+    {
+      return new JavaResolveResult[]{ javaResolveResult };
+    }
+    else
+    {
+      return new ResolveResult[]{ resolveResult };
+    }
   }
 
   // Handle case where multiple resolve results exist for a property ref, but really only one is valid. In this case, the
