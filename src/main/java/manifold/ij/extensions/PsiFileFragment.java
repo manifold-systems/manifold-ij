@@ -39,7 +39,6 @@ import manifold.ij.util.SlowOperationsUtil;
 import manifold.internal.javac.FragmentProcessor;
 import manifold.internal.javac.HostKind;
 import manifold.util.ReflectUtil;
-import org.jetbrains.annotations.NotNull;
 
 
 import static manifold.api.type.ContributorKind.Supplemental;

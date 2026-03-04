@@ -73,6 +73,7 @@ import org.jetbrains.annotations.Nullable;
 
 
 import static java.util.Objects.*;
+import static com.intellij.psi.search.GlobalSearchScope.EMPTY_SCOPE;
 import static manifold.api.type.ContributorKind.Supplemental;
 import static manifold.ij.util.ManPsiGenerationUtil.*;
 
@@ -724,7 +725,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
   @Override @Nullable
   protected PsiType inferType( @NotNull PsiTypeElement typeElement )
   {
-    if( !canInferType( typeElement ) )
+    if( !canInferType_Simple( typeElement ) )
     {
       return null;
     }
@@ -825,6 +826,11 @@ public class ManAugmentProvider extends PsiAugmentProvider
   @Override
   protected boolean canInferType( @NotNull PsiTypeElement typeElement )
   {
+    return inferType( typeElement ) != null;
+  }
+
+  private boolean canInferType_Simple( @NotNull PsiTypeElement typeElement )
+  {
     if( !ManProject.isManifoldInUse( typeElement ) )
     {
       // Manifold jars are not used in the project
@@ -832,8 +838,18 @@ public class ManAugmentProvider extends PsiAugmentProvider
     }
 
     String fqn = typeElement.getText();
-    return fqn.equals( ManClassUtil.getShortClassName( ManAttr.AUTO_TYPE ) ) ||
-      fqn.equals( ManAttr.AUTO_TYPE );
+    String fullAuto = ManAttr.AUTO_TYPE;
+    String auto = ManClassUtil.getShortClassName( fullAuto );
+    if( fqn.contains( auto ) )
+    {
+      if( PsiTreeUtil.getParentOfType( typeElement, PsiReferenceParameterList.class ) != null )
+      {
+        // `auto` not supported as a type argument
+        return false;
+      }
+      return fqn.equals( auto ) || fqn.equals( fullAuto );
+    }
+    return false;
   }
 
   // borrowed heavily from IJ's PsiConditional
