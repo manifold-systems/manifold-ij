@@ -107,6 +107,8 @@ public class ManPreprocessorJavaLexerHook implements JavaLexerHook
     if (match(directive = Define.getDirective(), offset) ||
       match(directive = Undef.getDirective(), offset) ||
       match(directive = If.getDirective(), offset) ||
+      match(directive = Ifdef.getDirective(), offset) ||
+      match(directive = Ifndef.getDirective(), offset) ||
       match(directive = Elif.getDirective(), offset) ||
       match(directive = Error.getDirective(), offset) ||
       match(directive = Warning.getDirective(), offset)) {
@@ -134,7 +136,9 @@ public class ManPreprocessorJavaLexerHook implements JavaLexerHook
     } else if (match(Endif.getDirective(), offset)) {
       _lexer.myTokenType = C_STYLE_COMMENT;
       _lexer.myTokenEndOffset = offset + Endif.getDirective().length();
-    } else if (match(If.getDirective(), offset)) {
+    } else if (match(If.getDirective(), offset) ||
+               match(Ifdef.getDirective(), offset) ||
+               match(Ifndef.getDirective(), offset)) {
       int rangeEnd = findCommentRangeEnd(true);
       if (rangeEnd > 0) {
         // handle nested `#if`
