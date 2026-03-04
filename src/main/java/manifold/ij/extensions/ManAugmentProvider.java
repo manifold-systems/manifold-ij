@@ -50,6 +50,10 @@ import manifold.api.gen.SrcParameter;
 import manifold.api.gen.SrcRawStatement;
 import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
+import manifold.ext.rt.api.ExtensionMethodType;
+import manifold.ext.rt.api.ExtensionSource;
+import manifold.ext.rt.api.ExtensionSources;
+import manifold.ext.rt.api.MethodSignature;
 import manifold.ext.rt.api.ThisClass;
 import manifold.internal.javac.ManAttr;
 import manifold.rt.api.Array;
@@ -67,7 +71,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 
-import static com.intellij.psi.search.GlobalSearchScope.EMPTY_SCOPE;
 import static manifold.api.type.ContributorKind.Supplemental;
 import static manifold.ij.util.ManPsiGenerationUtil.*;
 
@@ -274,6 +277,44 @@ public class ManAugmentProvider extends PsiAugmentProvider
     return null;
   }
 
+  /**
+   * Adds extension methods to {@code psiClass} from the specified {@code extClass}
+   * and registers them in {@code augFeatures}.
+   *
+   * <p>Processes:
+   * <ul>
+   *   <li>Methods declared directly in {@code extClass}</li>
+   *   <li>Methods contributed via {@code @ExtensionSource}</li>
+   * </ul>
+   *
+   * <p>Extension methods are converted to synthetic {@link PsiMethod}s and
+   * deduplicated using a rendered signature key. If a method is already present
+   * (e.g., from another module root), the existing method is updated to reference
+   * the additional {@link ManModule} instead of creating a duplicate.
+   *
+   * <h3>{@code @ExtensionSource} Handling</h3>
+   * <p>If {@code extClass} declares one or more {@code @ExtensionSource} annotations:
+   * <ul>
+   *   <li>The referenced source class is resolved and inspected.</li>
+   *   <li>All {@code public static} methods whose first parameter matches
+   *       {@code psiClass} are considered candidate extension methods.</li>
+   *   <li>If explicit {@code @MethodSignature} definitions are provided,
+   *       candidate methods are filtered according to:
+   *       <ul>
+   *         <li>Method name</li>
+   *         <li>Parameter type FQNs</li>
+   *         <li>{@link ExtensionMethodType} (INCLUDE or EXCLUDE semantics)</li>
+   *       </ul>
+   *   </li>
+   *   <li>Selected methods are annotated with {@code @This} on their first parameter
+   *       to mark them as extension methods.</li>
+   * </ul>
+   *
+   * @param psiClass    the class being augmented with extension methods
+   * @param augFeatures signature-keyed map used to collect and deduplicate methods
+   * @param manModule   the contributing module
+   * @param extClass    the class declaring extension logic (may be {@code null})
+   */
   private void addMethods( PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, ManModule manModule, PsiClass extClass )
   {
     if( extClass == null )
@@ -300,31 +341,233 @@ public class ManAugmentProvider extends PsiAugmentProvider
     {
       scratchClass.addTypeVar( new SrcType( StubBuilder.makeTypeVar( tv ) ) );
     }
+
+    // Add normal extension methods declared directly in the @Extension class.
     for( AbstractSrcMethod<?> m : srcExtClass.getMethods() )
     {
-      SrcMethod srcMethod = addExtensionMethod( scratchClass, m, psiClass );
-      if( srcMethod != null )
+      addMethod( psiClass, augFeatures, manModule, extClass, false, m, scratchClass );
+    }
+
+    // Add methods from @ExternalSource
+    addMethodsFromExternalSource( psiClass, augFeatures, manModule, extClass, scratchClass );
+  }
+
+  private void addMethod( PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, ManModule manModule,
+                          PsiClass extClass, boolean isExtensionSource,
+                          AbstractSrcMethod<?> m, SrcClass scratchClass )
+  {
+    SrcMethod srcMethod = createExtensionMethod( scratchClass, m, psiClass );
+    if( srcMethod != null )
+    {
+      StringBuilder key = new StringBuilder();
+      srcMethod.render( key, 0 );
+      PsiMethod existingMethod = augFeatures.get( key.toString() );
+      if( existingMethod != null )
       {
-        StringBuilder key = new StringBuilder();
-        srcMethod.render( key, 0 );
-        PsiMethod existingMethod = augFeatures.get( key.toString() );
-        if( existingMethod != null )
+        // already added from another module root, the method has multiple module refs e.g., ManStringExt
+        ((ManLightMethodBuilder)existingMethod).withAdditionalModule( manModule );
+      }
+      else
+      {
+        PsiMethod extMethod = makePsiMethod( srcMethod, psiClass );
+        if( extMethod != null )
         {
-          // already added from another module root, the method has multiple module refs e.g., ManStringExt
-          ((ManLightMethodBuilder)existingMethod).withAdditionalModule( manModule );
-        }
-        else
-        {
-          PsiMethod extMethod = makePsiMethod( srcMethod, psiClass );
-          if( extMethod != null )
-          {
-            PsiMethod navMethod = findExtensionMethodNavigationElement( extClass, extMethod );
-            PsiMethod plantedMethod = plantMethodInPsiClass( manModule, extMethod, psiClass, navMethod );
-            augFeatures.put( key.toString(), plantedMethod );
-          }
+          PsiMethod navMethod = findExtensionMethodNavigationElement( extClass, extMethod, isExtensionSource );
+          PsiMethod plantedMethod = plantMethodInPsiClass( manModule, extMethod, psiClass, navMethod );
+          augFeatures.put( key.toString(), plantedMethod );
         }
       }
     }
+  }
+
+  private void addMethodsFromExternalSource( PsiClass psiClass, LinkedHashMap<String, PsiMethod> augFeatures, ManModule manModule, PsiClass extClass, SrcClass scratchClass )
+  {
+    // Process @ExtensionSource annotations declared on the extension class.
+    // These allow extension methods to be sourced from external classes.
+    List<PsiAnnotation> extensionSourceAnnos =
+      getAnnotationsIncludingRepeatable( extClass, ExtensionSource.class, ExtensionSources.class );
+    for( PsiAnnotation anno : extensionSourceAnnos )
+    {
+      // Extract annotation parameters declared in @ExtensionSource
+      PsiClass extensionClass = getParameterPsiClass( anno );
+      if( extensionClass == null )
+      {
+        continue;
+      }
+      SrcClass sourceClass = new StubBuilder().make( extensionClass.getQualifiedName(), manModule, false );
+      List<PsiAnnotation> sourceMethodAnnos = getParameterArrayAsList( anno, ExtensionSource.methods, PsiAnnotation.class );
+
+      // Collect candidate extension methods:
+      // - public static
+      // - first parameter matches the target class
+      // These methods are eligible to become extension methods.
+      List<AbstractSrcMethod<?>> sourceMethods = ((List<AbstractSrcMethod<?>>)(List)sourceClass.getMethods())
+        .stream()
+        .filter( method ->
+          (method.getModifiers() & Modifier.STATIC) != 0 &&
+          (method.getModifiers() & Modifier.PUBLIC) != 0 &&
+          !method.getParameters().isEmpty() &&
+          method.getParameters().getFirst().getType().getFqName().equals( psiClass.getQualifiedName() ) )
+        .toList();
+
+      // Apply INCLUDE / EXCLUDE filtering if explicit method signatures are defined.
+      if( !sourceMethodAnnos.isEmpty() )
+      {
+        ExtensionMethodType extensionMethodType = getParameterEnumType( anno, ExtensionMethodType.class );
+
+        // Build a list of configured method signatures from @MethodSignature annotations.
+        List<MethodDescription> methodSignatures = sourceMethodAnnos.stream()
+          .map( methodSignatureAnno -> {
+            String methodName = getParameterString( methodSignatureAnno );
+            List<String> parameterFqns =
+              getParameterArrayAsList( methodSignatureAnno, MethodSignature.paramTypes, PsiClassObjectAccessExpression.class )
+                .stream().map( this::getClassFqn ).toList();
+            return new MethodDescription( methodName, parameterFqns );
+          } ).toList();
+
+        // Filter candidate methods according to configured signatures
+        // and the specified ExtensionMethodType (INCLUDE or EXCLUDE).
+        sourceMethods = sourceMethods.stream().filter( sourceMethod -> {
+           boolean match = methodSignatures.stream().anyMatch( methodSignature -> {
+             if( !sourceMethod.getSimpleName().equals( methodSignature.methodName ) )
+             {
+               return false;
+             }
+             List<String> parameterFqns = sourceMethod.getParameters().stream()
+               .map( param -> param.getType().getFqName() ).toList();
+             if( methodSignature.parameterFqns.size() == 1
+                 && methodSignature.parameterFqns.getFirst().equals( NullPointerException.class.getName() ) )
+             {
+               // No parameter types are defined. All methods with the provided name are selected.
+               return true;
+             }
+             return parameterFqns.equals( methodSignature.parameterFqns );
+           } );
+           return match == (extensionMethodType == ExtensionMethodType.INCLUDE);
+         } ).toList();
+      }
+
+      // Add the extension methods
+      for( AbstractSrcMethod<?> m : sourceMethods )
+      {
+        // Mark the first parameter with @This so the method is recognized and treated as an extension method.
+        m.getParameters().getFirst().addAnnotation( This.class.getName() );
+        addMethod( psiClass, augFeatures, manModule, extensionClass, true, m, scratchClass );
+      }
+    }
+  }
+
+  private record MethodDescription(String methodName, List<String> parameterFqns) { }
+
+  /**
+   * Returns all annotations of the specified {@code annotationType} declared on
+   * {@code extClass}, including those provided via a repeatable container annotation.
+   *
+   * <p>This method supports both:
+   * <ul>
+   *   <li>Direct annotations (e.g. {@code @MyAnnotation})</li>
+   *   <li>Repeatable container annotations (e.g. {@code @MyAnnotations})
+   *       whose {@code value()} contains multiple {@code @MyAnnotation} entries</li>
+   * </ul>
+   *
+   * @param extClass the class to inspect
+   * @param annotationType the annotation type to collect
+   * @param repeatableAnnotationType the container annotation type for repeatable usage
+   * @return a list containing all matching annotations, including those extracted
+   *         from the repeatable container
+   */
+  private List<PsiAnnotation> getAnnotationsIncludingRepeatable(PsiClass extClass, Class annotationType, Class repeatableAnnotationType)
+  {
+    PsiModifierList modifierList = extClass.getModifierList();
+    if( modifierList == null )
+    {
+      return List.of();
+    }
+    List<PsiAnnotation> annos = new ArrayList<>();
+    modifierList.getAnnotations().stream()
+      .filter( anno -> repeatableAnnotationType.getName().equals( anno.getQualifiedName() ) )
+      .forEach( anno -> annos.addAll( getParameterArrayAsList( anno, "value", PsiAnnotation.class ) ) );
+    modifierList.getAnnotations().stream()
+      .filter( anno -> annotationType.getName().equals( anno.getQualifiedName() ) )
+      .forEach( annos::add );
+    return annos;
+  }
+
+  /**
+   * Returns the value of an annotation parameter that is declared as an array,
+   * converted into a typed {@link List}.
+   *
+   * @param anno the annotation to inspect
+   * @param paramName the name of the annotation parameter
+   * @param arrayElementType the expected PSI element type of each array entry
+   * @param <C> the concrete class type used for casting
+   * @param <T> the resulting element type
+   * @return a list containing the casted initializer values
+   */
+  private <C extends Class<T>, T>  List<T> getParameterArrayAsList( PsiAnnotation anno, String paramName, C arrayElementType )
+  {
+    PsiArrayInitializerMemberValue attrValue = (PsiArrayInitializerMemberValue)anno.findAttributeValue( paramName );
+    return attrValue == null ? null : Arrays.stream( attrValue.getInitializers() ).map( arrayElementType::cast ).toList();
+  }
+
+  /**
+   * Resolves and returns the {@link PsiClass} referenced by a class-typed annotation parameter.
+   *
+   * @param anno the annotation to inspect
+   * @return the resolved {@link PsiClass}
+   */
+  private PsiClass getParameterPsiClass( PsiAnnotation anno )
+  {
+    PsiAnnotationMemberValue attrValue = anno.findAttributeValue( ExtensionSource.source );
+    return attrValue instanceof PsiClassObjectAccessExpression classLiteral
+           ? ((PsiClassType)classLiteral.getOperand().getType()).resolve()
+           : null;
+  }
+
+  /**
+   * Returns the fully qualified name (FQN) of the class referenced by a
+   * {@link PsiClassObjectAccessExpression}.
+   *
+   * @param exp the class object access expression
+   * @return the fully qualified class name
+   */
+  private String getClassFqn( PsiClassObjectAccessExpression exp )
+  {
+    PsiClass psiClass = ((PsiClassType)exp.getOperand().getType()).resolve();
+    return psiClass == null ? null : psiClass.getQualifiedName();
+  }
+
+  /**
+   * Returns the enum constant referenced by an annotation parameter.
+   *
+   * @param <E>      the enum type
+   * @param anno     the annotation to inspect
+   * @param enumType the expected enum class
+   * @return the matching enum constant
+   */
+  private <E extends Enum<E>> E getParameterEnumType( PsiAnnotation anno, Class<? extends E> enumType )
+  {
+    PsiReferenceExpression attrValue = (PsiReferenceExpression)anno.findAttributeValue( ExtensionSource.type );
+    if( attrValue == null )
+    {
+      return null;
+    }
+    String enumStringValue = attrValue.getReferenceName();
+    return Arrays.stream( enumType.getEnumConstants() )
+      .filter( enumVal -> enumVal.name().equals( enumStringValue ) ).findAny()
+      .orElseThrow( () -> new IllegalArgumentException( "Could not find an enum value [%s] for type [%s]".formatted( enumStringValue, enumType ) ) );
+  }
+
+  /**
+   * Returns the string value of an annotation parameter.
+   *
+   * @param anno the annotation to inspect
+   * @return the string value, or {@code null} if the literal value is null
+   */
+  private @Nullable String getParameterString( PsiAnnotation anno )
+  {
+    PsiLiteralExpression attrValue = (PsiLiteralExpression)anno.findAttributeValue( MethodSignature.name );
+    return attrValue == null ? null : (String)attrValue.getValue();
   }
 
   /**
@@ -339,7 +582,7 @@ public class ManAugmentProvider extends PsiAugmentProvider
     psiClass.putUserData( KEY_MAN_INTERFACE_EXTENSIONS, ifaceExtensions );
   }
 
-  private SrcMethod addExtensionMethod( SrcClass srcClass, AbstractSrcMethod<?> method, PsiClass extendedType )
+  private SrcMethod createExtensionMethod( SrcClass srcClass, AbstractSrcMethod<?> method, PsiClass extendedType )
   {
     if( !isExtensionMethod( method, extendedType.getQualifiedName() ) )
     {
