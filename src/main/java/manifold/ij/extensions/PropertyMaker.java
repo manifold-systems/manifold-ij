@@ -19,7 +19,6 @@
 
 package manifold.ij.extensions;
 
-import com.intellij.extapi.psi.StubBasedPsiElementBase;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.lang.java.JavaLanguage;
@@ -29,13 +28,9 @@ import com.intellij.lang.jvm.annotation.JvmAnnotationEnumFieldValue;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
-import com.intellij.psi.impl.compiled.ClsModifierListImpl;
-import com.intellij.psi.impl.java.stubs.PsiModifierListStub;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
-import com.intellij.psi.impl.source.PsiModifierListImpl;
 import com.intellij.psi.util.MethodSignature;
 import com.intellij.psi.util.MethodSignatureUtil;
-import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.TypeConversionUtil;
 import com.sun.tools.javac.code.Flags;
 import manifold.ext.props.PropIssueMsg;
@@ -45,7 +40,6 @@ import manifold.ij.psi.ManLightMethodBuilder;
 import manifold.ij.psi.ManLightModifierListImpl;
 import manifold.ij.psi.ManPsiElementFactory;
 import manifold.rt.api.util.ManStringUtil;
-import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -343,6 +337,7 @@ class PropertyMaker
     //noinspection ConstantConditions
     ManLightModifierListImpl modifierList = getGetterSetterModifiers( _field.getModifierList(), _psiClass.isInterface(), propAbstract, propFinal,
       _field.getModifierList().hasExplicitModifier( PsiModifier.STATIC ), propAccess );
+    modifierList.addAnnotation( _field.getAnnotation( Deprecated.class.getTypeName() ) );
     ManPsiElementFactory factory = ManPsiElementFactory.instance();
     String methodName = getGetterName( true );
     return factory.createLightMethod( ManProject.getModule( _psiClass ), _psiClass.getManager(), methodName, modifierList )
@@ -382,6 +377,7 @@ class PropertyMaker
     //noinspection ConstantConditions
     ManLightModifierListImpl modifierList = getGetterSetterModifiers( _field.getModifierList(), _psiClass.isInterface(), propAbstract, propFinal,
       _field.getModifierList().hasExplicitModifier( PsiModifier.STATIC ), propAccess );
+    modifierList.addAnnotation( _field.getAnnotation( Deprecated.class.getTypeName() ) );
     ManPsiElementFactory factory = ManPsiElementFactory.instance();
     String methodName = getSetterName();
     return factory.createLightMethod( ManProject.getModule( _psiClass ), _psiClass.getManager(), methodName, modifierList )

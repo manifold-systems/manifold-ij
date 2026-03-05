@@ -37,5 +37,7 @@ public interface ManLightFieldBuilder extends PsiField
 
   ManLightFieldBuilder withNavigationElement( PsiElement navigationElement );
 
+  ManLightFieldBuilder withIsDeprecated( boolean isDeprecated );
+
   boolean isProperty();
 }
