@@ -724,136 +724,72 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return false;
   }
 
-  /**
-   * Determines whether the {@code Field 'X' might not have been initialized} highlight
-   * should be suppressed.
-   * <p>
-   * The warning is suppressed if:
-   * <ul>
-   *   <li>The highlighted element is located inside an interface</li>
-   *   <li>The field is annotated with a property annotation</li>
-   * </ul>
-   *
-   * @param hi the highlight info produced by the inspection
-   * @param elem the PSI element at the highlight location
-   * @return Whether the warning should be suppressed
-   */
   private boolean filterFieldIsNotInitializedInInterfaceError( HighlightInfo hi, PsiElement elem )
   {
-    return descriptionStartsAndEndsWith(hi, "Field '", "' might not have been initialized")
-      && isElementInInterface( elem ) && hasPropertyAnnotation( getPsiField( elem ) );
-  }
-
-  /**
-   * Determines whether the {@code Field 'X' is never used} highlight
-   * should be suppressed.
-   * <p>
-   * The warning is suppressed if:
-   * <ul>
-   *   <li>The field is annotated with a property annotation</li>
-   *   <li>The field is additionally annotated with {@link override}</li>
-   * </ul>
-   *
-   * @param hi the highlight info produced by the inspection
-   * @param elem the PSI element at the highlight location
-   * @return Whether the warning should be suppressed
-   */
-  private boolean filterFieldIsNeverUsed( HighlightInfo hi, @Nullable PsiElement elem )
-  {
-    if( elem == null || !descriptionStartsAndEndsWith(hi, "Field '", "' is never used"))
+    PsiField psiField = getPsiField( elem );
+    if( psiField == null )
     {
       return false;
     }
-    PsiField psiFieldElement = getPsiField( elem );
-    return hasPropertyAnnotation( psiFieldElement ) && hasAnnotation( psiFieldElement, override.class );
+    return descriptionStartsAndEndsWith( hi, "Field '", "' might not have been initialized")
+           && isElementInInterface( elem ) && hasPropertyAnnotation( psiField );
   }
 
-  /**
-   * Determines whether the {@code @NullMarked fields must be initialized} highlight
-   * should be suppressed.
-   *
-   * <p>The suppression applies only if:
-   * <ul>
-   *   <li>The highlighted element is located inside an interface</li>
-   *   <li>The field is annotated with a property annotation</li>
-   * </ul>
-   *
-   * @param hi the highlight info produced by the inspection
-   * @param elem the PSI element at the highlight location
-   * @return Whether the warning should be suppressed
-   */
+  private boolean filterFieldIsNeverUsed( HighlightInfo hi, @Nullable PsiElement elem )
+  {
+    if( elem == null || !descriptionStartsAndEndsWith( hi, "Field '", "' is never used" ) )
+    {
+      return false;
+    }
+    PsiField psiField = getPsiField( elem );
+    if( psiField == null )
+    {
+      return false;
+    }
+    return hasPropertyAnnotation( psiField ) && hasAnnotation( psiField, override.class );
+  }
+
   private boolean filterNullMarkedFieldInitializationWarning( HighlightInfo hi, @Nullable PsiElement elem )
   {
+    PsiField psiField = getPsiField( elem );
+    if( psiField == null )
+    {
+      return false;
+    }
     return elem != null && hi.getDescription().equals( "@NullMarked fields must be initialized" )
-      && isElementInInterface( elem ) && hasPropertyAnnotation( getPsiField( elem ) );
+           && isElementInInterface( elem ) && hasPropertyAnnotation( psiField );
   }
 
-  /**
-   * Determines whether the {@code Synchronization on a non-final field} warning
-   * should be suppressed.
-   *
-   * <p>This suppresses false positives when a field is effectively treated
-   * as a final property via unmodifiable property annotations (i.e. {@link val}
-   * or {@link get}), even if it is not declared {@code final} in source.</p>
-   *
-   * <p>The suppression applies only if:
-   * <ul>
-   *   <li>The field is annotated with a supported property annotation (i.e. {@link val} or {@link get})</li>
-   * </ul>
-   *
-   * @param hi the highlight info produced by the inspection
-   * @param elem the PSI element at the highlight location
-   * @return Whether the warning should be suppressed
-   */
-  private boolean filterSynchronizationOnPropertyFieldWarning( HighlightInfo hi, @Nullable PsiElement elem) {
+  private boolean filterSynchronizationOnPropertyFieldWarning( HighlightInfo hi, @Nullable PsiElement elem )
+  {
     if( elem == null || !hi.getDescription().startsWith( "Synchronization on a non-final field '" ) )
     {
       return false;
     }
     PsiReferenceExpression reference = PsiTreeUtil.getParentOfType( elem, PsiReferenceExpression.class );
-    if ( reference == null ) {
+    if( reference == null )
+    {
       return false;
     }
     PsiElement resolved = reference.resolve();
-    if ( !( resolved instanceof PsiField field ) ) {
+    if( !(resolved instanceof PsiField field) )
+    {
       return false;
     }
-    return hasAnnotation( field, val.class )  || hasAnnotation( field, get.class );
+    return hasAnnotation( field, val.class ) || hasAnnotation( field, get.class );
   }
 
-  /**
-   * Checks whether the description of a {@link HighlightInfo} starts and ends
-   * with the given string fragments.
-   *
-   * @param hi the highlight info produced by the inspection
-   * @param start required prefix
-   * @param end required suffix
-   * @return Whether the description matches the pattern
-   */
   private boolean descriptionStartsAndEndsWith( HighlightInfo hi, String start, String end )
   {
     return hi.getDescription().startsWith( start ) && hi.getDescription().endsWith( end );
   }
 
-  /**
-   * Determines whether the given PSI element is declared inside an interface.
-   *
-   * @param element the PSI element to inspect
-   * @return Whether the element belongs to an interface class
-   */
   private boolean isElementInInterface( PsiElement element )
   {
     PsiClass psiClass = PsiTreeUtil.getParentOfType( element, PsiClass.class );
     return psiClass != null && psiClass.isInterface();
   }
 
-  /**
-   * Walks up the PSI tree starting from the given element and returns
-   * the enclosing {@link PsiField}, if any.
-   *
-   * @param elem the starting PSI element
-   * @return the enclosing field or {@code null} if none is found
-   */
   private @Nullable PsiField getPsiField( PsiElement elem )
   {
     PsiElement element = elem;
@@ -864,37 +800,17 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return (PsiField) element;
   }
 
-  /**
-   * Checks whether the given field is annotated with the specified annotation type.
-   *
-   * @param field the field to inspect
-   * @param annoType the annotation class to match
-   * @return Whether the field has the provide annotation
-   */
   private boolean hasAnnotation( @Nullable PsiField field, Class<?> annoType )
   {
     return field != null && Arrays.stream( field.getAnnotations() )
       .anyMatch( anno -> annoType.getTypeName().equals( anno.getQualifiedName() ) );
   }
 
-  /**
-   * Checks whether the given field has one of the property annotations.
-   *
-   * @param field the field to inspect
-   * @return Whether the field has a property annotation
-   */
-  private boolean hasPropertyAnnotation( @Nullable PsiField field )
+  private boolean hasPropertyAnnotation( PsiField field )
   {
-    return field != null && Arrays.stream( field.getAnnotations() ).anyMatch( this::isPropertyAnnotation );
+    return Arrays.stream( field.getAnnotations() ).anyMatch( this::isPropertyAnnotation );
   }
 
-  /**
-   * Determines whether the given annotation represents a property annotation
-   *       (i.e. {@link val}, {@link var}, {@link get}, {@link set})
-   *
-   * @param anno the annotation to inspect
-   * @return Whether the annotation matches one of the supported types
-   */
   private boolean isPropertyAnnotation( PsiAnnotation anno )
   {
     return PROPERTY_ANNO_FQNS.contains( anno.getQualifiedName() );
