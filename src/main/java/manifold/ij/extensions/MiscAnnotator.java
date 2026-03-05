@@ -58,6 +58,7 @@ public class MiscAnnotator implements Annotator
     verifyMethodRefNotAuto( element, holder );
     verifyMethodDefNotAbstractAuto( element, holder );
     verifyTuplesEnabled( element, holder );
+    verifyAutoNotUsedAsTypeArgument( element, holder );
 
     checkPolyadicOperatorApplicable( element, holder );
   }
@@ -101,6 +102,29 @@ public class MiscAnnotator implements Annotator
             .range( element.getTextRange() )
             .textAttributes( JavaHighlightingColors.KEYWORD )
             .create();
+        }
+      }
+    }
+  }
+
+  private void verifyAutoNotUsedAsTypeArgument( PsiElement element, AnnotationHolder holder )
+  {
+    if( element instanceof PsiJavaCodeReferenceElement psiTypeRef )
+    {
+      if( psiTypeRef.getTypeParameterCount() > 0 )
+      {
+        for( PsiType parameter : psiTypeRef.getTypeParameters() )
+        {
+          if( parameter instanceof PsiClassType && ((PsiClassType)parameter).resolve() instanceof PsiClass psiClass )
+          {
+            String fqn = psiClass.getQualifiedName();
+            if( fqn != null && fqn.equals( "manifold.ext.rt.api.auto" ) )
+            {
+              holder.newAnnotation( HighlightSeverity.ERROR, "'auto' is not allowed here" )
+                .range( element.getTextRange() )
+                .create();
+            }
+          }
         }
       }
     }

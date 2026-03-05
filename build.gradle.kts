@@ -25,7 +25,7 @@ import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 
 plugins {
   id("org.jetbrains.intellij.platform")
-  id("org.jetbrains.kotlin.jvm") version "2.2.0"
+//  id("org.jetbrains.kotlin.jvm") version "2.2.0"
   id("java")
 }
 
@@ -37,17 +37,6 @@ java {
 configurations {
   create("manifoldAll")
   create("manifoldEp")
-}
-
-repositories {
-//  if (System.getenv("CI")?.equals("true", ignoreCase = true) != true) {
-    mavenLocal()
-//  }
-  mavenCentral()
-  intellijPlatform {
-    defaultRepositories()
-  }
-  gradlePluginPortal()
 }
 
 subprojects {
@@ -129,7 +118,7 @@ intellijPlatform {
 
 tasks.register("deleteFrontloadClasses") {
   doLast {
-    val kotlinDir = layout.buildDirectory.dir("classes/kotlin/main/com/intellij").get().asFile
+    val kotlinDir = layout.buildDirectory.dir("classes/java/main/com/intellij").get().asFile
 
     val kotlinFiles = fileTree(kotlinDir) {
       include("**/*.class")
@@ -148,7 +137,7 @@ tasks.named("build") {
 // keep the frontloaded classes out of sight
 tasks.named("instrumentCode") {
   doLast {
-    val kotlinDir = layout.buildDirectory.dir("classes/kotlin/main/com/intellij").get().asFile
+    val kotlinDir = layout.buildDirectory.dir("classes/java/main/com/intellij").get().asFile
 
     val kotlinFiles = fileTree(kotlinDir) {
       include("**/*.class")
@@ -165,7 +154,7 @@ tasks.named<PrepareSandboxTask>("prepareSandbox") {
     into("manifold-ij/lib")
   }
   doLast {
-    val kotlinDir = layout.buildDirectory.dir("classes/kotlin/main/com/intellij").get().asFile
+    val kotlinDir = layout.buildDirectory.dir("classes/java/main/com/intellij").get().asFile
 
     val kotlinFiles = fileTree(kotlinDir) {
       include("**/*.class")

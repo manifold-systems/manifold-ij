@@ -27,6 +27,8 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.impl.light.LightModifierList;
 import com.intellij.util.IncorrectOperationException;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -100,6 +102,15 @@ public class ManLightModifierListImpl extends LightModifierList
     final PsiElementFactory elementFactory = JavaPsiFacade.getInstance( getProject() ).getElementFactory();
     final PsiAnnotation psiAnnotation = elementFactory.createAnnotationFromText( '@' + qualifiedName, null );
     _annotations.put( qualifiedName, psiAnnotation );
+    return psiAnnotation;
+  }
+
+  public @Nullable PsiAnnotation addAnnotation( @Nullable PsiAnnotation psiAnnotation )
+  {
+    if( psiAnnotation != null )
+    {
+      _annotations.put( psiAnnotation.getQualifiedName(), psiAnnotation );
+    }
     return psiAnnotation;
   }
 

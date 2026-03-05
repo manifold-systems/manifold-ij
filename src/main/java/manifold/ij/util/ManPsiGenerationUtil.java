@@ -215,7 +215,7 @@ public class ManPsiGenerationUtil
     }
   }
 
-  public static PsiMethod findExtensionMethodNavigationElement( PsiClass extClass, PsiMethod plantedMethod )
+  public static PsiMethod findExtensionMethodNavigationElement( PsiClass extClass, PsiMethod plantedMethod, boolean extensionSource )
   {
     PsiMethod[] found = extClass.findMethodsByName( plantedMethod.getName(), false );
     outer:
@@ -223,7 +223,7 @@ public class ManPsiGenerationUtil
     {
       PsiParameter[] extParams = m.getParameterList().getParameters();
       PsiParameter[] plantedParams = plantedMethod.getParameterList().getParameters();
-      int offset = getParamOffset( extParams );
+      int offset = extensionSource ? 1 : getParamOffset( extParams );
       if( extParams.length - offset == plantedParams.length )
       {
         for( int i = offset; i < extParams.length; i++ )

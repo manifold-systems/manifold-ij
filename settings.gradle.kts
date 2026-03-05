@@ -18,6 +18,13 @@
  */
 import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
 
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
 plugins {
     id("org.jetbrains.intellij.platform.settings") version "2.11.0"
 }
@@ -25,15 +32,12 @@ plugins {
 rootProject.name = "manifold-ij"
 
 dependencyResolutionManagement {
-//    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
-
     repositories {
-        mavenLocal()
+        mavenLocal()              // for local Manifold snapshot
+        mavenCentral()            // where almost everything else lives
         intellijPlatform {
-            defaultRepositories()
+            defaultRepositories() // JetBrains IDE artifacts
         }
-        gradlePluginPortal()
     }
 }
-
 include(":jps-plugin")
