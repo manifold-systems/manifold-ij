@@ -772,12 +772,10 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterCannotAssignToFinalIfJailbreak( String description, PsiElement elem )
   {
-    if( containsNone(description,  "Cannot assign a value to final variable", "无法将值赋给 final 变量" ) )
-    {
-      return false;
-    }
-
-    return elem instanceof PsiReferenceExpression refExpr && hasAnnotation( refExpr.getType(), Jailbreak.class );
+    return containsAny( description,  "Cannot assign a value to final variable", "无法将值赋给 final 变量" ) &&
+      elem instanceof PsiReferenceExpression refExpr &&
+      refExpr.getType() instanceof PsiType type &&
+      type.hasAnnotation( Jailbreak.class.getTypeName() );
   }
 
   private boolean filterAmbiguousMethods( String description, PsiElement elem )
