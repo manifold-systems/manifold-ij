@@ -36,7 +36,6 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -56,7 +55,6 @@ import manifold.ij.template.psi.ManTemplateJavaFile;
 import manifold.ij.util.ManPsiUtil;
 import manifold.internal.javac.ManAttr;
 import manifold.rt.api.util.ManClassUtil;
-import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -570,7 +568,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       if( enclosingMethod != null && ParamsMaker.hasOptionalParams( enclosingMethod ) )
       {
         PsiClass psiClass = enclosingMethod.getContainingClass();
-        if( psiClass != null )
+        if( psiClass == null )
         {
           return false;
         }
@@ -579,7 +577,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
         {
           if( method instanceof ManExtensionMethodBuilder manMeth &&
             manMeth.getTargetMethod().equals( enclosingMethod ) &&
-            !manMeth.findSuperMethods().isEmpty() );
+            !manMeth.findSuperMethods().isEmpty() )
           {
             return true;
           }
