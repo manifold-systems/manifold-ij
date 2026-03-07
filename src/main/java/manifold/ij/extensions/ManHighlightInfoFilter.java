@@ -623,7 +623,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
     PsiReferenceExpression ref = PsiTreeUtil.getParentOfType( elem, PsiReferenceExpression.class );
-    return ref != null &&  ref.resolve() instanceof PsiField field &&  hasAnyAnnotation( field, val.class, get.class );
+    return ref != null && ref.resolve() instanceof PsiField field && hasAnyAnnotation( field, val.class, get.class );
   }
 
   private boolean isElementInInterface( PsiElement element )
