@@ -39,7 +39,6 @@ import com.intellij.psi.util.PsiUtil;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.intellij.psi.util.TypeConversionUtil;
@@ -546,7 +545,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return false;
   }
 
-  private static Pattern paramsClassPattern = Pattern.compile( "\\$([a-zA-Z_$][a-zA-Z_$0-9]*)_(_[a-zA-Z_$][a-zA-Z_$0-9]*)" );
+  private static final Pattern PARAMS_CLASS_PATTERN = Pattern.compile( "\\$([a-zA-Z_$][a-zA-Z_$0-9]*)_(_[a-zA-Z_$][a-zA-Z_$0-9]*)" );
   private boolean filterParamsClassErrors( String description, PsiElement elem )
   {
     if( containedInTupleExpr( elem, elem ) )
@@ -560,7 +559,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       // pattern for matching manifold-params generated params class names such as $mymethodname__param1_param2.
       // basically, filtering out error messages concerning params method bc we do error checking on args wrt original
       // user-defined method, not generated one
-      return paramsClassPattern.matcher( description ).find();
+      return PARAMS_CLASS_PATTERN.matcher( description ).find();
     }
 
     // allow for @Override on opt params method if it has at least on telescoping method that that overrides
@@ -571,11 +570,21 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       if( enclosingMethod != null && ParamsMaker.hasOptionalParams( enclosingMethod ) )
       {
         PsiClass psiClass = enclosingMethod.getContainingClass();
+        if( psiClass != null )
+        {
+          return false;
+        }
         // opt params method has at least one telescoping overload that overrides a super method
-        return psiClass != null && psiClass.getMethods().stream()
-          .anyMatch( m -> m instanceof ManExtensionMethodBuilder manMeth &&
+        for( PsiMethod method : psiClass.getMethods() )
+        {
+          if( method instanceof ManExtensionMethodBuilder manMeth &&
             manMeth.getTargetMethod().equals( enclosingMethod ) &&
             !manMeth.findSuperMethods().isEmpty() );
+          {
+            return true;
+          }
+        }
+        return false;
       }
     }
 
@@ -642,7 +651,14 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean hasPropertyAnnotation( PsiField field )
   {
-    return Arrays.stream( field.getAnnotations() ).anyMatch( this::isPropertyAnnotation );
+    for( PsiAnnotation a : field.getAnnotations() )
+    {
+      if( isPropertyAnnotation( a ) )
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean isPropertyAnnotation( PsiAnnotation anno )
@@ -1053,22 +1069,36 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private static <T extends PsiElement> @Nullable T getSelfOrParentOfType( @Nullable PsiElement elem , Class<T> type )
   {
-    while( elem != null && !type.isInstance( elem ) )
+    if( type.isInstance( elem ) )
     {
-      elem = elem.getParent();
+      return (T) elem;
     }
-    return (T) elem;
+    return PsiTreeUtil.getParentOfType( elem, type );
   }
 
   private boolean startsWithAny( String description, String... parts )
   {
-    return Strings.CS.startsWithAny( description, parts );
+    for( String part: parts )
+    {
+      if( description.startsWith( part ) )
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
 
   private boolean containsAny( String description, String... parts )
   {
-    return Strings.CS.containsAny( description, parts );
+    for( String part: parts )
+    {
+      if( description.contains( part ) )
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean containsAll( String description, String... parts )
@@ -1090,6 +1120,6 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean containsNone( String description, String... parts )
   {
-    return!Strings.CS.containsAny( description, parts );
+    return !containsAny( description, parts );
   }
 }
