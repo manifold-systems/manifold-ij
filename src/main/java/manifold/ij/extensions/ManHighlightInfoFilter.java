@@ -346,8 +346,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
         javaToken.getTokenType() == JavaTokenType.TILDE ||
         javaToken.getTokenType() == JavaTokenType.EXCL) &&
       elem instanceof ManPsiPrefixExpressionImpl prefixExpr &&
-      (containsAll( description, "Operator", "cannot be applied to" ) ||
-       containsAll( description, "运算符", "不能应用于" )) &&
+      (containsAll( description, "Operator", "cannot be applied to" ) || containsAll( description, "运算符", "不能应用于" )) &&
       prefixExpr.getTypeForUnaryOverload() != null;
   }
 
@@ -442,28 +441,16 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private static boolean isInsideBindingExpression( PsiElement expression )
   {
-    if( !(expression instanceof PsiBinaryExpression binaryExpression ) )
-    {
-      return false;
-    }
-
-    if( ManJavaResolveCache.isBindingExpression( binaryExpression ) )
-    {
-      return true;
-    }
-
-    return isInsideBindingExpression( expression.getParent() );
+    return expression instanceof PsiBinaryExpression binaryExpression &&
+      !ManJavaResolveCache.isBindingExpression( binaryExpression ) &&
+      isInsideBindingExpression( expression.getParent() );
   }
 
   // support indexed operator overloading
   private boolean filterArrayTypeExpected( String description, PsiElement elem )
   {
-    PsiArrayAccessExpressionImpl arrayAccess;
-    return (arrayAccess = getSelfOrParentOfType( elem, PsiArrayAccessExpressionImpl.class )) != null &&
-      startsWithAny( description, "Array type expected", "应为数组类型" ) &&
-      arrayAccess.getIndexExpression() != null &&
-      ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_GET,
-        arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
+    return startsWithAny( description, "Array type expected", "应为数组类型" ) &&
+      hasBinaryType( getSelfOrParentOfType( elem, PsiArrayAccessExpressionImpl.class ) );
   }
   private boolean filterIncompatibleTypesWithArrayAccess( String description, PsiElement elem )
   {
@@ -480,20 +467,16 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       // use outermost index expression e.g., matrix[x][y] = 6
       arrayAccess = parent;
     }
-    return arrayAccess != null &&
-      startsWithAny( description, "Variable expected", "应为变量" ) &&
-      arrayAccess.getIndexExpression() != null &&
-      ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_SET,
-        arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
+    return startsWithAny( description, "Variable expected", "应为变量" ) && hasBinaryType( arrayAccess );
   }
   private boolean filterArrayIndexIsOutOfBounds( String description, PsiElement firstElem )
   {
-    if( !startsWithAny( "Array index is out of bounds", "数组索引超出范围" ) )
-    {
-      return false;
-    }
+    return startsWithAny( description, "Array index is out of bounds", "数组索引超出范围" ) &&
+      hasBinaryType( getSelfOrParentOfType( firstElem, PsiArrayAccessExpressionImpl.class ) );
+  }
 
-    PsiArrayAccessExpressionImpl arrayAccess = getSelfOrParentOfType( firstElem, PsiArrayAccessExpressionImpl.class );
+  private boolean hasBinaryType( @Nullable PsiArrayAccessExpressionImpl arrayAccess )
+  {
     return arrayAccess != null && arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_GET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
@@ -577,8 +560,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       // pattern for matching manifold-params generated params class names such as $mymethodname__param1_param2.
       // basically, filtering out error messages concerning params method bc we do error checking on args wrt original
       // user-defined method, not generated one
-      Matcher m = paramsClassPattern.matcher( description );
-      return m.find();
+      return paramsClassPattern.matcher( description ).find();
     }
 
     // allow for @Override on opt params method if it has at least on telescoping method that that overrides
@@ -604,8 +586,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     PsiField psiField = getSelfOrParentOfType( elem, PsiField.class );
     return psiField != null &&
-      startsEndsWith( description, "Field '", "' might not have been initialized")
-      && isElementInInterface( elem ) && hasPropertyAnnotation( psiField );
+      startsEndsWith( description, "Field '", "' might not have been initialized") &&
+      isElementInInterface( elem ) && hasPropertyAnnotation( psiField );
   }
 
   private boolean filterFieldIsNeverUsed( String description, PsiElement firstElem )
@@ -631,12 +613,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     {
       return false;
     }
-    PsiReferenceExpression reference = PsiTreeUtil.getParentOfType( elem, PsiReferenceExpression.class );
-    if( reference == null || !(reference.resolve() instanceof PsiField field) )
-    {
-      return false;
-    }
-    return hasAnnotation( field, val.class ) || hasAnnotation( field, get.class );
+    PsiReferenceExpression ref = PsiTreeUtil.getParentOfType( elem, PsiReferenceExpression.class );
+    return ref != null &&  ref.resolve() instanceof PsiField field &&  hasAnyAnnotation( field, val.class, get.class );
   }
 
   private boolean isElementInInterface( PsiElement element )
@@ -648,6 +626,18 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   private boolean hasAnnotation( @Nullable PsiAnnotationOwner psiAnnotationOwner, Class<?> annoType )
   {
     return psiAnnotationOwner != null && psiAnnotationOwner.hasAnnotation( annoType.getTypeName());
+  }
+
+  private boolean hasAnyAnnotation( @Nullable PsiAnnotationOwner psiAnnotationOwner, Class<?>... annoTypes )
+  {
+    for( Class<?> annoType : annoTypes )
+    {
+      if( hasAnnotation( psiAnnotationOwner, annoType ) )
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean hasPropertyAnnotation( PsiField field )
@@ -734,8 +724,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     // Preprocessor directives mask away text source in the lexer as comment tokens, obviously these will not
     // be closed with a normal comment terminator such as '*/'
-    return firstElem instanceof PsiComment &&
-      firstElem.getText().startsWith( "#" );
+    return firstElem instanceof PsiComment && firstElem.getText().startsWith( "#" );
   }
 
   private boolean filterUnhandledCheckedExceptions( String description, PsiFile file )
@@ -774,8 +763,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    return elem instanceof PsiReferenceExpression referenceExpr
-      && hasAnnotation( referenceExpr.getType(), Jailbreak.class );
+    return elem instanceof PsiReferenceExpression refExpr && hasAnnotation( refExpr.getType(), Jailbreak.class );
   }
 
   private boolean filterAmbiguousMethods( String description, PsiElement elem )
