@@ -74,7 +74,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   /**
    * Override to filter errors related to type incompatibilities arising from a
    * manifold extension adding an interface to an existing classpath class (as opposed
-   * to a source file).  Basically suppress "incompatible type errors" or similar
+   * to a source file). Basically suppress "incompatible type errors" or similar
    * involving a structural interface extension.
    */
   @Override
@@ -294,8 +294,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterTemplateUnnecessarySemicolon( String description, PsiFile file )
   {
-    return (file instanceof ManTemplateJavaFile || !(file instanceof PsiJavaFileBaseImpl)) &&
-      containsAny( description, "Unnecessary semicolon" ,  "不必要的分号");
+    return ( file instanceof ManTemplateJavaFile || !( file instanceof PsiJavaFileBaseImpl ) ) &&
+      containsAny( description, "Unnecessary semicolon", "不必要的分号");
   }
 
   // Operator overloading: Filter warning messages like "Number objects are compared using '==', not 'equals()'"
@@ -309,7 +309,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   // Filter warning messages like "1 Xxx can be replaced with Xxx" where '1 Xxx' is a binding expression
   private boolean filterCanBeReplacedWith( String description, PsiElement firstElem )
   {
-    return containsAny( description,  "can be replaced with","可被替换为" ) &&
+    return containsAny( description, "can be replaced with", "可被替换为" ) &&
       getSelfOrParentOfType( firstElem, PsiBinaryExpressionImpl.class ) instanceof PsiBinaryExpressionImpl binaryExpr &&
       // a null operator indicates a biding expression
       binaryExpr.findChildByRoleAsPsiElement( OPERATION_SIGN ) == null;
@@ -318,8 +318,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   // Filter warning messages like "1 Xxx can be replaced with Xxx" where '1 Xxx' is a binding expression
   private boolean filterCastingStructuralInterfaceWarning( String description, PsiElement firstElem )
   {
-    if( startsEndsWith( description, "Casting '",  "will produce 'ClassCastException' for any non-null value" ) ||
-      startsEndsWith( description, "将 '",  "会为任意非 null 值生成 'ClassCastException'" ) )
+    if( startsEndsWith( description, "Casting '", "will produce 'ClassCastException' for any non-null value" ) ||
+      startsEndsWith( description, "将 '", "会为任意非 null 值生成 'ClassCastException'" ) )
     {
       return isStructuralType( getSelfOrParentOfType( firstElem, PsiTypeElement.class ) );
     }
@@ -343,7 +343,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     return elem instanceof ManPsiPrefixExpressionImpl prefixExpr &&
       containsAny( description,
-        "Operator '-' cannot be applied to" , "Operator '--' cannot be applied to", "Operator '++' cannot be applied to",
+        "Operator '-' cannot be applied to", "Operator '--' cannot be applied to", "Operator '++' cannot be applied to",
         "运算符 '-' 不能应用于", "运算符 '--' 不能应用于", "运算符 '++' 不能应用于" ) &&
       prefixExpr.isOverloaded();
   }
@@ -364,7 +364,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   // allow compound assignment operator overloading
   private boolean filterIncompatibleTypesWithCompoundAssignmentOperatorOverload( String description, PsiElement elem )
   {
-    return elem.getParent() instanceof PsiAssignmentExpressionImpl assignmentExpr  &&
+    return elem.getParent() instanceof PsiAssignmentExpressionImpl assignmentExpr &&
       containsAny( description, "Incompatible types", "不兼容的类型" ) &&
       ManJavaResolveCache.getTypeForOverloadedBinaryOperator( assignmentExpr ) != null;
   }
@@ -444,7 +444,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterVariableExpected( String description, PsiElement elem )
   {
-    PsiArrayAccessExpressionImpl arrayAccess = getSelfOrParentOfType( elem, PsiArrayAccessExpressionImpl.class);
+    PsiArrayAccessExpressionImpl arrayAccess = getSelfOrParentOfType( elem, PsiArrayAccessExpressionImpl.class );
     while( arrayAccess != null && arrayAccess.getParent() instanceof PsiArrayAccessExpressionImpl parent )
     {
       // use outermost index expression e.g., matrix[x][y] = 6
@@ -477,8 +477,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     // for use with string templates when variable is referenced in the string
     if( containsAny( description, "updated, but never queried", "更新，但从未被查询" ) ||
-      containsAll( description, "changed" , "is never used" ) || //todo: chinese
-      containsAll( description,"The value ", "is never used") ) //todo: chinese
+      containsAll( description, "changed", "is never used" ) || //todo: chinese
+      containsAll( description, "The value ", "is never used") ) //todo: chinese
     {
       PsiElement e = resolveRef( elem ); // mainly for "is never used" cases
       return e != null && new ManStringLiteralTemplateUsageProvider().isImplicitUsage( e );
@@ -578,7 +578,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterFieldIsNeverUsed( String description, PsiElement firstElem )
   {
     return startsEndsWith( description, "Field '", "' is never used" ) &&
-      getSelfOrParentOfType( firstElem, PsiField.class ) instanceof  PsiField psiField &&
+      getSelfOrParentOfType( firstElem, PsiField.class ) instanceof PsiField psiField &&
       hasPropertyAnnotation( psiField ) && hasAnnotation( psiField, override.class );
   }
 
@@ -605,7 +605,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean hasAnnotation( @Nullable PsiField psiField, Class<?> annoType )
   {
-    return psiField != null && psiField.hasAnnotation( annoType.getTypeName());
+    return psiField != null && psiField.hasAnnotation( annoType.getTypeName() );
   }
 
   private boolean hasAnyAnnotation( @Nullable PsiField psiField, Class<?>... annoTypes )
@@ -639,7 +639,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private static boolean containedInTupleExpr( PsiElement origin, PsiElement elem )
   {
-    ManPsiTupleExpression manPsiTupleExpr = getSelfOrParentOfType(elem, ManPsiTupleExpression.class);
+    ManPsiTupleExpression manPsiTupleExpr = getSelfOrParentOfType( elem, ManPsiTupleExpression.class );
     return manPsiTupleExpr != null && manPsiTupleExpr.getTextRange().contains( origin.getTextRange() );
   }
 
@@ -657,7 +657,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     if( elem.getQualifier() instanceof PsiReferenceExpression qualifier )
     {
       PsiReference ref = qualifier.getReference();
-      if( ref != null &&  ref.resolve() instanceof PsiClass psiClass )
+      if( ref != null && ref.resolve() instanceof PsiClass psiClass )
       {
         for( PsiClass innerClass : psiClass.getInnerClasses() )
         {
@@ -714,7 +714,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     // Note the message can be singular or plural e.g., "Unhandled exception[s]:"
     return containsAny( description, "Unhandled exception", "未处理的异常", "未处理 异常" ) &&
-      ManProject.getIjModule( file ) instanceof  Module fileModule &&
+      ManProject.getIjModule( file ) instanceof Module fileModule &&
       ManProject.getModule( fileModule ).isExceptionsEnabled();
   }
 
@@ -727,7 +727,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterCannotAssignToFinalIfJailbreak( String description, PsiElement elem )
   {
-    return containsAny( description,  "Cannot assign a value to final variable", "无法将值赋给 final 变量" ) &&
+    return containsAny( description, "Cannot assign a value to final variable", "无法将值赋给 final 变量" ) &&
       elem instanceof PsiReferenceExpression refExpr &&
       refExpr.getType() instanceof PsiType type &&
       type.hasAnnotation( Jailbreak.class.getTypeName() );
@@ -735,7 +735,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterAmbiguousMethods( String description, PsiElement elem )
   {
-    if( containsNone(description,  "Ambiguous method call", "方法调用不明确" ) )
+    if( containsNone( description, "Ambiguous method call", "方法调用不明确" ) )
     {
       return false;
     }
@@ -1018,7 +1018,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return false;
   }
 
-  private static <T extends PsiElement> @Nullable T getSelfOrParentOfType( @Nullable PsiElement elem , Class<T> type )
+  private static <T extends PsiElement> @Nullable T getSelfOrParentOfType( @Nullable PsiElement elem, Class<T> type )
   {
     if( type.isInstance( elem ) )
     {
