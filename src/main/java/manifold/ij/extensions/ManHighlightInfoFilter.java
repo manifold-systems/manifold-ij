@@ -57,9 +57,9 @@ import manifold.ij.template.psi.ManTemplateJavaFile;
 import manifold.ij.util.ManPsiUtil;
 import manifold.internal.javac.ManAttr;
 import manifold.rt.api.util.ManClassUtil;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jspecify.annotations.NullMarked;
 
 
 import static com.intellij.psi.impl.source.tree.ChildRole.OPERATION_SIGN;
@@ -202,7 +202,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    if( filterUnclosedComment( description, firstElem ) )
+    if( filterUnclosedComment( firstElem ) )
     {
       return false;
     }
@@ -298,31 +298,21 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterTemplateUnnecessarySemicolon( String description, PsiFile file )
   {
     return (file instanceof ManTemplateJavaFile || !(file instanceof PsiJavaFileBaseImpl)) &&
-      (description.contains( "Unnecessary semicolon" ) ||
-        description.contains( "不必要的分号" ));
+      containsAny( description, "Unnecessary semicolon" ,  "不必要的分号");
   }
 
   // Operator overloading: Filter warning messages like "Number objects are compared using '==', not 'equals()'"
   private boolean filterComparedUsingEquals( String description, PsiElement firstElem )
   {
-    if( ((description.contains( "compared using '=='" ) ||
-        description.contains( "compared using '!='" )) ||
-        (description.contains( "使用 '==' 而不是" ) ||
-          description.contains( "使用 '!=' 而不是" ))) )
-    {
-      if( firstElem.getParent() instanceof PsiBinaryExpressionImpl binaryExpr )
-      {
-        PsiType type = ManJavaResolveCache.getTypeForOverloadedBinaryOperator( binaryExpr );
-        return type != null;
-      }
-    }
-    return false;
+    return firstElem.getParent() instanceof PsiBinaryExpressionImpl binaryExpr &&
+      containsAny( description, "compared using '=='", "compared using '!='", "使用 '==' 而不是", "使用 '!=' 而不是" ) &&
+      ManJavaResolveCache.getTypeForOverloadedBinaryOperator( binaryExpr ) != null;
   }
 
   // Filter warning messages like "1 Xxx can be replaced with Xxx" where '1 Xxx' is a binding expression
   private boolean filterCanBeReplacedWith( String description, PsiElement firstElem )
   {
-    if( description.contains( "can be replaced with" ) || description.contains( "可被替换为" ) )
+    if( containsAny( description,  "can be replaced with","可被替换为" ) )
     {
       PsiBinaryExpressionImpl binaryExpr = getSelfOrParentOfType( firstElem, PsiBinaryExpressionImpl.class );
       if( binaryExpr == null )
@@ -340,9 +330,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   // Filter warning messages like "1 Xxx can be replaced with Xxx" where '1 Xxx' is a binding expression
   private boolean filterCastingStructuralInterfaceWarning( String description, PsiElement firstElem )
   {
-    if( (description.startsWith( "Casting '" ) || description.startsWith( "将 '" )) &&
-      (description.endsWith( "will produce 'ClassCastException' for any non-null value" ) ||
-        description.endsWith( "会为任意非 null 值生成 'ClassCastException'" )) )
+    if( startsEndsWith( description, "Casting '",  "will produce 'ClassCastException' for any non-null value" ) ||
+      startsEndsWith( description, "将 '",  "会为任意非 null 值生成 'ClassCastException'" ) )
     {
       return isStructuralType( getSelfOrParentOfType( firstElem, PsiTypeElement.class ) );
     }
@@ -357,8 +346,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
         javaToken.getTokenType() == JavaTokenType.TILDE ||
         javaToken.getTokenType() == JavaTokenType.EXCL) &&
       elem instanceof ManPsiPrefixExpressionImpl prefixExpr &&
-      (description.contains( "Operator" ) && description.contains( "cannot be applied to" ) ||
-        description.contains( "运算符" ) && description.contains( "不能应用于" )) &&
+      (containsAll( description, "Operator", "cannot be applied to" ) ||
+       containsAll( description, "运算符", "不能应用于" )) &&
       prefixExpr.getTypeForUnaryOverload() != null;
   }
 
@@ -366,25 +355,17 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterPrefixExprCannotBeApplied( String description, PsiElement elem )
   {
     return elem instanceof ManPsiPrefixExpressionImpl prefixExpr &&
-      (description.contains( "Operator '-' cannot be applied to" ) ||
-        description.contains( "Operator '--' cannot be applied to" ) ||
-        description.contains( "Operator '++' cannot be applied to" ) ||
-
-        description.contains( "运算符 '-' 不能应用于" ) ||
-        description.contains( "运算符 '--' 不能应用于" ) ||
-        description.contains( "运算符 '++' 不能应用于" )) &&
+      containsAny( description,
+        "Operator '-' cannot be applied to" , "Operator '--' cannot be applied to", "Operator '++' cannot be applied to",
+        "运算符 '-' 不能应用于", "运算符 '--' 不能应用于", "运算符 '++' 不能应用于" ) &&
       prefixExpr.isOverloaded();
   }
   private boolean filterPostfixExprCannotBeApplied( String description, PsiElement elem )
   {
     return isInOverloadPostfixExpr( elem ) &&
-      (description.contains( "Operator '-' cannot be applied to" ) ||
-        description.contains( "Operator '--' cannot be applied to" ) ||
-        description.contains( "Operator '++' cannot be applied to" ) ||
-
-        description.contains( "运算符 '-' 不能应用于" ) ||
-        description.contains( "运算符 '--' 不能应用于" ) ||
-        description.contains( "运算符 '++' 不能应用于" ));
+      containsAny( description,
+        "Operator '-' cannot be applied to", "Operator '--' cannot be applied to", "Operator '++' cannot be applied to",
+        "运算符 '-' 不能应用于", "运算符 '--' 不能应用于", "运算符 '++' 不能应用于" );
   }
 
   private boolean isInOverloadPostfixExpr( PsiElement elem )
@@ -397,7 +378,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterIncompatibleTypesWithCompoundAssignmentOperatorOverload( String description, PsiElement elem )
   {
     return elem.getParent() instanceof PsiAssignmentExpressionImpl assignmentExpr  &&
-      (description.contains( "Incompatible types" ) || description.contains( "不兼容的类型" )) &&
+      containsAny( description, "Incompatible types", "不兼容的类型" ) &&
       ManJavaResolveCache.getTypeForOverloadedBinaryOperator( assignmentExpr ) != null;
   }
   private boolean filterOperatorCannotBeAppliedToWithCompoundAssignmentOperatorOverload( String description, PsiElement elem )
@@ -479,8 +460,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     PsiArrayAccessExpressionImpl arrayAccess;
     return (arrayAccess = getSelfOrParentOfType( elem, PsiArrayAccessExpressionImpl.class )) != null &&
-      (description.startsWith( "Array type expected" ) ||
-        description.startsWith( "应为数组类型" )) &&
+      startsWithAny( description, "Array type expected", "应为数组类型" ) &&
       arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_GET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
@@ -488,8 +468,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterIncompatibleTypesWithArrayAccess( String description, PsiElement elem )
   {
     return elem.getParent() instanceof PsiArrayAccessExpression arrayAccessExpr &&
-      (description.contains( "Incompatible types" ) ||
-        description.contains( "不兼容的类型" )) &&
+      containsAny( description, "Incompatible types", "不兼容的类型" ) &&
       arrayAccessExpr.getType() != null && arrayAccessExpr.getType().isValid();
   }
 
@@ -502,16 +481,14 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       arrayAccess = parent;
     }
     return arrayAccess != null &&
-      (description.startsWith( "Variable expected" ) ||
-        description.startsWith( "应为变量" )) &&
+      startsWithAny( description, "Variable expected", "应为变量" ) &&
       arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_SET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;
   }
   private boolean filterArrayIndexIsOutOfBounds( String description, PsiElement firstElem )
   {
-    if( !description.startsWith( "Array index is out of bounds" ) &&
-        !description.startsWith( "数组索引超出范围" ) )
+    if( !startsWithAny( "Array index is out of bounds", "数组索引超出范围" ) )
     {
       return false;
     }
@@ -527,8 +504,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     // for use with properties e.g., @val(annos = @Foo) String name;
 
     return elem instanceof PsiAnnotation &&
-      (description.startsWith( "Incompatible types" ) ||
-        description.startsWith( "不兼容的类型" )) &&
+      startsWithAny( description, "Incompatible types", "不兼容的类型" ) &&
       description.contains( manifold.rt.api.anno.any.class.getTypeName() );
   }
 
@@ -536,11 +512,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     // for use with string templates when variable is referenced in the string
 
-    if( (description.contains( "updated, but never queried" ) || description.contains( "更新，但从未被查询" )) ||
+    if( containsAny( description, "updated, but never queried", "更新，但从未被查询" ) ||
 
-      (description.contains( "changed" ) && description.contains( "is never used" )) || //todo: chinese
+      containsAll( description, "changed" , "is never used" ) || //todo: chinese
 
-      (description.startsWith( "The value ") && description.endsWith( "is never used")) ) //todo: chinese
+      containsAll( description,"The value ", "is never used") ) //todo: chinese
     {
       elem = resolveRef( elem ); // mainly for "is never used" cases
       return elem != null && new ManStringLiteralTemplateUsageProvider().isImplicitUsage( elem );
@@ -564,8 +540,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     // filter method override "incompatible return type" error involving 'auto'
 
     return elem.getText().equals( ManClassUtil.getShortClassName( ManAttr.AUTO_TYPE ) ) &&
-      (description.contains( "incompatible return type" ) ||
-        description.contains( "返回类型不兼容" ));
+      containsAny( description, "incompatible return type", "返回类型不兼容" );
   }
 
   private boolean filterInnerClassReferenceError( String desc, PsiElement elem, PsiElement firstElem )
@@ -574,18 +549,15 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
     if( elem instanceof PsiReferenceExpressionImpl referenceExpr )
     {
-      if( desc.startsWith( "Non-static field" ) && desc.contains( "cannot be referenced from a static context" ) )
+      if( containsAll( desc, "Non-static field", "cannot be referenced from a static context" ) )
       {
         return isInnerClass( referenceExpr, firstElem );
       }
-      else if( desc.contains( "Static method may be invoked on containing interface class only" ) ||
-        desc.contains( "Expected class or package" ) )
+      else if( containsAny( desc, "Static method may be invoked on containing interface class only", "Expected class or package" ) )
       {
-        if( elem.getParent().getParent() instanceof PsiReferenceExpression parent &&
-          parent.getFirstChild() instanceof PsiReferenceExpressionImpl refExpr )
-        {
-          return isInnerClass( refExpr, refExpr.getReferenceNameElement() );
-        }
+        return elem.getParent().getParent() instanceof PsiReferenceExpression parent &&
+          parent.getFirstChild() instanceof PsiReferenceExpressionImpl refExpr &&
+          isInnerClass( refExpr, refExpr.getReferenceNameElement() );
       }
     }
     return false;
@@ -632,13 +604,13 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     PsiField psiField = getSelfOrParentOfType( elem, PsiField.class );
     return psiField != null &&
-      descriptionStartsAndEndsWith( description, "Field '", "' might not have been initialized")
+      startsEndsWith( description, "Field '", "' might not have been initialized")
       && isElementInInterface( elem ) && hasPropertyAnnotation( psiField );
   }
 
   private boolean filterFieldIsNeverUsed( String description, PsiElement firstElem )
   {
-    if( !descriptionStartsAndEndsWith( description, "Field '", "' is never used" ) )
+    if( !startsEndsWith( description, "Field '", "' is never used" ) )
     {
       return false;
     }
@@ -665,11 +637,6 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
     return hasAnnotation( field, val.class ) || hasAnnotation( field, get.class );
-  }
-
-  private boolean descriptionStartsAndEndsWith( String description, String start, String end )
-  {
-    return description.startsWith( start ) && description.endsWith( end );
   }
 
   private boolean isElementInInterface( PsiElement element )
@@ -735,8 +702,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterForeachExpressionErrors( String description, PsiElement elem )
   {
-    if( !description.contains( "foreach not applicable to type" ) &&
-      !description.contains( "oreach 不适用于类型" ) )
+    if( containsNone( description, "foreach not applicable to type", "oreach 不适用于类型" ) )
     {
       return false;
     }
@@ -764,7 +730,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return false;
   }
 
-  private boolean filterUnclosedComment( String description, PsiElement firstElem )
+  private boolean filterUnclosedComment( PsiElement firstElem )
   {
     // Preprocessor directives mask away text source in the lexer as comment tokens, obviously these will not
     // be closed with a normal comment terminator such as '*/'
@@ -775,8 +741,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   private boolean filterUnhandledCheckedExceptions( String description, PsiFile file )
   {
     // Note the message can be singular or plural e.g., "Unhandled exception[s]:"
-    if( description.contains( "Unhandled exception" ) ||
-      description.contains( "未处理的异常" ) || description.contains( "未处理 异常" ) )
+    if( containsAny( description, "Unhandled exception", "未处理的异常", "未处理 异常" ) )
     {
       Module fileModule = ManProject.getIjModule( file );
       if( fileModule != null )
@@ -804,8 +769,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterCannotAssignToFinalIfJailbreak( String description, PsiElement elem )
   {
-    if( !description.startsWith( "Cannot assign a value to final variable" ) &&
-      !description.startsWith( "无法将值赋给 final 变量" ) )
+    if( containsNone(description,  "Cannot assign a value to final variable", "无法将值赋给 final 变量" ) )
     {
       return false;
     }
@@ -816,8 +780,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
 
   private boolean filterAmbiguousMethods( String description, PsiElement elem )
   {
-    if( !description.startsWith( "Ambiguous method call" ) &&
-      !description.startsWith( "方法调用不明确" ) )
+    if( containsNone(description,  "Ambiguous method call", "方法调用不明确" ) )
     {
       return false;
     }
@@ -844,8 +807,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
   {
     return firstElem instanceof PsiJavaToken javaToken &&
       javaToken.getTokenType() == JavaTokenType.STRING_LITERAL &&
-      (description.contains( "Illegal escape character" ) ||
-        description.contains( "字符串文字中的非法转义字符" )) &&
+      containsAny( description, "Illegal escape character", "字符串文字中的非法转义字符" ) &&
       elem.getText().contains( "\\$" );
   }
 
@@ -884,8 +846,7 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
         }
       }
     }
-    else if( description.contains( "cannot be applied to" ) ||
-      description.contains( "不能应用于" ) )
+    else if( containsAny( description, "cannot be applied to", "不能应用于" ) )
     {
       PsiMethodCallExpression methodCall = getSelfOrParentOfType( firstElem, PsiMethodCallExpression.class );
       if( methodCall != null )
@@ -1109,5 +1070,38 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       elem = elem.getParent();
     }
     return (T) elem;
+  }
+
+  private boolean startsWithAny( String description, String... parts )
+  {
+    return Strings.CS.startsWithAny( description, parts );
+  }
+
+
+  private boolean containsAny( String description, String... parts )
+  {
+    return Strings.CS.containsAny( description, parts );
+  }
+
+  private boolean containsAll( String description, String... parts )
+  {
+    for( String part : parts )
+    {
+      if( !description.contains( part ) )
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private boolean startsEndsWith( String description, String start, String end )
+  {
+    return description.startsWith( start ) && description.endsWith( end );
+  }
+
+  private boolean containsNone( String description, String... parts )
+  {
+    return!Strings.CS.containsAny( description, parts );
   }
 }
