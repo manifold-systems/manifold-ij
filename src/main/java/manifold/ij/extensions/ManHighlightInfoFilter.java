@@ -630,12 +630,12 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return psiClass != null && psiClass.isInterface();
   }
 
-  private boolean hasAnnotation( @Nullable PsiAnnotationOwner psiAnnotationOwner, Class<?> annoType )
+  private boolean hasAnnotation( @Nullable PsiField psiAnnotationOwner, Class<?> annoType )
   {
     return psiAnnotationOwner != null && psiAnnotationOwner.hasAnnotation( annoType.getTypeName());
   }
 
-  private boolean hasAnyAnnotation( @Nullable PsiAnnotationOwner psiAnnotationOwner, Class<?>... annoTypes )
+  private boolean hasAnyAnnotation( @Nullable PsiField psiAnnotationOwner, Class<?>... annoTypes )
   {
     for( Class<?> annoType : annoTypes )
     {
