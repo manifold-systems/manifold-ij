@@ -25,6 +25,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.augment.PsiAugmentProvider;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.util.PsiUtil;
+import com.siyeh.ig.psiutils.JavaDeprecationUtils;
 import manifold.ext.props.rt.api.*;
 import manifold.ij.psi.ManLightFieldBuilder;
 import manifold.ij.psi.ManLightModifierListImpl;
@@ -407,7 +408,8 @@ class PropertyInference
       .withModifierList( new ManLightModifierListImpl( psiClass.getManager(), JavaLanguage.INSTANCE,
         ModifierMap.fromBits( flags ).toArray( new String[0] ) ) )
       .withContainingClass( psiClass )
-      .withNavigationElement( accessor._m );
+      .withNavigationElement( accessor._m )
+      .withIsDeprecated( JavaDeprecationUtils.isDeprecated( accessor._m, accessor._m.getContext() ) );
   }
 
   private void addField( PsiField propField, Class<? extends Annotation> varClass, PsiMethod getter, PsiMethod setter )

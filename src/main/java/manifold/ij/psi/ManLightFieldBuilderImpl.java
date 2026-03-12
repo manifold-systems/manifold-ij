@@ -74,6 +74,13 @@ public class ManLightFieldBuilderImpl extends LightFieldBuilder implements ManLi
   }
 
   @Override
+  public ManLightFieldBuilder withIsDeprecated( boolean isDeprecated )
+  {
+    setIsDeprecated( isDeprecated );
+    return this;
+  }
+
+  @Override
   public PsiIdentifier getNameIdentifier()
   {
     return _nameIdentifier;
