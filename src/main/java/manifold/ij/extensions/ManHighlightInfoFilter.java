@@ -231,6 +231,11 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if( filterNotInitializedOnChainedAssignment( hi, elem ) )
+    {
+      return false;
+    }
+
     // handle indexed operator overloading
     if( filterArrayTypeExpected( hi, elem, firstElem ) )
     {
@@ -453,6 +458,25 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
              checkPolyadicOperatorApplicable( pexpr );
     }
     return false;
+  }
+
+  private boolean filterNotInitializedOnChainedAssignment( HighlightInfo hi, PsiElement elem )
+  {
+    if( isChainedAssignment( elem ) )
+    {
+      return hi.getDescription().contains( " might not have been initialized" ) ||
+             hi.getDescription().contains( "' 不能应用于 " ) ||
+
+             hi.getDescription().startsWith( "Variable expected" ) ||
+             hi.getDescription().startsWith( "应为变量" );
+    }
+    return false;
+  }
+
+  private boolean isChainedAssignment( PsiElement elem )
+  {
+    return elem.getParent() instanceof PsiAssignmentExpression parent &&
+        parent.getParent() instanceof PsiAssignmentExpression;
   }
 
   private static PsiPolyadicExpression getEnclosingPolyadicExpr( PsiElement elem )

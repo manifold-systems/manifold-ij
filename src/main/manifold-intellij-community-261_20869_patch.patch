@@ -1,4 +1,4 @@
-Subject: [PATCH] manifold-intellij-community-261.20869 patch
+Subject: [PATCH] manifold-intellij-community-261_20869
 ---
 Index: java/java-syntax/src/com/intellij/java/syntax/lexer/JavaLexerHook.kt
 IDEA additional info:
@@ -134,7 +134,7 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 ===================================================================
 diff --git a/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt b/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt
 --- a/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt	(revision 4834af522f95c47e087f8476e7479dc651e56478)
-+++ b/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt	(date 1771189542812)
++++ b/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt	(date 1773334674061)
 @@ -4,10 +4,13 @@
  import com.intellij.java.syntax.JavaSyntaxBundle
  import com.intellij.java.syntax.JavaSyntaxBundle.message
@@ -395,25 +395,23 @@ diff --git a/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressio
            builder.advanceLexer()
          }
        }
-+
-+      if (arg != null && isTupleItem) {
-+        argWhole.done(TUPLE_VALUE_EXPRESSION)
-     }
-+      else {
-+        argWhole.drop()
-+      }
-+      }
-+    val closed = expectOrError(builder, JavaSyntaxTokenType.RPARENTH, "expected.rparen")
+-    }
  
 -    var closed = true
 -    if (!builder.expect(JavaSyntaxTokenType.RPARENTH)) {
 -      if (first) {
 -        error(builder, message("expected.rparen"))
--      }
--      else {
++      if (arg != null && isTupleItem) {
++        argWhole.done(TUPLE_VALUE_EXPRESSION)
+       }
+       else {
 -        error(builder, message("expected.comma.or.rparen"))
--      }
++        argWhole.drop()
++      }
+       }
 -      closed = false
++    val closed = expectOrError(builder, JavaSyntaxTokenType.RPARENTH, "expected.rparen")
++
 +    if (colon) {
 +      tupleExpr.done(TUPLE_EXPRESSION)
 +    }
@@ -422,17 +420,33 @@ diff --git a/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressio
      }
  
      list.done(JavaSyntaxElementType.EXPRESSION_LIST)
-@@ -895,7 +1024,8 @@
+@@ -887,7 +1016,8 @@
+       mode: Int
+     ) {
+       var operandCount = 1
+-      while (true) {
++      //manifold: removing the loop to force binary expressions, which is required for binding expressions
++      //while (true) {
+         advanceBinOpToken(builder, binOpType)
+         val rhs = parser.tryParseWithPrecedenceAtMost(builder, currentPrecedence - 1, mode)
+         if (rhs == null) {
+@@ -895,10 +1025,11 @@
          }
          operandCount++
          val nextToken: SyntaxElementType? = getBinOpToken(builder)
 -        if (nextToken !== binOpType) {
+-          break
+-        }
+-      }
 +        // manifold: don't make polyadic exprs for biding and multiplication precedences, force multiple binary exprs (for binding exprs and unit types such as m/s/s)
-+        if (nextToken !== binOpType || currentPrecedence == MULTIPLICATION_PRECEDENCE) {
-           break
-         }
-       }
-@@ -906,6 +1036,25 @@
++        //if (nextToken !== binOpType || currentPrecedence == MULTIPLICATION_PRECEDENCE) {
++        //  break
++        //}
++      //}
+       done(beforeLhs, if (operandCount > 2)
+         JavaSyntaxElementType.POLYADIC_EXPRESSION
+       else
+@@ -906,6 +1037,25 @@
      }
    }
  
@@ -458,7 +472,7 @@ diff --git a/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressio
    private class ConditionalExprParser : InfixParser {
      override fun parse(
        parser: PrattExpressionParser,
-@@ -1048,16 +1197,30 @@
+@@ -1048,16 +1198,30 @@
    }
  }
  
