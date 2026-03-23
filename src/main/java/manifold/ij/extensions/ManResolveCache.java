@@ -425,7 +425,7 @@ public class ManResolveCache extends ResolveCache
     PsiClass psiClass = refMethod.getContainingClass();
     ManLightMethodBuilder method = manPsiElemFactory
       .createLightMethod( manModule, psiClass.getManager(), methodName )
-      .withContainingClass( psiClass );
+      .withContainingClass( refMethod.getContainingClass() );
     method.withNavigationElement( refMethod.getNavigationElement() );
     method.withMethodReturnType( handleType( refMethod.getReturnType(), ref, refMethod ) );
     copyAnnotations( refMethod, method );
