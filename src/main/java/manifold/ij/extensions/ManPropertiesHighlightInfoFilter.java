@@ -19,11 +19,14 @@
 
 package manifold.ij.extensions;
 
+import static manifold.ij.extensions.PropertyUtil.*;
+
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.light.LightRecordMember;
+import manifold.ext.props.rt.api.PropOption;
 import manifold.ext.props.rt.api.get;
 import manifold.ext.props.rt.api.set;
 import manifold.ext.props.rt.api.val;
@@ -35,7 +38,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
-
 
 /**
  * Suppress errors around properties that are not really errors
@@ -116,6 +118,11 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if( filterFieldMustBeInitializedForAbstractProperty( hi, parent ) )
+    {
+      return false;
+    }
+
     return true;
   }
 
@@ -165,6 +172,13 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
     // @val fields are already final
     PsiField field = getPropFieldFromDecl( firstElem );
     return field != null && isReadOnly( field );
+  }
+
+  private boolean filterFieldMustBeInitializedForAbstractProperty( HighlightInfo hi, PsiElement parent )
+  {
+    return "@NullMarked fields must be initialized".equals(hi.getDescription()) &&
+      parent instanceof PsiField field &&
+      ( hasAbstractModifier( field ) || hasOption( field, PropOption.Abstract ) );
   }
 
   private boolean filterAbstractError( HighlightInfo hi, PsiElement firstElem )
@@ -245,6 +259,11 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
       }
     }
     return false;
+  }
+
+  private boolean hasAbstractModifier( PsiField field )
+  {
+    return field.getModifierList() != null && field.getModifierList().hasModifierProperty( PsiModifier.ABSTRACT );
   }
 
   private boolean isVar( PsiField field )
