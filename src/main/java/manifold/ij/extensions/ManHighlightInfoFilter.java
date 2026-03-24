@@ -33,22 +33,14 @@ import com.intellij.psi.impl.source.tree.java.*;
 import com.intellij.psi.infos.MethodCandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.tree.IElementType;
-import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.refactoring.util.RefactoringUtil;
-import manifold.ext.props.rt.api.get;
-import manifold.ext.props.rt.api.override;
-import manifold.ext.props.rt.api.set;
-import manifold.ext.props.rt.api.val;
-import manifold.ext.props.rt.api.var;
 import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.core.*;
 import manifold.ij.psi.ManExtensionMethodBuilder;
@@ -70,9 +62,6 @@ import static manifold.ij.extensions.ManAugmentProvider.KEY_MAN_INTERFACE_EXTENS
  */
 public class ManHighlightInfoFilter implements HighlightInfoFilter
 {
-
-  private static final Set<String> PROPERTY_ANNO_FQNS =
-    Set.of( val.class.getTypeName(), var.class.getTypeName(), set.class.getTypeName(), get.class.getTypeName() );
 
   /**
    * Override to filter errors related to type incompatibilities arising from a
@@ -139,21 +128,6 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     PsiElement firstElem = file.findElementAt( hi.getStartOffset() );
-
-    if( filterFieldIsNeverUsed( hi, firstElem ) )
-    {
-      return false;
-    }
-
-    if( filterNullMarkedFieldInitializationWarning( hi, firstElem ) )
-    {
-      return false;
-    }
-
-    if( filterSynchronizationOnPropertyFieldWarning( hi, firstElem ) )
-    {
-      return false;
-    }
 
     if( hi.getSeverity() != HighlightSeverity.ERROR )
     {
@@ -276,11 +250,6 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
 
     if( filterParamsClassErrors( hi, elem, firstElem ) )
-    {
-      return false;
-    }
-
-    if( filterFieldIsNotInitializedInInterfaceError( hi, elem ) )
     {
       return false;
     }
@@ -748,97 +717,6 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     return false;
   }
 
-  private boolean filterFieldIsNotInitializedInInterfaceError( HighlightInfo hi, PsiElement elem )
-  {
-    PsiField psiField = getPsiField( elem );
-    if( psiField == null )
-    {
-      return false;
-    }
-    return descriptionStartsAndEndsWith( hi, "Field '", "' might not have been initialized")
-           && isElementInInterface( elem ) && hasPropertyAnnotation( psiField );
-  }
-
-  private boolean filterFieldIsNeverUsed( HighlightInfo hi, @Nullable PsiElement elem )
-  {
-    if( elem == null || !descriptionStartsAndEndsWith( hi, "Field '", "' is never used" ) )
-    {
-      return false;
-    }
-    PsiField psiField = getPsiField( elem );
-    if( psiField == null )
-    {
-      return false;
-    }
-    return hasPropertyAnnotation( psiField ) && hasAnnotation( psiField, override.class );
-  }
-
-  private boolean filterNullMarkedFieldInitializationWarning( HighlightInfo hi, @Nullable PsiElement elem )
-  {
-    PsiField psiField = getPsiField( elem );
-    if( psiField == null )
-    {
-      return false;
-    }
-    return elem != null && hi.getDescription().equals( "@NullMarked fields must be initialized" )
-           && isElementInInterface( elem ) && hasPropertyAnnotation( psiField );
-  }
-
-  private boolean filterSynchronizationOnPropertyFieldWarning( HighlightInfo hi, @Nullable PsiElement elem )
-  {
-    if( elem == null || !hi.getDescription().startsWith( "Synchronization on a non-final field '" ) )
-    {
-      return false;
-    }
-    PsiReferenceExpression reference = PsiTreeUtil.getParentOfType( elem, PsiReferenceExpression.class );
-    if( reference == null )
-    {
-      return false;
-    }
-    PsiElement resolved = reference.resolve();
-    if( !(resolved instanceof PsiField field) )
-    {
-      return false;
-    }
-    return hasAnnotation( field, val.class ) || hasAnnotation( field, get.class );
-  }
-
-  private boolean descriptionStartsAndEndsWith( HighlightInfo hi, String start, String end )
-  {
-    return hi.getDescription().startsWith( start ) && hi.getDescription().endsWith( end );
-  }
-
-  private boolean isElementInInterface( PsiElement element )
-  {
-    PsiClass psiClass = PsiTreeUtil.getParentOfType( element, PsiClass.class );
-    return psiClass != null && psiClass.isInterface();
-  }
-
-  private @Nullable PsiField getPsiField( PsiElement elem )
-  {
-    PsiElement element = elem;
-    while( element != null && !( element instanceof PsiField) )
-    {
-      element = element.getParent();
-    }
-    return (PsiField) element;
-  }
-
-  private boolean hasAnnotation( @Nullable PsiField field, Class<?> annoType )
-  {
-    return field != null && Arrays.stream( field.getAnnotations() )
-      .anyMatch( anno -> annoType.getTypeName().equals( anno.getQualifiedName() ) );
-  }
-
-  private boolean hasPropertyAnnotation( PsiField field )
-  {
-    return Arrays.stream( field.getAnnotations() ).anyMatch( this::isPropertyAnnotation );
-  }
-
-  private boolean isPropertyAnnotation( PsiAnnotation anno )
-  {
-    return PROPERTY_ANNO_FQNS.contains( anno.getQualifiedName() );
-  }
 
   private static boolean containedInTupleExpr( PsiElement origin, PsiElement elem )
   {
