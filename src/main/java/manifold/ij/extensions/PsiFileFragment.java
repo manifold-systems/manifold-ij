@@ -51,7 +51,7 @@ interface PsiFileFragment extends ASTNode, PsiElement
 
   HostKind getStyle();
 
-  default void handleFragments()
+  default void  handleFragments()
   {
     handleFragments( null );
   }
@@ -139,7 +139,7 @@ interface PsiFileFragment extends ASTNode, PsiElement
       if( this instanceof ManDefaultASTFactoryImpl.ManPsiCommentImpl )
       {
         // necessary when renaming a file fragment's type
-        ReparseUtil.instance().rerunAnnotators( containingFile );
+        ReparseUtil.instance().rerunAnnotators( containingFile, "Manifold fragment/inline in comment" );
       }
     }
   }

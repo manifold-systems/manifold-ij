@@ -692,6 +692,7 @@ Other minor fixes and improvements.
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.SelfUsageAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.JailbreakUsageAnnotator"/>
     <annotator language="JAVA" implementationClass="manifold.ij.extensions.MiscAnnotator"/>
+    <enterHandlerDelegate implementation="manifold.ij.extensions.PreprocessorEnterHandler" order="first"/>
     <daemon.highlightInfoFilter implementation="manifold.ij.extensions.ManHighlightInfoFilter"/>
     <daemon.highlightInfoFilter implementation="manifold.ij.extensions.ManPropertiesHighlightInfoFilter"/>
     <renamePsiElementProcessor implementation="manifold.ij.extensions.RenameTypeManifoldFileProcessor" order="first"/>

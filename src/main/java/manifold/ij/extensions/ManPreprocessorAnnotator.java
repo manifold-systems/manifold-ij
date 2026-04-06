@@ -70,34 +70,41 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
   @Override
   public Info doAnnotate( PsiFile file )
   {
+    Info info = new Info();
     if( !ManProject.isManifoldInUse( file ) )
     {
       // Manifold jars are not used in the project
-      return new Info();
+      return info;
     }
 
-    return ApplicationManager.getApplication().runReadAction( (Computable<Info>) () -> {
-      ManModule module = ManProject.getModule( file );
-      if( module == null || !module.isPreprocessorEnabled() )
-      {
-        return new Info();
+    String source = ApplicationManager.getApplication().runReadAction(
+      (Computable<String>)() -> {
+        ManModule module = ManProject.getModule( file );
+        if( module == null || !module.isPreprocessorEnabled() )
+        {
+          return null;
+        }
+        return file.getText();
       }
+    );
 
-      Info info = new Info();
-      String source = file.getText();
-      PreprocessorParser parser = new PreprocessorParser( source, t -> addDirective( t, info ) );
-      parser.parseFile( ( message, pos ) -> {
-        int errorPos = ensureErrorPosNotOnNewLine( source, pos );
-        info.addToIssues( message, errorPos );
-      } );
+    if( source == null )
+    {
       return info;
+    }
+
+    PreprocessorParser parser = new PreprocessorParser( source, t -> addDirective( t, info ) );
+    parser.parseFile( ( message, pos ) -> {
+      int errorPos = ensureErrorPosNotOnNewLine( source, pos );
+      info.addToIssues( message, errorPos );
     } );
+    return info;
   }
 
   private int ensureErrorPosNotOnNewLine( String source, int pos )
   {
     char c = pos < source.length() ? source.charAt( pos ) : '\0';
-    if( pos > 0 && c == '\0' || c == '\r' || c == '\n' )
+    if( pos > 0 && (c == '\0' || c == '\r' || c == '\n') )
     {
       pos--;
     }
@@ -139,7 +146,8 @@ public class ManPreprocessorAnnotator extends ExternalAnnotator<PsiFile, ManPrep
         }
         holder.newAnnotation( HighlightSeverity.INFORMATION, "" )
           .range( comment )
-          .enforcedTextAttributes( maskedCodeAttr() )
+          .textAttributes( ManColorSettingsPage.PREPROCESSOR_MASKED_CODE )
+//          .enforcedTextAttributes( maskedCodeAttr() )
           .create();
       }
     } );

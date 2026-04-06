@@ -22,12 +22,15 @@ package manifold.ij.util;
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerEx;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.fileEditor.impl.EditorHistoryManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiInvalidElementAccessException;
+import com.intellij.util.Alarm;
 import com.intellij.util.FileContentUtil;
 import com.intellij.util.FileContentUtilCore;
 
@@ -69,7 +72,7 @@ public class ReparseUtil
     return _repsarsingFiles.contains( file );
   }
 
-  public void rerunAnnotators( @NotNull PsiFile psiFile )
+  public void rerunAnnotators( @NotNull PsiFile psiFile, Object reason )
   {
     ApplicationManager.getApplication().invokeLater(
       () -> SlowOperationsUtil.allowSlowOperation( "manifold.generic", () -> {
@@ -77,7 +80,7 @@ public class ReparseUtil
         {
           if( DaemonCodeAnalyzerEx.getInstance( psiFile.getProject() ).isHighlightingAvailable( psiFile ) )
           {
-            DaemonCodeAnalyzer.getInstance( psiFile.getProject() ).restart( psiFile );
+            DaemonCodeAnalyzer.getInstance( psiFile.getProject() ).restart( psiFile, reason );
           }
         }
         catch( PsiInvalidElementAccessException ieae )
@@ -102,6 +105,14 @@ public class ReparseUtil
   }
   public void reparseRecentJavaFiles( @NotNull Project project, boolean force )
   {
+    Alarm alarm = new Alarm( Alarm.ThreadToUse.SWING_THREAD, project );
+    alarm.cancelAllRequests();
+    alarm.addRequest( () -> {
+      _reparseRecentJavaFiles( project, force );
+    }, 300 ); // 100–300ms works well
+  }
+  private void _reparseRecentJavaFiles( @NotNull Project project, boolean force )
+  {
     if( project.isDisposed() )
     {
       return;
@@ -123,24 +134,31 @@ public class ReparseUtil
         () -> {
           try
           {
-            ApplicationManager.getApplication().runReadAction(
-              () -> {
-                if( !project.isDisposed() )
-                {
-                  // reparse recent files (except module-info.java files because that causes infinite reset)
-                  Collection<? extends VirtualFile> openJavaFiles = getRecentJavaFiles( project ).stream()
-                    .filter( vf -> !vf.getName().toLowerCase().endsWith( "module-info.java" ) )
-                    .limit( 25 )
-                    .collect( Collectors.toSet() );
-                  FileContentUtil.reparseFiles( project, openJavaFiles, false );
-                }
-              } );
+            Collection<? extends VirtualFile> openJavaFiles =
+              ApplicationManager.getApplication().runReadAction(
+                (Computable<Collection<? extends VirtualFile>>)() -> {
+                  if( !project.isDisposed() )
+                  {
+                    // reparse recent files (except module-info.java files because that causes infinite reset)
+                    return getRecentJavaFiles( project ).stream()
+                      .filter( vf -> !vf.getName().toLowerCase().endsWith( "module-info.java" ) )
+                      .limit( 25 )
+                      .collect( Collectors.toSet() );
+                  }
+                  return null;
+                } );
+            if( !project.isDisposed() && !openJavaFiles.isEmpty() )
+            {
+//              TransactionGuard.getInstance().submitTransaction( project, () ->
+                FileContentUtil.reparseFiles( project, openJavaFiles, false );
+//              );
+            }
           }
           finally
           {
             _reparsingProjects.remove( project );
           }
-        } );
+        }, ModalityState.nonModal() );
     }
     catch( Throwable t )
     {
@@ -163,19 +181,16 @@ public class ReparseUtil
         () -> {
           try
           {
-            ApplicationManager.getApplication().runReadAction(
-              () -> {
-                if( !project.isDisposed() )
-                {
-                  FileContentUtilCore.reparseFiles( file );
-                }
-              } );
+            if( !project.isDisposed() )
+            {
+              FileContentUtilCore.reparseFiles( file );
+            }
           }
           finally
           {
             _repsarsingFiles.remove( file );
           }
-        } );
+        }, ModalityState.defaultModalityState() );
     }
     catch( Throwable t )
     {

@@ -19,6 +19,7 @@
 
 package manifold.ij.core;
 
+import com.intellij.codeInsight.lookup.LookupManager;
 import com.intellij.lang.Language;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.application.ApplicationManager;
@@ -33,8 +34,10 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.testFramework.LightVirtualFile;
+import com.intellij.util.Alarm;
 import com.intellij.util.FileContentUtilCore;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * For Preprocessor.
@@ -45,43 +48,72 @@ import org.jetbrains.annotations.NotNull;
 public class ManPreprocessorDocumentListener implements DocumentListener
 {
   private final Project _project;
+  private final Alarm _alarm;
   private boolean _reparse;
 
   public ManPreprocessorDocumentListener( Project project )
   {
     _project = project;
+    _alarm = new Alarm( Alarm.ThreadToUse.SWING_THREAD, project );
   }
 
   @Override
   public void beforeDocumentChange( @NotNull DocumentEvent event )
   {
-    Language language = getLanguage( event.getDocument() );
-    if( language == JavaLanguage.INSTANCE )
+    if( shouldReparse( event ) )
     {
-      if( definitionChanged( event ) )
-      {
-        _reparse = true;
-      }
+      _reparse = true;
     }
   }
 
   @Override
   public void documentChanged( @NotNull DocumentEvent event )
   {
-    if( _reparse || getLanguage( event.getDocument() ) == JavaLanguage.INSTANCE )
+    if( _reparse || shouldReparse( event ) )
     {
-      if( _reparse || definitionChanged( event ) )
-      {
-        ApplicationManager.getApplication().invokeLater( () -> {
-          PsiDocumentManager.getInstance( _project ).commitDocument( event.getDocument() );
-          ApplicationManager.getApplication().runReadAction( () -> {
-            VirtualFile vfile = FileDocumentManager.getInstance().getFile( event.getDocument() );
-            FileContentUtilCore.reparseFiles( vfile );
-          } );
-        } );
-      }
+      reparse( event );
     }
     _reparse = false;
+  }
+
+  private void reparse( @NonNull DocumentEvent event )
+  {
+    _alarm.cancelAllRequests();
+    _alarm.addRequest( () -> {
+      // Avoid interfering with active completion
+      if( LookupManager.getInstance( _project ).getActiveLookup() != null )
+      {
+        reparse( event );
+        return;
+      }
+
+      PsiDocumentManager.getInstance( _project ).commitDocument( event.getDocument() );
+      ApplicationManager.getApplication().runReadAction( () -> {
+        VirtualFile vfile = FileDocumentManager.getInstance().getFile( event.getDocument() );
+        FileContentUtilCore.reparseFiles( vfile );
+      } );
+    }, 150 );
+  }
+
+  private boolean shouldReparse( DocumentEvent event )
+  {
+    if( _project.isDisposed() )
+    {
+      return false;
+    }
+
+    Document doc = event.getDocument();
+    if( getLanguage( doc ) != JavaLanguage.INSTANCE )
+    {
+      return false;
+    }
+
+    if( FileDocumentManager.getInstance().getFile( doc ) instanceof LightVirtualFile )
+    {
+      return false;
+    }
+
+    return definitionChanged( event );
   }
 
   private Language getLanguage( Document document )

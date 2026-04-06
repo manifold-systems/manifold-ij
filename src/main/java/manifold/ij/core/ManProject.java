@@ -352,7 +352,8 @@ public class ManProject
     _fs = new IjFileSystem( this );
     _psiClassCache = new ManifoldPsiClassCache( this );
     _hasNamedModule = false;
-    _modules = LockingLazyVar.make( () -> ApplicationManager.getApplication().<Map<Module, ManModule>>runReadAction( this::defineModules ) );
+    _modules = LockingLazyVar.make( () -> ApplicationManager.getApplication().<Map<Module, ManModule>>runReadAction(
+      () -> SlowOperationsUtil.allowSlowOperation( "manifold.generic", this::defineModules ) ) );
     _rootModules = assignRootModuleLazy();
     ManLibraryChecker.instance().warnIfManifoldJarsAreOld( getNativeProject() );
   }

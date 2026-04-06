@@ -20,24 +20,25 @@
 package manifold.ij.extensions;
 
 import com.intellij.compiler.CompilerConfiguration;
-import com.intellij.lang.ASTNode;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.module.LanguageLevelUtil;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.FileIndexFacade;
 import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.io.FileUtilRt;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.java.LanguageLevel;
-import com.intellij.psi.PsiJavaFile;
 import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 
-import com.intellij.psi.SmartPsiElementPointer;
-import com.intellij.psi.util.PsiUtil;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
-import manifold.ij.fs.IjFile;
 import manifold.ij.util.FileUtil;
 import manifold.preprocessor.definitions.Definitions;
 import manifold.preprocessor.definitions.EnvironmentDefinitions;
@@ -50,46 +51,39 @@ import org.jetbrains.annotations.Nullable;
 public class ManDefinitions extends Definitions
 {
   private static final String MODULE_INFO_FILE = "module-info.java";
-  private final ASTNode _chameleon;
-  private final SmartPsiElementPointer<PsiJavaFile> _psiFile;
+  private final Project _project;
+  private final VirtualFile _vFile;
 
-  ManDefinitions( ASTNode chameleon, SmartPsiElementPointer<PsiJavaFile> psiFile )
+  ManDefinitions( Project project, VirtualFile vFile )
   {
-    super( getFile( psiFile ) );
-    _chameleon = chameleon;
-    _psiFile = psiFile;
+    super( FileUtil.toIFile( project, vFile ) );
+    _project = project;
+    _vFile = vFile;
   }
 
-  private static IjFile getFile( SmartPsiElementPointer<PsiJavaFile> psiFile )
+  public VirtualFile getFile()
   {
-    if( psiFile == null )
-    {
-      return null;
-    }
-    PsiJavaFile psiJavaFile = psiFile.getElement();
-    if( psiJavaFile == null )
-    {
-      return null;
-    }
-    return FileUtil.toIFile( psiFile.getProject(), FileUtil.toVirtualFile( psiJavaFile ) );
-  }
-
-  public SmartPsiElementPointer<PsiJavaFile> getPsiFile()
-  {
-    return _psiFile;
+    return _vFile;
   }
 
   public ManModule getModule()
   {
-    if( _psiFile != null )
+    ManModule module = getModule( _vFile );
+    if( module == null )
     {
-      PsiJavaFile psiJavaFile = _psiFile.getElement();
-      if( psiJavaFile != null )
-      {
-        return ManProject.getModule( psiJavaFile );
-      }
+      // default to project-dir-based module
+      module = getModule( ProjectUtil.guessProjectDir( _project ) );
     }
-    return ManProject.getModule( _chameleon.getPsi() );
+    return module;
+  }
+  private ManModule getModule( VirtualFile vfile )
+  {
+    if( vfile == null )
+    {
+      return null;
+    }
+    Module moduleForFile = ModuleUtilCore.findModuleForFile( vfile, _project );
+    return moduleForFile == null ? null : ManProject.getModule( moduleForFile );
   }
 
   @Override
@@ -124,15 +118,34 @@ public class ManDefinitions extends Definitions
       }
       else
       {
-        PsiJavaFile psiJavaFile;
-        if( _psiFile != null && (psiJavaFile = _psiFile.getElement()) != null )
+        ApplicationManager.getApplication()
+          .runReadAction( () -> _addJpms( map ) );
+      }
+    }
+
+    private void _addJpms( Map<String, String> map )
+    {
+      if( _vFile != null )
+      {
+        VirtualFile sourceRoot = ProjectFileIndex.getInstance( _project ).getSourceRootForFile( _vFile );
+        if( sourceRoot != null )
         {
-          Project project = _psiFile.getProject();
-          VirtualFile sourceRoot = ProjectFileIndex.getInstance( project )
-            .getSourceRootForFile( FileUtil.toVirtualFile( psiJavaFile ) );
-          if( sourceRoot != null )
+          File moduleInfoFile = findModuleInfoFile( sourceRoot, _project );
+          if( moduleInfoFile != null )
           {
-            File moduleInfoFile = findModuleInfoFile( sourceRoot, project );
+            map.put( EnvironmentDefinitions.JPMS_NAMED, "" );
+            return;
+          }
+        }
+      }
+      else
+      {
+        ManModule module = getModule();
+        if( module != null )
+        {
+          for( VirtualFile sourceRoot: ManProject.getSourceRoots( module.getIjModule() ) )
+          {
+            File moduleInfoFile = findModuleInfoFile( sourceRoot, module.getIjProject() );
             if( moduleInfoFile != null )
             {
               map.put( EnvironmentDefinitions.JPMS_NAMED, "" );
@@ -140,33 +153,23 @@ public class ManDefinitions extends Definitions
             }
           }
         }
-        else
-        {
-          ManModule module = ManProject.getModule( _chameleon.getPsi() );
-          if( module != null )
-          {
-            for( VirtualFile sourceRoot: ManProject.getSourceRoots( module.getIjModule() ) )
-            {
-              File moduleInfoFile = findModuleInfoFile( sourceRoot, module.getIjProject() );
-              if( moduleInfoFile != null )
-              {
-                map.put( EnvironmentDefinitions.JPMS_NAMED, "" );
-                return;
-              }
-            }
-          }
-        }
-        map.put( EnvironmentDefinitions.JPMS_UNNAMED, "" );
       }
+      map.put( EnvironmentDefinitions.JPMS_UNNAMED, "" );
     }
 
     private int getJavaVersion()
     {
-      PsiJavaFile psiJavaFile;
-      LanguageLevel languageLevel = _psiFile != null && (psiJavaFile = _psiFile.getElement()) != null
-        ? psiJavaFile.getLanguageLevel()
-        : PsiUtil.getLanguageLevel( _chameleon.getPsi() );
+      LanguageLevel languageLevel = ApplicationManager.getApplication()
+        .runReadAction( (Computable<LanguageLevel>)() -> getLanguageLevel( _vFile, _project ) );
       return languageLevel.toJavaVersion().feature;
+    }
+
+    private LanguageLevel getLanguageLevel( VirtualFile file, Project project )
+    {
+      Module module = ModuleUtilCore.findModuleForFile( file, project );
+      return module == null
+        ? LanguageLevel.HIGHEST
+        : LanguageLevelUtil.getEffectiveLanguageLevel( module );
     }
 
     private File findModuleInfoFile( VirtualFile root, Project project )
