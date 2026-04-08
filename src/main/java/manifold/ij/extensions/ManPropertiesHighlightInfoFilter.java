@@ -24,7 +24,9 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.light.LightRecordMember;
+import com.intellij.psi.util.PsiTreeUtil;
 import manifold.ext.props.rt.api.get;
+import manifold.ext.props.rt.api.override;
 import manifold.ext.props.rt.api.set;
 import manifold.ext.props.rt.api.val;
 import manifold.ext.props.rt.api.var;
@@ -35,13 +37,18 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
-
+import java.util.Set;
 
 /**
  * Suppress errors around properties that are not really errors
  */
 public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
 {
+
+  private static final Set<String> PROPERTY_ANNO_FQNS =
+    Set.of( val.class.getTypeName(), var.class.getTypeName(), set.class.getTypeName(), get.class.getTypeName() );
+
+
   @Override
   public boolean accept( @NotNull HighlightInfo hi, @Nullable PsiFile file )
   {
@@ -100,7 +107,6 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    //noinspection RedundantIfStatement
     if( filterCannotAssignToFinalError( hi, firstElem ) )
     {
       return false;
@@ -112,6 +118,33 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
     }
 
     if( filterNonFinalFieldInEnumForVal( hi, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterFieldIsNeverUsed( hi, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterNullMarkedFieldInitializationWarning( hi, firstElem ) )
+    {
+      return false;
+    }
+
+    if( filterSynchronizationOnPropertyFieldWarning( hi, firstElem ) )
+    {
+      return false;
+    }
+
+    PsiElement elem = firstElem.getParent();
+    if( elem == null )
+    {
+      return true;
+    }
+
+    //noinspection RedundantIfStatement
+    if( filterFieldIsNotInitializedInInterfaceError( hi, elem ) )
     {
       return false;
     }
@@ -276,4 +309,97 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
     return hi.getDescription().equals( "Illegal reference to restricted type 'var'" ) ||
            hi.getDescription().equals( "非法引用受限类型 'var'" );
   }
+
+  private boolean filterFieldIsNotInitializedInInterfaceError( HighlightInfo hi, PsiElement elem )
+  {
+    PsiField psiField = getPsiField( elem );
+    if( psiField == null )
+    {
+      return false;
+    }
+    return descriptionStartsAndEndsWith( hi, "Field '", "' might not have been initialized")
+      && isElementInInterface( elem ) && hasPropertyAnnotation( psiField );
+  }
+
+  private boolean filterFieldIsNeverUsed( HighlightInfo hi, @Nullable PsiElement elem )
+  {
+    if( elem == null || !descriptionStartsAndEndsWith( hi, "Field '", "' is never used" ) )
+    {
+      return false;
+    }
+    PsiField psiField = getPsiField( elem );
+    if( psiField == null )
+    {
+      return false;
+    }
+    return hasPropertyAnnotation( psiField ) && hasAnnotation( psiField, override.class );
+  }
+
+  private boolean filterNullMarkedFieldInitializationWarning( HighlightInfo hi, @Nullable PsiElement elem )
+  {
+    PsiField psiField = getPsiField( elem );
+    if( psiField == null )
+    {
+      return false;
+    }
+    return elem != null && hi.getDescription().equals( "@NullMarked fields must be initialized" )
+      && isElementInInterface( elem ) && hasPropertyAnnotation( psiField );
+  }
+
+  private boolean filterSynchronizationOnPropertyFieldWarning( HighlightInfo hi, @Nullable PsiElement elem )
+  {
+    if( elem == null || !hi.getDescription().startsWith( "Synchronization on a non-final field '" ) )
+    {
+      return false;
+    }
+    PsiReferenceExpression reference = PsiTreeUtil.getParentOfType( elem, PsiReferenceExpression.class );
+    if( reference == null )
+    {
+      return false;
+    }
+    PsiElement resolved = reference.resolve();
+    if( !(resolved instanceof PsiField field) )
+    {
+      return false;
+    }
+    return hasAnnotation( field, val.class ) || hasAnnotation( field, get.class );
+  }
+
+  private boolean descriptionStartsAndEndsWith( HighlightInfo hi, String start, String end )
+  {
+    return hi.getDescription().startsWith( start ) && hi.getDescription().endsWith( end );
+  }
+
+  private boolean isElementInInterface( PsiElement element )
+  {
+    PsiClass psiClass = PsiTreeUtil.getParentOfType( element, PsiClass.class );
+    return psiClass != null && psiClass.isInterface();
+  }
+
+  private @Nullable PsiField getPsiField( PsiElement elem )
+  {
+    PsiElement element = elem;
+    while( element != null && !( element instanceof PsiField) )
+    {
+      element = element.getParent();
+    }
+    return (PsiField) element;
+  }
+
+  private boolean hasAnnotation( @Nullable PsiField field, Class<?> annoType )
+  {
+    return field != null && Arrays.stream( field.getAnnotations() )
+      .anyMatch( anno -> annoType.getTypeName().equals( anno.getQualifiedName() ) );
+  }
+
+  private boolean hasPropertyAnnotation( PsiField field )
+  {
+    return Arrays.stream( field.getAnnotations() ).anyMatch( this::isPropertyAnnotation );
+  }
+
+  private boolean isPropertyAnnotation( PsiAnnotation anno )
+  {
+    return PROPERTY_ANNO_FQNS.contains( anno.getQualifiedName() );
+  }
+
 }
