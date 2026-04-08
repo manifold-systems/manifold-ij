@@ -29,8 +29,7 @@ public class PreprocessorEnterHandler implements EnterHandlerDelegate
     }
     if( isInMaskedRegion( editor, caretOffset.get() ) )
     {
-      EditorModificationUtil.insertStringAtCaret( editor, "\n" );
-      return Result.Stop;
+      return Result.Default;
     }
     return Result.Continue;
   }
