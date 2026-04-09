@@ -84,7 +84,7 @@ public class ManPsiGenerationUtil
       String methodName = refMethod.getName();
       ManExtensionMethodBuilder method = manPsiElemFactory.createExtensionMethodMethod( manModule, psiClass.getManager(), methodName, navMethod )
         .withMethodReturnType( refMethod.getReturnType() )
-        .withContainingClass( psiClass );
+        .withContainingClass( navMethod.getContainingClass() );
 
       method.setConstructor( refMethod.isConstructor() || isConstructor );
       
