@@ -46,6 +46,7 @@ import java.util.*;
 
 import static java.lang.reflect.Modifier.*;
 import static manifold.ext.props.PropIssueMsg.*;
+import static manifold.ij.extensions.PropertyUtil.*;
 
 class PropertyMaker
 {
@@ -695,15 +696,6 @@ class PropertyMaker
       accessorAccess == 0 && propAccess == PRIVATE;
   }
 
-  private boolean hasOption( List<JvmAnnotationAttribute> args, PropOption option )
-  {
-    if( args == null )
-    {
-      return false;
-    }
-    return args.stream().anyMatch( e -> isOption( option, e ) );
-  }
-
   private PropOption getAccess( List<JvmAnnotationAttribute> args )
   {
     if( _psiClass.isInterface() )
@@ -741,19 +733,6 @@ class PropertyMaker
       return PRIVATE;
     }
     return publicDefault ? PUBLIC : 0;
-  }
-
-  private boolean isOption( PropOption option, JvmAnnotationAttribute e )
-  {
-    if( e instanceof PsiNameValuePair )
-    {
-      JvmAnnotationAttributeValue value = e.getAttributeValue();
-      if( value instanceof JvmAnnotationEnumFieldValue )
-      {
-        return Objects.equals( ((JvmAnnotationEnumFieldValue)value).getFieldName(), option.name() );
-      }
-    }
-    return false;
   }
 
   private boolean isAbstract()
