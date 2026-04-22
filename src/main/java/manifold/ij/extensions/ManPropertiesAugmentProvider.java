@@ -61,6 +61,15 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
   static final Key<CachedValue<List<PsiField>>> KEY_CACHED_PROP_FIELD_AUGMENTS = new Key<>( "KEY_CACHED_PROP_FIELD_AUGMENTS" );
   static final Key<CachedValue<List<PsiMethod>>> KEY_CACHED_PROP_METHOD_AUGMENTS = new Key<>( "KEY_CACHED_PROP_METHOD_AUGMENTS" );
 
+  public static List<PsiField> collectPropertyFieldAugments( @NotNull PsiClass psiClass )
+  {
+    if( !(psiClass instanceof PsiExtensibleClass) )
+    {
+      return Collections.emptyList();
+    }
+    return new ManPropertiesAugmentProvider().getAugments( psiClass, PsiField.class, null );
+  }
+
   @SuppressWarnings( "deprecation" )
   @NotNull
   public <E extends PsiElement> List<E> getAugments( @NotNull PsiElement element, @NotNull Class<E> cls )
@@ -271,7 +280,7 @@ public class ManPropertiesAugmentProvider extends PsiAugmentProvider
       if( psiClass != origin )
       {
         // force augments to load on fields, for the side effect of adding VAR_TAG etc. to existing fields
-        PsiAugmentProvider.collectAugments( psiClass, PsiField.class, null );
+        collectPropertyFieldAugments( psiClass );
       }
     }
     finally

@@ -24,7 +24,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.IndexNotReadyException;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
-import com.intellij.psi.augment.PsiAugmentProvider;
 import com.intellij.psi.impl.compiled.ClsClassImpl;
 import com.intellij.psi.impl.source.resolve.ResolveCache;
 import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
@@ -345,7 +344,7 @@ public class ManResolveCache extends ResolveCache
     // limiting to ClsClassImpl for now, maybe source classes too someday if necessary
     if( psiClass instanceof ClsClassImpl )
     {
-      PsiAugmentProvider.collectAugments( psiClass, PsiField.class, null );
+      ManPropertiesAugmentProvider.collectPropertyFieldAugments( psiClass );
       return true;
     }
 
