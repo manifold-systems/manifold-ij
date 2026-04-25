@@ -19,6 +19,7 @@
 
 package manifold.ij.extensions;
 
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -27,6 +28,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.ResolveScopeEnlarger;
 import com.intellij.psi.search.GlobalSearchScope;
+import java.util.Map;
 import java.util.Set;
 
 import com.intellij.psi.search.SearchScope;
@@ -48,26 +50,39 @@ public class ManResolveScopeProvider extends ResolveScopeEnlarger
   @Override
   public SearchScope getAdditionalResolveScope( @NotNull VirtualFile file, Project project )
   {
-    if( !ManProject.isManifoldInUse( project ) || !file.isValid() )
+    if( project.isDisposed() || !ManProject.isManifoldInUse( project ) || !file.isValid() )
     {
       return null;
     }
 
     ManProject manProject = ManProject.manProjectFrom( project );
+    if( manProject == null )
+    {
+      return null;
+    }
+    Map<Module, ManModule> modules = manProject.getModules();
+    if( modules == null || modules.isEmpty() )
+    {
+      return null;
+    }
     PsiFile psiFile = PsiManager.getInstance( project ).findFile( file );
+    if( psiFile == null || psiFile.getProject() != project )
+    {
+      return null;
+    }
     GlobalSearchScope unionScope = null;
     if( psiFile instanceof PsiClassOwner )
     {
       PsiClassOwner classFile = (PsiClassOwner)psiFile;
       String fqn = classFile.getPackageName() + '.' + FileUtil.getNameWithoutExtension( classFile.getName() );
-      for( ManModule module : manProject.getModules().values() )
+      for( ManModule module : modules.values() )
       {
         unionScope = addScopeIfExtended( fqn, unionScope, module );
       }
     }
     else
     {
-      for( ManModule module : manProject.getModules().values() )
+      for( ManModule module : modules.values() )
       {
         String[] fqns = module.getTypesForFile( manProject.getFileSystem().getIFile( file ) );
         for( String fqn: fqns )
@@ -83,14 +98,29 @@ public class ManResolveScopeProvider extends ResolveScopeEnlarger
   {
     if( isTypeExtendedInModule( fqn, module ) )
     {
-      GlobalSearchScope scope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( module.getIjModule() );
+      Module ijModule = module.getIjModule();
+      if( ijModule == null || ijModule.isDisposed() )
+      {
+        return unionScope;
+      }
+
+      GlobalSearchScope scope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope( ijModule );
+      if( scope.getProject() == null )
+      {
+        return unionScope;
+      }
       if( unionScope == null )
       {
         unionScope = scope;
       }
       else
       {
-        if( !scope.isSearchInModuleContent( module.getIjModule() ) )
+        if( unionScope.getProject() != scope.getProject() )
+        {
+          return unionScope;
+        }
+        // avoid redundant union when the module is already covered by current union scope
+        if( !unionScope.isSearchInModuleContent( ijModule ) )
         {
           unionScope = unionScope.union( scope );
         }
