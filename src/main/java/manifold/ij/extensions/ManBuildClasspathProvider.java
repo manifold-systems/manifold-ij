@@ -17,7 +17,7 @@
  *
  */
 
-package manifold.ij.jps;
+package manifold.ij.extensions;
 
 import com.intellij.compiler.server.BuildProcessParametersProvider;
 import com.intellij.ide.plugins.cl.PluginClassLoader;

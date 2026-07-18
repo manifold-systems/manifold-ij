@@ -1,4 +1,4 @@
-Subject: [PATCH] manifold-intellij-community-261_20869
+Subject: [PATCH] manifold-intellij-community-261_20869_patch
 ---
 Index: java/java-syntax/src/com/intellij/java/syntax/lexer/JavaLexerHook.kt
 IDEA additional info:
@@ -102,6 +102,24 @@ diff --git a/java/java-syntax/src/com/intellij/java/syntax/lexer/JavaLexer.kt b/
      if (myTokenEndOffset > myBufferEndOffset) {
        myTokenEndOffset = myBufferEndOffset
      }
+Index: .idea/libraries/Permanent_Script_Dependencies.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/libraries/Permanent_Script_Dependencies.xml b/.idea/libraries/Permanent_Script_Dependencies.xml
+new file mode 100644
+--- /dev/null	(date 1775157056577)
++++ b/.idea/libraries/Permanent_Script_Dependencies.xml	(date 1775157056577)
+@@ -0,0 +1,7 @@
++<component name="libraryTable">
++  <library name="Permanent Script Dependencies">
++    <CLASSES />
++    <JAVADOC />
++    <SOURCES />
++  </library>
++</component>
+\ No newline at end of file
 Index: platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactoryHook.kt
 IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
@@ -134,7 +152,7 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 ===================================================================
 diff --git a/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt b/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt
 --- a/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt	(revision 4834af522f95c47e087f8476e7479dc651e56478)
-+++ b/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt	(date 1773334674061)
++++ b/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressionParser.kt	(date 1775704241200)
 @@ -4,10 +4,13 @@
  import com.intellij.java.syntax.JavaSyntaxBundle
  import com.intellij.java.syntax.JavaSyntaxBundle.message
@@ -187,6 +205,10 @@ diff --git a/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressio
  
      while (true) {
 -      val type = getBinOpToken(builder) ?: break
+-      val data = ourInfixParsers[type] ?: break
+-      val opPrecedence = data.myPrecedence
+-      if (maxPrecedence < opPrecedence) {
+-        break
 +      val type = getBinOpToken(builder) //manifold:
 +      val parser : InfixParser
 +      val opPrecedence : Int
@@ -205,14 +227,13 @@ diff --git a/java/java-syntax/src/com/intellij/java/syntax/parser/PrattExpressio
 +        opPrecedence = BINDING_PRECEDENCE
 +      }
 +      else {
-       val data = ourInfixParsers[type] ?: break
--      val opPrecedence = data.myPrecedence
-+        parser = data.myParser
-+        opPrecedence = data.myPrecedence
-       if (maxPrecedence < opPrecedence) {
-         break
++        val data = ourInfixParsers[type] ?: break
++          parser = data.myParser
++          opPrecedence = data.myPrecedence
++        if (maxPrecedence < opPrecedence) {
++          break
++        }
        }
-+      }
        val beforeLhs = lhs.precede()
 -      data.myParser.parse(this, builder, beforeLhs, type, opPrecedence, mode)
 +      parser.parse(this, builder, beforeLhs, type, opPrecedence, mode)
@@ -601,6 +622,44 @@ new file mode 100644
 +    fun updateConverter( tuple_expression: SyntaxElementType, tuple_value_expression: SyntaxElementType )
 +}
 \ No newline at end of file
+Index: .idea/runConfigurations/IDEA__K1_Kotlin_.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/runConfigurations/IDEA__K1_Kotlin_.xml b/.idea/runConfigurations/IDEA__K1_Kotlin_.xml
+new file mode 100644
+--- /dev/null	(date 1771175839456)
++++ b/.idea/runConfigurations/IDEA__K1_Kotlin_.xml	(date 1771175839456)
+@@ -0,0 +1,27 @@
++<component name="ProjectRunConfigurationManager">
++  <configuration default="false" name="IDEA (K1 Kotlin)" type="Application" factoryName="Application" singleton="true">
++    <option name="ALTERNATIVE_JRE_PATH" value="BUNDLED" />
++    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
++    <log_file alias="idea.log" path="$PROJECT_DIR$/system/idea/log/idea.log" />
++    <log_file alias="build.log" path="$PROJECT_DIR$/system/idea/log/build-log/build.log" />
++    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
++    <module name="intellij.idea.community.main" />
++    <shortenClasspath name="ARGS_FILE" />
++    <option name="VM_PARAMETERS" value="-Xmx2g -XX:ReservedCodeCacheSize=240m -XX:SoftRefLRUPolicyMSPerMB=50 -XX:MaxJavaStackTraceDepth=10000 -ea -Dsun.io.useCanonCaches=false -Dapple.laf.useScreenMenuBar=true -Dsun.awt.disablegrab=true -Didea.jre.check=true -Didea.is.internal=true -Didea.debug.mode=true -Djdk.attach.allowAttachSelf -Dfus.internal.test.mode=true -Dkotlinx.coroutines.debug=off -Djdk.module.illegalAccess.silent=true -Didea.config.path=../config/idea -Didea.system.path=../system/idea --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.base/java.time=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/jdk.internal.vm=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.desktop/com.apple.eawt.event=ALL-UNNAMED --add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED --add-opens=java.desktop/com.apple.laf=ALL-UNNAMED --add-opens=java.desktop/com.sun.java.swing.plaf.gtk=ALL-UNNAMED --add-opens=java.desktop/java.awt.dnd.peer=ALL-UNNAMED --add-opens=java.desktop/java.awt.event=ALL-UNNAMED --add-opens=java.desktop/java.awt.image=ALL-UNNAMED --add-opens=java.desktop/java.awt.peer=ALL-UNNAMED --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-opens=java.desktop/javax.swing.plaf.basic=ALL-UNNAMED --add-opens=java.desktop/javax.swing.text=ALL-UNNAMED --add-opens=java.desktop/javax.swing.text.html=ALL-UNNAMED  --add-opens=java.desktop/javax.swing.text.html.parser=ALL-UNNAMED --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED --add-opens=java.desktop/sun.awt.datatransfer=ALL-UNNAMED --add-opens=java.desktop/sun.awt.image=ALL-UNNAMED --add-opens=java.desktop/sun.awt.windows=ALL-UNNAMED --add-opens=java.desktop/sun.awt=ALL-UNNAMED --add-opens=java.desktop/sun.font=ALL-UNNAMED --add-opens=java.desktop/sun.java2d=ALL-UNNAMED --add-opens=java.desktop/sun.lwawt.macosx=ALL-UNNAMED --add-opens=java.desktop/sun.lwawt=ALL-UNNAMED --add-opens=java.desktop/sun.swing=ALL-UNNAMED --add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED --add-opens=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED --add-opens=jdk.jdi/com.sun.tools.jdi=ALL-UNNAMED --add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED -Didea.kotlin.plugin.use.k1=true -Didea.platform.prefix=Idea -Djava.system.class.loader=com.intellij.util.lang.PathClassLoader -Djavax.xml.parsers.SAXParserFactory=com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl -Dawt.toolkit.name=auto" />
++    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/bin" />
++    <RunnerSettings RunnerId="Debug">
++      <option name="DEBUG_PORT" value="60786" />
++      <option name="TRANSPORT" value="0" />
++      <option name="LOCAL" value="true" />
++    </RunnerSettings>
++    <RunnerSettings RunnerId="Profile " />
++    <RunnerSettings RunnerId="Run" />
++    <ConfigurationWrapper RunnerId="Debug" />
++    <ConfigurationWrapper RunnerId="Profile " />
++    <ConfigurationWrapper RunnerId="Run" />
++    <method v="2">
++      <option name="Make" enabled="true" />
++      <option name="BuildArtifacts" enabled="true" />
++    </method>
++  </configuration>
++</component>
+\ No newline at end of file
 Index: platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactory.kt
 IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
@@ -608,7 +667,7 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 ===================================================================
 diff --git a/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactory.kt b/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactory.kt
 --- a/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactory.kt	(revision 4834af522f95c47e087f8476e7479dc651e56478)
-+++ b/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactory.kt	(date 1771190584033)
++++ b/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/PsiSyntaxBuilderFactory.kt	(date 1784303437621)
 @@ -1,13 +1,10 @@
  // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  package com.intellij.platform.syntax.psi
@@ -695,6 +754,25 @@ diff --git a/platform/syntax/syntax-psi/src/com/intellij/platform/syntax/psi/Psi
    }
  
    override fun createBuilder(
+@@ -129,8 +169,16 @@
+   }
+ }
+ 
++// manifold: catch exception and return false (for tuple expressions and others)
+ private class DefaultWhitespaceOrCommentPolicy(val tokenConverter: ElementTypeConverter) : WhitespaceOrCommentBindingPolicy {
+-  override fun isLeftBound(elementType: SyntaxElementType): Boolean =
+-    tokenConverter.convertNotNull(elementType).isLeftBound
++  override fun isLeftBound(elementType: SyntaxElementType): Boolean {
++    try {
++      tokenConverter.convertNotNull(elementType).isLeftBound
++    }
++    catch( _: Exception ) {
++      return false
++    }
++    return true
++  }
+ }
+ 
 Index: java/java-syntax/src/com/intellij/java/syntax/parser/DeclarationParser.kt
 IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP

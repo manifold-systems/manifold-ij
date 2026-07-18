@@ -11,11 +11,10 @@ configurations {
   create("manifoldAll")
 }
 
-java {
-// Java 8 is required for JPS, otherwise an IJ project use a Java 8 compiler
-// will fail to load Java 11 compiled JPS classes
-  sourceCompatibility = JavaVersion.VERSION_1_8
-  targetCompatibility = JavaVersion.VERSION_1_8
+// Java 8 is required for JPS, otherwise an IJ project using a Java 8 compiler
+// will fail to load JPS classes compiled a newer bytecode version
+tasks.withType<JavaCompile>().configureEach {
+  options.release.set(8)
 }
 
 //repositories {

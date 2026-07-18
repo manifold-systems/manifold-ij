@@ -29,6 +29,10 @@ plugins {
   id("java")
 }
 
+//java {
+//  sourceCompatibility = JavaVersion.VERSION_25
+//  targetCompatibility = JavaVersion.VERSION_25
+//}
 java {
   sourceCompatibility = JavaVersion.VERSION_21
   targetCompatibility = JavaVersion.VERSION_21
@@ -68,7 +72,7 @@ dependencies {
   implementation("systems.manifold:manifold-ext:$manifoldVersion")
   implementation("systems.manifold:manifold-props:$manifoldVersion")
   implementation("systems.manifold:manifold-params:$manifoldVersion")
-  implementation("systems.manifold:manifold-delegation:$manifoldVersion")
+  implementation("systems.manifold:manifold-parts:$manifoldVersion")
   implementation("systems.manifold:manifold-strings:$manifoldVersion")
   implementation("systems.manifold:manifold-exceptions:$manifoldVersion")
   implementation("systems.manifold:manifold-preprocessor:$manifoldVersion")
@@ -105,13 +109,12 @@ intellijPlatform {
   buildSearchableOptions = false
   pluginConfiguration {
     name = project.name
-    description = "IntelliJ IDEA plugin for the Manifold project"
     version = project.property("version") as String
 
     ideaVersion {
       // Get build numbers from https://www.jetbrains.com/idea/download/other.html
-      sinceBuild = "261"   //2025.3
-      untilBuild = "261.*" //2025.3.*
+      sinceBuild = "261"   //2026.1
+      untilBuild = "261.*" //2026.1.*
     }
   }
 }
@@ -215,6 +218,31 @@ tasks.test {
     "path.to.manifold.ep" to configurations.getByName("manifoldEp").files.first()
   )
 }
+
+//tasks.withType<JavaCompile>().configureEach {
+////  options.compilerArgs.addAll(listOf(
+////    "--add-modules", "jdk.compiler",
+////    "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED"
+////  ))
+//  doFirst {
+//    println("===================================")
+//    println("Task: $path")
+//    println("Compiler: ${javaCompiler.get().executablePath}")
+//    println("Language: ${javaCompiler.get().metadata.languageVersion}")
+//    println("Source: ${sourceCompatibility}")
+//    println("Target: ${targetCompatibility}")
+//    println("Toolchain = ${extensions.findByType(JavaPluginExtension::class.java)?.toolchain?.languageVersion?.orNull}")
+//    println("allCompilerArgs = ${options.allCompilerArgs}")
+//    println("release = ${options.release.orNull}")
+//  }
+//}
+////tasks.withType<JavaCompile>().configureEach {
+////  javaCompiler.set(
+////    javaToolchains.compilerFor {
+////      languageVersion.set(JavaLanguageVersion.of(25))
+////    }
+////  )
+////}
 
 tasks.runIde {
     minHeapSize = "1g"

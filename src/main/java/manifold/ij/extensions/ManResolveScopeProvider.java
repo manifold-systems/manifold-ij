@@ -90,7 +90,7 @@ public class ManResolveScopeProvider extends ResolveScopeEnlarger
       }
       else
       {
-        if( !scope.isSearchInModuleContent( module.getIjModule() ) )
+        if( !unionScope.isSearchInModuleContent( module.getIjModule() ) )
         {
           unionScope = unionScope.union( scope );
         }

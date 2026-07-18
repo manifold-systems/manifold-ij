@@ -27,7 +27,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.refactoring.util.RefactoringUtil;
-import manifold.ext.delegation.DelegationIssueMsg;
+import manifold.ext.parts.PartsIssueMsg;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
@@ -222,7 +222,7 @@ public class DelegationAnnotator implements Annotator
   private static void addThisNonInterfaceError( PsiThisExpression thisExpr, AnnotationHolder holder )
   {
     holder.newAnnotation( HighlightSeverity.ERROR,
-        DelegationIssueMsg.MSG_PART_THIS_NONINTERFACE_USE.get() )
+        PartsIssueMsg.MSG_PART_THIS_NONINTERFACE_USE.get() )
       .range( thisExpr.getTextRange() )
       .create();
   }

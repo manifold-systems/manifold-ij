@@ -20,231 +20,61 @@
 <idea-plugin>
   <id>manifold.ij</id>
   <name>Manifold</name>
-  <description>
-    <![CDATA[
-<p>Manifold is a Java compiler plugin. Use it to supplement your Java projects with highly productive features.</p>
+  <description><![CDATA[
+<h2>Manifold javac plugin support</h2>
 
-<ul>
-<li><p>Advanced compile-time <b>metaprogramming</b> type-safely integrates any kind of data, metadata, or DSL directly into Java.</p></li>
-<ul>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-sql">SQL <b><i>(New!)</i></b></a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-graphql">GraphQL</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-json">JSON & JSON Schema</a>, <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-yaml">YAML</a>, <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-xml">XML</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-csv">CSV</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-js">JavaScript</a></li>
-  <li>etc.</li>
-</ul>
-<p/>
-<li><p>Powerful <b>language enhancements</b> significantly improve developer productivity.</p></li>
-<ul>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extension methods</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-delegation">Delegation</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-props">Properties</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-tuple">Tuple expressions</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#operator-overloading">Operator overloading</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions">Unit expressions</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">A <em>Java</em> Template engine</a></li>
-  <li><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">A preprocessor</a></li>
-  <li>...and more</li>
-</ul>
-</ul>
-
-<p>Each feature is available as a separate dependency. Simply add the Manifold dependencies of your choosing to your existing project and begin taking advantage of them.</p>
-
-<p>All fully supported in <strong>Java 8 - 21</strong> + latest with comprehensive IDE support in <strong>IntelliJ IDEA</strong> and <strong>Android Studio</strong>.</p>
-<hr/>
-<blockquote>
-  <p><h2><i>What's new...</i></h2></p>
-  <p><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-sql/readme.md"<i><h2>Type-safe SQL!</h2></i></a></p>
-  <p>Manifold SQL lets you write native SQL <i>directly</i> and <i>type-safely</i> in your Java code.</p>
-  <ul>
-    <li>Query types are instantly available as you type native SQL of any complexity in your Java code</li>
-    <li>Schema types are automatically derived from your database, providing type-safe CRUD, decoupled TX, and more</li>
-    <li>No ORM, No DSL, No wiring, and No code generation build steps</li>
-  </ul><br>
-  <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-sql/readme.md"><img width="80%" height="80%" align="top" src="https://github.com/manifold-systems/manifold/raw/master/docs/images/img_3.png"></a>.
-</blockquote>
-<hr/>
-<h2><a href="#what-can-you-do-with-manifold" id="what-can-you-do-with-manifold">What can you do with Manifold?</a></h2>
-<h3><a href="#meta-programming" id="meta-programming"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-core-parent/manifold">Meta-programming</a></a></h3>
-<p>Use the framework to directly and type-safely integrate <em>any</em> type of resource, such as
-<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-sql"><strong>SQL</strong></a>,
-<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-graphql"><strong>GraphQL</strong></a>,
-<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-json"><strong>JSON</strong></a>,
-<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-xml"><strong>XML</strong></a>,
-<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-yaml"><strong>YAML</strong></a>,
-<a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-csv"><strong>CSV</strong></a>, and even
-other languages such as <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-js"><strong>JavaScript</strong></a>.
-Remove the code gen step in your build process.</p>
-<p><strong>SQL:</strong> Use native SQL of any complexity directly and <em>type-safely</em> from your Java code.</p>
-<pre><code class="java">Language english =
-  &quot;[.sql/]select * from Language where name = 'English'&quot;.fetchOne();
-Film film = Film.builder(&quot;My Movie&quot;, english)
-  .withDescription(&quot;Nice movie&quot;)
-  .withReleaseYear(2023)
-  .build();
-MyDatabase.commit();
-</code></pre>
-<p><strong>GraphQL:</strong> Use types defined in .graphql files <em>directly</em>, no code gen steps! Make GraphQL changes and immediately use
-them with code completion.</p>
-<pre><code class="java">var query = MovieQuery.builder(Action).build();
-var result = query.request(&quot;http://com.example/graphql&quot;).post();
-var actionMovies = result.getMovies();
-for (var movie : actionMovies) {
-  out.println(
-    &quot;Title: &quot; + movie.getTitle() + &quot;\n&quot; +
-    &quot;Genre: &quot; + movie.getGenre() + &quot;\n&quot; +
-    &quot;Year: &quot; + movie.getReleaseDate().getYear() + &quot;\n&quot;);
-}
-</code></pre>
-<p><strong>JSON:</strong> Use .json schema files directly and type-safely, no code gen steps! Find usages of .json properties in your
-Java code.</p>
-<pre><code class="java">// From User.json
-User user = User.builder(&quot;myid&quot;, &quot;mypassword&quot;, &quot;Scott&quot;)
-  .withGender(male)
-  .withDob(LocalDate.of(1987, 6, 15))
-  .build();
-User.request(&quot;http://api.example.com/users&quot;).postOne(user);
-</code></pre>
-<hr/>
-<h3><a href="#extension-methods" id="extension-methods"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext">Extension Methods</a></a></h3>
-<p>Add your own methods to existing Java classes, even <em>String</em>, <em>List</em>, and <em>File</em>. Eliminate boilerplate code.
+<p>
+    Manifold extends the type system and compiler to support type-safe metaprogramming (Type Manifolds) and language extensions.
 </p>
-<pre><code class="java">String greeting = &quot;hello&quot;;
-greeting.myMethod(); // Add your own methods to String!
-</code></pre>
-<hr/>
-<h3><a href="#delegation" id="delegation"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-delegation">Delegation</a></a></h3>
-<p>Favor composition over inheritance. Use <code>@link</code> and <code>@part</code> for automatic interface implementation forwarding and <em>true</em> delegation.
+
+<h3>Type Manifolds</h3>
+<p>
+    Integrates with <code>javac</code> to enable direct use of data, schemas, and domain-specific constructs as typed elements in Java code. Supported sources include:
 </p>
-<pre><code class="java">class MyClass implements MyInterface {
-  @link MyInterface myInterface; // transfers calls on MyInterface to myInterface
+<ul>
+    <li>JSON, XML, YAML, CSV</li>
+    <li>SQL schemas and queries</li>
+    <li>GraphQL schemas</li>
+    <li>Properties and configuration files</li>
+</ul>
+<p>
+    These types are available without code generation or runtime reflection (e.g., type-safely use native SQL in your code)
+</p>
 
-  public MyClass(MyInterface myInterface) {
-    this.myInterface = myInterface; // dynamically configure behavior
-  }
+<h3>Language Extensions</h3>
+<p>
+    Manifold provides optional language features, including:
+</p>
+<ul>
+    <li>Extension methods</li>
+    <li>Parts (compositional inheritance)</li>
+    <li>Properties</li>
+    <li>Optional parameters</li>
+    <li>Operator overloading</li>
+    <li>Tuple expressions</li>
+    <li>Structural interfaces</li>
+    <li>String templates</li>
+    <li>Unit expressions</li>
+    <li>Compilation directives</li>
+    <li>... and more</li>
+</ul>
+<p>
+    Each feature is modular and can be used independently.
+</p>
 
-  // No need to implement MyInterface here, but you can override myInterface as needed
-}
-</code></pre>
-<hr/>
-<h3><a href="#operator-overloading" id="operator-overloading"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#operator-overloading">Operator Overloading</a></a></h3>
-<p>Implement <em>operator</em> methods on any type to directly support arithmetic, relational, and unit operators.</p>
-<pre><code class="java">// BigDecimal expressions
-if (bigDec1 &gt; bigDec2) {
-  BigDecimal result = bigDec1 + bigDec2;
-  ...
-}
-// Implement operators for any type
-MyType value = myType1 + myType2;
-</code></pre>
-<hr/>
-<h3><a href="#unit-expressions" id="unit-expressions"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions">Unit Expressions</a></a></h3>
-<p>Unit or <em>binding</em> operations are unique to the Manifold framework. They provide a powerfully concise syntax and can be
-applied to a wide range of applications.</p>
-<pre><code class="java">import static manifold.science.util.UnitConstants.*; // kg, m, s, ft, etc
-...
-Length distance = 100 mph * 3 hr;
-Force f = 5.2 kg m/s/s; // same as 5.2 N
-Mass infant = 9 lb + 8.71 oz;
-</code></pre>
-<hr/>
-<h3><a href="#ranges" id="ranges"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-collections#ranges">Ranges</a></a></h3>
-<p>Easily work with the <em>Range</em> API using <a href="(https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#unit-expressions)">unit expressions</a>.
-Simply import the <em>RangeFun</em> constants to create ranges.</p>
-<pre><code class="java">// imports the `to`, `step`, and other &quot;binding&quot; constants
-import static manifold.collections.api.range.RangeFun.*;
-...
-for (int i: 1 to 5) {
-  out.println(i);
-}
+<h3>Integration</h3>
+<ul>
+    <li>Integrates with Java as a javac plugin</li>
+    <li>Supports incremental adoption</li>
+    <li>Compatible with existing build tools</li>
+    <li>Supports Java release 8 - 26</li>
+</ul>
 
-for (Mass m: 0kg to 10kg step 22r unit g) {
-  out.println(m);
-}
-</code></pre>
-<hr/>
-<h3><a href="#science" id="science"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">Science</a></a></h3>
-<p>Use the <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-science">manifold-science</a>
-framework to type-safely incorporate units and precise measurements into your applications.</p>
-<pre><code class="java">import static manifold.science.util.UnitConstants.*; // kg, m, s, ft, etc.
-...
-Velocity rate = 65mph;
-Time time = 1min + 3.7sec;
-Length distance = rate * time;
-</code></pre>
-<hr/>
-<h3><a href="#preprocessor" id="preprocessor"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor">Preprocessor</a></a></h3>
-<p>Use familiar directives such as <strong>#define</strong> and <strong>#if</strong> to conditionally compile your Java projects. The preprocessor offers
-a simple and convenient way to support multiple build targets with a single codebase. </p>
-<pre><code class="java">#if JAVA_8_OR_LATER
-  @Override
-  public void setTime(LocalDateTime time) {...)
-#else
-  @Override
-  public void setTime(Calendar time) {...}
-#endif
-</code></pre>
-<hr/>
-<h3><a href="#structural-typing" id="structural-typing"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#structural-interfaces-via-structural">Structural Typing</a></a></h3>
-<p>Unify disparate APIs. Bridge software components you do not control. Access maps through type-safe interfaces. </p>
-<pre><code class="java">Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();
-MyThingInterface thing = (MyThingInterface) map; // O_o
-thing.setFoo(new Foo());
-Foo foo = thing.getFoo();
-out.println(thing.getClass()); // prints &quot;java.util.HashMap&quot;
-</code></pre>
-<hr/>
-<h3><a href="#type-safe-reflection" id="type-safe-reflection"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#type-safe-reflection-via-jailbreak">Type-safe Reflection</a></a></h3>
-<p>Access private features with <b>@Jailbreak</b> to avoid the drudgery and vulnerability of Java reflection. </p>
-<pre><code class="java">@Jailbreak Foo foo = new Foo();
-// Direct, *type-safe* access to *all* foo's members
-foo.privateMethod(x, y, z);
-foo.privateField = value;
-</code></pre>
-<hr/>
-<h3><a href="#checked-exception-handling" id="checked-exception-handling"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-exceptions">Checked Exception Handling</a></a></h3>
-<p>You now have an option to make checked exceptions behave like unchecked exceptions!  No more unintended exception
-swallowing. No more <em>try</em>/<em>catch</em>/<em>wrap</em>/<em>rethrow</em> boilerplate!</p>
-<pre><code class="java">List&lt;String&gt; strings = ...;
-List&lt;URL&gt; urls = list
-  .map(URL::new) // No need to handle the MalformedURLException!
-  .collect(Collectors.toList());
-</code></pre>
-<hr/>
-<h3><a href="#string-templates" id="string-templates"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-strings">String Templates</a></a></h3>
-<p>Embed variables and expressions in String literals, no more clunky string concat! </p>
-<pre><code class="java">int hour = 15;
-// Simple variable access with '$'
-String result = &quot;The hour is $hour&quot;; // Yes!!!
-// Use expressions with '${}'
-result = &quot;It is ${hour &gt; 12 ? hour-12 : hour} o'clock&quot;;
-</code></pre>
-<hr/>
-<h3><a href="#a-java-template-engine" id="a-java-template-engine"><a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-templates">A <em>Java</em> Template Engine</a></a></h3>
-<p>Author template files with the full expressive power of Java, use your templates directly in your code as types.
-Supports type-safe inclusion of other templates, shared layouts, and more. </p>
-<pre><code class="java">List&lt;User&gt; users = ...;
-String content = abc.example.UserSample.render(users);
-</code></pre>
-<p>A template file <em>abc/example/UserSample.html.mtl</em></p>
-<pre><code class="html">&lt;%@ import java.util.List %&gt;
-&lt;%@ import com.example.User %&gt;
-&lt;%@ params(List&lt;User&gt; users) %&gt;
-&lt;html lang=&quot;en&quot;&gt;
-&lt;body&gt;
-&lt;% users.stream()
-   .filter(user -&gt; user.getDateOfBirth() != null)
-   .forEach(user -&gt; { %&gt;
-    User: ${user.getName()} &lt;br&gt;
-    DOB: ${user.getDateOfBirth()} &lt;br&gt;
-&lt;% }); %&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-</code></pre>
-<hr/>
-    ]]>
-  </description>
+<h3>Resources</h3>
+<ul>
+    <li><a href="https://github.com/manifold-systems/manifold">https://github.com/manifold-systems/manifold</a></li>
+</ul>
+]]></description>
   <version>This value is patched by the build script</version>
   <vendor email="admin@manifold.systems" url="http://manifold.systems">Manifold</vendor>
   <!-- please see http://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
@@ -256,363 +86,7 @@ String content = abc.example.UserSample.render(users);
   <!-- no longer a paid plugin -->
   <!--  <product-descriptor code="PMANIFOLD" optional="true" release-date="20200212" release-version="20201"/>-->
 
-  <change-notes>
-    <![CDATA[
-<h3>Change notes:</h3>
-<h4>
-<br>
-
-<a href="https://github.com/manifold-systems/manifold/issues/585">#585</a>: IntelliJ plugin: update expression parser to support manifold string templates in text blocks
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/579">#579</a>: support private interface methods on class extensions
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/578">#578</a>: handle structural interface parameters in lambda expressions
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/577">#577</a>: integrate automatic structural type checking into compiler & IJ plugin
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/574">#574</a>: IntelliJ plugin: fix several plugin exceptions stemming from "ActionUpdateThread" changes
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/573">#573</a>: fix issue with using a binding expression in a ternary expression
-<br>
-<a href="https://github.com/manifold-systems/manifold-ij/issues/27">#27</a>: IntelliJ plugin: update statement parser to handle JDK 21 support expr
-<br>
-<a href="https://github.com/manifold-systems/manifold-ij/issues/23">#23</a>: IntelliJ plugin: support correct mapping of parameters from extension method call sites to extension impl e.g., for annotation diagnostics
-<br>
-<a href="https://github.com/manifold-systems/manifold-ij/issues/22">#22</a>: IntelliJ plugin: account for references to inferred properties as indirect usages of getters/setters
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/564">#564</a>: IntelliJ plugin: support more error suppression re operator overloading with the Chinese (Simplified) Language Pack
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/562">#562</a>: manifold-sql: for nullable annotations on accessors take into account pre-commit state of columns
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/561">#561</a>: refine check to prevent string concat on fragments
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/558">#558</a>: manifold-sql: fix NPE corresponding with a "isSameType" error
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/555">#555</a>: fix regression that broke compatibility with Lombok
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/552">#552</a>: manifold-sql: include "fetchBy" methods for all columns, not just the required one
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/551">#551</a>: handle case where an array annotation arg is provided as a List as opposed to an array
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/550">#550</a>: manifold-sql: use "isXxx" for boolean columns
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/549">#549</a>: manifold-delegation: for @link support specifying specific interfaces to share, both share={interface-list} and shareAll=true
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/509">#509</a>: manifold-json: simplify naming scheme from <parent>_Xxx to Xxx_N where N reflects depth
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/548">#548</a>: exclude constructor from record stub generation
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/547">#547</a>: manifold-sql: provide fetchAll methods for schema types
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/546">#546</a>: fix stub generation involving vararg and annotations
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/545">#545</a>: handle case where java 8 jdk does not include javadoc classes
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/541">#541</a>: manifod-graphql: fix withAuthorization()
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/540">#540</a>: IntelliJ plugin: fix string template escape char error
-<br>
-<hr>
-<a href="https://github.com/manifold-systems/manifold/issues/537">#537</a>: Support operator overloading for binary operators (&, |, ^, <<, >>, >>>)
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/428">#428</a>: Support operator overloading for additional unary operators (!, ~)
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/538">#538</a>: Intellij plugin: do not process a psi element in a file that is not represented by a type manifold
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/535">#535</a>: Intellij plugin: filter "non-final field 'x' in enum..." on @val
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/533">#533</a>: Intellij plugin: suppress false positive errors re manifold string templates
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/532">#532</a>: Intellij plugin: string template processing is disabled in annotations due to wide usage of ${} templating in many annotation libraries
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/531">#531</a>: Fix ProcessCanceledExceptions, forward exceptions directly during "slow operations" handling, esp. ProcessCanceledException
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/529">#529</a>: Suppress error/warning messages in Chinese as well as English, translate/map message filters to Chinese (Simplified) Language Pack.
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/528">#528</a>: Use private tags to execute "slow operations", centralize how/where these are executed
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/525">#525</a>: Preprocessor: Enable IDE to use SymbolProviders according to module dependencies
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/520">#520</a>: Provide error message when attempting to use a method ref for a method returning `auto`, must use lambda in this case (for now)
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/516">#516</a>: Fix NoClassDefFoundError: com/intellij/lang/java/parser/BasicStatementParser (affected IJ versions: 2023.2.2, 2023.2.3)
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/497">#497</a>: IntelliJ plugin: Complete JDK 21 support
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/495">#495</a>: IntelliJ plugin: Improve performance and stability of manifold fragments in IntelliJ
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/494">#494</a>: IntelliJ plugin: Fix fragment error reporting
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/489">#489</a>: Fix "cannot implement" interface error using delegation with @link in JDK 21
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/488">#488</a>: Fix tuple expr passed directly as argument to method (was broken in jdk 11+)
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/483">#483</a>: Unintended behavior for manifold-prop annotation parameters 
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/479">#479</a>: Unintended behavior when using both manifold-delegation and manifold-props
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/478">#478</a>: Support abstract enum methods with manifold-ext
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/477">#477</a>: Field access from inside the class on a @set field
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/476">#476</a>: Fix issue with using annotation processors e.g., lombok, mixed with manifold
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/474">#474</a>: Fix regression in 2023.1.15 where new fragment delimiters can interfere with string templates
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/364">#364</a>: Add @Expires annotation to prevent extension methods from duplicating JDK methods
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/473">#473</a>: Change fragment delimiters
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/471">#471</a>: Change return type to be compatible with SequencedCollection#reversed
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/470">#470</a>: Support "short" runtime methods
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/468">#468</a>: Avoid adding bootstrap block to sidecar classes
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/467">#467</a>: IntelliJ plugin: support error/warning highlights in fragments (in prep for manifold-sql)
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/466">#466</a>: IntelliJ plugin: Deprecated class usage results in compilation error in IntelliJ IDEA
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/451">#451</a>: IntelliJ plugin: Invalid warning message re older manifold version in project than in intellij plugin
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/449">#449</a>: Remedy a java symbol resolve issue where a field and an inner class share the same name
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/446">#446</a>: Use MathContext.128 for big decimal division
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/436">#436</a>: Fix mapstruct handling of default interface methods
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/422">#422</a>: Fix self type bug with arrays
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/423">#423</a>: Add support for forwarding and delegation
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/421">#421</a>: IntelliJ plugin: auto, like var, should be highlighted as a keyword
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/418">#418</a>: Compiling from IntelliJ can cause UnsupportedClassVersionError using the preprocessor and using pre-JDK 17
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/417">#417</a>: Class cannot be converted Issue
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/416">#416</a>: Unqualified static varargs extension method call results in compiler error
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/414">#414</a>: Using JDK 17+ in preview mode + using an annotation processor causes NPE
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/412">#412</a>: "Variable expected" error involving multidimensional index operator in assignment
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/411">#411</a>: Intermittent "Incorrect CachedValue use" errors
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/400">#400</a>: Support getter/setter extension methods as property access for manifold-props
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/409">#409</a>: Intellij plugin: fix generic extension method type parameter inference regression
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/408">#408</a>: Support Valhalla EA Jdk releases
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/407">#407</a>: Fix compile error using latest JDK 20 EA release (build 28)
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/406">#406</a>: IntelliJ plugin: "Incorrect CachedValue use:" errors reported with property and extension caching
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/405">#405</a>: IntelliJ plugin: many issues in latest 2022.3 release with renaming files/elements, other related issues
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/404">#404</a>: Using ReflectUtil with JDK 19 cannot set value on static final field on an interface
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/403">#403</a>: Extension methods on inner classes not working in some cases
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/402">#402</a>: IntelliJ plugin: Exception when using tuple expressions without adding manifold-tuple/manifold-tuple-rt
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/396">#396</a>: Handle expression in foreach stmt where the expression type structurally implements Iterator and a class extension exists that makes Iterable structural
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/395">#395</a>: Support property inference on record types
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/394">#394</a>: Support EA release of JDK 20
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/393">#393</a>: Java 17+: fix $ escape char for string templates
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/392">#392</a>: Cast as raw generic type
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/387">#387</a>: Tree is null for module-info file, do not process
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/380">#380</a>: Fix regression involving fields as structurally equivalent to get/set methods
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/382">#382</a>: Fix instanceof pattern matching issue related to parser changes in latest IntelliJ release
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/376">#376</a>: Support an explicit typed variable having an implicit typed initializer expression
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/375">#375</a>: Policy change: support only LTS versions of JDKs and the latest release
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/373">#373</a>: New Feature: multiple return types via `auto` and enhanced tuple expressions
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/372">#372</a>: New Feature: type-safe tuple expressions
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/371">#371</a>: New Feature: `auto` type inference for local vars, fields, and method return types
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/355">#355</a>: fix instanceof Pattern Matching within if-statement condition (Cannot Find Symbol)
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/351">#351</a>: Increment/decrement operators on properties cause compiler exception in Java 11+
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/349">#349</a>: Support non-public extension methods
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/348">#348</a>: @ThisClass extension method receiver, provides the calling class of static method
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/345">#345</a>: Allow Jailbreak to work when casting
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/338">#338</a>: fix ManTL template issues that have piled up with recent JetBrains platform updates
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/337">#337</a>: Support structural interface implementation via Extension Class without having to manually create an IProxyFactory service impl
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/336">#336</a>: IntelliJ plugin: performing a clean build from maven/gradle tool causes perpetual refresh in UI
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/334">#334</a>: handle case with ReflectUtil.invokeDefault() where the receiving default method has param type that is a structural interface
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/333">#333</a>: handle structural overload operator methods
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/332">#332</a>: fix issues with operator overloading relating to structural interfaces
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/290">#290</a>: address lag in intellij editor after adding errors
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/328">#328</a>: editing a graphql file in IntelliJ causes some graphql types not to resolve
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/329">#329</a>: 'Array index out of bounds' warning highlight in IJ editor for indexed access to Maps
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/330">#330</a>: NPE in IntelliJ inside fileOpenedSync() when manifold-props not in use
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/324">#324</a>: fix general lag in IJ editor after typing
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/327">#327</a>: fix conflict with preprocessor build.properties and environment symbols
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/326">#326</a>: Add a preprocessor SymbolProvider implementation for Android build variants
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/325">#325</a>: Building on Android Studio with Gradle 7.0.3 and Java 11 causes internal compiler errors
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/322">#322</a>: Add an SPI to augment the preprocessor's symbols dynamically
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/319">#319</a>: Fix IJ plugin regarding manifold preprocessor when only the preprocessor is in use
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/313">#313</a>: Fix default parameter values for graphql operations
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/101">#101</a>: Support multiple GraphQL schemas using .graphqlconfig files
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/306">#311</a>: IJ plugin: Fix psi cache exception caused by intellij internals using WrappedLexer
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/306">#306</a>: Support Java 17
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/290">#290</a>: IJ plugin: More performance-related changes targeting type resolution and completion
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/297">#297</a>: IJ plugin: Some features of manifold-ext and manifold-props leak through to modules not depending on these artifacts, in such cases avoid applying these code paths
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/290">#290</a>: IJ plugin: Improve performance while editing, particularly where code completion involves manifold extensions, also avoid irrelevant code paths where possible e.g., type resolution involving manifold-ext where it is not used
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/303">#303</a>: GQL Fields with Underscores producing incorrectly in 2021.1.23
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/302">#302</a>: "Access is allowed from event dispatch thread only" exception thrown occasionally in IntelliJ
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/301">#301</a>: GraphQL: Slim down generated source
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/300">#300</a>: CCE at runtime when structural interface having a method that returns a structural interface
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/296">#296</a>: AbstractMethodError using property syntax in an interface default method
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/295">#295</a>: Support compiler option to dump [pre]processed and/or generated manifold sources to disk
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/292">#292</a>: Compile with Java Operator Overloading inc() dec() error
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/288">#288</a>: Incompatible types. required: 'manifold.rt.api.anno.any[]'
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/283">#283</a>: Switch on Enum is probably broken IntelliJ Plugin
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/282">#282</a>: Manifold incompatible with Lombok val/var locals
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/281">#281</a>: IntelliJ 2021.2 Community Edition: Null Ptr Exceptions
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/279">#279</a>: GraphQL: Bearer Authorization broken when calling graphQL server
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/277">#277</a>: GraphQL: Add support for processing the raw GraphQL response to access custom key/value pairs etc.
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/276">#276</a>: manifold-graphql: support a built-in "JSON" scalar
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/273">#273</a>: IJ plugin: revise logic for protected property access
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/270">#270</a>: don't pollute compiler output with warnings from generated code, particularly relevant with `-Xlint:all` usage
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/268">#268</a>: manifold-strings: provide javac command line option to exclude simple `$foo` syntax from processing while still allowing `${foo}`
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/173">#173</a>: Fix race condition
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/255">#255</a>: Fix issues with JDK 16 compatibility and manifold-props
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/254">#254</a>: Inferred property silently shadows local captured reference from anonymous context
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/253">#253</a>: using manifold-props with AWT/Swing app, cannot find symbols in sun.awt.util
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/251">#251</a>: prevent "error: Xxx is not a repeatable annotation type" esp. jetbrains NotNull, Nullable
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/248">#248</a>: GraphQL: improve support for custom scalar types
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/243">#243</a>: GraphQL: provide type-safe access to result data from GqlRequestException
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/242">#242</a>: Properties language support for Java (@var, @val, @set)
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/241">#241</a>: GraphQL: add simple Config API to manage system-level configuration options, RemoveNullConstraintValues added
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/240">#240</a>: support structural interfaces dynamically without having `manifold-ext` dependency at runtime
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/239">#239</a>: don't insert bootstrap in interfaces
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/238">#238</a>: Support Java 16
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/237">#237</a>: issue a compiler warning when an extension method conflicts with an extended class or another extension
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/236">#236</a>: handle case where Gradle uses a DelegatingJavaFileManager
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/235">#235</a>: GraphQL: report the duplication error directly as an error in the .gql file
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/230">#230</a>: JEP 305 ('Pattern Matching for instanceof') IJ plugin support
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/229">#229</a>: Add support for simpler Map creation using `mapOf` extension method with new `and` binder expressions
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/228">#228</a>: java.lang.IllegalArgumentException: URI has an authority component at startup
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/227">#227</a>: Fix warnings where a variable referenced exclusively in string interpolation was marked as "never used"
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/126">#126</a>: Implement additional operator overloading for index/subscript operator, compound assignment operators, and increment/decrement operators
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/223">#223</a>: IntelliJ plugin: account for IntelliJ's internal Array type as a pseudo generic type
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/222">#222</a>: Compiler: Fatal error processing with Manifold type processor: manifold.ext.ExtensionManifold on type: _temp_._Manifold_Temp_Main_
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/208">#208</a>: `withBearerAuthorization` does not populate correct Authorization header value
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/209">#209</a>: Patched classes via --patch-module are ignored
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/212">#212</a>: Ensure annotator runs in read action
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/213">#213</a>: Line numbers are wrong for javac reported errors following preprocessor directives
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/214">#214</a>: manifold-graphql needs to make its manifold-strings dependency `optional`
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/215">#215</a>: Runtime bootstrap should not open compiler jdk module (Java 9+)
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/216">#216</a>: Manifold dependencies declared with `provided` or `compileOnly` should instead be used exclusively in the `processorPath`
-<br>
-Support for <a href="https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-ext#extending-arrays">Array Extensions</a>.
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/205">#205</a>: Improve support for @Self, Fix check for already bootstrapped class
-<br>
-Manifold supports <b>Android Studio</b>!
-<br>
-Manifold supports <b>Kotlin</b>!
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/181">#181</a>: Core: Separate Manifold into compile-time and runtime dependencies, toward support for Android
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/186">#186</a>: GraphQL & JSON: Modify GraphQL and JSON APIs to work better with other JVM languages such as Kotlin
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/192">#192</a>: Plugin: Fix project context menu behavior when multiple items are selected
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/193">#193</a>: Core: Remove runtime requirement for manifold-rt for projects not using extensions
-<br>
-<a href="https://github.com/manifold-systems/manifold/issues/194">#194</a>: Core: Enable comprehensive Java/Manifold interop with Manifold-enabled languages in a Java 9+ modular build
-<br>
-Other minor fixes and improvements.
-</h4>
-    ]]>
-  </change-notes>
+  <change-notes/>
 
 <!--  <depends>com.intellij.modules.java</depends>-->
 
@@ -736,7 +210,7 @@ Other minor fixes and improvements.
     <registryKey key="ide.slow.operations.assertion.manifold.generic" description="Slow operation" defaultValue="false"/>
 
     <!-- This enables the ManBuilderService and dynamically configures the classpath (includes manifold-jps-plugin.jar etc.) -->
-    <buildProcess.parametersProvider implementation="manifold.ij.jps.ManBuildClasspathProvider"/>
+    <buildProcess.parametersProvider implementation="manifold.ij.extensions.ManBuildClasspathProvider"/>
     <compileServer.plugin classpath=""/>
 
     <!-- Manifold Template extensions -->

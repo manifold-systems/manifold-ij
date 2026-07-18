@@ -31,9 +31,9 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.MethodSignatureUtil;
 import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.TypeConversionUtil;
-import manifold.ext.delegation.DelegationIssueMsg;
-import manifold.ext.delegation.rt.api.link;
-import manifold.ext.delegation.rt.api.part;
+import manifold.ext.parts.PartsIssueMsg;
+import manifold.ext.parts.rt.api.link;
+import manifold.ext.parts.rt.api.part;
 import manifold.ext.rt.api.Structural;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
@@ -45,7 +45,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static manifold.ext.delegation.DelegationIssueMsg.*;
+import static manifold.ext.parts.PartsIssueMsg.*;
 
 public class DelegationMaker
 {
@@ -107,6 +107,7 @@ public class DelegationMaker
 
   private void generateOrCheck()
   {
+    addAsLinkMethods( _classInfo );
     processLinks();
 
     if( _classInfo.hasLinks() )
@@ -130,6 +131,12 @@ public class DelegationMaker
         }
       }
     }
+
+    if( _augFeatures != null )
+    {
+      _augFeatures.addAll( _classInfo.getGeneratedMethods() );
+    }
+
   }
 
   private void processLinks()
@@ -374,6 +381,78 @@ public class DelegationMaker
     li.addGeneratedMethod( method );
   }
 
+  // add the "asLink()" static methods for abstract @part classes, they correspond to constructors
+  private void addAsLinkMethods( ClassInfo ci )
+  {
+    PsiExtensibleClass classDecl = ci._classDecl;
+    PsiModifierList modifierList = classDecl.getModifierList();
+    if( modifierList == null || !modifierList.hasExplicitModifier( PsiModifier.ABSTRACT ) )
+    {
+      return;
+    }
+
+    if( classDecl.getOwnMethods().stream().anyMatch( e -> e.isConstructor() ) )
+    {
+      for( PsiMethod def : classDecl.getOwnMethods() )
+      {
+        if( def.isConstructor() )
+        {
+          generateAsLinkStaticMethod( ci, def );
+        }
+      }
+    }
+    else
+    {
+      generateAsLinkStaticMethod( ci, null );
+    }
+  }
+
+  private void generateAsLinkStaticMethod( ClassInfo ci, PsiMethod refMethod )
+  {
+    PsiClass containingClass = ci._classDecl;
+    if( containingClass == null )
+    {
+      return;
+    }
+
+    ManPsiElementFactory manPsiElemFactory = ManPsiElementFactory.instance();
+    ManModule manModule = ManProject.getModule( containingClass );
+    PsiType returnType = JavaPsiFacade.getElementFactory( containingClass.getProject() ).createType( containingClass );
+    ManLightMethodBuilder method = manPsiElemFactory.createLightMethod( manModule, containingClass.getManager(), "asLink" )
+      .withMethodReturnType( returnType )
+      .withContainingClass( containingClass );
+
+    method.withModifier( PsiModifier.STATIC );
+    if( refMethod == null )
+    {
+      method.withModifier( PsiModifier.PUBLIC );
+      method.withNavigationElement( containingClass );
+    }
+    else
+    {
+      copyModifiers( refMethod, method );
+
+      for( PsiTypeParameter tv : refMethod.getTypeParameters() )
+      {
+        method.withTypeParameterDirect( tv );
+      }
+
+      PsiParameter[] parameters = refMethod.getParameterList().getParameters();
+      for( PsiParameter psiParameter : parameters )
+      {
+        method.withParameter( psiParameter.getName(), psiParameter.getType() );
+      }
+
+      for( PsiClassType psiClassType : refMethod.getThrowsList().getReferencedTypes() )
+      {
+        method.withException( psiClassType );
+      }
+
+      method.withNavigationElement( refMethod );
+    }
+    ci.addGeneratedMethod( method );
+  }
+
   private void copyModifiers( PsiMethod refMethod, ManLightMethodBuilder method )
   {
     addModifier( refMethod, method, PsiModifier.PUBLIC );
@@ -483,7 +562,7 @@ public class DelegationMaker
             if( !isInterfaceShared )
             {
               reportWarning( li.getLinkField(),
-                DelegationIssueMsg.MSG_INTERFACE_OVERLAP.get( iface.getClassName(), fieldNames ) );
+                PartsIssueMsg.MSG_INTERFACE_OVERLAP.get( iface.getClassName(), fieldNames ) );
             }
 
             // remove the overlap interface from the link, only the sharing link provides it
@@ -505,7 +584,7 @@ public class DelegationMaker
       sharedLinks.forEach( li -> fieldNames.append( !fieldNames.isEmpty() ? ", " : "" ).append( li._linkField.getName() ) );
 
       sharedLinks.forEach( li -> reportError( li.getLinkField(),
-        DelegationIssueMsg.MSG_MULTIPLE_SHARING.get( iface.getClassName(), fieldNames ) ) );
+        PartsIssueMsg.MSG_MULTIPLE_SHARING.get( iface.getClassName(), fieldNames ) ) );
     }
     return !sharedLinks.isEmpty();
   }
@@ -707,11 +786,13 @@ public class DelegationMaker
     private final PsiExtensibleClass _classDecl;
     private ArrayList<PsiClassType> _interfaces;
     private final Map<PsiVariable, LinkInfo> _linkInfos;
+    private List<PsiMethod> _generatedMethods;
 
     ClassInfo( PsiExtensibleClass classDecl )
     {
       _classDecl = classDecl;
       _linkInfos = new HashMap<>();
+      _generatedMethods = new ArrayList<>();
     }
 
     public ArrayList<PsiClassType> getInterfaces()
@@ -733,6 +814,15 @@ public class DelegationMaker
     Map<PsiVariable, LinkInfo> getLinks()
     {
       return _linkInfos;
+    }
+
+    public void addGeneratedMethod( PsiMethod methDecl )
+    {
+      _generatedMethods.add( methDecl );
+    }
+    public Collection<? extends PsiMethod> getGeneratedMethods()
+    {
+      return _generatedMethods;
     }
   }
 
