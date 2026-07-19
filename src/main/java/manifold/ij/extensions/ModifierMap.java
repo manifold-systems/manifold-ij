@@ -20,7 +20,6 @@
 package manifold.ij.extensions;
 
 import com.intellij.psi.PsiModifier;
-import com.sun.tools.javac.code.Flags;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -41,7 +40,7 @@ public enum ModifierMap
   STRICTFP( PsiModifier.STRICTFP, Modifier.STRICT ),
   TRANSIENT( PsiModifier.TRANSIENT, Modifier.TRANSIENT ),
   VOLATILE( PsiModifier.VOLATILE, Modifier.VOLATILE ),
-  DEFAULT( PsiModifier.DEFAULT, Flags.DEFAULT );
+  DEFAULT( PsiModifier.DEFAULT, 1L<<43 );
 
   private final String _name;
   private final long _mod;

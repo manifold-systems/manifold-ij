@@ -32,7 +32,6 @@ import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.util.MethodSignature;
 import com.intellij.psi.util.MethodSignatureUtil;
 import com.intellij.psi.util.TypeConversionUtil;
-import com.sun.tools.javac.code.Flags;
 import manifold.ext.props.PropIssueMsg;
 import manifold.ext.props.rt.api.*;
 import manifold.ij.core.ManProject;
@@ -649,7 +648,8 @@ class PropertyMaker
       : propAccess.getModifier();
     if( isInterface && !propAbstract && !propStatic )
     {
-      access |= Flags.DEFAULT;
+      long DEFAULT = 1L<<43;
+      access |= DEFAULT;
     }
     access |= (propAbstract ? ABSTRACT : 0);
     access |= (propFinal ? FINAL : 0);

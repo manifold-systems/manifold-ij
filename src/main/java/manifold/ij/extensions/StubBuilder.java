@@ -41,6 +41,7 @@ import manifold.api.gen.SrcStatementBlock;
 import manifold.api.gen.SrcType;
 import manifold.ij.core.ManModule;
 import manifold.ij.util.ComputeUtil;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -364,7 +365,7 @@ public class StubBuilder
       String typeName = type.getCanonicalText();
       if( type instanceof PsiPrimitiveType )
       {
-        return Class.class.jailbreak().getPrimitiveClass( typeName );
+        return (Class<?>)ReflectUtil.method( Class.class, "getPrimitiveClass", String.class ).invokeStatic( typeName );
       }
       int iLt = typeName.indexOf( '<' );
       if( iLt > 0 )

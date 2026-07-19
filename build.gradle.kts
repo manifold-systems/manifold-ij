@@ -34,8 +34,9 @@ plugins {
 //  targetCompatibility = JavaVersion.VERSION_25
 //}
 java {
-  sourceCompatibility = JavaVersion.VERSION_21
-  targetCompatibility = JavaVersion.VERSION_21
+  toolchain {
+    languageVersion.set(JavaLanguageVersion.of(25))
+  }
 }
 
 configurations {
@@ -113,8 +114,8 @@ intellijPlatform {
 
     ideaVersion {
       // Get build numbers from https://www.jetbrains.com/idea/download/other.html
-      sinceBuild = "261"   //2026.1
-      untilBuild = "261.*" //2026.1.*
+      sinceBuild = "262"   //2026.2
+      untilBuild = "262.*" //2026.2.*
     }
   }
 }
@@ -220,10 +221,10 @@ tasks.test {
 }
 
 //tasks.withType<JavaCompile>().configureEach {
-////  options.compilerArgs.addAll(listOf(
+//  options.compilerArgs.addAll(listOf(
 ////    "--add-modules", "jdk.compiler",
-////    "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED"
-////  ))
+//    "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED"
+//  ))
 //  doFirst {
 //    println("===================================")
 //    println("Task: $path")
@@ -242,7 +243,7 @@ tasks.test {
 ////      languageVersion.set(JavaLanguageVersion.of(25))
 ////    }
 ////  )
-////}
+//}
 
 tasks.runIde {
     minHeapSize = "1g"

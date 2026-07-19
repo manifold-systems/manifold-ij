@@ -44,6 +44,7 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.IFileElementType;
 import com.intellij.psi.tree.TokenSet;
 import manifold.ij.template.ManTemplateJavaLanguage;
+import manifold.ij.util.ManVersionUtil;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -186,7 +187,14 @@ public class ManTemplateJavaParserDefinition extends JavaParserDefinition
       {
         if( csr != null )
         {
-          ReflectUtil.method( innards, "rawRemoveUpToWithoutNotifications", TreeElement.class, boolean.class ).invoke( csr, false );
+          if( ManVersionUtil.isAtLeast( 2026, 2, 0 ) )
+          {
+            ReflectUtil.method( innards, "rawRemoveUpToWithoutNotifications", long.class, TreeElement.class, boolean.class ).invoke( -1, csr, false );
+          }
+          else
+          {
+            ReflectUtil.method( innards, "rawRemoveUpToWithoutNotifications", TreeElement.class, boolean.class ).invoke( csr, false );
+          }
         }
         importList.rawAddChildrenWithoutNotifications( (TreeElement)innards );
       }

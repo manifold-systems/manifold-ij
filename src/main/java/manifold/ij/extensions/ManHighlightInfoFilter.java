@@ -590,7 +590,8 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
     return arrayAccess != null &&
       (hi.getDescription().startsWith( "Variable expected" ) ||
-       hi.getDescription().startsWith( "应为变量" )) &&
+       hi.getDescription().contains( "variable expected on left" ) ||
+       hi.getDescription().contains( "应为变量" )) &&
       arrayAccess.getIndexExpression() != null &&
       ManJavaResolveCache.getBinaryType( ManJavaResolveCache.INDEXED_SET,
         arrayAccess.getArrayExpression().getType(), arrayAccess.getIndexExpression().getType(), arrayAccess ) != null;

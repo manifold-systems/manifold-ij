@@ -254,7 +254,7 @@ public class ExtensionClassAnnotator implements Annotator
   {
     if( element instanceof PsiJavaCodeReferenceElementImpl &&
         ((PsiJavaCodeReferenceElementImpl)element).getTreeParent() instanceof ReferenceListElement &&
-        ((PsiJavaCodeReferenceElementImpl)element).getTreeParent().getText().startsWith( PsiKeyword.IMPLEMENTS ) )
+        ((PsiJavaCodeReferenceElementImpl)element).getTreeParent().getText().startsWith( "implements" ) )
     {
       PsiReference reference = element.getReference();
       if( reference == null )
