@@ -396,6 +396,10 @@ public class ManAugmentProvider extends PsiAugmentProvider
       }
       SrcClass sourceClass = new StubBuilder().make( extensionClass.getQualifiedName(), manModule, false );
       List<PsiAnnotation> sourceMethodAnnos = getParameterArrayAsList( anno, ExtensionSource.methods, PsiAnnotation.class );
+      if( sourceMethodAnnos == null )
+      {
+        continue;
+      }
 
       // Collect candidate extension methods:
       // - public static
@@ -419,11 +423,16 @@ public class ManAugmentProvider extends PsiAugmentProvider
         List<MethodDescription> methodSignatures = sourceMethodAnnos.stream()
           .map( methodSignatureAnno -> {
             String methodName = getParameterString( methodSignatureAnno );
-            List<String> parameterFqns =
-              getParameterArrayAsList( methodSignatureAnno, MethodSignature.paramTypes, PsiClassObjectAccessExpression.class )
-                .stream().map( this::getClassFqn ).toList();
+            List<PsiClassObjectAccessExpression> parameterArrayAsList = getParameterArrayAsList( methodSignatureAnno, MethodSignature.paramTypes, PsiClassObjectAccessExpression.class );
+            if( parameterArrayAsList == null )
+            {
+              return null;
+            }
+            List<String> parameterFqns = parameterArrayAsList.stream().map( this::getTypeFqn ).toList();
             return new MethodDescription( methodName, parameterFqns );
-          } ).toList();
+          } )
+          .filter( Objects::nonNull )
+          .toList();
 
         // Filter candidate methods according to configured signatures
         // and the specified ExtensionMethodType (INCLUDE or EXCLUDE).
@@ -525,16 +534,21 @@ public class ManAugmentProvider extends PsiAugmentProvider
   }
 
   /**
-   * Returns the fully qualified name (FQN) of the class referenced by a
+   * Returns the fully qualified name (FQN) of the type referenced by a
    * {@link PsiClassObjectAccessExpression}.
    *
    * @param exp the class object access expression
    * @return the fully qualified class name
    */
-  private String getClassFqn( PsiClassObjectAccessExpression exp )
+  private String getTypeFqn( PsiClassObjectAccessExpression exp )
   {
-    PsiClass psiClass = ((PsiClassType)exp.getOperand().getType()).resolve();
-    return psiClass == null ? null : psiClass.getQualifiedName();
+    PsiType type = exp.getOperand().getType();
+    if( type instanceof PsiClassType )
+    {
+      PsiClass psiClass = ((PsiClassType)type).resolve();
+      return psiClass == null ? null : psiClass.getQualifiedName();
+    }
+    return type.getPresentableText( false );
   }
 
   /**

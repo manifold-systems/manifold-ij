@@ -20,8 +20,8 @@
 package manifold.ij.extensions;
 
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.SmartPointerManager;
 import com.intellij.psi.SmartPsiElementPointer;
-import com.intellij.psi.impl.smartPointers.SmartPointerManagerImpl;
 
 import java.util.Objects;
 
@@ -61,7 +61,7 @@ public class MaybeSmartPsiElementPointer<E extends PsiElement>
       return _element;
     }
 
-    _smartPointer = SmartPointerManagerImpl.createPointer( _element );
+    _smartPointer = SmartPointerManager.createPointer( _element );
     _element = null;
     return getElement();
   }

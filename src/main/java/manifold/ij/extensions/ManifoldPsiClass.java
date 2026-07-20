@@ -34,7 +34,6 @@ import com.intellij.pom.Navigatable;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.PsiManagerImpl;
 import com.intellij.psi.impl.light.LightClass;
-import com.intellij.psi.impl.smartPointers.SmartPointerManagerImpl;
 import com.intellij.psi.util.ClassUtil;
 import java.util.ArrayList;
 import java.util.List;
