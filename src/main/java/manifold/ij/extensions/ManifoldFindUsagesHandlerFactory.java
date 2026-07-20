@@ -19,7 +19,6 @@
 
 package manifold.ij.extensions;
 
-import com.intellij.find.FindBundle;
 import com.intellij.find.findUsages.FindUsagesHandler;
 import com.intellij.find.findUsages.JavaFindUsagesHandler;
 import com.intellij.find.findUsages.JavaFindUsagesHandlerFactory;
@@ -33,6 +32,7 @@ import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiPackage;
 import java.util.Set;
 import manifold.ij.core.ManProject;
+import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,7 +41,9 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ManifoldFindUsagesHandlerFactory extends JavaFindUsagesHandlerFactory
 {
-  private static final String ACTION_STRING = FindBundle.message( "find.super.method.warning.action.verb" );
+  private static final String ACTION_STRING =
+    (String)ReflectUtil.method( "com.intellij.find.FindBundle", "message", String.class, Object[].class )
+      .invokeStatic( "find.super.method.warning.action.verb", new Object[0] );
 
   public ManifoldFindUsagesHandlerFactory( Project project )
   {
