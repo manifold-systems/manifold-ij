@@ -79,6 +79,10 @@ public class PreprocessorEnterHandler implements EnterHandlerDelegate
       }
       int spaces = text.length() - trim.length();
       offset = csr - spaces;
+      if( offset <= endif.length() )
+      {
+        return false;
+      }
       text = editor.getDocument().getText( TextRange.create( offset - endif.length(), offset ) );
       return endif.equals( text );
     }
