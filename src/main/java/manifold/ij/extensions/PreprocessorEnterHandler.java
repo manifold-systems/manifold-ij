@@ -43,10 +43,10 @@ public class PreprocessorEnterHandler implements EnterHandlerDelegate
       return false;
     }
 
-    if( isAfterEndIf( editor, offset ) )
-    {
-      return true;
-    }
+//    if( isAfterEndIf( editor, offset ) )
+//    {
+//      return true;
+//    }
 
     boolean[] found = {false};
     mmx.processRangeHighlightersOverlappingWith( offset + 1, offset + 1, highlighter -> {
