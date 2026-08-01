@@ -62,6 +62,8 @@ public class PreprocessorEnterHandler implements EnterHandlerDelegate
 
   private boolean isAfterEndIf( Editor editor, int offset )
   {
+    String elif = "#elif";
+    String else_ = "#else";
     String endif = "#endif";
     if( offset < endif.length() )
     {
@@ -84,7 +86,7 @@ public class PreprocessorEnterHandler implements EnterHandlerDelegate
         return false;
       }
       text = editor.getDocument().getText( TextRange.create( offset - endif.length(), offset ) );
-      return endif.equals( text );
+      return endif.equals( text ) || text.endsWith( elif ) || text.endsWith( else_ );
     }
 
     return false;

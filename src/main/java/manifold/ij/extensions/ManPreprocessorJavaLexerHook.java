@@ -1,6 +1,7 @@
 package manifold.ij.extensions;
 
 import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.java.syntax.element.JavaSyntaxTokenType;
 import com.intellij.java.syntax.lexer.JavaLexer;
 import com.intellij.java.syntax.lexer.JavaLexerHook;
 import com.intellij.lang.ASTNode;
@@ -45,6 +46,7 @@ public class ManPreprocessorJavaLexerHook implements JavaLexerHook
   private static final String MANIFOLD_PREPROCESSOR_DUMB_MODE = "manifold.preprocessor.dumb_mode";
   private static final LocklessLazyVar<boolean[]> PREPROCESSOR_DUMB_MODE = LocklessLazyVar.make(() ->
     new boolean[]{PropertiesComponent.getInstance().getBoolean(MANIFOLD_PREPROCESSOR_DUMB_MODE)});
+  public static final SyntaxElementType MY_MASKED_TOKEN = JavaSyntaxTokenType.END_OF_LINE_COMMENT;//C_STYLE_COMMENT;
 
   private @Jailbreak JavaLexer _lexer;
   private Project _project;
@@ -186,13 +188,13 @@ public class ManPreprocessorJavaLexerHook implements JavaLexerHook
       offset = skipSpaces(offset + directive.length());
       Expression expr = new ExpressionParser(_lexer.myBuffer, offset, _lexer.myBufferEndOffset).parse();
 
-      _lexer.myTokenType = C_STYLE_COMMENT;
+      _lexer.myTokenType = MY_MASKED_TOKEN;
         _lexer.myTokenEndOffset = Math.min(expr.getEndOffset(), _lexer.myBufferEndOffset);
     }
     // handle directives without expressions: #else, #endif
     else if (match(directive = Else.getDirective(), offset) ||
       match(directive = Endif.getDirective(), offset)) {
-      _lexer.myTokenType = C_STYLE_COMMENT;
+      _lexer.myTokenType = MY_MASKED_TOKEN;
       _lexer.myTokenEndOffset = Math.min(offset + directive.length(), _lexer.myBufferEndOffset);
     }
     else {
@@ -208,12 +210,12 @@ public class ManPreprocessorJavaLexerHook implements JavaLexerHook
     // handle #elif / #else
     if (match(Elif.getDirective(), offset) ||
       match(Else.getDirective(), offset)) {
-      _lexer.myTokenType = C_STYLE_COMMENT;
+      _lexer.myTokenType = MY_MASKED_TOKEN;
       _lexer.myTokenEndOffset = Math.min(findCommentRangeEnd(false), _lexer.myBufferEndOffset);
     }
     // handle #endif
     else if (match(Endif.getDirective(), offset)) {
-      _lexer.myTokenType = C_STYLE_COMMENT;
+      _lexer.myTokenType = MY_MASKED_TOKEN;
       _lexer.myTokenEndOffset = Math.min(offset + Endif.getDirective().length(), _lexer.myBufferEndOffset);
     }
     // handle #if
@@ -221,7 +223,7 @@ public class ManPreprocessorJavaLexerHook implements JavaLexerHook
       int rangeEnd = findCommentRangeEnd(true);
       if (rangeEnd > 0) {
         // handle nested `#if`
-        _lexer.myTokenType = C_STYLE_COMMENT;
+        _lexer.myTokenType = MY_MASKED_TOKEN;
         _lexer.myTokenEndOffset = Math.min(rangeEnd, _lexer.myBufferEndOffset);
       } else {
         // Create a PreprocessorParser with position set to '#' char, then call parseStatement()
@@ -237,7 +239,7 @@ public class ManPreprocessorJavaLexerHook implements JavaLexerHook
         // add empty statement marking end of if-stmt
         _visibleStmts.add(new SourceStatement(null, statement.getTokenEnd(), statement.getTokenEnd()));
 
-        _lexer.myTokenType = C_STYLE_COMMENT;
+        _lexer.myTokenType = MY_MASKED_TOKEN;
         _lexer.myTokenEndOffset = Math.min(findCommentRangeEnd(false), _lexer.myBufferEndOffset);
       }
     }
@@ -249,7 +251,7 @@ public class ManPreprocessorJavaLexerHook implements JavaLexerHook
 
       statement.execute(new ArrayList<>(), true, _definitions.get() );
 
-      _lexer.myTokenType = C_STYLE_COMMENT;
+      _lexer.myTokenType = MY_MASKED_TOKEN;
       _lexer.myTokenEndOffset = Math.min(statement.getTokenEnd(), _lexer.myBufferEndOffset);
     }
     // handle #error / #warning
@@ -257,7 +259,7 @@ public class ManPreprocessorJavaLexerHook implements JavaLexerHook
       match(Warning.getDirective(), offset)) {
       PreprocessorParser preProc = new PreprocessorParser(_lexer.myBuffer, _lexer.myBufferIndex, _lexer.myBufferEndOffset, null);
       Statement statement = preProc.parseStatement();
-      _lexer.myTokenType = C_STYLE_COMMENT;
+      _lexer.myTokenType = MY_MASKED_TOKEN;
       _lexer.myTokenEndOffset = Math.min(statement.getTokenEnd(), _lexer.myBufferEndOffset);
     }
     else {
