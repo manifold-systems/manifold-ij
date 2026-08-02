@@ -24,11 +24,11 @@ import java.util.jar.JarFile;
 
 public class Frontloader
 {
-  public static void frontloadClasses( String fqn, Class<?> from )
+  public static void frontloadClasses( String fqn, Class<?> from, Set<String> loaded )
   {
-    frontloadClasses( fqn, fqn, from );
+    frontloadClasses( fqn, fqn, from, loaded );
   }
-  public static void frontloadClasses( String fqn, String clFqn, Class<?> from )
+  public static void frontloadClasses( String fqn, String clFqn, Class<?> from, Set<String> loaded )
   {
     @Jailbreak ClassLoader classLoader = findClassLoader( clFqn, from );
     if( classLoader == null )
@@ -46,14 +46,18 @@ public class Frontloader
           String path = url.getPath().substring( 0, url.getPath().lastIndexOf( '.' ) );
           String fileName = path.substring( path.lastIndexOf( '/' ) + 1 );
           fqn = ManClassUtil.getPackage( fqn ) + "." + fileName;
-          try( InputStream bytes = url.openStream() )
+          if( !loaded.contains( fqn ) )
           {
-            byte[] content = StreamUtil.getContent( bytes );
-            classLoader.defineClass( fqn, content, 0, content.length );
-          }
-          catch( IOException e )
-          {
-            throw new RuntimeException( e );
+            try (InputStream bytes = url.openStream())
+            {
+              byte[] content = StreamUtil.getContent( bytes );
+              classLoader.defineClass( fqn, content, 0, content.length );
+              loaded.add( fqn );
+            }
+            catch( IOException e )
+            {
+              throw new RuntimeException( e );
+            }
           }
         }
       }

@@ -37,6 +37,8 @@ import com.intellij.psi.impl.source.tree.JavaElementType;
 import com.intellij.psi.tree.IElementType;
 
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -147,14 +149,15 @@ public class ManApplicationLoadListener implements ApplicationLoadListener
   public static Class<?> typePsiSyntaxBuilderFactoryKt = null;
   private void replaceJavaExpressionParser()
   {
-    Frontloader.frontloadClasses( "com.intellij.java.syntax.lexer.JavaLexer", getClass() );
-    Frontloader.frontloadClasses( "com.intellij.platform.syntax.psi.impl.PsiSyntaxBuilderImpl", getClass() );
-    Frontloader.frontloadClasses( "com.intellij.platform.syntax.psi.PsiSyntaxBuilderFactory", getClass() );
-    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.JavaParserHook", "com.intellij.java.syntax.parser.JavaParser", getClass() );
-    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.PrattExpressionParser", getClass() );
-    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.ExpressionParser", getClass() );
-    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.StatementParser", getClass() );
-    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.DeclarationParser", getClass() );
+    Set<String> loaded = new LinkedHashSet<>();
+    Frontloader.frontloadClasses( "com.intellij.java.syntax.lexer.JavaLexer", getClass(), loaded );
+    Frontloader.frontloadClasses( "com.intellij.platform.syntax.psi.impl.PsiSyntaxBuilderImpl", getClass(), loaded );
+    Frontloader.frontloadClasses( "com.intellij.platform.syntax.psi.PsiSyntaxBuilderFactory", getClass(), loaded );
+    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.JavaParserHook", "com.intellij.java.syntax.parser.JavaParser", getClass(), loaded );
+    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.PrattExpressionParser", getClass(), loaded );
+    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.ExpressionParser", getClass(), loaded );
+    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.StatementParser", getClass(), loaded );
+    Frontloader.frontloadClasses( "com.intellij.java.syntax.parser.DeclarationParser", getClass(), loaded );
 
     ReflectUtil.field( JavaLexer.class.getTypeName() + "Kt" , "MAN_CLASSLOADER" ).setStatic( getClass().getClassLoader() );
     typePsiSyntaxBuilderFactoryKt = ReflectUtil.type( PsiSyntaxBuilderFactory.class.getTypeName() + "Kt" );
