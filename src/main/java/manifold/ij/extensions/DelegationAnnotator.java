@@ -25,14 +25,21 @@ import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.refactoring.util.RefactoringUtil;
 import manifold.ext.parts.PartsIssueMsg;
+import manifold.ext.parts.rt.api.internal;
+import manifold.ext.parts.rt.api.link;
 import manifold.ij.core.ManModule;
 import manifold.ij.core.ManProject;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+
+import static com.intellij.codeInsight.AnnotationUtil.findAnnotationInHierarchy;
+import static manifold.ext.parts.PartsIssueMsg.MSG_INTERFACE_IS_INTERNAL_TO_DELEGATE;
+import static manifold.ext.parts.PartsIssueMsg.MSG_INTERNAL_ACCESS_NOT_ALLOWED_HERE;
 
 /**
  * Annotator for stuff not covered in DelegationExternalAnnotator. For example, `this` usage in @part classes.
@@ -62,6 +69,11 @@ public class DelegationAnnotator implements Annotator
       return;
     }
 
+    if( element instanceof PsiMethodCallExpression )
+    {
+      checkInternalMethodUse( (PsiMethodCallExpression)element, holder );
+    }
+
     PsiClass containingClass = ManifoldPsiClassAnnotator.getContainingClass( element );
 
     if( !(containingClass instanceof PsiExtensibleClass) )
@@ -78,6 +90,149 @@ public class DelegationAnnotator implements Annotator
     if( element instanceof PsiThisExpression )
     {
       checkThis( (PsiThisExpression)element, holder );
+    }
+    else if( element instanceof PsiReferenceExpression )
+    {
+      checkLinkFieldUse( (PsiReferenceExpression)element, holder );
+    }
+    else if( element instanceof PsiAssignmentExpression )
+    {
+      checkLinkFieldAssignment( (PsiAssignmentExpression)element, holder );
+    }
+    else if( element instanceof PsiField )
+    {
+      checkLinkFieldAssignment( (PsiField)element, holder );
+    }
+  }
+
+  private void checkInternalMethodUse( @NotNull PsiMethodCallExpression tree, @NotNull AnnotationHolder holder )
+  {
+    PsiReferenceExpression methExpr = tree.getMethodExpression();
+    PsiExpression qualExpr = methExpr.getQualifierExpression();
+    if( qualExpr == null )
+    {
+      return; // unqualified call ok (implementer)
+    }
+
+    PsiElement resolve = methExpr.resolve();
+    if( !(resolve instanceof PsiMethod psiMeth) )
+    {
+      return;
+    }
+
+    if( findAnnotationInHierarchy( psiMeth, internal.class ) == null )
+    {
+      // not an @internal method
+      return;
+    }
+
+    if( !(qualExpr instanceof PsiReferenceExpression) )
+    {
+      return;
+    }
+
+    String qualText = qualExpr.getText();
+    if( qualText.equals( "this" ) ||
+        qualText.endsWith( ".this" ) ||
+        qualText.equals( "super" ) ||
+        qualText.endsWith( ".super" ) )
+    {
+      // this or super access ok (implementer)
+      return;
+    }
+
+    PsiElement qual = ((PsiReferenceExpression)qualExpr).resolve();
+    if( qual instanceof PsiField )
+    {
+      boolean isLinkFieldRef = ((PsiField)qual).hasAnnotation( link.class.getTypeName() );
+      if( isLinkFieldRef )
+      {
+        // link field access ok (like super-call in composite)
+        return;
+      }
+    }
+
+    // illegal call to @internal method
+    holder.newAnnotation( HighlightSeverity.ERROR, MSG_INTERNAL_ACCESS_NOT_ALLOWED_HERE
+        .get( psiMeth.getPresentation() == null ? psiMeth.getName() : psiMeth.getPresentation().getPresentableText(),
+              psiMeth.getContainingClass() == null ? "" : psiMeth.getContainingClass().getQualifiedName() ) )
+      .range( tree.getTextRange() )
+      .create();
+  }
+
+  private void checkLinkFieldAssignment( PsiAssignmentExpression element, @NotNull AnnotationHolder holder )
+  {
+    PsiExpression lhs = element.getLExpression();
+    PsiType lhsType = lhs.getType();
+    if( !(lhsType instanceof PsiClassType) )
+    {
+      return;
+    }
+
+    PsiField linkField = resolveLinkFieldReference( lhs );
+    if( linkField == null )
+    {
+      // not a link field reference
+      return;
+    }
+
+    PsiExpression rhs = element.getRExpression();
+    if( rhs == null )
+    {
+      return;
+    }
+
+    checkInternalInterface( holder, rhs, lhsType );
+  }
+
+  private void checkLinkFieldAssignment( PsiField field, @NotNull AnnotationHolder holder )
+  {
+    PsiType lhsType = field.getType();
+    if( !(lhsType instanceof PsiClassType) )
+    {
+      return;
+    }
+
+    PsiField linkField = field.hasAnnotation( link.class.getTypeName() ) ? field : null;
+    if( linkField == null )
+    {
+      // not a link field reference
+      return;
+    }
+
+    PsiExpression rhs = linkField.getInitializer();
+    if( rhs == null )
+    {
+      return;
+    }
+
+    checkInternalInterface( holder, rhs, lhsType );
+  }
+
+  private static void checkInternalInterface( AnnotationHolder holder, PsiExpression rhs, PsiType lhsType )
+  {
+    PsiType rhsType = rhs.getType();
+    if( rhsType instanceof PsiClassType classType )
+    {
+      PsiClass psiClass = classType.resolve();
+      if( psiClass != null )
+      {
+        PsiClassType @NotNull [] interfaces = psiClass.getImplementsListTypes();
+        for( PsiClassType iface : interfaces )
+        {
+          if( iface.hasAnnotation( internal.class.getTypeName() ) )
+          {
+            if( ((PsiClassType)lhsType).rawType().equals( iface ) )
+            {
+              holder.newAnnotation( HighlightSeverity.ERROR, MSG_INTERFACE_IS_INTERNAL_TO_DELEGATE
+                  .get( lhsType.getPresentableText(), rhsType.getPresentableText() ) )
+                .range( rhs.getTextRange() )
+                .create();
+              break;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -213,7 +368,7 @@ public class DelegationAnnotator implements Annotator
   private static void checkThis( PsiType type, PsiThisExpression thisExpr, AnnotationHolder holder )
   {
     PsiClass psiType = PsiTypesUtil.getPsiClass( type );
-    if( psiType != null && !psiType.isInterface() )
+    if( psiType != null && !psiType.isInterface() && !Object.class.getTypeName().equals( psiType.getQualifiedName() ) )
     {
       addThisNonInterfaceError( thisExpr, holder );
     }
@@ -225,6 +380,57 @@ public class DelegationAnnotator implements Annotator
         PartsIssueMsg.MSG_PART_THIS_NONINTERFACE_USE.get() )
       .range( thisExpr.getTextRange() )
       .create();
+  }
+
+  private void checkLinkFieldUse( PsiReferenceExpression tree, @NotNull AnnotationHolder holder )
+  {
+    if( !inInstanceMethod( tree ) )
+    {
+      // probably in a constructor, which is where fields may be assigned
+      return;
+    }
+
+    PsiField linkField = resolveLinkFieldReference( tree );                      
+    if( linkField == null )
+    {
+      // not a link field reference
+      return;
+    }
+
+    PsiMethodCallExpression mcall = PsiTreeUtil.getParentOfType( tree, PsiMethodCallExpression.class );
+    if( mcall != null && PsiTreeUtil.isAncestor( mcall.getMethodExpression(), tree, false ) )
+    {
+      // linkField ref is the receiver of a method call, the only permitted use of a linkField
+      return;
+    }
+
+    holder.newAnnotation( HighlightSeverity.ERROR,
+                          PartsIssueMsg.MSG_PART_LINKFIELD_USE.get( tree.getText() ) )
+      .range( tree.getTextRange() )
+      .create();
+  }
+
+  private PsiField resolveLinkFieldReference( PsiExpression expr )
+  {
+    if( !(expr instanceof PsiReferenceExpression) )
+    {
+      return null;
+    }
+
+    PsiReferenceExpression reference = (PsiReferenceExpression)expr;
+
+    if( reference.resolve() instanceof PsiField field &&
+        field.hasAnnotation( link.class.getTypeName() ) )
+    {
+      return field;
+    }
+    return null;
+  }
+
+  private boolean  inInstanceMethod( PsiElement tree )
+  {
+    PsiMethod m = PsiTreeUtil.getParentOfType( tree, PsiMethod.class );
+    return m != null && !m.isConstructor() && !m.hasModifierProperty( PsiModifier.STATIC );
   }
 
 //  private boolean replaceThisReceiver( PsiThisExpression thisExpr, AnnotationHolder holder )

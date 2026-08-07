@@ -30,6 +30,7 @@ import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.MethodSignatureUtil;
 import com.intellij.psi.util.PsiTypesUtil;
+import com.intellij.psi.util.PsiUtil;
 import com.intellij.psi.util.TypeConversionUtil;
 import manifold.ext.parts.PartsIssueMsg;
 import manifold.ext.parts.rt.api.link;
@@ -45,9 +46,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static manifold.ext.parts.PartsIssueMsg.*;
+import static manifold.ext.parts.PartsIssueMsg.MSG_INTERFACE_LINK_FIELD_TYPE_EXPECTED;
 
-public class DelegationMaker
+ public class DelegationMaker
 {
   private static final ThreadLocal<Set<String>> _reenter = ThreadLocal.withInitial( () -> new HashSet<>() );
 
@@ -163,7 +164,7 @@ public class DelegationMaker
 
     if( isStatic( field ) )
     {
-      reportError( field, MSG_LINK_STATIC_FIELD.get() );
+      reportError( field, PartsIssueMsg.MSG_LINK_STATIC_FIELD.get() );
       return;
     }
 
@@ -174,64 +175,33 @@ public class DelegationMaker
 
   private void addLinkedInterfaces( PsiAnnotation linkAnno, ClassInfo classInfo, PsiVariable field )
   {
-    ArrayList<PsiClassType> interfaces = new ArrayList<>();
-    ArrayList<PsiClassType> shared = new ArrayList<>();
-    ArrayList<PsiClassType> fromAnno = new ArrayList<>();
-    boolean shareAll = getInterfacesFromLinkAnno( linkAnno, fromAnno, shared );
-    if( fromAnno.isEmpty() )
+    ArrayList<PsiClassType> shared = getSharedInterfacesFromLinkAnno( linkAnno );
+    PsiType fieldType = field.getType();
+    ArrayList<PsiClassType> interfaces = new ArrayList<>( getCommonInterfaces( classInfo, fieldType ) );
+
+    PsiClass fieldClass = PsiUtil.resolveClassInType( fieldType );
+    if( fieldClass == null || !fieldClass.isInterface() )
     {
-      interfaces.addAll( getCommonInterfaces( classInfo, field.getType() ) );
-      if( interfaces.isEmpty() )
-      {
-        reportError( field, MSG_NO_INTERFACES.get( field.getType().getPresentableText(), classInfo._classDecl.getQualifiedName() ) );
-      }
+      reportError( field, PartsIssueMsg.MSG_INTERFACE_LINK_FIELD_TYPE_EXPECTED.get() );
     }
-    else
+    else if( interfaces.isEmpty() )
     {
-      for( PsiClassType iface : fromAnno )
-      {
-        Set<PsiClassType> commonInterfaces = getCommonInterfaces( classInfo, iface );
-        if( commonInterfaces.isEmpty() )
-        {
-          reportError( linkAnno, MSG_NO_INTERFACES.get( iface.getPresentableText(), classInfo._classDecl.getQualifiedName() ) );
-        }
-        interfaces.addAll( commonInterfaces );
-      }
-      verifyFieldTypeSatisfiesAnnoTypes( field, interfaces );
+      reportError( field, PartsIssueMsg.MSG_DELEGATING_CLASS_DOES_NOT_IMPLEMENT
+        .get( classInfo._classDecl.getQualifiedName(), fieldType.getPresentableText(), field.getName() ) );
     }
 
-    if( shareAll || !shared.isEmpty() )
-    {
-      //todo:
-      // shared links must be final
-      //field.getModifiers().flags |= FINAL;
-    }
-
-    classInfo.getLinks().put( field, new LinkInfo( field, interfaces, shareAll, shared ) );
+    classInfo.getLinks().put( field, new LinkInfo( field, interfaces, shared ) );
   }
 
-  private void verifyFieldTypeSatisfiesAnnoTypes( PsiVariable field, ArrayList<PsiClassType> interfaces )
+  private ArrayList<PsiClassType> getSharedInterfacesFromLinkAnno( PsiAnnotation linkAnno )
   {
-    for( PsiClassType t : interfaces )
-    {
-      if( !t.isAssignableFrom( field.getType() ) )
-      {
-        PsiTypeElement typeElement = field.getTypeElement();
-        reportError( typeElement == null ? field : typeElement, MSG_FIELD_TYPE_NOT_ASSIGNABLE_TO.get(
-          field.getType().getPresentableText(), t.getPresentableText() ) );
-      }
-    }
-  }
-
-  private boolean getInterfacesFromLinkAnno( PsiAnnotation linkAnno, ArrayList<PsiClassType> interfaces, ArrayList<PsiClassType> share )
-  {
+    ArrayList<PsiClassType> share = new ArrayList<>();
     @NotNull List<JvmAnnotationAttribute> args = linkAnno.getAttributes();
     if( args.isEmpty() )
     {
-      return false;
+      return share;
     }
 
-    boolean shareAll = false;
     for( int i = 0; i < args.size(); i++ )
     {
       JvmAnnotationAttribute entry = args.get( i );
@@ -242,25 +212,12 @@ public class DelegationMaker
       {
         continue;
       }
-      if( argSym.equals( "shareAll" ) )
-      {
-        Boolean val = (Boolean)((JvmAnnotationConstantValue)value).getConstantValue();
-        shareAll = val != null && val;
-      }
-      else if( argSym.equals( "share" ) )
+      if( argSym.equals( "share" ) )
       {
         processClassType( share, value, linkAnno.getParameterList().getAttributes()[i] );
       }
-      else if( argSym.equals( "value" ) )
-      {
-        processClassType( interfaces, value, linkAnno.getParameterList().getAttributes()[i] );
-      }
-      else
-      {
-        // todo: add compile error here?
-      }
     }
-    return shareAll;
+    return share;
   }
 
   private void processClassType(ArrayList<PsiClassType> interfaces, JvmAnnotationAttributeValue value, PsiElement expr )
@@ -297,7 +254,7 @@ public class DelegationMaker
     }
     else
     {
-      reportError( location, MSG_ONLY_INTERFACES_HERE.get() );
+      reportError( location, PartsIssueMsg.MSG_ONLY_INTERFACES_HERE.get() );
     }
   }
 
@@ -520,7 +477,7 @@ public class DelegationMaker
         {
           PsiClassType.ClassResolveResult classResolveResult = type.resolveGenerics();
           PsiSubstitutor substitutor = classResolveResult.getSubstitutor();
-          //substitutor = TypeConversionUtil.getSuperClassSubstitutor( psiIface, psiClass, substitutor );
+          //substitutor = TypeConversionUtil.getSuperClassSubstitutor( psiIface, fieldClass, substitutor );
           ifaceType = (PsiClassType)substitutor.substitute( ifaceType );
         }
         findAllInterfaces( ifaceType, seen, result );
@@ -640,7 +597,7 @@ public class DelegationMaker
         for( LinkInfo li : lis )
         {
           reportWarning( li.getLinkField(),
-            MSG_METHOD_OVERLAP.get( mt.getName(), fieldNames ) );
+                         PartsIssueMsg.MSG_METHOD_OVERLAP.get( mt.getName(), fieldNames ) );
 
           // remove the overlap method type from the link, the delegating class must implement it directly
           CandidateInfo candi = li.findMethod( mt );
@@ -693,13 +650,13 @@ public class DelegationMaker
     if( modifiers != null &&
       (modifiers.hasModifierProperty( PsiModifier.PUBLIC ) || modifiers.hasModifierProperty( PsiModifier.PROTECTED )) )
     {
-      reportError( varDecl.getModifierList(), MSG_MODIFIER_NOT_ALLOWED_HERE.get(
+      reportError( varDecl.getModifierList(), PartsIssueMsg.MSG_MODIFIER_NOT_ALLOWED_HERE.get(
         modifiers.hasModifierProperty( PsiModifier.PUBLIC ) ? PsiModifier.PUBLIC : PsiModifier.PROTECTED ) );
     }
 
     if( modifiers != null && modifiers.hasModifierProperty( PsiModifier.PRIVATE ) )
     {
-      reportWarning( varDecl.getModifierList(), MSG_MODIFIER_REDUNDANT_FOR_LINK.get( PsiModifier.PRIVATE ) );
+      reportWarning( varDecl.getModifierList(), PartsIssueMsg.MSG_MODIFIER_REDUNDANT_FOR_LINK.get( PsiModifier.PRIVATE ) );
     }
     else
     {
@@ -710,7 +667,7 @@ public class DelegationMaker
 
     if( modifiers != null && modifiers.hasModifierProperty( PsiModifier.FINAL ) )
     {
-      reportWarning( varDecl.getModifierList(), MSG_MODIFIER_REDUNDANT_FOR_LINK.get( PsiModifier.FINAL ) );
+      reportWarning( varDecl.getModifierList(), PartsIssueMsg.MSG_MODIFIER_REDUNDANT_FOR_LINK.get( PsiModifier.FINAL ) );
     }
     else
     {
@@ -725,32 +682,32 @@ public class DelegationMaker
     return elem.getModifierList() != null && elem.getModifierList().hasModifierProperty( PsiModifier.STATIC );
   }
 
-  private void checkSuperclass( PsiExtensibleClass psiClass )
+  private void checkSuperclass( PsiExtensibleClass fieldClass )
   {
     if( !shouldCheck() )
     {
       return;
     }
 
-    if( !isPartClass( psiClass ) )
+    if( !isPartClass( fieldClass ) )
     {
       return;
     }
 
-    @Nullable PsiClass superclass = psiClass.getSuperClass();
+    @Nullable PsiClass superclass = fieldClass.getSuperClass();
     if( superclass != null && !superclass.hasAnnotation( part.class.getTypeName() ) )
     {
       String qname = superclass.getQualifiedName();
       if( qname == null || !qname.equals( Object.class.getTypeName() ) )
       {
-        reportError( psiClass.getExtendsList(), MSG_SUPERCLASS_NOT_PART.get() );
+        reportError( fieldClass.getExtendsList(), PartsIssueMsg.MSG_SUPERCLASS_NOT_PART.get() );
       }
     }
   }
 
-  public static boolean isPartClass( PsiExtensibleClass psiClass )
+  public static boolean isPartClass( PsiExtensibleClass fieldClass )
   {
-    PsiAnnotation partAnno = psiClass.getAnnotation( part.class.getTypeName() );
+    PsiAnnotation partAnno = fieldClass.getAnnotation( part.class.getTypeName() );
     return partAnno != null;
   }
 
@@ -834,15 +791,13 @@ public class DelegationMaker
     private final Set<CandidateInfo> _methodTypes;
     private final ArrayList<PsiClassType> _interfaces;
     private final ArrayList<PsiClassType> _shared;
-    private final boolean _shareAll;
 
-    LinkInfo( PsiVariable linkField, ArrayList<PsiClassType> linkedInterfaces, boolean shareAll, ArrayList<PsiClassType> shared )
+    LinkInfo( PsiVariable linkField, ArrayList<PsiClassType> linkedInterfaces, ArrayList<PsiClassType> shared )
     {
       _linkField = linkField;
       _generatedMethods = new ArrayList<>();
       _methodTypes = new HashSet<>();
       _interfaces = new ArrayList<>( linkedInterfaces );
-      _shareAll = shareAll;
       _shared = shared;
     }
 
@@ -897,7 +852,7 @@ public class DelegationMaker
 
     public boolean shares( PsiClassType iface )
     {
-      return _shareAll || _shared.stream().anyMatch( t -> t.equals( TypeConversionUtil.erasure( iface ) ) );
+      return _shared.stream().anyMatch( t -> t.equals( TypeConversionUtil.erasure( iface ) ) );
     }
   }
 }
