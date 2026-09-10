@@ -24,6 +24,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.light.LightRecordMember;
+import com.intellij.psi.util.PsiUtil;
 import manifold.ext.props.rt.api.get;
 import manifold.ext.props.rt.api.set;
 import manifold.ext.props.rt.api.val;
@@ -35,7 +36,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
-
 
 /**
  * Suppress errors around properties that are not really errors
@@ -116,6 +116,11 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if ( filterNotInitializedWarningForComputedProperty( hi, firstElem ) )
+    {
+        return false;
+    }
+
     return true;
   }
 
@@ -194,6 +199,14 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
     return field != null;
   }
 
+  private boolean filterNotInitializedWarningForComputedProperty( HighlightInfo hi, PsiElement firstElem )
+  {
+    return "@NullMarked fields must be initialized".equals( hi.getDescription() ) &&
+        firstElem.getParent() instanceof PsiField field && isPropField( field ) &&
+        ( !isReadable( field ) || hasGetter( field ) ) &&
+        ( !isWritable( field ) || hasSetter( field ) );
+  }
+
   private PsiField getPropFieldFromExpr( PsiElement elem )
   {
     while( !(elem instanceof PsiReferenceExpression) )
@@ -260,9 +273,67 @@ public class ManPropertiesHighlightInfoFilter implements HighlightInfoFilter
   private boolean isReadOnly( PsiField field )
   {
     return isVal( field ) ||
-      (field.hasAnnotation( get.class.getTypeName() ) &&
-        !field.hasAnnotation( set.class.getTypeName() ) &&
-        !isVar( field ));
+        (field.hasAnnotation( get.class.getTypeName() ) &&
+            !field.hasAnnotation( set.class.getTypeName() ) &&
+            !isVar( field ));
+  }
+
+  private boolean isReadable( PsiField field )
+  {
+    return isVal( field ) || field.hasAnnotation( get.class.getTypeName() );
+  }
+
+  private boolean isWritable( PsiField field )
+  {
+    return isVar( field ) || field.hasAnnotation( set.class.getTypeName() );
+  }
+
+  private boolean hasGetter( PsiField field )
+  {
+    if( field.getCopyableUserData( PropertyInference.GETTER_TAG ) != null )
+    {
+      return true;
+    }
+    for( PsiMethod method : PsiUtil.getContainingClass( field ).findMethodsByName( getGetterName( field ), false ) )
+    {
+      if( field.getType().equals( method.getReturnType() ) );
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean hasSetter( PsiField field )
+  {
+    if( field.getCopyableUserData( PropertyInference.SETTER_TAG ) != null )
+    {
+      return true;
+    }
+    for( PsiMethod method : PsiUtil.getContainingClass( field ).findMethodsByName( getSetterName( field ), false ) )
+    {
+      PsiParameter[] parameters = method.getParameterList().getParameters();
+      if( parameters.length == 1 && parameters[0].getType().equals( field.getType() ) );
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private String getGetterName( PsiField field )
+  {
+    return getAccessorName( field, field.getType().equals( PsiTypes.booleanType() ) ? "is" : "get" );
+  }
+
+  private String getSetterName( PsiField field )
+  {
+    return getAccessorName( field, "set" );
+  }
+
+  private String getAccessorName( PsiField field, String prefix )
+  {
+    return prefix + field.getName().substring(0, 1).toUpperCase() + field.getName().substring( 1 );
   }
 
   private boolean hasVarTag( PsiField field, Class<? extends Annotation> varClass )
