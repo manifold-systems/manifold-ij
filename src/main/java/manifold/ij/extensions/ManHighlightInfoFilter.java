@@ -44,6 +44,8 @@ import java.util.regex.Pattern;
 
 import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.refactoring.util.RefactoringUtil;
+import manifold.ext.parts.rt.api.link;
+import manifold.ext.parts.rt.api.part;
 import manifold.ext.props.rt.api.get;
 import manifold.ext.props.rt.api.override;
 import manifold.ext.props.rt.api.set;
@@ -155,6 +157,20 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
+    if( filterCastingThisIsRedundant( hi, firstElem ) )
+    {
+      return false;
+    }
+
+    PsiElement elem = firstElem == null ? null : firstElem.getParent();
+    if( elem != null )
+    {
+      if( filterLinkFieldIsNeverUsedError( hi, elem ) )
+      {
+        return false;
+      }
+    }
+
     if( hi.getSeverity() != HighlightSeverity.ERROR )
     {
       return true;
@@ -184,7 +200,6 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
       return false;
     }
 
-    PsiElement elem = firstElem.getParent();
     if( elem == null )
     {
       return true;
@@ -758,6 +773,31 @@ public class ManHighlightInfoFilter implements HighlightInfoFilter
     }
     return descriptionStartsAndEndsWith( hi, "Field '", "' might not have been initialized")
            && isElementInInterface( elem ) && hasPropertyAnnotation( psiField );
+  }
+
+  private boolean filterLinkFieldIsNeverUsedError( HighlightInfo hi, PsiElement elem )
+  {
+    PsiField psiField = getPsiField( elem );
+    if( psiField == null )
+    {
+      return false;
+    }
+
+    return (descriptionStartsAndEndsWith( hi, "Private field ", " is never used" ) ||
+            hi.getDescription().equals( "Field can be converted to a local variable" ) ||
+            descriptionStartsAndEndsWith( hi, "Private field ", " is assigned but never accessed" )) &&
+           psiField.hasAnnotation( link.class.getTypeName() );
+  }
+
+  // suppress the warning for `((A)this).foo()` when foo() may be defined in multiple interfaces of a part's delegation surface
+  private boolean filterCastingThisIsRedundant( HighlightInfo hi, PsiElement elem )
+  {
+    if( descriptionStartsAndEndsWith( hi, "Casting 'this' to ", " is redundant" ) )
+    {
+      PsiClass containingClass = PsiUtil.getContainingClass( elem );
+      return containingClass != null && containingClass.hasAnnotation( part.class.getTypeName() );
+    }
+    return false;
   }
 
   private boolean filterFieldIsNeverUsed( HighlightInfo hi, @Nullable PsiElement elem )

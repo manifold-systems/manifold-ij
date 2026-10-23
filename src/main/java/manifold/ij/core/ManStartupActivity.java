@@ -19,12 +19,17 @@
 
 package manifold.ij.core;
 
+import com.intellij.application.options.CodeStyle;
 import com.intellij.codeInsight.highlighting.PairedBraceMatcherAdapter;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageAnnotators;
 import com.intellij.lang.LanguageBraceMatching;
+import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.codeStyle.CodeStyleSettings;
+import com.intellij.psi.codeStyle.CodeStyleSettingsManager;
+import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
 import manifold.ij.extensions.ManifoldPsiClassAnnotator;
@@ -42,9 +47,25 @@ public class ManStartupActivity implements com.intellij.openapi.startup.ProjectA
   public Object execute( @NotNull Project project, @NotNull Continuation<? super Unit> continuation )
   {
     initForAllProjects();
-
+    noAnnotationWrap( project );
     ApplicationManager.getApplication().runReadAction( () -> ManProject.manProjectFrom( project ).projectOpened() );
     return null;
+  }
+
+  // this is necessary to work with manifold's various lowercase annotations (e.g., @link, @part, @val, @var, etc.)
+  // where they are intended to be placed on the same line, like a modifier or keyword.
+  public static void noAnnotationWrap( Project project )
+  {
+    CodeStyleSettings settings = CodeStyle.getSettings( project );
+
+    CommonCodeStyleSettings java = settings.getCommonSettings( JavaLanguage.INSTANCE );
+    java.CLASS_ANNOTATION_WRAP = CommonCodeStyleSettings.DO_NOT_WRAP;
+    java.METHOD_ANNOTATION_WRAP = CommonCodeStyleSettings.DO_NOT_WRAP;
+    java.FIELD_ANNOTATION_WRAP = CommonCodeStyleSettings.DO_NOT_WRAP;
+    java.PARAMETER_ANNOTATION_WRAP = CommonCodeStyleSettings.DO_NOT_WRAP;
+    java.VARIABLE_ANNOTATION_WRAP = CommonCodeStyleSettings.DO_NOT_WRAP;
+
+    CodeStyleSettingsManager.getInstance( project ).notifyCodeStyleSettingsChanged();
   }
 
   /**
