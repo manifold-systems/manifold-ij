@@ -28,7 +28,6 @@ import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.util.MethodSignatureUtil;
 import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.PsiUtil;
 import com.intellij.psi.util.TypeConversionUtil;
@@ -45,8 +44,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static manifold.ext.parts.PartsIssueMsg.MSG_INTERFACE_LINK_FIELD_TYPE_EXPECTED;
 
 public class DelegationMaker
 {
@@ -183,12 +180,12 @@ public class DelegationMaker
     if( fieldClass == null || !fieldClass.isInterface() )
     {
       reportError( field, PartsIssueMsg.MSG_INTERFACE_LINK_FIELD_TYPE_EXPECTED.get() );
-  }
+    }
     else if( interfaces.isEmpty() )
-  {
+    {
       reportError( field, PartsIssueMsg.MSG_DELEGATING_CLASS_DOES_NOT_IMPLEMENT
         .get( classInfo._classDecl.getQualifiedName(), fieldType.getPresentableText(), field.getName() ) );
-      }
+    }
 
     classInfo.getLinks().put( field, new LinkInfo( field, interfaces, shared ) );
   }
@@ -342,6 +339,11 @@ public class DelegationMaker
   private void addAsLinkMethods( ClassInfo ci )
   {
     PsiExtensibleClass classDecl = ci._classDecl;
+    if( !isPartClass( classDecl ) )
+    {
+      return;
+    }
+
     PsiModifierList modifierList = classDecl.getModifierList();
     if( modifierList == null || !modifierList.hasExplicitModifier( PsiModifier.ABSTRACT ) )
     {
@@ -630,7 +632,7 @@ public class DelegationMaker
     for( PsiMethod subMethod : methods )
     {
       if( subMethod.getName().equals( m.getName() ) &&
-        MethodSignatureUtil.areOverrideEquivalent( subMethod, m ) )
+          Arrays.asList( subMethod.findSuperMethods( m.getContainingClass() ) ).contains( m ) )
       {
         return subMethod;
       }
@@ -653,28 +655,17 @@ public class DelegationMaker
       reportError( varDecl.getModifierList(), PartsIssueMsg.MSG_MODIFIER_NOT_ALLOWED_HERE.get(
         modifiers.hasModifierProperty( PsiModifier.PUBLIC ) ? PsiModifier.PUBLIC : PsiModifier.PROTECTED ) );
     }
-
-    if( modifiers != null && modifiers.hasModifierProperty( PsiModifier.PRIVATE ) )
-    {
-      reportWarning( varDecl.getModifierList(), PartsIssueMsg.MSG_MODIFIER_REDUNDANT_FOR_LINK.get( PsiModifier.PRIVATE ) );
-    }
-    else
-    {
-      //todo:
-      // default @link fields to PRIVATE
-      //varDecl.getModifiers().flags |= PRIVATE;
-    }
-
-    if( modifiers != null && modifiers.hasModifierProperty( PsiModifier.FINAL ) )
-    {
-      reportWarning( varDecl.getModifierList(), PartsIssueMsg.MSG_MODIFIER_REDUNDANT_FOR_LINK.get( PsiModifier.FINAL ) );
-    }
-    else
-    {
-      //todo:
-      // default @link fields to FINAL
-      //varDecl.getModifiers().flags |= FINAL;
-    }
+// these will trigger with the augmented modifiers :(
+//
+//    if( modifiers != null && modifiers.hasModifierProperty( PsiModifier.PRIVATE ) )
+//    {
+//      reportWarning( varDecl.getModifierList(), PartsIssueMsg.MSG_MODIFIER_REDUNDANT_FOR_LINK.get( PsiModifier.PRIVATE ) );
+//    }
+//
+//    if( modifiers != null && modifiers.hasModifierProperty( PsiModifier.FINAL ) )
+//    {
+//      reportWarning( varDecl.getModifierList(), PartsIssueMsg.MSG_MODIFIER_REDUNDANT_FOR_LINK.get( PsiModifier.FINAL ) );
+//    }
   }
 
   private boolean isStatic( PsiModifierListOwner elem )
@@ -682,33 +673,42 @@ public class DelegationMaker
     return elem.getModifierList() != null && elem.getModifierList().hasModifierProperty( PsiModifier.STATIC );
   }
 
-  private void checkSuperclass( PsiExtensibleClass fieldClass )
+  private void checkSuperclass( PsiExtensibleClass psiClass )
   {
     if( !shouldCheck() )
     {
       return;
     }
 
-    if( !isPartClass( fieldClass ) )
+    @Nullable PsiClass superclass = psiClass.getSuperClass();
+    if( superclass == null )
     {
       return;
     }
 
-    @Nullable PsiClass superclass = fieldClass.getSuperClass();
-    if( superclass != null && !superclass.hasAnnotation( part.class.getTypeName() ) )
+    if( isPartClass( psiClass ) )
     {
-      String qname = superclass.getQualifiedName();
-      if( qname == null || !qname.equals( Object.class.getTypeName() ) )
+      if( !isPartClass( superclass ) )
       {
-        reportError( fieldClass.getExtendsList(), PartsIssueMsg.MSG_SUPERCLASS_NOT_PART.get() );
+        String qname = superclass.getQualifiedName();
+        if( qname == null || !qname.equals( Object.class.getTypeName() ) )
+        {
+          reportError( psiClass.getExtendsList(), PartsIssueMsg.MSG_SUPERCLASS_NOT_PART.get() );
+        }
+      }
+    }
+    else if( isPartClass( superclass ) )
+    {
+      if( !isPartClass( psiClass ) )
+      {
+        reportError( psiClass.getNameIdentifier(), PartsIssueMsg.MSG_SUPERCLASS_PART.get() );
       }
     }
   }
 
-  public static boolean isPartClass( PsiExtensibleClass fieldClass )
+  public static boolean isPartClass( PsiClass psiClass )
   {
-    PsiAnnotation partAnno = fieldClass.getAnnotation( part.class.getTypeName() );
-    return partAnno != null;
+    return psiClass.hasAnnotation( part.class.getTypeName() );
   }
 
   private boolean shouldCheck()
@@ -833,20 +833,14 @@ public class DelegationMaker
 
     public boolean hasMethod( CandidateInfo candi )
     {
-      return _methodTypes.stream().anyMatch( m -> areOverrideEquivalent( candi, m ) );
-    }
-
-    private boolean areOverrideEquivalent( CandidateInfo candi, CandidateInfo m )
-    {
-      return ((PsiMethod)candi.getElement()).getName().equals( ((PsiMethod)m.getElement()).getName() ) &&
-        MethodSignatureUtil.areOverrideEquivalent( (PsiMethod)m.getElement(), (PsiMethod)candi.getElement() );
+      return _methodTypes.stream().anyMatch( m -> haveSameErasedSignature( (PsiMethod)candi.getElement(), (PsiMethod)m.getElement() ) );
     }
 
     public CandidateInfo findMethod( PsiMethod method )
     {
       return _methodTypes.stream()
         .filter( m -> method.getName().equals( ((PsiMethod)m.getElement()).getName() ) &&
-          MethodSignatureUtil.areOverrideEquivalent( (PsiMethod)m.getElement(), method ) )
+          haveSameErasedSignature( (PsiMethod)m.getElement(), method ) )
         .findFirst().orElse( null );
     }
 
@@ -854,5 +848,34 @@ public class DelegationMaker
     {
       return _shared.stream().anyMatch( t -> t.equals( TypeConversionUtil.erasure( iface ) ) );
     }
+  }
+
+  static boolean haveSameErasedSignature( PsiMethod a, PsiMethod b )
+  {
+    if( !a.getName().equals( b.getName() ) )
+    {
+      return false;
+    }
+
+    PsiParameter[] pa = a.getParameterList().getParameters();
+    PsiParameter[] pb = b.getParameterList().getParameters();
+
+    if( pa.length != pb.length )
+    {
+      return false;
+    }
+
+    for( int i = 0; i < pa.length; i++ )
+    {
+      PsiType ta = TypeConversionUtil.erasure( pa[i].getType() );
+      PsiType tb = TypeConversionUtil.erasure( pb[i].getType() );
+
+      if( ta == null || tb == null || !ta.equals( tb ) )
+      {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

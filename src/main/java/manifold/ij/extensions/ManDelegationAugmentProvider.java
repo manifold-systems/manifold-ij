@@ -20,10 +20,6 @@
 package manifold.ij.extensions;
 
 import com.intellij.lang.java.JavaLanguage;
-import com.intellij.lang.jvm.annotation.JvmAnnotationArrayValue;
-import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
-import com.intellij.lang.jvm.annotation.JvmAnnotationAttributeValue;
-import com.intellij.lang.jvm.annotation.JvmNestedAnnotationValue;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.util.Computable;
@@ -35,10 +31,9 @@ import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.util.CachedValue;
 import com.intellij.psi.util.CachedValueProvider;
 import com.intellij.psi.util.CachedValuesManager;
+import manifold.ext.parts.rt.api.link;
+import manifold.ext.parts.rt.api.part;
 import manifold.ij.core.ManProject;
-import manifold.ij.psi.ManLightFieldBuilder;
-import manifold.ij.psi.ManLightModifierListImpl;
-import manifold.ij.psi.ManPsiElementFactory;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,14 +41,41 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static manifold.ij.extensions.DelegationMaker.generateMethods;
-
 /**
  * - Generate stubbed methods for linked interfaces
  */
 public class ManDelegationAugmentProvider extends PsiAugmentProvider
 {
   static final Key<CachedValue<List<PsiMethod>>> KEY_CACHED_DELEGATION_AUGMENTS = new Key<>( "KEY_CACHED_DELEGATION_AUGMENTS" );
+
+  @NotNull
+  @Override
+  protected Set<String> transformModifiers( @NotNull PsiModifierList modifierList, @NotNull Set<String> modifiers )
+  {
+    if( modifierList.getParent() instanceof PsiClass psiClass )
+    {
+      // make inner @part classes `static`
+      if( psiClass.getContainingClass() != null && !modifierList.hasExplicitModifier( PsiModifier.STATIC ) &&
+          psiClass.hasAnnotation( part.class.getTypeName() ) )
+      {
+        Set<String> augmentedModifiers = new HashSet<>( modifiers );
+        augmentedModifiers.add( PsiModifier.STATIC );
+        return augmentedModifiers;
+      }
+    }
+    else if( modifierList.getParent() instanceof PsiField psiField )
+    {
+      // make @link fields `private final`
+      if( psiField.hasAnnotation( link.class.getTypeName() ) )
+      {
+        Set<String> augmentedModifiers = new HashSet<>( modifiers );
+        augmentedModifiers.add( PsiModifier.PRIVATE );
+        augmentedModifiers.add( PsiModifier.FINAL );
+        return augmentedModifiers;
+      }
+    }
+    return modifiers;
+  }
 
   @SuppressWarnings( "deprecation" )
   @NotNull
