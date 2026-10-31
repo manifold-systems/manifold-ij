@@ -40,6 +40,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 // override standard JavaDocumentProvider to filter out generated params methods/constructors
 public class ManJavaDocumentationProvider extends JavaDocumentationProvider
@@ -127,19 +128,22 @@ public class ManJavaDocumentationProvider extends JavaDocumentationProvider
     return generateExternalJavadoc(element);
   }
 
-  private @Nls String getMethodCandidateInfo(PsiMethodCallExpression expr) {
-    final PsiResolveHelper rh = JavaPsiFacade.getInstance(expr.getProject()).getResolveHelper();
-    final CandidateInfo[] candidates = rh.getReferencedMethodCandidates(expr, true);
-
-    final String text = expr.getText();
+  @Nls
+  protected static String getMethodCandidateInfo(PsiMethodCallExpression expr) {
+    PsiResolveHelper rh = JavaPsiFacade.getInstance(expr.getProject()).getResolveHelper();
+    CandidateInfo[] candidates = rh.getReferencedMethodCandidates(expr, true);
+    String text = expr.getText();
     if (candidates.length > 0) {
       if (candidates.length == 1) {
         PsiElement element = candidates[0].getElement();
-        if (element instanceof PsiMethod) return generateDoc(element, null);
+        if (element instanceof PsiMethod) {
+          return generateDocStatic(element, (PsiElement)null);
+        }
       }
-      final StringBuilder sb = new StringBuilder();
-      @NotNull List<? extends CandidateInfo> conflicts = new ArrayList<>( Arrays.asList(candidates));
-      JavaMethodsConflictResolver.filterSupers(conflicts, expr.getContainingFile(), null);
+
+      StringBuilder sb = new StringBuilder();
+      List<? extends CandidateInfo> conflicts = new ArrayList(Arrays.asList(candidates));
+      JavaMethodsConflictResolver.filterSupers(conflicts, expr.getContainingFile(), (Map)null);
 
       conflicts = conflicts.stream()
         .filter( c -> c.getElement() instanceof PsiMethod m && m.getAnnotation( params.class.getTypeName() ) == null )
@@ -147,25 +151,20 @@ public class ManJavaDocumentationProvider extends JavaDocumentationProvider
       if( conflicts.size() == 1 )
       {
         PsiElement element = conflicts.get( 0 ).getElement();
-        return generateDoc( element, null );
+        return generateDocStatic( element, null );
       }
 
-      for (final CandidateInfo candidate : conflicts) {
-        final PsiElement element = candidate.getElement();
-
-        final String str = PsiFormatUtil.formatMethod((PsiMethod)element, candidate.getSubstitutor(),
-          PsiFormatUtilBase.SHOW_NAME |
-            PsiFormatUtilBase.SHOW_TYPE |
-            PsiFormatUtilBase.SHOW_PARAMETERS,
-          PsiFormatUtilBase.SHOW_TYPE);
-        @Jailbreak JavaDocumentationProvider _super = this;
-        _super.createElementLink(sb, element, StringUtil.escapeXmlEntities(str));
+      for(CandidateInfo candidate : conflicts) {
+        PsiElement element = candidate.getElement();
+        if (element instanceof PsiMethod) {
+          String str = PsiFormatUtil.formatMethod((PsiMethod)element, candidate.getSubstitutor(), 259, 2);
+          createElementLink(sb, element, StringUtil.escapeXmlEntities(str));
+        }
       }
 
-      return CodeInsightBundle.message("javadoc.candidates", text, sb);
+      return CodeInsightBundle.message("javadoc.candidates", new Object[]{text, sb});
+    } else {
+      return JavaBundle.message("javadoc.candidates.not.found", new Object[]{text});
     }
-
-    return JavaBundle.message("javadoc.candidates.not.found", text);
   }
-
 }

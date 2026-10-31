@@ -20,7 +20,7 @@
 package manifold.ij.template.psi;
 
 import com.intellij.lang.ASTNode;
-import com.intellij.lang.java.lexer.JavaLexer;
+import manifold.ij.template.java.lexer.JavaLexer;
 import com.intellij.lexer.DelegateLexer;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.LanguageLevelProjectExtension;

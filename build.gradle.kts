@@ -65,6 +65,17 @@ dependencies {
     testFramework(TestFrameworkType.Platform)
   }
 
+//
+//  intellijPlatformTesting {
+//    runIde {
+//      register("runLocal20262") // this is the gradle task to run instead of "runIde"
+//      {
+//        // This isolates the execution override purely to the launcher task!
+//        localPath.set(file("C:/Program Files/JetBrains/IntelliJ IDEA 2026.2.4"))
+//      }
+//    }
+//  }
+
   val manifoldVersion : String by project
   implementation("systems.manifold:manifold:$manifoldVersion")
   implementation("systems.manifold:manifold-util:$manifoldVersion")
@@ -114,8 +125,8 @@ intellijPlatform {
 
     ideaVersion {
       // Get build numbers from https://www.jetbrains.com/idea/download/other.html
-      sinceBuild = "262"   //2026.2
-      untilBuild = "262.*" //2026.2.*
+      sinceBuild = "263"   //2026.3
+      untilBuild = "263.*" //2026.3.*
     }
   }
 }

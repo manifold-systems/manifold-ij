@@ -21,8 +21,8 @@ package manifold.ij.template.psi;
 
 import com.intellij.codeInsight.daemon.JavaErrorBundle;
 import com.intellij.lang.PsiBuilder;
-import com.intellij.lang.java.parser.JavaParser;
-import com.intellij.lang.java.parser.ReferenceParser;
+import manifold.ij.template.java.parser.JavaParser;
+import manifold.ij.template.java.parser.ReferenceParser;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.impl.source.tree.ElementType;
@@ -34,7 +34,7 @@ import org.jetbrains.annotations.PropertyKey;
 
 
 import static com.intellij.lang.PsiBuilderUtil.expect;
-import static com.intellij.lang.java.parser.JavaParserUtil.*;
+import static manifold.ij.template.java.parser.JavaParserUtil.*;
 
 public class DirectiveParser
 {

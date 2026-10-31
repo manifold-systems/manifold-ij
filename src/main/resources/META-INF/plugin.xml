@@ -102,13 +102,17 @@
     </group>
   </actions>
 
+  <applicationListeners>
+    <listener
+            class="manifold.ij.core.ManApplicationLoadListener"
+            topic="com.intellij.ide.AppLifecycleListener"/>
+  </applicationListeners>
+
   <extensions defaultExtensionNs="com.intellij">
     <repositoryLibrary name="Manifold">
       <groupId>systems.manfold</groupId>
       <artifactId>manifold-all</artifactId>
     </repositoryLibrary>
-
-    <ApplicationLoadListener implementation="manifold.ij.core.ManApplicationLoadListener"/>
 
     <!-- Manifold Core extensions -->
 

@@ -20,10 +20,9 @@
 package manifold.ij.core;
 
 import com.intellij.diagnostic.LoadingState;
-import com.intellij.ide.ApplicationLoadListener;
+import com.intellij.ide.AppLifecycleListener;
 import com.intellij.java.syntax.lexer.JavaLexer;
 import com.intellij.lang.ASTNode;
-import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -36,40 +35,28 @@ import com.intellij.psi.impl.java.stubs.JavaStubElementTypes;
 import com.intellij.psi.impl.source.tree.JavaElementType;
 import com.intellij.psi.tree.IElementType;
 
-import java.nio.file.Path;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.intellij.util.messages.MessageBusConnection;
-import kotlin.Unit;
-import kotlin.coroutines.Continuation;
-import manifold.ext.rt.api.Jailbreak;
 import manifold.ij.extensions.ManJavaLiteralExpressionElementType;
-import manifold.ij.extensions.ManPsiBuilderFactoryHook;
 import manifold.ij.extensions.ManPsiLiteralExpressionImpl;
 import manifold.util.JdkAccessUtil;
 import manifold.util.ReflectUtil;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This class is a main entry point for the Manifold plugin. It performs the following tasks:
- * <p/>
- * - handles project open and close events by hooking up ManProjects<br>
- * - overrides the JavaExpressionParser and other stuff before the application loads<br>
- * - registers the manifold Annotator with all languages, since a type manifold can add errors to existing languages/markups<br>
- * - adds a brace matcher for templates, which must happen early<br>
- * <p/>
  */
-public class ManApplicationLoadListener implements ApplicationLoadListener
+public class ManApplicationLoadListener implements AppLifecycleListener
 {
   @Override
-  public Object beforeApplicationLoaded(Application application, Path configPath, Continuation<? super Unit> continuation)
+  public void appFrameCreated( @NotNull List<String> commandLineArgs )
   {
     overrideJavaParserStuff();
     listenToProjectOpenClose();
-    return null;
   }
 
   public void overrideJavaParserStuff()
